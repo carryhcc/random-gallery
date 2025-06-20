@@ -1,0 +1,68 @@
+body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol";
+    margin: 0;
+    background-color: #f4f7f6;
+    color: #333;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+    padding: 20px;
+    box-sizing: border-box;
+}
+
+.container {
+    background-color: #ffffff;
+    padding: 30px;
+    border-radius: 12px;
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+    max-width: 700px;
+    width: 100%;
+    text-align: center;
+}
+
+header h1 {
+    color: #2c3e50;
+    margin-bottom: 25px;
+    font-size: 2.5em; /* 比 base.css 中的 div 更大 */
+}
+
+.image-card {
+    border-radius: 8px;
+    overflow: hidden; /* 确保图片边角也是圆角 */
+    margin-bottom: 20px;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
+    background-color: #fff; /* 如果图片有透明度 */
+}
+
+.image-card img {
+    display: block;
+    width: 100%;
+    height: auto;
+    border-bottom: 1px solid #eee; /* 可选：如果你有图片说明区域 */
+}
+
+.image-caption {
+    padding: 15px;
+    font-size: 0.9em;
+    color: #555;
+}
+
+footer {
+    margin-top: 30px;
+    font-size: 0.8em;
+    color: #777;
+}
+
+/* 响应式调整 */
+@media (max-width: 600px) {
+    .container {
+        padding: 20px;
+    }
+    header h1 {
+        font-size: 2em;
+    }
+    .image-caption {
+        font-size: 0.85em;
+    }
+}

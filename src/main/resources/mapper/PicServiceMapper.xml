@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.example.randomGallery.server.mapper.PicServiceMapper">
+
+    <!-- 可根据自己的需求，是否要使用 -->
+    <resultMap type="com.example.randomGallery.entity.DO.PicInfoDO" id="PicInfoMap">
+        <result property="id" column="id"/>
+        <result property="picUrl" column="pic_url"/>
+        <result property="picName" column="pic_name"/>
+        <result property="groupId" column="group_id"/>
+        <result property="isDelete" column="is_delete"/>
+    </resultMap>
+
+    <select id="getMaxId" resultType="java.lang.Integer">
+        SELECT id
+        FROM cc_pic_all_dev
+        WHERE is_delete = 0
+        ORDER BY id DESC
+        LIMIT 1
+    </select>
+    <select id="getMinId" resultType="java.lang.Integer">
+        SELECT id
+        FROM cc_pic_all_dev
+        WHERE is_delete = 0
+        ORDER BY id
+        LIMIT 1
+    </select>
+    <select id="getMaxGroupId" resultType="java.lang.Integer">
+        SELECT group_id
+        FROM cc_pic_all_dev
+        WHERE is_delete = 0
+        ORDER BY group_id DESC
+        LIMIT 1
+    </select>
+    <select id="getMinGroupId" resultType="java.lang.Integer">
+        SELECT group_id
+        FROM cc_pic_all_dev
+        WHERE is_delete = 0
+        ORDER BY group_id
+        LIMIT 1
+    </select>
+    <select id="getUrlById" resultType="java.lang.String">
+        SELECT pic_url
+        FROM cc_pic_all_dev
+        WHERE id = #{id}
+    </select>
+
+    <select id="getRandomGroupPicList" resultType="com.example.randomGallery.entity.DO.PicInfoDO">
+        SELECT id, pic_url, pic_name, group_id, is_delete
+        FROM cc_pic_all_dev
+        WHERE is_delete = 0
+          AND group_id = #{groupId}
+    </select>
+</mapper>
