@@ -58,4 +58,8 @@ public class PicController {
         return new ModelAndView("/picList.ftl");
     }
 
+    @GetMapping("/test")
+    public String test() {
+        return "测试成功";
+    }
 }

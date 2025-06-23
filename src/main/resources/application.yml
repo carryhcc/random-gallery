@@ -5,9 +5,9 @@ spring:
   application:
     name: random-gallery #
   datasource:
-    url: jdbc:mysql://59.173.123.187:3306/testPic?useUnicode=true&characterEncoding=utf8&serverTimezone=UTC&allowPublicKeyRetrieval=true&useSSL=false #
+    url: jdbc:mysql://111.111.111.111:3306/testPic?useUnicode=true&characterEncoding=utf8&serverTimezone=UTC&allowPublicKeyRetrieval=true&useSSL=false #
     username: root #
-    password: hcc123 #
+    password: root #
     driver-class-name: com.mysql.cj.jdbc.Driver #
 
 mybatis:
