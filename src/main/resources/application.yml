@@ -12,7 +12,7 @@ spring:
 
   freemarker:
     template-loader-path: classpath:/templates/
-
+    suffix: .ftl
 mybatis:
   mapper-locations: classpath:mapper/*.xml #
   configuration:
