@@ -10,6 +10,9 @@ spring:
     password: root #
     driver-class-name: com.mysql.cj.jdbc.Driver #
 
+  freemarker:
+    template-loader-path: classpath:/templates/
+
 mybatis:
   mapper-locations: classpath:mapper/*.xml #
   configuration:
