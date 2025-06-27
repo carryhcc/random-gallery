@@ -11,16 +11,15 @@ import java.util.List;
 @Mapper
 public interface PicServiceMapper {
 
-    Integer getMaxId();
+    Integer getMaxId(@Param("tableName") String tableName);
 
-    Integer getMinId();
+    Integer getMinId(@Param("tableName") String tableName);
 
-    Integer getMaxGroupId();
+    Integer getMaxGroupId(@Param("tableName") String tableName);
 
-    Integer getMinGroupId();
+    Integer getMinGroupId(@Param("tableName") String tableName);
 
-    String getUrlById(@Param("id") Integer id);
+    String getUrlById(@Param("tableName") String tableName, @Param("id") Integer id);
 
-
-    List<PicInfoDO> getRandomGroupPicList(@Param("groupId") Integer groupId);
+    List<PicInfoDO> getRandomGroupPicList(@Param("tableName") String tableName, @Param("groupId") Integer groupId);
 }

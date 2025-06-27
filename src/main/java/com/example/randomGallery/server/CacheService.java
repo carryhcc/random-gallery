@@ -51,6 +51,10 @@ public class CacheService {
         return defaultEnv;
     }
 
+    public String getSqlName() {
+        return sqlName;
+    }
+
     public static final List<String> defaultList = Arrays.asList(
             "cc_pic_all_dev", "cc_pic_all_test", "cc_pic_all_prod"
     );
@@ -69,13 +73,13 @@ public class CacheService {
     @PostConstruct
     public void cachePicId() throws SQLException {
         // 缓存图片ID
-        maxId = picServiceMapper.getMaxId();
-        minId = picServiceMapper.getMinId();
+        maxId = picServiceMapper.getMaxId(sqlName);
+        minId = picServiceMapper.getMinId(sqlName);
         log.info("cache_minId:{} cache_maxId:{}", minId, maxId);
 
         // 缓存分组ID
-        maxGroupId = picServiceMapper.getMaxGroupId();
-        minGroupId = picServiceMapper.getMinGroupId();
+        maxGroupId = picServiceMapper.getMaxGroupId(sqlName);
+        minGroupId = picServiceMapper.getMinGroupId(sqlName);
 
         log.info("cache_minGroupId:{} cache_maxGroupId:{}", minGroupId, maxGroupId);
     }
