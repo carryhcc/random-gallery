@@ -3,20 +3,18 @@ server:
 
 spring:
   application:
-    name: random-gallery #
+    name: random-gallery
   datasource:
-    url: jdbc:mysql://111.111.111.111:3306/testPic?useUnicode=true&characterEncoding=utf8&serverTimezone=UTC&allowPublicKeyRetrieval=true&useSSL=false #
-    username: root #
-    password: root #
-    driver-class-name: com.mysql.cj.jdbc.Driver #
-
+    url: jdbc:mysql://${db.host}:${db.port}/${db.name}?useUnicode=true&characterEncoding=utf8&serverTimezone=UTC&allowPublicKeyRetrieval=true&useSSL=false
+    username: ${db.username}
+    password: ${db.password}
+    driver-class-name: com.mysql.cj.jdbc.Driver
+  config:
+    import: classpath:db.yaml
   freemarker:
     template-loader-path: classpath:/templates/
     suffix: .ftl
 mybatis:
-  mapper-locations: classpath:mapper/*.xml #
+  mapper-locations: classpath:mapper/*.xml
   configuration:
     map-underscore-to-camel-case: true
-# 如果CacheService中的defaultEnv配置需要从yml加载，可以在这里添加
-# config:
-#   env: dev
