@@ -25,6 +25,11 @@ public class PicController {
     @Resource
     PicServiceApi picServiceApi;
 
+    @GetMapping("/")
+    public ModelAndView homePage() {
+        return new ModelAndView("index");
+    }
+
     /**
      * 跳转网页
      *
