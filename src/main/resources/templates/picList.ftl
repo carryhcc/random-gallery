@@ -138,6 +138,7 @@
                 padding: 2rem;
                 color: #165DFF;
             }
+            /* 以下是为被移除的环境选择器留下的样式，可以根据需要清除 */
             .dropdown {
                 transform-origin: top right;
                 transform: scale(0.95) translateY(-5px); /* 初始状态微调 */
@@ -171,24 +172,6 @@
                     <h1 class="text-[clamp(1.5rem,3vw,2.25rem)] font-bold text-primary flex items-center">
                         <i class="fa fa-images mr-2"></i>套图
                     </h1>
-                    <div class="ml-4 relative">
-                        <button id="envSelectorBtn" class="flex items-center justify-center bg-neutral-100 hover:bg-neutral-200 text-neutral-600 px-3 py-1.5 rounded-lg transition-all duration-200 text-sm md:text-base">
-                            <i class="fa fa-cog mr-1"></i>
-                            <span id="currentEnv">环境</span>
-                            <i class="fa fa-chevron-down ml-1 text-xs"></i>
-                        </button>
-                        <div id="envDropdown" class="dropdown absolute right-0 mt-2 w-36 bg-white rounded-lg shadow-dropdown z-50 overflow-hidden ring-1 ring-neutral-200">
-                            <div class="env-item active px-4 py-2 cursor-pointer flex items-center text-sm" data-env="dev">
-                                <i class="fa fa-check-circle mr-2 text-primary"></i>开发环境
-                            </div>
-                            <div class="env-item px-4 py-2 cursor-pointer flex items-center text-sm" data-env="test">
-                                <i class="fa fa-circle-o mr-2 text-neutral-400"></i>测试环境
-                            </div>
-                            <div class="env-item px-4 py-2 cursor-pointer flex items-center text-sm" data-env="prod">
-                                <i class="fa fa-circle-o mr-2 text-neutral-400"></i>生产环境
-                            </div>
-                        </div>
-                    </div>
                 </div>
                 <button id="mobileMenuBtn" class="md:hidden text-neutral-500 focus:outline-none p-2 rounded-md hover:bg-neutral-200 transition-colors">
                     <i class="fa fa-bars text-xl"></i>
@@ -196,6 +179,10 @@
             </div>
 
             <div id="navActions" class="flex flex-col md:flex-row items-center space-y-3 md:space-y-0 md:space-x-4 w-full md:w-auto mt-3 md:mt-0 hidden md:flex">
+                <button id="backToHomeBtn" class="bg-gray-500 hover:bg-gray-600 text-white font-medium py-2.5 px-5 rounded-lg transition-all duration-300 flex items-center shadow-md hover:shadow-lg transform hover:-translate-y-0.5 w-full md:w-auto justify-center">
+                    <i class="fa fa-arrow-left mr-2"></i>
+                    <span>返回首页</span>
+                </button>
                 <button id="refreshImageListBtn" class="bg-primary hover:bg-primary/90 text-white font-medium py-2.5 px-5 rounded-lg transition-all duration-300 flex items-center shadow-md hover:shadow-lg transform hover:-translate-y-0.5 w-full md:w-auto justify-center">
                     <i class="fa fa-refresh mr-2"></i>
                     <span>刷新图片</span>
@@ -246,12 +233,7 @@
         const navActions = document.getElementById('navActions');
         const loadingIndicator = document.getElementById('loadingIndicator');
         const noMoreImages = document.getElementById('noMoreImages');
-
-        // 环境选择相关元素
-        const envSelectorBtn = document.getElementById('envSelectorBtn');
-        const envDropdown = document.getElementById('envDropdown');
-        const envItems = document.querySelectorAll('.env-item');
-        const currentEnvDisplay = document.getElementById('currentEnv');
+        const backToHomeBtn = document.getElementById('backToHomeBtn'); // 新增：返回首页按钮
 
         // 大图查看器相关元素
         const imageViewer = document.getElementById('imageViewer');
@@ -277,7 +259,6 @@
         let displayedImagesCount = 0;
         const imagesPerLoad = 5; // 每次加载更多图片数量
         let isLoading = false;
-        let currentEnv = 'dev'; // 默认环境
 
 
         function showStatus(message, isError = false) {
@@ -463,44 +444,9 @@
         refreshButton.addEventListener('click', fetchAndDisplayImages);
         fetchAndDisplayImages(); // 页面加载时立即获取图片
 
-        // 环境选择器逻辑
-        envSelectorBtn.addEventListener('click', function(e) {
-            e.stopPropagation(); // 阻止事件冒泡到 document
-            envDropdown.classList.toggle('active');
-        });
-
-        envItems.forEach(item => {
-            item.addEventListener('click', function(e) {
-                e.stopPropagation();
-                const env = this.dataset.env;
-
-                if (env !== currentEnv) {
-                    // 更新UI
-                    envItems.forEach(i => {
-                        i.classList.remove('active');
-                        i.querySelector('i').className = 'fa fa-circle-o mr-2 text-neutral-400';
-                    });
-                    this.classList.add('active');
-                    this.querySelector('i').className = 'fa fa-check-circle mr-2 text-primary';
-                    currentEnvDisplay.textContent = env === 'dev' ? '开发' : env === 'test' ? '测试' : '生产';
-
-                    // 更新环境
-                    currentEnv = env;
-
-                    // 调用环境切换逻辑
-                    fetch('/' + env).then(() => {
-                        fetchAndDisplayImages();
-                    });
-                }
-
-                // 关闭下拉菜单
-                envDropdown.classList.remove('active');
-            });
-        });
-
-        // 点击页面其他区域关闭下拉菜单
-        document.addEventListener('click', function() {
-            envDropdown.classList.remove('active');
+        // 返回首页按钮逻辑
+        backToHomeBtn.addEventListener('click', function() {
+            window.location.href = '/'; // 跳转到根路径
         });
 
         // 大图查看器逻辑

@@ -120,7 +120,7 @@
 </head>
 <body>
 <div class="container">
-    <h1>欢迎来到随机图库</h1>
+    <h1>随机图库</h1>
     <div class="button-group">
         <button class="primary" onclick="location.href='/showPic'">获取随机图片</button>
         <button class="primary" onclick="location.href='/showPicList'">获取随机套图</button>
