@@ -35,8 +35,9 @@ public class PicController {
     public ModelAndView picTo() throws SQLException {
         Integer randomId = cacheService.getRandomId();
         String urlById = picServiceApi.getUrlById(randomId);
-        return new ModelAndView("pic.ftl").addObject("url", urlById);
+        return new ModelAndView("pic").addObject("url", urlById);
     }
+
 
     /**
      * 获取随机套图
