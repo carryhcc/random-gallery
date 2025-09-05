@@ -31,7 +31,10 @@ public class GroupServiceApiImpl implements GroupServiceApi {
     public List<GroupVO> queryGroupList(GroupQry qry) {
         String sqlName = cacheService.getSqlName();
         // 内存分页
-        RowBounds rowBounds = new RowBounds(qry.getPageIndex(), qry.getPageSize());
+        Integer pageIndex = qry.getPageIndex();
+        Integer pageSize = qry.getPageSize();
+        int offset = (pageIndex - 1) * pageSize;
+        RowBounds rowBounds = new RowBounds(offset, pageSize);
         return groupServiceMapper.queryGroupList(qry, sqlName, rowBounds);
     }
 
