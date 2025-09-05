@@ -1,0 +1,362 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>随机图库 - 魅影</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap" rel="stylesheet">
+
+    <style>
+        :root {
+            --primary-color: #00aaff;
+            --success-color: #27ae60;
+            --error-color: #e74c3c;
+            --glow-color: rgba(0, 170, 255, 0.7);
+            --active-glow-color: rgba(0, 170, 255, 0.9);
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'Poppins', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            background-color: #1a1a2e;
+            color: #e0e0e0;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .aurora-background {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: -1;
+        }
+
+        .aurora-background::before, .aurora-background::after {
+            content: ''; position: absolute; width: 800px; height: 800px; border-radius: 50%;
+            filter: blur(150px); opacity: 0.4; mix-blend-mode: screen;
+        }
+
+        .aurora-background::before {
+            background: radial-gradient(circle, #ff3cac, #784ba0, #2b86c5);
+            top: -25%; left: -25%; animation: move-aurora-1 25s infinite alternate ease-in-out;
+        }
+
+        .aurora-background::after {
+            background: radial-gradient(circle, #f7b733, #fc4a1a);
+            bottom: -25%; right: -25%; animation: move-aurora-2 25s infinite alternate ease-in-out;
+        }
+
+        @keyframes move-aurora-1 { 0% { transform: translate(0, 0) rotate(0deg); } 100% { transform: translate(100px, 200px) rotate(180deg); } }
+        @keyframes move-aurora-2 { 0% { transform: translate(0, 0) rotate(0deg); } 100% { transform: translate(-150px, -100px) rotate(-180deg); } }
+
+        .container {
+            background: rgba(255, 255, 255, 0.1); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.2); border-radius: 20px;
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37); padding: 40px; text-align: center;
+            width: 90%; max-width: 500px; animation: fadeInUp 1s ease-out;
+        }
+
+        @keyframes fadeInUp { from { opacity: 0; transform: translateY(50px); } to { opacity: 1; transform: translateY(0); } }
+
+        h1 { font-size: 2.5em; font-weight: 600; color: #fff; margin-bottom: 30px; text-shadow: 0 0 10px rgba(255,255,255,0.3); }
+        h3 { font-weight: 300; color: rgba(255, 255, 255, 0.8); margin-top: 30px; margin-bottom: 15px; }
+
+        .button-group { display: flex; flex-direction: column; gap: 20px; }
+
+        .btn {
+            padding: 15px 25px; font-size: 1.1em; font-weight: 400; border: 1px solid rgba(255, 255, 255, 0.3);
+            border-radius: 12px; cursor: pointer; transition: all 0.3s ease; color: white;
+            background: rgba(255, 255, 255, 0.15); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
+            text-decoration: none; display: block; width: 100%;
+        }
+
+        .btn:not(:disabled):hover {
+            background: rgba(255, 255, 255, 0.25); transform: translateY(-5px);
+            box-shadow: 0 0 20px var(--glow-color), 0 0 30px var(--glow-color);
+        }
+
+        .btn:active { transform: translateY(-2px) scale(0.98); box-shadow: 0 0 10px var(--glow-color); }
+
+        .env-buttons { display: flex; justify-content: center; gap: 15px; flex-wrap: wrap; }
+
+        .env-buttons .btn {
+            background: rgba(0, 0, 0, 0.2); border-color: rgba(255, 255, 255, 0.2);
+        }
+
+        /* --- 新增：当前环境按钮的激活和禁用样式 --- */
+        .env-buttons .btn.active {
+            background: var(--primary-color);
+            color: #1a1a2e;
+            font-weight: 600;
+            box-shadow: 0 0 20px var(--active-glow-color);
+            border-color: var(--primary-color);
+        }
+
+        .btn:disabled, .btn.active {
+            cursor: not-allowed;
+            transform: none; /* 禁用时移除浮动效果 */
+        }
+
+        .btn.active:hover {
+            /* 覆盖普通hover效果，使其在激活状态下无变化 */
+            box-shadow: 0 0 20px var(--active-glow-color);
+        }
+
+        #toast {
+            visibility: hidden; min-width: 280px; color: #fff; text-align: center; border-radius: 12px;
+            padding: 16px; position: fixed; z-index: 100; left: 50%; transform: translateX(-50%);
+            top: -100px; font-size: 1em; transition: top 0.5s ease-in-out, opacity 0.5s ease-in-out;
+            opacity: 0; border: 1px solid rgba(255, 255, 255, 0.2); box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+            backdrop-filter: blur(10px);
+        }
+
+        #toast.success { background-color: rgba(39, 174, 96, 0.7); }
+        #toast.error { background-color: rgba(192, 57, 43, 0.7); }
+        #toast.show { visibility: visible; top: 30px; opacity: 1; }
+
+        @media (max-width: 600px) {
+            .container { padding: 30px 20px; }
+            h1 { font-size: 2em; }
+            .btn { padding: 12px 20px; font-size: 1em; }
+            .env-buttons .btn { flex-grow: 1; }
+        }
+        /* --- 下拉菜单样式 --- */
+        .dropdown {
+            position: relative;
+            width: 100%;
+            margin-top: 15px;
+        }
+
+        .dropdown-toggle {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 15px 25px;
+            font-size: 1.1em;
+            font-weight: 400;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            border-radius: 12px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            color: white;
+            background: rgba(255, 255, 255, 0.15);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            width: 100%;
+        }
+
+        .dropdown-toggle:hover {
+            background: rgba(255, 255, 255, 0.25);
+            transform: translateY(-2px);
+            box-shadow: 0 0 15px var(--glow-color);
+        }
+
+        .dropdown-arrow {
+            width: 20px;
+            height: 20px;
+            transition: transform 0.3s ease;
+        }
+
+        /* 当下拉菜单展开时，箭头旋转 */
+        .dropdown.open .dropdown-arrow {
+            transform: rotate(180deg);
+        }
+
+        .dropdown-menu {
+            position: absolute;
+            top: calc(100% + 10px);
+            left: 0;
+            width: 100%;
+            background: rgba(40, 40, 70, 0.8);
+            backdrop-filter: blur(15px);
+            -webkit-backdrop-filter: blur(15px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 12px;
+            padding: 10px;
+            z-index: 10;
+            overflow: hidden;
+
+            /* 默认隐藏，并准备动画 */
+            opacity: 0;
+            visibility: hidden;
+            transform: translateY(-10px);
+            transition: opacity 0.3s ease, transform 0.3s ease, visibility 0.3s;
+        }
+
+        /* 当下拉菜单展开时，显示菜单 */
+        .dropdown.open .dropdown-menu {
+            opacity: 1;
+            visibility: visible;
+            transform: translateY(0);
+        }
+
+        .dropdown-menu a {
+            display: block;
+            padding: 12px 20px;
+            color: #e0e0e0;
+            text-decoration: none;
+            border-radius: 8px;
+            transition: background-color 0.2s ease;
+            font-size: 1em;
+        }
+
+        .dropdown-menu a:hover {
+            background-color: rgba(255, 255, 255, 0.1);
+            color: #fff;
+        }
+
+        /* 当前激活环境的样式 */
+        .dropdown-menu a.active {
+            background-color: var(--primary-color);
+            color: #1a1a2e;
+            font-weight: 600;
+            pointer-events: none; /* 禁止点击当前已激活的选项 */
+        }
+    </style>
+</head>
+<body>
+
+<div class="aurora-background"></div>
+
+<div class="container">
+    <h1>随机图库</h1>
+    <div class="button-group">
+        <a href="/showPic" class="btn primary">获取随机图片</a>
+        <a href="/showPicList" class="btn primary">获取随机套图</a>
+    </div>
+    <h3>切换环境</h3>
+    <div class="dropdown" id="env-dropdown">
+        <div class="dropdown-toggle" onclick="toggleDropdown()">
+            <span id="selected-env-text">加载中...</span>
+            <svg class="dropdown-arrow" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M7 10L12 15L17 10" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+        </div>
+        <div class="dropdown-menu">
+            <a href="#" data-env="dev" onclick="selectEnvironment('dev', '开发环境')">开发环境</a>
+            <a href="#" data-env="test" onclick="selectEnvironment('test', '测试环境')">测试环境</a>
+            <a href="#" data-env="prod" onclick="selectEnvironment('prod', '生产环境')">生产环境</a>
+        </div>
+    </div>
+</div>
+
+<div id="toast"></div>
+
+<script>
+    let toastTimer;
+
+    function showToast(message, type = 'success') {
+        const toast = document.getElementById('toast');
+        clearTimeout(toastTimer);
+        toast.textContent = message;
+        toast.className = 'show ' + type;
+        toastTimer = setTimeout(function(){
+            toast.className = toast.className.replace('show', '');
+        }, 3000);
+    }
+
+    /**
+     * 新增：切换下拉菜单的显示/隐藏
+     */
+    function toggleDropdown() {
+        document.getElementById('env-dropdown').classList.toggle('open');
+    }
+
+    /**
+     * 新增：处理环境选择
+     * @param {string} targetEnv - 'dev', 'test', 或 'prod'
+     * @param {string} envText - '开发环境', '测试环境', '生产环境'
+     */
+    function selectEnvironment(targetEnv, envText) {
+        // 立即关闭下拉菜单
+        toggleDropdown();
+        // 可以在这里先做一个视觉上的即时反馈（可选）
+        // document.getElementById('selected-env-text').textContent = envText;
+        // 调用后端切换逻辑
+        switchEnvironment(targetEnv);
+    }
+
+    /**
+     * 核心更新：获取当前环境并更新下拉菜单的状态
+     */
+    async function updateEnvStatus() {
+        try {
+            const response = await fetch('/getEnv');
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+            const currentEnv = (await response.text()).trim();
+
+            const selectedEnvText = document.getElementById('selected-env-text');
+            const envOptions = document.querySelectorAll('.dropdown-menu a');
+
+            let found = false;
+            envOptions.forEach(option => {
+                const optionEnv = option.dataset.env;
+                if (optionEnv === currentEnv) {
+                    option.classList.add('active'); // 激活当前选项
+                    selectedEnvText.textContent = option.textContent; // 更新显示文本
+                    found = true;
+                } else {
+                    option.classList.remove('active'); // 移除其他选项的激活状态
+                }
+            });
+
+            if (!found) {
+                selectedEnvText.textContent = "未知环境";
+            }
+
+        } catch (error) {
+            console.error("获取环境状态失败:", error);
+            showToast("获取环境状态失败", "error");
+            document.getElementById('selected-env-text').textContent = "获取失败";
+        }
+    }
+
+    /**
+     * 切换环境的函数 (这个函数的功能保持不变，仍然是核心的后端通信逻辑)
+     * @param {string} targetEnv - 目标环境
+     */
+    async function switchEnvironment(targetEnv) {
+        const envMap = { dev: '开发环境', test: '测试环境', prod: '生产环境' };
+        showToast(`正在切换到 ${envMap[targetEnv] || targetEnv} ...`);
+        try {
+            const response = await fetch('/' + targetEnv); // 已在上一轮修复为 GET 请求
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+
+            // 切换成功后，重新获取最新环境并更新UI
+            // updateEnvStatus 会处理所有的UI更新
+            await updateEnvStatus();
+
+            const currentActiveButtonText = document.getElementById('selected-env-text').textContent;
+            showToast(`成功切换到 ${currentActiveButtonText}！`, 'success');
+
+        } catch (error) {
+            console.error("切换环境失败:", error);
+            showToast("切换环境失败", "error");
+            // 如果切换失败，最好也刷新一下状态，以回退到真实的环境
+            await updateEnvStatus();
+        }
+    }
+
+    // --- 页面加载完成后立即执行 ---
+    document.addEventListener('DOMContentLoaded', updateEnvStatus);
+
+    // --- 新增：点击页面其他地方关闭下拉菜单 ---
+    window.onclick = function(event) {
+        const dropdown = document.getElementById('env-dropdown');
+        // 检查点击的不是下拉菜单本身或其子元素
+        if (dropdown && !dropdown.contains(event.target)) {
+            dropdown.classList.remove('open');
+        }
+    }
+</script>
+
+</body>
+</html>

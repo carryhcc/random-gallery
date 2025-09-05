@@ -3,156 +3,128 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>图片展示</title>
+    <title>图片展示 - 随机图库</title>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap" rel="stylesheet">
+
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
     <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-    <script>
-        tailwind.config = {
-            theme: {
-                extend: {
-                    colors: {
-                        primary: '#165DFF',
-                        secondary: '#36BFFA',
-                        neutral: {
-                            100: '#F5F7FA',
-                            200: '#E4E6EB',
-                            300: '#C9CDD4',
-                            400: '#86909C',
-                            500: '#4E5969',
-                            600: '#272E3B',
-                            700: '#1D2129',
-                        }
-                    },
-                    fontFamily: {
-                        inter: ['Inter', 'sans-serif'],
-                    },
-                    boxShadow: {
-                        'card': '0 4px 20px rgba(0, 0, 0, 0.08)',
-                        'header': '0 2px 10px rgba(0, 0, 0, 0.05)',
-                        'dropdown': '0 4px 12px rgba(0, 0, 0, 0.15)',
-                    }
-                },
+    <style>
+        /* --- 动态极光背景 --- */
+        .aurora-background {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: -1;
+            overflow: hidden;
+        }
+        .aurora-background::before, .aurora-background::after {
+            content: ''; position: absolute; width: 800px; height: 800px; border-radius: 50%;
+            filter: blur(150px); opacity: 0.4; mix-blend-mode: screen;
+        }
+        .aurora-background::before {
+            background: radial-gradient(circle, #ff3cac, #784ba0, #2b86c5);
+            top: -25%; left: -25%; animation: move-aurora-1 25s infinite alternate ease-in-out;
+        }
+        .aurora-background::after {
+            background: radial-gradient(circle, #f7b733, #fc4a1a);
+            bottom: -25%; right: -25%; animation: move-aurora-2 25s infinite alternate ease-in-out;
+        }
+        @keyframes move-aurora-1 { 0% { transform: translate(0, 0) rotate(0deg); } 100% { transform: translate(100px, 200px) rotate(180deg); } }
+        @keyframes move-aurora-2 { 0% { transform: translate(0, 0) rotate(0deg); } 100% { transform: translate(-150px, -100px) rotate(-180deg); } }
+
+        @config 'tailwind.config.js';
+        @tailwind base;
+        @tailwind components;
+        @tailwind utilities;
+
+        @layer base {
+            body {
+                font-family: 'Poppins', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+                background-color: #1a1a2e;
+                color: #e0e0e0;
             }
         }
-    </script>
-    <style type="text/tailwindcss">
-        @layer utilities {
-            body {
-                @apply font-inter bg-neutral-100 text-neutral-700 min-h-screen flex flex-col;
+
+        @layer components {
+            .btn-glow {
+                @apply w-full md:w-auto justify-center text-center font-medium py-3 px-6 rounded-xl transition-all duration-300 flex items-center shadow-md hover:shadow-lg transform hover:-translate-y-0.5;
             }
-            .header-main {
-                @apply fixed top-0 left-0 right-0 z-50 bg-white/80 backdrop-blur-sm shadow-header transition-all duration-300 py-3 md:py-4;
+            .btn-glow-primary {
+                @apply btn-glow bg-white/10 text-white border border-white/20;
             }
-            .image-card {
-                @apply bg-white rounded-xl shadow-card p-6 md:p-8 text-center max-w-full md:max-w-xl lg:max-w-2xl w-full mx-auto my-auto transition-transform duration-300 ease-in-out;
+            .btn-glow-primary:hover {
+                background-color: rgba(255, 255, 255, 0.2);
+                box-shadow: 0 0 15px rgba(0, 170, 255, 0.6), 0 0 20px rgba(0, 170, 255, 0.4);
             }
-            .image-card:hover {
-                @apply transform -translate-y-1;
-            }
-            .image-wrapper {
-                @apply relative overflow-hidden rounded-lg mx-auto mb-4 block leading-none;
-            }
-            .single-image {
-                @apply block max-w-full h-auto rounded-lg transform scale-100 transition-transform duration-300 ease-in-out;
-            }
-            .image-wrapper:hover .single-image {
-                @apply scale-110;
-            }
-            .download-link {
-                @apply absolute bottom-2.5 right-2.5 flex items-center justify-center p-2 px-3 bg-black/60 text-white no-underline rounded-md text-sm transition-all duration-300 ease-in-out backdrop-blur-sm opacity-0 invisible pointer-events-none;
-            }
-            .image-wrapper:hover .download-link {
-                @apply opacity-100 visible pointer-events-auto transform -translate-y-1;
-            }
-            .download-link:hover {
-                @apply bg-black/80 transform -translate-y-1.5;
-            }
-            .download-link .icon {
-                @apply mr-1 text-base;
-            }
-            /* 响应式调整 */
-            @media (max-width: 768px) {
-                .image-card {
-                    @apply p-5 mx-4 my-auto;
-                }
-                .download-link {
-                    @apply text-xs p-1.5 px-2 bottom-2 right-2;
-                }
-                .download-link .icon {
-                    @apply text-sm;
-                }
-            }
+        }
+
+        /* --- 图片展示卡片和下载链接的样式 --- */
+        .image-wrapper {
+            /* FIX: Use flexbox to center the image inside */
+            @apply relative flex justify-center items-center overflow-hidden rounded-lg mx-auto mb-6 shadow-lg;
+        }
+        .single-image {
+            /* max-w-full prevents the image from exceeding the container width */
+            @apply block max-w-full h-auto rounded-lg transform scale-100 transition-transform duration-500 ease-in-out;
+        }
+        .image-wrapper:hover .single-image {
+            @apply scale-105;
+        }
+        .download-link {
+            @apply absolute bottom-3 right-3 flex items-center justify-center p-2.5 px-4 bg-black/50 text-white no-underline rounded-lg text-sm transition-all duration-300 ease-in-out backdrop-blur-sm opacity-0 group-hover:opacity-100;
+        }
+        .download-link:hover {
+            @apply bg-black/70 shadow-lg;
+            box-shadow: 0 0 15px rgba(0, 170, 255, 0.6);
+        }
+        .download-link .icon {
+            @apply mr-1.5 text-base;
         }
     </style>
 </head>
-<body>
-<div class="relative min-h-screen flex flex-col">
-    <header class="header-main">
-        <div class="container mx-auto px-4 flex flex-col md:flex-row md:items-center justify-between">
-            <div class="flex items-center justify-between mb-3 md:mb-0 w-full md:w-auto">
-                <div class="flex items-center">
-                    <h1 class="text-[clamp(1.5rem,3vw,2.25rem)] font-bold text-primary flex items-center">
-                        <i class="fa fa-image mr-2"></i>单图
-                    </h1>
-                </div>
-                <button id="mobileMenuBtn" class="md:hidden text-neutral-500 focus:outline-none p-2 rounded-md hover:bg-neutral-200 transition-colors">
-                    <i class="fa fa-bars text-xl"></i>
-                </button>
-            </div>
+<body class="min-h-screen flex items-center justify-center p-4">
 
-            <div id="navActions" class="flex flex-col md:flex-row items-center space-y-3 md:space-y-0 md:space-x-4 w-full md:w-auto mt-3 md:mt-0 hidden md:flex">
-                <button id="backToHomeBtn" class="bg-gray-500 hover:bg-gray-600 text-white font-medium py-2.5 px-5 rounded-lg transition-all duration-300 flex items-center shadow-md hover:shadow-lg transform hover:-translate-y-0.5 w-full md:w-auto justify-center">
-                    <i class="fa fa-arrow-left mr-2"></i>
-                    <span>返回首页</span>
-                </button>
-            </div>
-        </div>
-    </header>
+<div class="aurora-background"></div>
 
-    <main class="flex-grow flex items-center justify-center px-4 py-28">
-        <div class="image-card">
-            <h2 class="text-neutral-700 text-2xl md:text-3xl font-bold mb-3">精选图片展示</h2>
-            <p class="text-neutral-500 text-base md:text-lg mb-6">欣赏一张高质量的图片</p>
-            <div class="image-wrapper">
-                <img src="${url}" alt="图片加载失败" class="single-image">
-                <a href="${url}" class="download-link" download="${url?substring(url?last_index_of('/') + 1)}">
-                    <i class="fa fa-download icon"></i>下载
-                </a>
-            </div>
-            <p class="text-neutral-400 text-sm md:text-base mt-6">如果图片未显示或无法下载，请检查外部网络连接。</p>
+<div class="w-full max-w-2xl">
+    <div class="bg-white/10 backdrop-blur-xl border border-white/20 rounded-2xl shadow-2xl p-6 md:p-8 text-center transition-all duration-500 animate-fade-in-up">
+
+        <h1 class="text-3xl md:text-4xl font-bold text-white mb-2 text-shadow">精选图片</h1>
+        <p class="text-neutral-300 text-base md:text-lg mb-6 text-shadow-sm">希望你喜欢这张随机展示的图片</p>
+
+        <div class="image-wrapper group">
+            <img src="${url}" alt="图片加载失败..." class="single-image">
+            <a href="${url}" class="download-link" download="${url?substring(url?last_index_of('/') + 1)}">
+                <i class="fa fa-download icon"></i>下载
+            </a>
         </div>
-    </main>
+
+        <div class="mt-8">
+            <button id="backToHomeBtn" class="btn-glow-primary">
+                <i class="fa fa-arrow-left mr-2"></i>
+                <span>返回首页</span>
+            </button>
+        </div>
+    </div>
 </div>
 
 <script>
     document.addEventListener('DOMContentLoaded', function () {
-        const mobileMenuBtn = document.getElementById('mobileMenuBtn');
-        const navActions = document.getElementById('navActions');
         const backToHomeBtn = document.getElementById('backToHomeBtn');
-
-        // 移动端菜单处理
-        mobileMenuBtn.addEventListener('click', function() {
-            navActions.classList.toggle('hidden');
-            navActions.classList.toggle('flex');
-        });
 
         // 返回首页按钮逻辑
         backToHomeBtn.addEventListener('click', function() {
             window.location.href = '/'; // 跳转到根路径
         });
 
-        // 头部滚动效果 (与 picList.ftl 保持一致)
-        const header = document.querySelector('header');
-        window.addEventListener('scroll', () => {
-            if (window.scrollY > 10) {
-                header.classList.add('py-2', 'shadow-md');
-                header.classList.remove('py-3', 'shadow-header');
-            } else {
-                header.classList.add('py-3', 'shadow-header');
-                header.classList.remove('py-2', 'shadow-md');
-            }
-        });
+        // 添加一个简单的入场动画效果
+        const card = document.querySelector('.animate-fade-in-up');
+        card.style.opacity = '0';
+        card.style.transform = 'translateY(20px)';
+        setTimeout(() => {
+            card.style.opacity = '1';
+            card.style.transform = 'translateY(0)';
+        }, 100);
     });
 </script>
 </body>

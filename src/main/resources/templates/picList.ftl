@@ -3,51 +3,74 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>图片列表展示</title>
+    <title>图片列表展示 - 随机图库</title>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap" rel="stylesheet">
+
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
     <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-    <script>
-        tailwind.config = {
-            theme: {
-                extend: {
-                    colors: {
-                        primary: '#165DFF',
-                        secondary: '#36BFFA',
-                        neutral: {
-                            100: '#F5F7FA',
-                            200: '#E4E6EB',
-                            300: '#C9CDD4',
-                            400: '#86909C',
-                            500: '#4E5969',
-                            600: '#272E3B',
-                            700: '#1D2129',
-                        }
-                    },
-                    fontFamily: {
-                        inter: ['Inter', 'sans-serif'],
-                    },
-                    boxShadow: {
-                        'card': '0 4px 20px rgba(0, 0, 0, 0.08)',
-                        'header': '0 2px 10px rgba(0, 0, 0, 0.05)',
-                        'dropdown': '0 4px 12px rgba(0, 0, 0, 0.15)',
-                    }
-                },
+    <style>
+        /* --- 动态极光背景 --- */
+        .aurora-background {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: -1;
+            overflow: hidden;
+        }
+        .aurora-background::before, .aurora-background::after {
+            content: ''; position: absolute; width: 800px; height: 800px; border-radius: 50%;
+            filter: blur(150px); opacity: 0.4; mix-blend-mode: screen;
+        }
+        .aurora-background::before {
+            background: radial-gradient(circle, #ff3cac, #784ba0, #2b86c5);
+            top: -25%; left: -25%; animation: move-aurora-1 25s infinite alternate ease-in-out;
+        }
+        .aurora-background::after {
+            background: radial-gradient(circle, #f7b733, #fc4a1a);
+            bottom: -25%; right: -25%; animation: move-aurora-2 25s infinite alternate ease-in-out;
+        }
+        @keyframes move-aurora-1 { 0% { transform: translate(0, 0) rotate(0deg); } 100% { transform: translate(100px, 200px) rotate(180deg); } }
+        @keyframes move-aurora-2 { 0% { transform: translate(0, 0) rotate(0deg); } 100% { transform: translate(-150px, -100px) rotate(-180deg); } }
+
+        /* --- Tailwind CSS 扩展 --- */
+        @config 'tailwind.config.js';
+        @tailwind base;
+        @tailwind components;
+        @tailwind utilities;
+
+        @layer base {
+            body {
+                font-family: 'Poppins', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+                background-color: #1a1a2e;
+                color: #e0e0e0;
             }
         }
-    </script>
-    <style type="text/tailwindcss">
+
+        @layer components {
+            .btn-glow {
+                @apply w-full md:w-auto justify-center text-center font-medium py-2.5 px-5 rounded-xl transition-all duration-300 flex items-center transform;
+                background: rgba(255, 255, 255, 0.1);
+                border: 1px solid rgba(255, 255, 255, 0.2);
+                color: white;
+            }
+            .btn-glow:hover {
+                background: rgba(255, 255, 255, 0.2);
+                transform: translateY(-2px);
+                box-shadow: 0 0 15px rgba(0, 170, 255, 0.6);
+            }
+            .btn-glow:disabled {
+                @apply opacity-50 cursor-not-allowed;
+            }
+            .glass-header {
+                @apply fixed top-0 left-0 right-0 z-40 bg-black/20 backdrop-blur-lg border-b border-white/10 transition-all duration-300 py-3 md:py-4;
+            }
+        }
+
         @layer utilities {
-            .content-auto {
-                content-visibility: auto;
-            }
-            .backdrop-blur-sm {
-                backdrop-filter: blur(8px);
-            }
             .image-grid {
                 display: grid;
-                grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); /* 更小的最小宽度适应手机 */
-                gap: 1rem;
+                grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+                gap: 1.5rem;
                 grid-auto-flow: dense;
             }
             @media (min-width: 768px) {
@@ -55,75 +78,43 @@
                     grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
                 }
             }
-            .image-grid .img-container {
-                transition: transform 0.3s ease, box-shadow 0.3s ease, opacity 0.5s ease, transform 0.5s ease; /* 添加 opacity 和 transform 过渡 */
-                opacity: 0; /* 默认隐藏用于动画 */
-                transform: translateY(20px); /* 默认向下移动用于动画 */
-            }
-            .image-grid .img-container.loaded {
-                opacity: 1; /* 加载完成后显示 */
-                transform: translateY(0); /* 加载完成后回到原位 */
-            }
-            .image-grid .img-container:hover {
-                transform: translateY(-5px);
-                box-shadow: 0 8px 30px rgba(0, 0, 0, 0.12); /* 更明显的阴影效果 */
-            }
-            .image-grid img {
-                object-fit: cover;
-                width: 100%;
-                height: 100%;
-                border-radius: 0.5rem;
-            }
-            .download-btn {
-                position: absolute;
-                bottom: 0.75rem;
-                right: 0.75rem;
-                background-color: rgba(255, 255, 255, 0.9); /* 更不透明 */
-                border-radius: 50%;
-                width: 2.5rem; /* 稍大一点 */
-                height: 2.5rem; /* 稍大一点 */
-                display: flex;
-                align-items: center;
-                justify-content: center;
+
+            .img-container {
+                @apply relative rounded-xl overflow-hidden transition-all duration-300 ease-in-out;
+                background: rgba(255, 255, 255, 0.05);
+                border: 1px solid rgba(255, 255, 255, 0.1);
+                box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
                 opacity: 0;
-                transition: opacity 0.3s ease, transform 0.3s ease; /* 添加 transform 过渡 */
-                color: #4E5969;
-                box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15); /* 更明显的阴影 */
+                transform: translateY(20px);
             }
-            .img-container:hover .download-btn {
+            .img-container.loaded {
                 opacity: 1;
-                transform: translateY(-3px); /* 悬停时向上轻微移动 */
+                transform: translateY(0);
             }
+            .img-container:hover {
+                transform: translateY(-5px);
+                box-shadow: 0 0 20px rgba(0, 170, 255, 0.5);
+                border-color: rgba(0, 170, 255, 0.5);
+            }
+
+            /* (注意：图片本身的样式已移至 JS 中动态添加，这里的规则不再需要) */
+
+            .download-btn {
+                @apply absolute bottom-3 right-3 bg-black/50 text-white rounded-full w-10 h-10 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all duration-300 ease-in-out transform hover:scale-110;
+            }
+            .download-btn:hover {
+                box-shadow: 0 0 10px rgba(0, 170, 255, 0.7);
+            }
+
             .nav-btn {
-                position: absolute;
-                top: 50%;
-                transform: translateY(-50%);
-                background-color: rgba(0, 0, 0, 0.6); /* 稍深 */
-                color: white;
-                border-radius: 50%;
-                width: 3rem; /* 增大点击区域 */
-                height: 3rem; /* 增大点击区域 */
-                display: flex;
-                align-items: center;
-                justify-content: center;
-                cursor: pointer;
-                transition: background-color 0.3s ease, transform 0.2s ease;
-                z-index: 10;
-                font-size: 1.25rem; /* 增大图标 */
+                @apply absolute top-1/2 -translate-y-1/2 bg-black/30 text-white rounded-full w-12 h-12 flex items-center justify-center cursor-pointer transition-all duration-300 ease-in-out z-10 text-xl backdrop-blur-sm;
             }
             .nav-btn:hover {
-                background-color: rgba(0, 0, 0, 0.8);
-                transform: translateY(-50%) scale(1.05); /* 悬停时轻微放大 */
+                background-color: rgba(0, 0, 0, 0.6);
+                transform: translateY(-50%) scale(1.05);
+                box-shadow: 0 0 15px rgba(0, 170, 255, 0.7);
             }
-            .image-viewer {
-                opacity: 0;
-                visibility: hidden;
-                transition: opacity 0.3s ease, visibility 0.3s ease;
-            }
-            .image-viewer.active {
-                opacity: 1;
-                visibility: visible;
-            }
+
             .fade-in {
                 animation: fadeIn 0.5s ease-in-out;
             }
@@ -131,94 +122,54 @@
                 from { opacity: 0; }
                 to { opacity: 1; }
             }
-            .loading-indicator {
-                display: flex;
-                justify-content: center;
-                align-items: center;
-                padding: 2rem;
-                color: #165DFF;
-            }
-            /* 以下是为被移除的环境选择器留下的样式，可以根据需要清除 */
-            .dropdown {
-                transform-origin: top right;
-                transform: scale(0.95) translateY(-5px); /* 初始状态微调 */
-                opacity: 0;
-                transition: transform 0.2s ease-out, opacity 0.2s ease-out; /* 调整过渡效果 */
-            }
-            .dropdown.active {
-                transform: scale(1) translateY(0);
-                opacity: 1;
-            }
-            .env-item {
-                transition: all 0.2s ease;
-            }
-            .env-item:hover {
-                background-color: rgba(22, 93, 255, 0.08); /* 稍浅的hover效果 */
-            }
-            .env-item.active {
-                background-color: rgba(22, 93, 255, 0.12); /* 稍浅的active效果 */
-                color: #165DFF;
-                font-weight: 500;
-            }
         }
     </style>
 </head>
-<body class="font-inter bg-neutral-100 text-neutral-700 min-h-screen">
+<body class="min-h-screen">
+
+<div class="aurora-background"></div>
+
 <div class="relative min-h-screen flex flex-col">
-    <header class="fixed top-0 left-0 right-0 z-50 bg-white/80 backdrop-blur-sm shadow-header transition-all duration-300 py-3 md:py-4">
+    <header class="glass-header">
         <div class="container mx-auto px-4 flex flex-col md:flex-row md:items-center justify-between">
             <div class="flex items-center justify-between mb-3 md:mb-0 w-full md:w-auto">
-                <div class="flex items-center">
-                    <h1 class="text-[clamp(1.5rem,3vw,2.25rem)] font-bold text-primary flex items-center">
-                        <i class="fa fa-images mr-2"></i>套图
-                    </h1>
-                </div>
-                <button id="mobileMenuBtn" class="md:hidden text-neutral-500 focus:outline-none p-2 rounded-md hover:bg-neutral-200 transition-colors">
+                <h1 class="text-[clamp(1.5rem,3vw,2.25rem)] font-bold text-white flex items-center">
+                    <i class="fa fa-images mr-3"></i>套图
+                </h1>
+                <button id="mobileMenuBtn" class="md:hidden text-white/80 focus:outline-none p-2 rounded-md hover:bg-white/10 transition-colors">
                     <i class="fa fa-bars text-xl"></i>
                 </button>
             </div>
-
             <div id="navActions" class="flex flex-col md:flex-row items-center space-y-3 md:space-y-0 md:space-x-4 w-full md:w-auto mt-3 md:mt-0 hidden md:flex">
-                <button id="backToHomeBtn" class="bg-gray-500 hover:bg-gray-600 text-white font-medium py-2.5 px-5 rounded-lg transition-all duration-300 flex items-center shadow-md hover:shadow-lg transform hover:-translate-y-0.5 w-full md:w-auto justify-center">
-                    <i class="fa fa-arrow-left mr-2"></i>
-                    <span>返回首页</span>
+                <button id="backToHomeBtn" class="btn-glow">
+                    <i class="fa fa-arrow-left mr-2"></i><span>返回首页</span>
                 </button>
-                <button id="refreshImageListBtn" class="bg-primary hover:bg-primary/90 text-white font-medium py-2.5 px-5 rounded-lg transition-all duration-300 flex items-center shadow-md hover:shadow-lg transform hover:-translate-y-0.5 w-full md:w-auto justify-center">
-                    <i class="fa fa-refresh mr-2"></i>
-                    <span>刷新图片</span>
+                <button id="refreshImageListBtn" class="btn-glow">
+                    <i class="fa fa-refresh mr-2"></i><span>刷新图片</span>
                 </button>
-                <div id="galleryTitle" class="ml-2 text-neutral-600 font-medium text-base md:text-xl fade-in text-center md:text-left w-full md:w-auto">加载中...</div>
+                <div id="galleryTitle" class="ml-2 text-white/80 font-medium text-base md:text-xl fade-in text-center md:text-left w-full md:w-auto">加载中...</div>
             </div>
         </div>
     </header>
 
-    <main class="container mx-auto px-4 pt-28 pb-16 flex-grow">
-        <div id="statusMessage" class="mb-6 text-center py-3 px-4 rounded-lg hidden fade-in text-sm md:text-base"></div>
-
-        <div id="imageGallery" class="image-grid fade-in">
+    <main class="container mx-auto px-4 pt-32 pb-16 flex-grow">
+        <div id="statusMessage" class="mb-6 text-center py-3 px-4 rounded-lg hidden fade-in text-sm md:text-base bg-black/20 border border-white/10"></div>
+        <div id="imageGallery" class="image-grid fade-in"></div>
+        <div id="loadingIndicator" class="hidden mt-8 flex justify-center items-center p-2">
+            <div class="animate-spin rounded-full h-10 w-10 border-b-2 border-cyan-400"></div>
+            <p class="ml-4 text-neutral-300">加载更多图片中...</p>
         </div>
-
-        <div id="loadingIndicator" class="loading-indicator hidden mt-8">
-            <div class="animate-spin rounded-full h-10 w-10 border-b-2 border-primary"></div>
-            <p class="ml-3 text-neutral-500">加载更多图片中...</p>
-        </div>
-        <div id="noMoreImages" class="hidden text-center text-neutral-400 mt-8 py-4 border-t border-neutral-200">
-            所有图片已加载完毕
+        <div id="noMoreImages" class="hidden text-center text-neutral-400 mt-8 py-4 border-t border-white/10">
+            所有图片已加载完毕 ✨
         </div>
     </main>
 
-    <div id="imageViewer" class="image-viewer fixed inset-0 z-50 bg-black/90 flex items-center justify-center p-4">
-        <div class="image-viewer-content relative max-w-full lg:max-w-5xl w-full h-full flex items-center justify-center">
-                <span id="closeViewer" class="absolute top-4 right-4 text-white text-3xl cursor-pointer hover:text-neutral-300 transition-colors z-20">
-                    <i class="fa fa-times"></i>
-                </span>
-            <span id="prevImage" class="nav-btn left-4 md:left-8">
-                    <i class="fa fa-chevron-left"></i>
-                </span>
-            <span id="nextImage" class="nav-btn right-4 md:right-8">
-                    <i class="fa fa-chevron-right"></i>
-                </span>
-            <img id="fullsizeImage" src="" alt="大图预览" class="max-h-[85vh] max-w-[90vw] mx-auto rounded-lg shadow-2xl object-contain transition-transform duration-300 ease-out">
+    <div id="imageViewer" class="fixed inset-0 z-50 bg-black/90 flex items-center justify-center p-4 backdrop-blur-sm transition-opacity duration-300 opacity-0 invisible">
+        <div class="relative max-w-full lg:max-w-6xl w-full h-full flex items-center justify-center">
+            <span id="closeViewer" class="absolute top-4 right-4 text-white/80 text-3xl cursor-pointer hover:text-white transition-colors z-20"><i class="fa fa-times"></i></span>
+            <span id="prevImage" class="nav-btn left-4 md:left-8"><i class="fa fa-chevron-left"></i></span>
+            <span id="nextImage" class="nav-btn right-4 md:right-8"><i class="fa fa-chevron-right"></i></span>
+            <img id="fullsizeImage" src="" alt="大图预览" class="max-h-[90vh] max-w-[95vw] mx-auto rounded-lg shadow-2xl object-contain">
         </div>
     </div>
 </div>
@@ -233,86 +184,53 @@
         const navActions = document.getElementById('navActions');
         const loadingIndicator = document.getElementById('loadingIndicator');
         const noMoreImages = document.getElementById('noMoreImages');
-        const backToHomeBtn = document.getElementById('backToHomeBtn'); // 新增：返回首页按钮
-
-        // 大图查看器相关元素
+        const backToHomeBtn = document.getElementById('backToHomeBtn');
         const imageViewer = document.getElementById('imageViewer');
         const fullSizeImage = document.getElementById('fullsizeImage');
         const closeViewer = document.getElementById('closeViewer');
         const prevImage = document.getElementById('prevImage');
         const nextImage = document.getElementById('nextImage');
-
-        // 页面滚动效果
-        const header = document.querySelector('header');
-        window.addEventListener('scroll', () => {
-            if (window.scrollY > 10) {
-                header.classList.add('py-2', 'shadow-md');
-                header.classList.remove('py-3', 'shadow-header');
-            } else {
-                header.classList.add('py-3', 'shadow-header');
-                header.classList.remove('py-2', 'shadow-md');
-            }
-        });
-
         let currentImageIndex = 0;
         let allImageUrls = [];
         let displayedImagesCount = 0;
-        const imagesPerLoad = 5; // 每次加载更多图片数量
+        const imagesPerLoad = 5;
         let isLoading = false;
-
 
         function showStatus(message, isError = false) {
             statusMessage.textContent = message;
             statusMessage.className = isError ?
-                'mb-6 text-center py-3 px-4 rounded-lg bg-red-50 text-red-700 border border-red-200 fade-in' :
-                'mb-6 text-center py-3 px-4 rounded-lg bg-blue-50 text-blue-700 border border-blue-200 fade-in';
+                'mb-6 text-center py-3 px-4 rounded-lg bg-red-900/50 text-red-300 border border-red-500/30 fade-in' :
+                'mb-6 text-center py-3 px-4 rounded-lg bg-cyan-900/50 text-cyan-300 border border-cyan-500/30 fade-in';
             statusMessage.classList.remove('hidden');
-            gallery.innerHTML = ''; // 清空画廊
-            loadingIndicator.classList.add('hidden'); // 隐藏加载指示器
-            noMoreImages.classList.add('hidden'); // 隐藏“无更多图片”信息
+            gallery.innerHTML = '';
+            loadingIndicator.classList.add('hidden');
+            noMoreImages.classList.add('hidden');
         }
 
         function displayImages(data) {
-            gallery.innerHTML = ''; // 清空现有图片
+            gallery.innerHTML = '';
             statusMessage.classList.add('hidden');
             allImageUrls = [];
             displayedImagesCount = 0;
-            noMoreImages.classList.add('hidden'); // 每次加载新数据时隐藏
-
+            noMoreImages.classList.add('hidden');
             try {
                 const parsedData = typeof data === 'string' ? JSON.parse(data) : data;
-
                 const galleryName = Object.keys(parsedData)[0];
                 let imageUrls = parsedData[galleryName];
-
                 if (typeof imageUrls === 'string') {
-                    if (imageUrls.startsWith('[') && imageUrls.endsWith(']')) {
-                        const urlsString = imageUrls.substring(1, imageUrls.length - 1);
-                        imageUrls = urlsString.split(',').map(url => url.trim());
-                    } else {
-                        imageUrls = [imageUrls.trim()];
-                    }
+                    imageUrls = imageUrls.replace(/^\[|\]$/g, '').split(',').map(url => url.trim());
                 }
-
                 galleryTitle.textContent = galleryName || '未命名图片组';
-
                 if (!imageUrls || imageUrls.length === 0) {
                     showStatus('图片列表为空。');
                     return;
                 }
-
-                imageUrls.forEach(url => {
-                    if (url && url.trim() !== '') {
-                        allImageUrls.push(url.trim());
-                    }
-                });
-
+                allImageUrls = imageUrls.filter(url => url && url.trim() !== '');
                 if (allImageUrls.length > 0) {
-                    loadMoreImages(); // 加载第一批图片
+                    loadMoreImages();
                 } else {
                     showStatus('没有有效的图片URL。');
                 }
-
             } catch (error) {
                 console.error('解析图片数据失败:', error);
                 showStatus('解析图片数据失败: ' + error.message, true);
@@ -321,92 +239,70 @@
 
         function createImageElement(url) {
             const imgContainer = document.createElement('div');
-            imgContainer.className = 'img-container relative rounded-lg overflow-hidden shadow-card bg-white opacity-0 transform translate-y-4'; // 初始状态用于动画
+            imgContainer.className = 'img-container group';
 
             const img = document.createElement('img');
+            // --- FIX: Directly apply classes to the img element ---
+            img.className = 'w-full h-full object-cover transition-transform duration-300 group-hover:scale-105';
             img.src = url;
             img.alt = '套图图片';
-            img.loading = 'lazy'; // 懒加载图片
-            img.onerror = function() {
-                this.alt = '图片加载失败';
-                this.classList.add('opacity-50', 'bg-neutral-200'); // 加载失败时背景变灰
-                console.warn('图片加载失败: ' + this.src);
-            };
+            img.loading = 'lazy';
+            img.onerror = function() { this.alt = '图片加载失败'; };
 
             img.onload = function() {
                 const ratio = this.naturalWidth / this.naturalHeight;
-
-                if (ratio > 1.8) { // 宽图
-                    imgContainer.classList.add('md:col-span-2');
-                } else if (ratio < 0.6) { // 长图
-                    imgContainer.classList.add('md:row-span-2');
-                }
-                // 图片加载完成后添加 loaded 类以触发动画
+                if (ratio > 1.8) imgContainer.classList.add('md:col-span-2');
+                else if (ratio < 0.6) imgContainer.classList.add('md:row-span-2');
                 imgContainer.classList.add('loaded');
             };
 
-
-            // 创建下载按钮
             const downloadBtn = document.createElement('button');
             downloadBtn.className = 'download-btn';
             downloadBtn.innerHTML = '<i class="fa fa-download"></i>';
-            downloadBtn.onclick = function(e) {
-                e.stopPropagation(); // 防止触发图片点击事件
+            downloadBtn.onclick = (e) => {
+                e.stopPropagation();
                 downloadImage(url);
             };
 
             imgContainer.appendChild(img);
             imgContainer.appendChild(downloadBtn);
-
-            // 为图片添加点击事件
-            imgContainer.addEventListener('click', function() {
+            imgContainer.addEventListener('click', () => {
                 currentImageIndex = allImageUrls.indexOf(url);
                 openImageViewer(url);
             });
-
             return imgContainer;
         }
 
         function loadMoreImages() {
             if (isLoading || displayedImagesCount >= allImageUrls.length) {
                 if (!isLoading && displayedImagesCount === allImageUrls.length && allImageUrls.length > 0) {
-                    noMoreImages.classList.remove('hidden'); // 显示“所有图片已加载”
+                    noMoreImages.classList.remove('hidden');
                 }
                 return;
             }
-
             isLoading = true;
             loadingIndicator.classList.remove('hidden');
-            noMoreImages.classList.add('hidden'); // 隐藏“无更多图片”信息
-
-            const imagesToLoad = Math.min(imagesPerLoad, allImageUrls.length - displayedImagesCount);
+            noMoreImages.classList.add('hidden');
+            const imagesToLoad = allImageUrls.slice(displayedImagesCount, displayedImagesCount + imagesPerLoad);
             const fragment = document.createDocumentFragment();
-
-            // 使用 setTimeout 模拟网络延迟和分批加载效果
             setTimeout(() => {
-                for (let i = 0; i < imagesToLoad; i++) {
-                    const imgUrl = allImageUrls[displayedImagesCount + i];
-                    const imgElement = createImageElement(imgUrl);
-                    fragment.appendChild(imgElement);
-                }
-
+                imagesToLoad.forEach(imgUrl => {
+                    fragment.appendChild(createImageElement(imgUrl));
+                });
                 gallery.appendChild(fragment);
-                displayedImagesCount += imagesToLoad;
-
+                displayedImagesCount += imagesToLoad.length;
                 isLoading = false;
                 loadingIndicator.classList.add('hidden');
-
-                if (displayedImagesCount >= allImageUrls.length && allImageUrls.length > 0) {
-                    noMoreImages.classList.remove('hidden'); // 所有图片加载完毕
+                if (displayedImagesCount >= allImageUrls.length) {
+                    noMoreImages.classList.remove('hidden');
                 }
-            }, 300); // 模拟一点加载时间
+            }, 300);
         }
 
-        // 下载图片的函数
         function downloadImage(url) {
             const link = document.createElement('a');
             link.href = url;
-            link.download = url.split('/').pop() || 'downloaded_image'; // 从URL获取文件名，如果为空则给默认名
+            link.download = url.split('/').pop() || 'downloaded_image';
             document.body.appendChild(link);
             link.click();
             document.body.removeChild(link);
@@ -415,21 +311,15 @@
         function fetchAndDisplayImages() {
             refreshButton.disabled = true;
             refreshButton.innerHTML = '<i class="fa fa-spinner fa-spin mr-2"></i><span>加载中...</span>';
-            gallery.innerHTML = ''; // 清空画廊
-            noMoreImages.classList.add('hidden'); // 隐藏“无更多图片”信息
+            gallery.innerHTML = '';
+            noMoreImages.classList.add('hidden');
             showStatus('正在加载图片列表...');
             galleryTitle.textContent = '加载中...';
-
             fetch('/pic/list')
                 .then(response => {
-                    if (!response.ok) {
-                        throw new Error('网络响应错误: ' + response.statusText + ' (状态码: ' + response.status + ')');
-                    }
                     return response.text();
                 })
-                .then(dataString => {
-                    displayImages(dataString);
-                })
+                .then(displayImages)
                 .catch(error => {
                     console.error('获取图片列表失败:', error);
                     showStatus('获取图片列表失败: ' + error.message, true);
@@ -442,35 +332,27 @@
         }
 
         refreshButton.addEventListener('click', fetchAndDisplayImages);
-        fetchAndDisplayImages(); // 页面加载时立即获取图片
+        fetchAndDisplayImages();
+        backToHomeBtn.addEventListener('click', () => window.location.href = '/');
 
-        // 返回首页按钮逻辑
-        backToHomeBtn.addEventListener('click', function() {
-            window.location.href = '/'; // 跳转到根路径
-        });
-
-        // 大图查看器逻辑
         function openImageViewer(imgUrl) {
             fullSizeImage.src = imgUrl;
-            imageViewer.classList.add('active');
-            document.body.style.overflow = 'hidden'; // 禁止背景滚动
+            imageViewer.classList.remove('invisible');
+            imageViewer.classList.add('opacity-100');
+            document.body.style.overflow = 'hidden';
             updateNavButtons();
         }
 
         function closeImageViewer() {
-            imageViewer.classList.remove('active');
-            document.body.style.overflow = ''; // 恢复背景滚动
-            fullSizeImage.src = ''; // 清空图片，防止内存占用
+            imageViewer.classList.add('invisible');
+            imageViewer.classList.remove('opacity-100');
+            document.body.style.overflow = '';
         }
 
         function updateNavButtons() {
-            if (allImageUrls.length <= 1) {
-                prevImage.style.display = 'none';
-                nextImage.style.display = 'none';
-            } else {
-                prevImage.style.display = 'flex';
-                nextImage.style.display = 'flex';
-            }
+            const display = allImageUrls.length <= 1 ? 'none' : 'flex';
+            prevImage.style.display = display;
+            nextImage.style.display = display;
         }
 
         function showPreviousImage() {
@@ -490,40 +372,19 @@
         closeViewer.addEventListener('click', closeImageViewer);
         prevImage.addEventListener('click', showPreviousImage);
         nextImage.addEventListener('click', showNextImage);
-
-        // 点击大图查看器背景关闭
-        imageViewer.addEventListener('click', function(e) {
-            if (e.target === imageViewer || e.target === fullSizeImage) {
-                closeImageViewer();
-            }
+        imageViewer.addEventListener('click', e => {
+            if (e.target === imageViewer) closeImageViewer();
         });
-
-        document.addEventListener('keydown', function(e) {
-            if (!imageViewer.classList.contains('active')) return;
-
-            if (e.key === 'Escape') {
-                closeImageViewer();
-            } else if (e.key === 'ArrowLeft') {
-                showPreviousImage();
-            } else if (e.key === 'ArrowRight') {
-                showNextImage();
-            }
+        document.addEventListener('keydown', e => {
+            if (imageViewer.classList.contains('invisible')) return;
+            if (e.key === 'Escape') closeImageViewer();
+            if (e.key === 'ArrowLeft') showPreviousImage();
+            if (e.key === 'ArrowRight') showNextImage();
         });
-
-        // 移动端菜单处理
-        mobileMenuBtn.addEventListener('click', function() {
-            navActions.classList.toggle('hidden');
-            navActions.classList.toggle('flex');
-        });
-
-        // 滚动加载更多图片
+        mobileMenuBtn.addEventListener('click', () => navActions.classList.toggle('hidden'));
         window.addEventListener('scroll', () => {
-            if (isLoading) return;
-
-            const { scrollTop, scrollHeight, clientHeight } = document.documentElement;
-
-            // 当滚动到距离底部 300px 时加载更多图片
-            if (scrollTop + clientHeight >= scrollHeight - 300) {
+            if (isLoading || displayedImagesCount >= allImageUrls.length) return;
+            if (window.innerHeight + window.scrollY >= document.body.offsetHeight - 500) {
                 loadMoreImages();
             }
         });

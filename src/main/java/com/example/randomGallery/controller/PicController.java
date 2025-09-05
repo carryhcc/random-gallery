@@ -10,8 +10,6 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.servlet.ModelAndView;
 
-
-import java.sql.SQLException;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -25,19 +23,25 @@ public class PicController {
     @Resource
     PicServiceApi picServiceApi;
 
-    @GetMapping("/")
-    public ModelAndView homePage() {
-        return new ModelAndView("index");
-    }
+//    @GetMapping("/")
+//    public ModelAndView homePage() {
+//        return new ModelAndView("1index.ftl1");
+//    }
 
     /**
+     * 获取当前环境
+     */
+    @ResponseBody
+    @GetMapping("/getEnv")
+    public String getEnv() {
+        String val = cacheService.getDefaultEnv();
+        return String.format(val);
+    }
+    /**
      * 跳转网页
-     *
-     * @return
-     * @throws SQLException
      */
     @GetMapping("/showPic")
-    public ModelAndView picTo() throws SQLException {
+    public ModelAndView picTo() {
         Integer randomId = cacheService.getRandomId();
         String urlById = picServiceApi.getUrlById(randomId);
         return new ModelAndView("pic").addObject("url", urlById);
@@ -46,9 +50,6 @@ public class PicController {
 
     /**
      * 获取随机套图
-     *
-     * @return
-     * @throws SQLException
      */
     @GetMapping("/pic/list")
     @ResponseBody

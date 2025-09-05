@@ -45,14 +45,4 @@ public class EnvController {
         cacheService.switchSqlName(env);
         return "切换环境:" + env;
     }
-
-    /**
-     * 获取当前环境
-     */
-    @ResponseBody
-    @GetMapping("/getEnv")
-    public String getEnv() {
-        String val = cacheService.getDefaultEnv();
-        return String.format(val);
-    }
 }
