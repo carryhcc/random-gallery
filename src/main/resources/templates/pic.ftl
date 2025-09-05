@@ -47,7 +47,7 @@
 
         @layer components {
             .btn-glow {
-                @apply w-full md:w-auto justify-center text-center font-medium py-3 px-6 rounded-xl transition-all duration-300 flex items-center shadow-md hover:shadow-lg transform hover:-translate-y-0.5;
+                @apply w-full md:w-auto justify-center text-center font-medium py-3 px-6 rounded-full transition-all duration-300 flex items-center shadow-md hover:shadow-lg transform hover:scale-105;
             }
             .btn-glow-primary {
                 @apply btn-glow bg-white/10 text-white border border-white/20;
@@ -70,16 +70,6 @@
         .image-wrapper:hover .single-image {
             @apply scale-105;
         }
-        .download-link {
-            @apply absolute bottom-3 right-3 flex items-center justify-center p-2.5 px-4 bg-black/50 text-white no-underline rounded-lg text-sm transition-all duration-300 ease-in-out backdrop-blur-sm opacity-0 group-hover:opacity-100;
-        }
-        .download-link:hover {
-            @apply bg-black/70 shadow-lg;
-            box-shadow: 0 0 15px rgba(0, 170, 255, 0.6);
-        }
-        .download-link .icon {
-            @apply mr-1.5 text-base;
-        }
     </style>
 </head>
 <body class="min-h-screen flex items-center justify-center p-4">
@@ -93,16 +83,21 @@
         <p class="text-neutral-300 text-base md:text-lg mb-6 text-shadow-sm">希望你喜欢这张随机展示的图片</p>
 
         <div class="image-wrapper group">
-            <img src="${url}" alt="图片加载失败..." class="single-image">
-            <a href="${url}" class="download-link" download="${url?substring(url?last_index_of('/') + 1)}">
-                <i class="fa fa-download icon"></i>下载
-            </a>
+            <img id="displayImage" src="${url}" alt="图片加载失败..." class="single-image">
         </div>
 
-        <div class="mt-8">
+        <div class="mt-8 flex flex-col md:flex-row md:justify-center gap-4">
             <button id="backToHomeBtn" class="btn-glow-primary">
                 <i class="fa fa-arrow-left mr-2"></i>
                 <span>返回首页</span>
+            </button>
+            <button id="refreshBtn" class="btn-glow-primary">
+                <i class="fa fa-sync-alt mr-2"></i>
+                <span>刷新</span>
+            </button>
+            <button id="downloadBtn" class="btn-glow-primary">
+                <i class="fa fa-download mr-2"></i>
+                <span>下载</span>
             </button>
         </div>
     </div>
@@ -111,10 +106,32 @@
 <script>
     document.addEventListener('DOMContentLoaded', function () {
         const backToHomeBtn = document.getElementById('backToHomeBtn');
+        const refreshBtn = document.getElementById('refreshBtn');
+        const downloadBtn = document.getElementById('downloadBtn');
+        const displayImage = document.getElementById('displayImage');
 
         // 返回首页按钮逻辑
         backToHomeBtn.addEventListener('click', function() {
             window.location.href = '/'; // 跳转到根路径
+        });
+
+        // 刷新按钮逻辑
+        refreshBtn.addEventListener('click', function() {
+            window.location.reload(); // 重新加载当前页面
+        });
+
+        // 下载按钮逻辑
+        downloadBtn.addEventListener('click', function() {
+            const imageUrl = displayImage.src;
+            const fileName = imageUrl.substring(imageUrl.lastIndexOf('/') + 1);
+
+            // 创建一个临时的 a 标签
+            const link = document.createElement('a');
+            link.href = imageUrl;
+            link.download = fileName; // 设置下载的文件名
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
         });
 
         // 添加一个简单的入场动画效果

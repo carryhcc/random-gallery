@@ -37,6 +37,7 @@ public class PicController {
         String val = cacheService.getDefaultEnv();
         return String.format(val);
     }
+
     /**
      * 跳转网页
      */
@@ -45,6 +46,15 @@ public class PicController {
         Integer randomId = cacheService.getRandomId();
         String urlById = picServiceApi.getUrlById(randomId);
         return new ModelAndView("pic").addObject("url", urlById);
+    }
+
+    /**
+     * 外部接口-返回随机单张图片地址
+     */
+    @GetMapping("/showPicOne")
+    @ResponseBody
+    public String picToOne() {
+        return picServiceApi.getUrlById(cacheService.getRandomId());
     }
 
 
