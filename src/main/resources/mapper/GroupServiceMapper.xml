@@ -18,8 +18,7 @@
         group by group_id,pic_name
     </select>
     <select id="queryGroupCount" resultType="java.lang.Integer">
-        SELECT
-        count(*)
+        SELECT COUNT(DISTINCT group_id, pic_name)
         FROM ${tableName}
         WHERE
         is_delete = 0
@@ -27,8 +26,7 @@
             AND group_id = #{qry.groupId}
         </if>
         <if test="qry.picName !=null and qry.picName !=''">
-            and pic_name like concat('%',#{qry.picName},'%')
+            AND pic_name LIKE CONCAT('%', #{qry.picName}, '%')
         </if>
-        group by group_id,pic_name
     </select>
 </mapper>

@@ -3,15 +3,17 @@ package com.example.randomGallery.controller;
 
 import com.example.randomGallery.entity.VO.PicGroupVO;
 import com.example.randomGallery.server.CacheService;
+import com.example.randomGallery.server.GroupServiceApi;
 import com.example.randomGallery.server.PicServiceApi;
 import jakarta.annotation.Resource;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.ResponseBody;
+import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.ModelAndView;
 
-import java.util.HashMap;
+import java.util.Collections;
 import java.util.Map;
+import java.util.Optional;
 
 @Controller
 public class PicController {
@@ -62,18 +64,24 @@ public class PicController {
      * 获取随机套图
      */
     @GetMapping("/pic/list")
-    @ResponseBody
-    public Map<String, String> picList() {
+    public ResponseEntity<Map<String, String>> picList(@RequestParam(value = "groupId", required = false) Integer groupId) {
         cacheService.resetTimer();
-        Integer randomGroupId = cacheService.getRandomGroupId();
-        PicGroupVO randomGroupPicList = picServiceApi.getRandomGroupPicList(randomGroupId);
-        Map<String, String> map = new HashMap<>();
-        map.put(randomGroupPicList.getGroupName(), randomGroupPicList.getUrlList().toString());
-        return map;
+        Integer finalGroupId = Optional.ofNullable(groupId).orElseGet(cacheService::getRandomGroupId);
+        PicGroupVO randomGroupPicList = picServiceApi.getRandomGroupPicList(finalGroupId);
+        if (randomGroupPicList == null) {
+            return ResponseEntity.ok(Collections.emptyMap());
+        }
+        Map<String, String> map = Map.of(randomGroupPicList.getGroupName(), randomGroupPicList.getUrlList().toString());
+        return ResponseEntity.ok(map);
     }
 
     @GetMapping("/showPicList")
     public ModelAndView showPicListPage() {
         return new ModelAndView("picList");
+    }
+
+    @GetMapping("/groupList")
+    public ModelAndView showGroupList() {
+        return new ModelAndView("group");
     }
 }
