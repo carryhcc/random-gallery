@@ -11,4 +11,6 @@ import java.util.List;
 public interface GroupServiceApi {
 
     List<GroupVO> queryGroupList(GroupQry qry);
+
+    Integer queryGroupCount(GroupQry qry);
 }

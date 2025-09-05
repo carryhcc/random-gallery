@@ -25,7 +25,12 @@ public class OutController {
     @ResponseBody
     @PostMapping("/queryGroupList")
     public List<GroupVO> queryGroupList(@RequestBody GroupQry qry) {
-        List<GroupVO> groupVOS = groupServiceApi.queryGroupList(qry);
-        return groupVOS;
+        return groupServiceApi.queryGroupList(qry);
+    }
+
+    @ResponseBody
+    @PostMapping("/queryGroupCount")
+    public Integer queryGroupCount(@RequestBody GroupQry qry) {
+        return groupServiceApi.queryGroupCount(qry);
     }
 }

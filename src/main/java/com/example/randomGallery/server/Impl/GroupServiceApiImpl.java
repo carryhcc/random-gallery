@@ -34,4 +34,10 @@ public class GroupServiceApiImpl implements GroupServiceApi {
         RowBounds rowBounds = new RowBounds(qry.getPageIndex(), qry.getPageSize());
         return groupServiceMapper.queryGroupList(qry, sqlName, rowBounds);
     }
+
+    @Override
+    public Integer queryGroupCount(GroupQry qry) {
+        String sqlName = cacheService.getSqlName();
+        return groupServiceMapper.queryGroupCount(qry, sqlName);
+    }
 }
