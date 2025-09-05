@@ -315,7 +315,10 @@
             noMoreImages.classList.add('hidden');
             showStatus('正在加载图片列表...');
             galleryTitle.textContent = '加载中...';
-            fetch('/pic/list')
+            const urlParams = new URLSearchParams(window.location.search);
+            const groupId = urlParams.get('groupId');
+            const fetchUrl = groupId ? `/pic/list?groupId=` + groupId : '/pic/list';
+            fetch(fetchUrl) // 使用新的 fetchUrl 变量
                 .then(response => {
                     return response.text();
                 })

@@ -123,7 +123,7 @@
 
     // 修改 viewGroup 函数的 URL 拼接方式
     function viewGroup(groupId) {
-        window.location.href = '/pic/list?groupId=' + groupId;
+        window.location.href = '/showQueryList?groupId=' + groupId;
     }
 
     $(document).ready(function() {

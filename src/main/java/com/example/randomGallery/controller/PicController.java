@@ -3,9 +3,9 @@ package com.example.randomGallery.controller;
 
 import com.example.randomGallery.entity.VO.PicGroupVO;
 import com.example.randomGallery.server.CacheService;
-import com.example.randomGallery.server.GroupServiceApi;
 import com.example.randomGallery.server.PicServiceApi;
 import jakarta.annotation.Resource;
+import org.apache.ibatis.annotations.Param;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.*;
@@ -77,6 +77,11 @@ public class PicController {
 
     @GetMapping("/showPicList")
     public ModelAndView showPicListPage() {
+        return new ModelAndView("picList");
+    }
+
+    @GetMapping("/showQueryList")
+    public ModelAndView showQueryList(@Param("groupId") Integer groupId) {
         return new ModelAndView("picList");
     }
 
