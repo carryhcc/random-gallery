@@ -61,7 +61,6 @@
             @apply btn-glow text-xs px-2 py-1;
             background-color: rgba(16, 185, 129, 0.1);
             color: #10b981;
-            border: 1px solid rgba(16, 185, 129, 0.3);
         }
         .btn-glow-operation:hover {
             background-color: rgba(16, 185, 129, 0.2);
