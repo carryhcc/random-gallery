@@ -1,150 +1,160 @@
 <!DOCTYPE html>
-<html>
+<html lang="zh-CN">
 <head>
-    <title>图片分组查询</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>图片分组查询 - 随机图库</title>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap" rel="stylesheet">
+
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
     <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://cdn.jsdelivr.net/npm/font-awesome@4.7.0/css/font-awesome.min.css" rel="stylesheet">
     <style>
-        /* 保持原有样式不变 */
-        body {
-            font-family: Arial, sans-serif;
-            margin: 20px;
+        /* --- 动态极光背景 --- */
+        .aurora-background {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: -1;
+            overflow: hidden;
         }
-        .search-container {
-            margin-bottom: 20px;
-            padding: 15px;
-            background-color: #f8fafc;
-            border-radius: 6px;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        .aurora-background::before, .aurora-background::after {
+            content: ''; position: absolute; width: 800px; height: 800px; border-radius: 50%;
+            filter: blur(150px); opacity: 0.4; mix-blend-mode: screen;
         }
-        .search-container input {
-            padding: 8px 12px;
-            margin-right: 10px;
-            border: 1px solid #ddd;
-            border-radius: 4px;
+        .aurora-background::before {
+            background: radial-gradient(circle, #ff3cac, #784ba0, #2b86c5);
+            top: -25%; left: -25%; animation: move-aurora-1 25s infinite alternate ease-in-out;
         }
-        .search-container button {
-            padding: 8px 15px;
-            cursor: pointer;
-            border: none;
-            border-radius: 4px;
-            background-color: #3b82f6;
-            color: white;
-            transition: background-color 0.2s;
+        .aurora-background::after {
+            background: radial-gradient(circle, #f7b733, #fc4a1a);
+            bottom: -25%; right: -25%; animation: move-aurora-2 25s infinite alternate ease-in-out;
         }
-        .search-container button:hover {
-            background-color: #2563eb;
+        @keyframes move-aurora-1 { 0% { transform: translate(0, 0) rotate(0deg); } 100% { transform: translate(100px, 200px) rotate(180deg); } }
+        @keyframes move-aurora-2 { 0% { transform: translate(0, 0) rotate(0deg); } 100% { transform: translate(-150px, -100px) rotate(-180deg); } }
+
+        @layer base {
+            body {
+                font-family: 'Poppins', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+                background-color: #1a1a2e;
+                color: #e0e0e0;
+            }
         }
-        .search-container button.reset-btn {
-            background-color: #64748b;
+
+        .btn-glow {
+            @apply justify-center text-center font-medium py-2 px-4 rounded-full transition-all duration-300 flex items-center shadow-md hover:shadow-lg transform hover:scale-105;
         }
-        .search-container button.reset-btn:hover {
-            background-color: #475569;
+        .btn-glow-primary {
+            @apply btn-glow bg-white/10 text-white border border-white/20;
         }
-        #results-table {
-            width: 100%;
-            border-collapse: collapse;
-            margin-top: 20px;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        .btn-glow-primary:hover {
+            background-color: rgba(255, 255, 255, 0.2);
+            box-shadow: 0 0 15px rgba(0, 170, 255, 0.6), 0 0 20px rgba(0, 170, 255, 0.4);
         }
-        #results-table th, #results-table td {
-            border: 1px solid #ddd;
-            padding: 12px;
-            text-align: left;
+        .btn-glow-reset {
+            @apply btn-glow bg-gray-500/10 text-gray-400 border border-gray-500/20;
         }
-        #results-table th {
-            background-color: #f1f5f9;
-            font-weight: bold;
+        .btn-glow-reset:hover {
+            background-color: rgba(100, 116, 139, 0.2);
+            box-shadow: 0 0 15px rgba(100, 116, 139, 0.6), 0 0 20px rgba(100, 116, 139, 0.4);
         }
-        #results-table tr:hover {
-            background-color: #f8fafc;
+        .btn-glow-operation {
+            @apply btn-glow text-xs px-2 py-1;
+            background-color: rgba(16, 185, 129, 0.1);
+            color: #10b981;
+            border: 1px solid rgba(16, 185, 129, 0.3);
         }
-        .total-count {
-            margin-top: 10px;
-            font-weight: bold;
-            color: #334155;
-        }
-        .pagination {
-            margin-top: 20px;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            gap: 8px;
+        .btn-glow-operation:hover {
+            background-color: rgba(16, 185, 129, 0.2);
+            box-shadow: 0 0 15px rgba(16, 185, 129, 0.6), 0 0 20px rgba(16, 185, 129, 0.4);
         }
         .pagination button {
-            padding: 6px 12px;
-            border: 1px solid #ddd;
-            border-radius: 4px;
-            background-color: white;
-            cursor: pointer;
-            transition: all 0.2s;
-        }
-        .pagination button:hover:not(.active):not(:disabled) {
-            background-color: #f1f5f9;
-            border-color: #94a3b8;
+            @apply btn-glow-primary py-1 px-3;
         }
         .pagination button.active {
-            background-color: #3b82f6;
-            color: white;
-            border-color: #3b82f6;
+            @apply bg-sky-500/50 border-sky-500;
         }
         .pagination button:disabled {
-            opacity: 0.5;
-            cursor: not-allowed;
+            @apply opacity-50 cursor-not-allowed transform-none shadow-none hover:bg-white/10;
         }
-        .page-info {
-            margin: 0 10px;
-            color: #64748b;
+        /* 自定义表格样式 */
+        #results-table {
+            @apply w-full border-collapse mt-6 text-sm text-gray-300 rounded-lg overflow-hidden;
         }
-        .operation-btn {
-            padding: 5px 10px;
-            background-color: #10b981;
-            color: white;
-            border: none;
-            border-radius: 4px;
-            cursor: pointer;
-            transition: background-color 0.2s;
+        #results-table th, #results-table td {
+            @apply p-3 text-left;
         }
-        .operation-btn:hover {
-            background-color: #059669;
+        #results-table thead th {
+            @apply bg-white/5 font-semibold text-gray-200;
+        }
+        #results-table tbody tr {
+            @apply border-t border-white/10;
+        }
+        #results-table tbody tr:hover {
+            @apply bg-white/5;
         }
     </style>
 </head>
-<body>
+<body class="min-h-screen p-4 flex justify-center items-start">
 
-<h2 class="text-2xl font-bold text-gray-800 mb-6">图片分组查询</h2>
+<div class="aurora-background"></div>
 
-<div class="search-container">
-    分组名称: <input type="text" id="picName" placeholder="输入分组名称">
-    分组ID: <input type="text" id="groupId" placeholder="输入分组ID">
-    <button onclick="queryGroups(1)">查询</button>
-    <button class="reset-btn" onclick="resetForm()">重置</button>
-</div>
+<div class="w-full max-w-4xl pt-12 md:pt-24">
+    <div class="bg-white/10 backdrop-blur-xl border border-white/20 rounded-2xl shadow-2xl p-6 md:p-8 text-center transition-all duration-500 animate-fade-in-up">
 
-<div class="total-count">总条数: <span id="totalCount">0</span></div>
+        <h1 class="text-3xl md:text-4xl font-bold text-white mb-2 text-shadow">图片分组查询</h1>
+        <p class="text-neutral-300 text-base md:text-lg mb-6 text-shadow-sm">查询、浏览和管理图片分组</p>
 
-<table id="results-table">
-    <thead>
-    <tr>
-        <th>分组名称</th>
-        <th>分组ID</th>
-        <th>操作</th>
-    </tr>
-    </thead>
-    <tbody id="results-body">
-    </tbody>
-</table>
+        <div class="bg-white/5 border border-white/10 rounded-xl p-4 md:p-6 mb-6">
+            <div class="flex flex-col md:flex-row items-center justify-center gap-4">
+                <div class="flex-grow flex items-center gap-2 w-full md:w-auto">
+                    <label for="picName" class="text-neutral-300 whitespace-nowrap">分组名称:</label>
+                    <input type="text" id="picName" placeholder="输入分组名称" class="flex-grow w-full bg-white/5 text-white placeholder-neutral-500 border border-white/10 rounded-lg px-3 py-2 focus:outline-none focus:border-sky-500 transition-colors duration-200">
+                </div>
+                <div class="flex-grow flex items-center gap-2 w-full md:w-auto">
+                    <label for="groupId" class="text-neutral-300 whitespace-nowrap">分组ID:</label>
+                    <input type="text" id="groupId" placeholder="输入分组ID" class="flex-grow w-full bg-white/5 text-white placeholder-neutral-500 border border-white/10 rounded-lg px-3 py-2 focus:outline-none focus:border-sky-500 transition-colors duration-200">
+                </div>
+                <div class="flex-shrink-0 flex gap-2 w-full md:w-auto">
+                    <button onclick="queryGroups(1)" class="btn-glow-primary flex-grow">
+                        <i class="fas fa-search mr-2"></i>
+                        <span>查询</span>
+                    </button>
+                    <button class="btn-glow-reset flex-grow" onclick="resetForm()">
+                        <i class="fas fa-redo mr-2"></i>
+                        <span>重置</span>
+                    </button>
+                </div>
+            </div>
+        </div>
 
-<!-- 分页控件 -->
-<div class="pagination" id="pagination">
-    <button id="prevPage" onclick="changePage(currentPageIndex - 1)" disabled>
-        <i class="fa fa-chevron-left"></i> 上一页
-    </button>
-    <span class="page-info" id="pageInfo">第 1 页 / 共 0 页</span>
-    <div id="pageNumbers"></div>
-    <button id="nextPage" onclick="changePage(currentPageIndex + 1)" disabled>
-        下一页 <i class="fa fa-chevron-right"></i>
-    </button>
+        <div class="text-left font-bold text-neutral-300 mb-4">
+            总条数: <span id="totalCount">0</span>
+        </div>
+
+        <table id="results-table">
+            <thead>
+            <tr>
+                <th>分组名称</th>
+                <th>分组ID</th>
+                <th>操作</th>
+            </tr>
+            </thead>
+            <tbody id="results-body">
+            </tbody>
+        </table>
+
+        <div class="pagination flex flex-col md:flex-row justify-center items-center gap-2 mt-6 text-xs md:text-sm">
+            <button id="prevPage" onclick="changePage(currentPageIndex - 1)" disabled class="flex-shrink-0">
+                <i class="fas fa-chevron-left"></i>
+            </button>
+            <span class="page-info text-neutral-400 whitespace-nowrap" id="pageInfo">第 1 页 / 共 0 页</span>
+            <div id="pageNumbers" class="flex flex-wrap justify-center gap-2"></div>
+            <button id="nextPage" onclick="changePage(currentPageIndex + 1)" disabled class="flex-shrink-0">
+                <i class="fas fa-chevron-right"></i>
+            </button>
+        </div>
+
+    </div>
 </div>
 
 <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
@@ -187,7 +197,7 @@
                         const newRow = '<tr>' +
                             '<td>' + (item.picName || '') + '</td>' +
                             '<td>' + (item.groupId || '') + '</td>' +
-                            '<td><button class="operation-btn" onclick="viewGroup(\'' + (item.groupId || '') + '\')">查看</button></td>' +
+                            '<td><button class="btn-glow-operation" onclick="viewGroup(\'' + (item.groupId || '') + '\')"><i class="fas fa-eye mr-1"></i>查看</button></td>' +
                             '</tr>';
                         resultsBody.append(newRow);
                     });
@@ -242,7 +252,7 @@
         pageNumbersContainer.empty();
 
         // 最多显示10个页码按钮
-        const maxVisiblePages = 10;
+        const maxVisiblePages = 5;
         let startPage = Math.max(1, currentPageIndex - Math.floor(maxVisiblePages / 2));
         let endPage = startPage + maxVisiblePages - 1;
 
@@ -256,7 +266,7 @@
         if (startPage > 1) {
             addPageButton(1);
             if (startPage > 2) {
-                pageNumbersContainer.append('<span>...</span>');
+                pageNumbersContainer.append('<span class="text-neutral-500">...</span>');
             }
         }
 
@@ -268,7 +278,7 @@
         // 添加最后一页按钮
         if (endPage < totalPages) {
             if (endPage < totalPages - 1) {
-                pageNumbersContainer.append('<span>...</span>');
+                pageNumbersContainer.append('<span class="text-neutral-500">...</span>');
             }
             addPageButton(totalPages);
         }

@@ -29,6 +29,7 @@
             color: #e0e0e0;
             overflow: hidden;
             position: relative;
+            padding: 20px;
         }
 
         .aurora-background {
@@ -63,7 +64,6 @@
         @keyframes fadeInUp { from { opacity: 0; transform: translateY(50px); } to { opacity: 1; transform: translateY(0); } }
 
         h1 { font-size: 2.5em; font-weight: 600; color: #fff; margin-bottom: 30px; text-shadow: 0 0 10px rgba(255,255,255,0.3); }
-        h3 { font-weight: 300; color: rgba(255, 255, 255, 0.8); margin-top: 30px; margin-bottom: 15px; }
 
         .button-group { display: flex; flex-direction: column; gap: 20px; }
 
@@ -87,7 +87,7 @@
             background: rgba(0, 0, 0, 0.2); border-color: rgba(255, 255, 255, 0.2);
         }
 
-        /* --- 新增：当前环境按钮的激活和禁用样式 --- */
+        /* 环境按钮的激活和禁用样式 */
         .env-buttons .btn.active {
             background: var(--primary-color);
             color: #1a1a2e;
@@ -102,7 +102,6 @@
         }
 
         .btn.active:hover {
-            /* 覆盖普通hover效果，使其在激活状态下无变化 */
             box-shadow: 0 0 20px var(--active-glow-color);
         }
 
@@ -118,25 +117,25 @@
         #toast.error { background-color: rgba(192, 57, 43, 0.7); }
         #toast.show { visibility: visible; top: 30px; opacity: 1; }
 
-        @media (max-width: 600px) {
-            .container { padding: 30px 20px; }
-            h1 { font-size: 2em; }
-            .btn { padding: 12px 20px; font-size: 1em; }
-            .env-buttons .btn { flex-grow: 1; }
+        /* 下拉菜单样式 - 已移至左上角 */
+        .env-switcher {
+            position: fixed;
+            top: 20px;
+            left: 20px;
+            z-index: 50;
         }
-        /* --- 下拉菜单样式 --- */
+
         .dropdown {
             position: relative;
-            width: 100%;
-            margin-top: 15px;
+            width: 200px;
         }
 
         .dropdown-toggle {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            padding: 15px 25px;
-            font-size: 1.1em;
+            padding: 12px 20px;
+            font-size: 1em;
             font-weight: 400;
             border: 1px solid rgba(255, 255, 255, 0.3);
             border-radius: 12px;
@@ -156,8 +155,8 @@
         }
 
         .dropdown-arrow {
-            width: 20px;
-            height: 20px;
+            width: 16px;
+            height: 16px;
             transition: transform 0.3s ease;
         }
 
@@ -216,20 +215,36 @@
             font-weight: 600;
             pointer-events: none; /* 禁止点击当前已激活的选项 */
         }
+
+        @media (max-width: 600px) {
+            .container { padding: 30px 20px; }
+            h1 { font-size: 2em; }
+            .btn { padding: 12px 20px; font-size: 1em; }
+            .env-buttons .btn { flex-grow: 1; }
+
+            /* 移动设备上调整环境切换器 */
+            .env-switcher {
+                top: 15px;
+                left: 15px;
+            }
+
+            .dropdown {
+                width: 160px;
+            }
+
+            .dropdown-toggle {
+                padding: 10px 15px;
+                font-size: 0.9em;
+            }
+        }
     </style>
 </head>
 <body>
 
 <div class="aurora-background"></div>
 
-<div class="container">
-    <h1>随机图库</h1>
-    <div class="button-group">
-        <a href="/showPic" class="btn primary">获取随机图片</a>
-        <a href="/showPicList" class="btn primary">获取随机套图</a>
-        <a href="/groupList" class="btn primary">分组列表</a>
-    </div>
-    <h3>切换环境</h3>
+<!-- 环境切换器 - 移至左上角 -->
+<div class="env-switcher">
     <div class="dropdown" id="env-dropdown">
         <div class="dropdown-toggle" onclick="toggleDropdown()">
             <span id="selected-env-text">加载中...</span>
@@ -242,6 +257,15 @@
             <a href="#" data-env="test" onclick="selectEnvironment('test', '测试环境')">测试环境</a>
             <a href="#" data-env="prod" onclick="selectEnvironment('prod', '生产环境')">生产环境</a>
         </div>
+    </div>
+</div>
+
+<div class="container">
+    <h1>随机图库</h1>
+    <div class="button-group">
+        <a href="/showPic" class="btn primary">获取随机图片</a>
+        <a href="/showPicList" class="btn primary">获取随机套图</a>
+        <a href="/groupList" class="btn primary">分组列表</a>
     </div>
 </div>
 
@@ -261,28 +285,26 @@
     }
 
     /**
-     * 新增：切换下拉菜单的显示/隐藏
+     * 切换下拉菜单的显示/隐藏
      */
     function toggleDropdown() {
         document.getElementById('env-dropdown').classList.toggle('open');
     }
 
     /**
-     * 新增：处理环境选择
+     * 处理环境选择
      * @param {string} targetEnv - 'dev', 'test', 或 'prod'
      * @param {string} envText - '开发环境', '测试环境', '生产环境'
      */
     function selectEnvironment(targetEnv, envText) {
         // 立即关闭下拉菜单
         toggleDropdown();
-        // 可以在这里先做一个视觉上的即时反馈（可选）
-        // document.getElementById('selected-env-text').textContent = envText;
         // 调用后端切换逻辑
         switchEnvironment(targetEnv);
     }
 
     /**
-     * 核心更新：获取当前环境并更新下拉菜单的状态
+     * 获取当前环境并更新下拉菜单的状态
      */
     async function updateEnvStatus() {
         try {
@@ -319,20 +341,19 @@
     }
 
     /**
-     * 切换环境的函数 (这个函数的功能保持不变，仍然是核心的后端通信逻辑)
+     * 切换环境的函数
      * @param {string} targetEnv - 目标环境
      */
     async function switchEnvironment(targetEnv) {
         const envMap = { dev: '开发环境', test: '测试环境', prod: '生产环境' };
         showToast(`正在切换到 ${envMap[targetEnv] || targetEnv} ...`);
         try {
-            const response = await fetch('/' + targetEnv); // 已在上一轮修复为 GET 请求
+            const response = await fetch('/' + targetEnv);
             if (!response.ok) {
                 throw new Error(`HTTP error! status: ${response.status}`);
             }
 
             // 切换成功后，重新获取最新环境并更新UI
-            // updateEnvStatus 会处理所有的UI更新
             await updateEnvStatus();
 
             const currentActiveButtonText = document.getElementById('selected-env-text').textContent;
@@ -341,15 +362,15 @@
         } catch (error) {
             console.error("切换环境失败:", error);
             showToast("切换环境失败", "error");
-            // 如果切换失败，最好也刷新一下状态，以回退到真实的环境
+            // 如果切换失败，刷新状态回退到真实环境
             await updateEnvStatus();
         }
     }
 
-    // --- 页面加载完成后立即执行 ---
+    // 页面加载完成后立即执行
     document.addEventListener('DOMContentLoaded', updateEnvStatus);
 
-    // --- 新增：点击页面其他地方关闭下拉菜单 ---
+    // 点击页面其他地方关闭下拉菜单
     window.onclick = function(event) {
         const dropdown = document.getElementById('env-dropdown');
         // 检查点击的不是下拉菜单本身或其子元素
