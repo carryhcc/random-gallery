@@ -76,12 +76,14 @@
         .pagination button:disabled {
             @apply opacity-50 cursor-not-allowed transform-none shadow-none hover:bg-white/10;
         }
-        /* 自定义表格样式 */
+        /* 自定义表格样式 - 增加边框和间距 */
         #results-table {
-            @apply w-full border-collapse mt-6 text-sm text-gray-300 rounded-lg overflow-hidden;
+            @apply w-full border-collapse mt-6 text-sm text-gray-300 rounded-lg overflow-hidden mx-auto;
+            border: 1px solid rgba(255, 255, 255, 0.1); /* 表格外边框 */
         }
         #results-table th, #results-table td {
-            @apply p-3 text-left;
+            @apply p-4 text-center; /* 增加内边距 */
+            border: 1px solid rgba(255, 255, 255, 0.1); /* 单元格边框 */
         }
         #results-table thead th {
             @apply bg-white/5 font-semibold text-gray-200;
@@ -91,6 +93,10 @@
         }
         #results-table tbody tr:hover {
             @apply bg-white/5;
+        }
+        /* 表格容器居中 */
+        .table-container {
+            @apply flex justify-center;
         }
     </style>
 </head>
@@ -127,21 +133,24 @@
             </div>
         </div>
 
-        <div class="text-left font-bold text-neutral-300 mb-4">
+        <div class="text-center font-bold text-neutral-300 mb-4">
             总条数: <span id="totalCount">0</span>
         </div>
 
-        <table id="results-table">
-            <thead>
-            <tr>
-                <th>分组名称</th>
-                <th>分组ID</th>
-                <th>操作</th>
-            </tr>
-            </thead>
-            <tbody id="results-body">
-            </tbody>
-        </table>
+        <!-- 表格容器 -->
+        <div class="table-container">
+            <table style="width:100%;" id="results-table">
+                <thead>
+                <tr>
+                    <th style="width:calc(100% - 220px)">分组名称</th>
+                    <th style="width:120px;">分组ID</th>
+                    <th style="width:100px;">操作</th>
+                </tr>
+                </thead>
+                <tbody id="results-body">
+                </tbody>
+            </table>
+        </div>
 
         <div class="pagination flex flex-col md:flex-row justify-center items-center gap-2 mt-6 text-xs md:text-sm">
             <button id="prevPage" onclick="changePage(currentPageIndex - 1)" disabled class="flex-shrink-0">
@@ -159,7 +168,7 @@
 
 <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 <script>
-    // 分页相关变量（JavaScript变量，而非FTL模板变量）
+    // 分页相关变量
     let currentPageIndex = 1; // 当前页码
     const pageSize = 10;      // 每页条数
     let totalPages = 0;       // 总页数
@@ -178,7 +187,7 @@
         const requestData = {
             picName: picName,
             groupId: groupId,
-            pageIndex: currentPageIndex,  // 使用当前页码
+            pageIndex: currentPageIndex,
             pageSize: pageSize
         };
 
@@ -222,7 +231,7 @@
 
                 // 计算总页数
                 totalPages = Math.ceil(totalCount / pageSize);
-                if (totalPages === 0) totalPages = 1; // 至少显示一页
+                if (totalPages === 0) totalPages = 1;
 
                 // 更新分页控件状态
                 updatePagination();
@@ -235,7 +244,6 @@
 
     // 更新分页控件状态
     function updatePagination() {
-        // 更新页码信息（使用JavaScript动态更新，而非FTL渲染时静态生成）
         $('#pageInfo').text(`第` + currentPageIndex + `页 / 共`+ totalPages + `页`);
 
         // 更新上一页/下一页按钮状态
@@ -251,7 +259,7 @@
         const pageNumbersContainer = $('#pageNumbers');
         pageNumbersContainer.empty();
 
-        // 最多显示10个页码按钮
+        // 最多显示5个页码按钮
         const maxVisiblePages = 5;
         let startPage = Math.max(1, currentPageIndex - Math.floor(maxVisiblePages / 2));
         let endPage = startPage + maxVisiblePages - 1;
