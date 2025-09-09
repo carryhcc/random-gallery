@@ -113,6 +113,7 @@ public class CacheService {
 
         // 刷新定时器
         this.resetTimer();
+        log.warn("切换环境:{}完成", env);
     }
 
     public void resetTimer() {

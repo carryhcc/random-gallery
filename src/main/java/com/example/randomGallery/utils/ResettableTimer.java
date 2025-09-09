@@ -98,13 +98,7 @@ public class ResettableTimer implements AutoCloseable {
     }
 
     public Boolean isDefaultEnv() {
-        // 假设 cacheService.getDefaultEnv() 不会返回 null
-        boolean bool = targetEnv.equalsIgnoreCase(cacheService.getDefaultEnv());
-        // 这条日志在 scheduleNewTask 中已有类似的，可以按需保留或移除
-        // if (bool) {
-        //     log.info("当前目标环境 {} 被识别为默认/开发环境。", targetEnv);
-        // }
-        return bool;
+        return targetEnv.equalsIgnoreCase(cacheService.getDefaultEnv());
     }
 
     /**
@@ -156,18 +150,4 @@ public class ResettableTimer implements AutoCloseable {
             log.info("ResettableTimer (目标环境: {}) 已关闭。", targetEnv);
         }
     }
-
-    // (可选) 如果 ResettableTimer 对象生命周期结束时需要确保关闭，
-    // 可以在不再使用时手动调用 close()，或者考虑使用 finalize() 作为最后的保障（但不推荐依赖 finalize）。
-     @Override
-     protected void finalize() throws Throwable {
-         try {
-             if (scheduler != null && !scheduler.isShutdown()) {
-                 log.warn("ResettableTimer (目标环境: {}) 被垃圾回收前未显式关闭，将尝试在finalize中关闭。", targetEnv);
-                 close();
-             }
-         } finally {
-             super.finalize();
-         }
-     }
 }

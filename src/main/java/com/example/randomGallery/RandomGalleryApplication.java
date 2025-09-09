@@ -1,5 +1,6 @@
 package com.example.randomGallery;
 
+import lombok.extern.log4j.Log4j2;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.boot.SpringApplication;
@@ -9,6 +10,7 @@ import org.springframework.scheduling.annotation.EnableScheduling;
 
 @SpringBootApplication
 @EnableScheduling
+@Log4j2
 public class RandomGalleryApplication {
 
     public static void main(String[] args) {
@@ -27,15 +29,19 @@ public class RandomGalleryApplication {
     @Value("${db.username}")
     private String dbUser;
 
+    @Value("${server.port}")
+    private String port;
+
     @Bean
     public CommandLineRunner run() {
         return args -> {
-            System.out.println("=== 数据库配置（通过 @Value 注入） ===");
-            System.out.println("DB_HOST: " + dbHost);
-            System.out.println("DB_PORT: " + dbPort);
-            System.out.println("DB_NAME: " + dbName);
-            System.out.println("DB_USER: " + dbUser);
-            System.out.println("================================");
+            log.warn("=== 数据库配置（通过 @Value 注入） ===");
+            log.warn("DB_HOST: {}", dbHost);
+            log.warn("DB_PORT: {}", dbPort);
+            log.warn("DB_NAME: {}", dbName);
+            log.warn("DB_USER: {}", dbUser);
+            log.warn("================================");
+            log.warn("http://127.0.0.1:{}", port);
         };
     }
 }

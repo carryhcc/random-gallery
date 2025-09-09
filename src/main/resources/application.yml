@@ -22,4 +22,9 @@ mybatis:
 
 logging:
   level:
-    root: info
+    root: INFO
+    com.example.service: DEBUG
+  file:
+    name: logs/app.log
+  pattern:
+    console: "%d{yyyy-MM-dd} [%thread] %-5level %logger{36} - %msg%n"

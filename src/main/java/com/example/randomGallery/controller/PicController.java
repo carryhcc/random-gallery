@@ -25,11 +25,6 @@ public class PicController {
     @Resource
     PicServiceApi picServiceApi;
 
-//    @GetMapping("/")
-//    public ModelAndView homePage() {
-//        return new ModelAndView("1index.ftl1");
-//    }
-
     /**
      * 获取当前环境
      */

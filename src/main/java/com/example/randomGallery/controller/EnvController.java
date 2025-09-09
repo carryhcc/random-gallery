@@ -3,12 +3,14 @@ package com.example.randomGallery.controller;
 
 import com.example.randomGallery.server.CacheService;
 import jakarta.annotation.Resource;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.ResponseBody;
 
 import java.sql.SQLException;
 
+@Slf4j
 @Controller
 public class EnvController {
 
@@ -26,7 +28,6 @@ public class EnvController {
     public String switchEnvDev() throws SQLException {
         String env = "dev";
         cacheService.switchSqlName(env);
-        System.out.println("切换环境:" + env);
         return "切换环境:" + env;
     }
 
