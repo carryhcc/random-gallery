@@ -11,68 +11,7 @@
 
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
     <script src="https://cdn.tailwindcss.com"></script>
-    <style>
-        /* --- 动态极光背景 --- */
-        .aurora-background {
-            position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: -1;
-            overflow: hidden;
-        }
-        .aurora-background::before, .aurora-background::after {
-            content: ''; position: absolute; width: 800px; height: 800px; border-radius: 50%;
-            filter: blur(150px); opacity: 0.4; mix-blend-mode: screen;
-        }
-        .aurora-background::before {
-            background: radial-gradient(circle, #ff3cac, #784ba0, #2b86c5);
-            top: -25%; left: -25%; animation: move-aurora-1 25s infinite alternate ease-in-out;
-        }
-        .aurora-background::after {
-            background: radial-gradient(circle, #f7b733, #fc4a1a);
-            bottom: -25%; right: -25%; animation: move-aurora-2 25s infinite alternate ease-in-out;
-        }
-        @keyframes move-aurora-1 { 0% { transform: translate(0, 0) rotate(0deg); } 100% { transform: translate(100px, 200px) rotate(180deg); } }
-        @keyframes move-aurora-2 { 0% { transform: translate(0, 0) rotate(0deg); } 100% { transform: translate(-150px, -100px) rotate(-180deg); } }
-
-        @config 'tailwind.config.js';
-        @tailwind base;
-        @tailwind components;
-        @tailwind utilities;
-
-        @layer base {
-            body {
-                font-family: 'Poppins', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-                background-color: #1a1a2e;
-                color: #e0e0e0;
-            }
-        }
-
-        @layer components {
-            .btn-glow {
-                @apply w-full md:w-auto justify-center text-center font-medium py-3 px-6 rounded-full transition-all duration-300 flex items-center shadow-md hover:shadow-lg transform hover:scale-105;
-            }
-
-        }
-        .btn-glow-primary {
-            @apply btn-glow bg-white/10 text-white border border-white/20;
-            padding: 0 12px;
-        }
-        .btn-glow-primary:hover {
-            background-color: rgba(255, 255, 255, 0.2);
-            box-shadow: 0 0 15px rgba(0, 170, 255, 0.2), 0 0 20px rgba(0, 170, 255, 0.2);
-            border-radius: 5px;
-        }
-        /* --- 图片展示卡片和下载链接的样式 --- */
-        .image-wrapper {
-            /* FIX: Use flexbox to center the image inside */
-            @apply relative flex justify-center items-center overflow-hidden rounded-lg mx-auto mb-6 shadow-lg;
-        }
-        .single-image {
-            /* max-w-full prevents the image from exceeding the container width */
-            @apply block max-w-full h-auto rounded-lg transform scale-100 transition-transform duration-500 ease-in-out;
-        }
-        .image-wrapper:hover .single-image {
-            @apply scale-105;
-        }
-    </style>
+    <link rel="stylesheet" href="/css/style.css">
 </head>
 <body class="min-h-screen flex items-center justify-center p-4">
 

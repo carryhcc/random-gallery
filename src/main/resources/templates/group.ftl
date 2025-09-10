@@ -5,109 +5,15 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>图片分组查询 - 随机图库</title>
 
+    <!-- 外部资源引用（保留原链接） -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap" rel="stylesheet">
-
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
     <script src="https://cdn.tailwindcss.com"></script>
-    <style>
-        /* --- 动态极光背景 --- */
-        .aurora-background {
-            position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: -1;
-            overflow: hidden;
-        }
-        .aurora-background::before, .aurora-background::after {
-            content: ''; position: absolute; width: 800px; height: 800px; border-radius: 50%;
-            filter: blur(150px); opacity: 0.4; mix-blend-mode: screen;
-        }
-        .aurora-background::before {
-            background: radial-gradient(circle, #ff3cac, #784ba0, #2b86c5);
-            top: -25%; left: -25%; animation: move-aurora-1 25s infinite alternate ease-in-out;
-        }
-        .aurora-background::after {
-            background: radial-gradient(circle, #f7b733, #fc4a1a);
-            bottom: -25%; right: -25%; animation: move-aurora-2 25s infinite alternate ease-in-out;
-        }
-        @keyframes move-aurora-1 { 0% { transform: translate(0, 0) rotate(0deg); } 100% { transform: translate(100px, 200px) rotate(180deg); } }
-        @keyframes move-aurora-2 { 0% { transform: translate(0, 0) rotate(0deg); } 100% { transform: translate(-150px, -100px) rotate(-180deg); } }
 
-        @layer base {
-            body {
-                font-family: 'Poppins', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-                background-color: #1a1a2e;
-                color: #e0e0e0;
-            }
-        }
-
-        .btn-glow {
-            @apply justify-center text-center font-medium py-2 px-4 rounded-full transition-all duration-300 flex items-center shadow-md hover:shadow-lg transform hover:scale-105;
-        }
-        .btn-glow-primary {
-            @apply btn-glow bg-white/10 text-white border border-white/20;
-            padding: 0 3px;
-        }
-        .btn-glow-primary:hover {
-            box-shadow: 0 0 15px rgba(0, 170, 255, 0.6), 0 0 20px rgba(0, 170, 255, 0.4);
-            border-radius: 5px;
-        }
-        .btn-glow-reset {
-            @apply btn-glow bg-gray-500/10 text-gray-400 border border-gray-500/20;
-            padding: 0 3px;
-        }
-        .btn-glow-reset:hover {
-            background-color: rgba(100, 116, 139, 0.2);
-            box-shadow: 0 0 15px rgba(100, 116, 139, 0.6), 0 0 20px rgba(100, 116, 139, 0.4);
-            border-radius: 5px;
-        }
-        .btn-glow-operation {
-            @apply btn-glow text-xs px-2 py-1;
-            color: #10b981;
-        }
-        .btn-glow-operation:hover {
-            box-shadow: 0 0 15px rgba(16, 185, 129, 0.2), 0 0 20px rgba(16, 185, 129, 0.2);
-            border-radius: 5px;
-            padding: 0 5px;
-        }
-        .pagination button {
-            @apply btn-glow-primary py-1 px-3;
-        }
-        .pagination button.active {
-            @apply bg-sky-500/50 border-sky-500;
-        }
-        .pagination button:disabled {
-            @apply opacity-50 cursor-not-allowed transform-none shadow-none hover:bg-white/10;
-        }
-        /* 自定义表格样式 - 增加边框和间距 */
-        #results-table {
-            @apply w-full border-collapse mt-6 text-sm text-gray-300 rounded-lg overflow-hidden mx-auto;
-            border: 1px solid rgba(255, 255, 255, 0.1); /* 表格外边框 */
-        }
-        #results-table th, #results-table td {
-            @apply p-4 text-center; /* 增加内边距 */
-            border: 1px solid rgba(255, 255, 255, 0.1); /* 单元格边框 */
-        }
-        #results-table thead th {
-            @apply bg-white/5 font-semibold text-gray-200;
-        }
-        #results-table tbody tr {
-            @apply border-t border-white/10;
-        }
-        #results-table tbody tr:hover {
-            @apply bg-white/5;
-        }
-        /* 表格容器居中 */
-        .table-container {
-            @apply flex justify-center;
-        }
-        /* 新增的按钮定位样式 */
-        .back-to-home-btn {
-            position: fixed;
-            top: 1rem; /* 距离顶部 1rem */
-            left: 1rem; /* 距离左侧 1rem */
-            z-index: 1000; /* 确保它在最上层 */
-        }
-    </style>
+    <!-- 引用独立 CSS 文件（路径需根据实际项目目录调整） -->
+    <link rel="stylesheet" href="/css/style.css">
 </head>
 <body class="min-h-screen p-4 flex justify-center items-start">
 
@@ -174,6 +80,7 @@
     </div>
 </div>
 
+<!-- 保留原 JS 脚本（与页面交互强相关，暂不拆分） -->
 <script>
     // 分页相关变量
     let currentPageIndex = 1; // 当前页码
@@ -202,15 +109,10 @@
         currentPageIndex = pageIndex || 1;
 
         const picNameInput = document.getElementById('picName').value;
-        // 原始代码中没有 groupId 这个输入框，所以我将它注释掉了，以防报错。
-        // const groupIdInput = document.getElementById('groupId').value;
-
         const picName = picNameInput === '' ? null : picNameInput;
-        // const groupId = groupIdInput === '' ? null : parseInt(groupIdInput);
 
         const requestData = {
             picName: picName,
-            // groupId: groupId,
             pageIndex: currentPageIndex,
             pageSize: pageSize
         };
@@ -338,7 +240,6 @@
 
     function resetForm() {
         document.getElementById('picName').value = '';
-        // document.getElementById('groupId').value = '';
         queryGroups(1);
     }
 
