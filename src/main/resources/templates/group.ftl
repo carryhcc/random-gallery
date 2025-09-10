@@ -174,7 +174,6 @@
     </div>
 </div>
 
-<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 <script>
     // 分页相关变量
     let currentPageIndex = 1; // 当前页码
@@ -182,119 +181,125 @@
     let totalPages = 0;       // 总页数
     let totalCount = 0;       // 总条数
 
+    // 辅助函数：使用 fetch 发送 POST 请求
+    function postData(url, data) {
+        return fetch(url, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(data)
+        }).then(response => {
+            if (!response.ok) {
+                throw new Error('HTTP Error, status: ' + response.status);
+            }
+            return response.json();
+        });
+    }
+
     function queryGroups(pageIndex) {
         // 更新当前页码
         currentPageIndex = pageIndex || 1;
 
-        const picNameInput = $('#picName').val();
-        const groupIdInput = $('#groupId').val();
+        const picNameInput = document.getElementById('picName').value;
+        // 原始代码中没有 groupId 这个输入框，所以我将它注释掉了，以防报错。
+        // const groupIdInput = document.getElementById('groupId').value;
 
         const picName = picNameInput === '' ? null : picNameInput;
-        const groupId = groupIdInput === '' ? null : parseInt(groupIdInput);
+        // const groupId = groupIdInput === '' ? null : parseInt(groupIdInput);
 
         const requestData = {
             picName: picName,
-            groupId: groupId,
+            // groupId: groupId,
             pageIndex: currentPageIndex,
             pageSize: pageSize
         };
 
-        // 查询数据列表
-        $.ajax({
-            url: '/queryGroupList',
-            type: 'POST',
-            contentType: 'application/json',
-            data: JSON.stringify(requestData),
-            success: function(listData) {
-                const resultsBody = $('#results-body');
-                resultsBody.empty();
+        const resultsBody = document.getElementById('results-body');
+        resultsBody.innerHTML = ''; // 清空表格
 
-                if (listData && listData.length > 0) {
-                    listData.forEach(function(item) {
-                        const newRow = '<tr>' +
-                            '<td>' + (item.groupId || '') + '</td>' +
-                            '<td>' + (item.picName || '') + '</td>' +
-                            '<td><button class="btn-glow-operation" onclick="viewGroup(\'' + (item.groupId || '') + '\')"><i class="fas fa-eye mr-1"></i>查看</button></td>' +
-                            '</tr>';
-                        resultsBody.append(newRow);
-                    });
-                } else {
-                    resultsBody.append('<tr><td colspan="3" style="text-align: center;">未找到匹配的数据</td></tr>');
-                }
-            },
-            error: function() {
-                $('#results-body').html('<tr><td colspan="3" style="text-align: center; color: #dc2626;">查询失败，请重试</td></tr>');
+        // 使用 Promise.all 并行发送请求
+        Promise.all([
+            postData('/queryGroupList', requestData),
+            postData('/queryGroupCount', requestData)
+        ]).then(([listData, countData]) => {
+            // 渲染列表数据
+            if (listData && listData.length > 0) {
+                listData.forEach(function(item) {
+                    const newRow = document.createElement('tr');
+                    newRow.innerHTML = '<td>' + (item.groupId || '') + '</td>' +
+                        '<td>' + (item.picName || '') + '</td>' +
+                        '<td><button class="btn-glow-operation" onclick="viewGroup(\'' + (item.groupId || '') + '\')"><i class="fas fa-eye mr-1"></i>查看</button></td>';
+                    resultsBody.appendChild(newRow);
+                });
+            } else {
+                resultsBody.innerHTML = '<tr><td colspan="3" style="text-align: center;">未找到匹配的数据</td></tr>';
             }
-        });
 
-        // 查询总条数并更新分页
-        $.ajax({
-            url: '/queryGroupCount',
-            type: 'POST',
-            contentType: 'application/json',
-            data: JSON.stringify(requestData),
-            success: function(countData) {
-                totalCount = typeof countData === 'object' ? (countData.count || 0) : (countData || 0);
-                $('#totalCount').text(totalCount);
+            // 更新总条数和分页
+            totalCount = typeof countData === 'object' ? (countData.count || 0) : (countData || 0);
+            document.getElementById('totalCount').textContent = totalCount;
 
-                // 计算总页数
-                totalPages = Math.ceil(totalCount / pageSize);
-                if (totalPages === 0) totalPages = 1;
+            totalPages = Math.ceil(totalCount / pageSize);
+            if (totalPages === 0) totalPages = 1;
 
-                // 更新分页控件状态
-                updatePagination();
-            },
-            error: function() {
-                alert('获取总条数失败，请重试');
-            }
+            updatePagination();
+        }).catch(error => {
+            console.error('Fetch Error:', error);
+            resultsBody.innerHTML = '<tr><td colspan="3" style="text-align: center; color: #dc2626;">查询失败，请重试</td></tr>';
+            document.getElementById('totalCount').textContent = '0';
+            updatePagination();
         });
     }
 
     // 更新分页控件状态
     function updatePagination() {
-        $('#pageInfo').text(`第` + currentPageIndex + `页 / 共`+ totalPages + `页`);
+        const pageInfoSpan = document.getElementById('pageInfo');
+        const prevPageBtn = document.getElementById('prevPage');
+        const nextPageBtn = document.getElementById('nextPage');
 
-        // 更新上一页/下一页按钮状态
-        $('#prevPage').prop('disabled', currentPageIndex <= 1);
-        $('#nextPage').prop('disabled', currentPageIndex >= totalPages);
+        pageInfoSpan.textContent = '第 ' + currentPageIndex + ' 页 / 共 ' + totalPages + ' 页';
 
-        // 生成页码按钮
+        prevPageBtn.disabled = currentPageIndex <= 1;
+        nextPageBtn.disabled = currentPageIndex >= totalPages;
+
         generatePageNumbers();
     }
 
     // 生成页码按钮
     function generatePageNumbers() {
-        const pageNumbersContainer = $('#pageNumbers');
-        pageNumbersContainer.empty();
+        const pageNumbersContainer = document.getElementById('pageNumbers');
+        pageNumbersContainer.innerHTML = '';
 
-        // 最多显示5个页码按钮
         const maxVisiblePages = 5;
         let startPage = Math.max(1, currentPageIndex - Math.floor(maxVisiblePages / 2));
         let endPage = startPage + maxVisiblePages - 1;
 
-        // 调整结束页
         if (endPage > totalPages) {
             endPage = totalPages;
             startPage = Math.max(1, endPage - maxVisiblePages + 1);
         }
 
-        // 添加第一页按钮
         if (startPage > 1) {
             addPageButton(1);
             if (startPage > 2) {
-                pageNumbersContainer.append('<span class="text-neutral-500">...</span>');
+                const span = document.createElement('span');
+                span.className = 'text-neutral-500';
+                span.textContent = '...';
+                pageNumbersContainer.appendChild(span);
             }
         }
 
-        // 添加中间页码按钮
         for (let i = startPage; i <= endPage; i++) {
             addPageButton(i);
         }
 
-        // 添加最后一页按钮
         if (endPage < totalPages) {
             if (endPage < totalPages - 1) {
-                pageNumbersContainer.append('<span class="text-neutral-500">...</span>');
+                const span = document.createElement('span');
+                span.className = 'text-neutral-500';
+                span.textContent = '...';
+                pageNumbersContainer.appendChild(span);
             }
             addPageButton(totalPages);
         }
@@ -302,48 +307,47 @@
 
     // 添加单个页码按钮
     function addPageButton(pageNum) {
-        const pageNumbersContainer = $('#pageNumbers');
-        const button = $('<button></button>')
-            .text(pageNum)
-            .click(function() {
-                changePage(pageNum);
-            });
+        const pageNumbersContainer = document.getElementById('pageNumbers');
+        const button = document.createElement('button');
+        button.textContent = pageNum;
 
-        // 当前页按钮高亮
         if (pageNum === currentPageIndex) {
-            button.addClass('active');
+            button.classList.add('active');
         }
 
-        pageNumbersContainer.append(button);
+        button.onclick = function() {
+            changePage(pageNum);
+        };
+        pageNumbersContainer.appendChild(button);
     }
 
     // 切换页码
     function changePage(pageNum) {
-        // 验证页码有效性
         if (pageNum < 1 || pageNum > totalPages || pageNum === currentPageIndex) {
             return;
         }
 
-        // 跳转到指定页码
         queryGroups(pageNum);
 
         // 滚动到表格顶部
-        $('html, body').animate({
-            scrollTop: $('#results-table').offset().top - 20
-        }, 300);
+        const resultsTable = document.getElementById('results-table');
+        if (resultsTable) {
+            resultsTable.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
     }
 
     function resetForm() {
-        $('#picName').val('');
-        $('#groupId').val('');
-        updatePagination();
+        document.getElementById('picName').value = '';
+        // document.getElementById('groupId').value = '';
+        queryGroups(1);
     }
 
     function viewGroup(groupId) {
         window.location.href = '/showQueryList?groupId=' + groupId;
     }
 
-    $(document).ready(function() {
+    // 页面加载后执行
+    document.addEventListener('DOMContentLoaded', function() {
         queryGroups(1); // 初始加载第一页
     });
 </script>
