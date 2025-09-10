@@ -45,26 +45,29 @@
         }
         .btn-glow-primary {
             @apply btn-glow bg-white/10 text-white border border-white/20;
+            padding: 0 3px;
         }
         .btn-glow-primary:hover {
-            background-color: rgba(255, 255, 255, 0.2);
             box-shadow: 0 0 15px rgba(0, 170, 255, 0.6), 0 0 20px rgba(0, 170, 255, 0.4);
+            border-radius: 5px;
         }
         .btn-glow-reset {
             @apply btn-glow bg-gray-500/10 text-gray-400 border border-gray-500/20;
+            padding: 0 3px;
         }
         .btn-glow-reset:hover {
             background-color: rgba(100, 116, 139, 0.2);
             box-shadow: 0 0 15px rgba(100, 116, 139, 0.6), 0 0 20px rgba(100, 116, 139, 0.4);
+            border-radius: 5px;
         }
         .btn-glow-operation {
             @apply btn-glow text-xs px-2 py-1;
-            background-color: rgba(16, 185, 129, 0.1);
             color: #10b981;
         }
         .btn-glow-operation:hover {
-            background-color: rgba(16, 185, 129, 0.2);
-            box-shadow: 0 0 15px rgba(16, 185, 129, 0.6), 0 0 20px rgba(16, 185, 129, 0.4);
+            box-shadow: 0 0 15px rgba(16, 185, 129, 0.2), 0 0 20px rgba(16, 185, 129, 0.2);
+            border-radius: 5px;
+            padding: 0 5px;
         }
         .pagination button {
             @apply btn-glow-primary py-1 px-3;
@@ -112,15 +115,11 @@
         <div class="bg-white/5 border border-white/10 rounded-xl p-4 md:p-6 mb-6">
             <div class="flex flex-col md:flex-row items-center justify-center gap-4">
                 <div class="flex-grow flex items-center gap-2 w-full md:w-auto">
-                    <label for="picName" class="text-neutral-300 whitespace-nowrap">分组名称:</label>
-                    <input type="text" id="picName" placeholder="输入分组名称" class="flex-grow w-full bg-white/5 text-white placeholder-neutral-500 border border-white/10 rounded-lg px-3 py-2 focus:outline-none focus:border-sky-500 transition-colors duration-200">
-                </div>
-                <div class="flex-grow flex items-center gap-2 w-full md:w-auto">
-                    <label for="groupId" class="text-neutral-300 whitespace-nowrap">分组ID:</label>
-                    <input type="text" id="groupId" placeholder="输入分组ID" class="flex-grow w-full bg-white/5 text-white placeholder-neutral-500 border border-white/10 rounded-lg px-3 py-2 focus:outline-none focus:border-sky-500 transition-colors duration-200">
+                    <label for="picName" class="text-neutral-300 whitespace-nowrap">名称:</label>
+                    <input type="text" id="picName" placeholder="输入名称" class="flex-grow w-full bg-white/5 text-white placeholder-neutral-500 border border-white/10 rounded-lg px-3 py-2 focus:outline-none focus:border-sky-500 transition-colors duration-200">
                 </div>
                 <div class="flex-shrink-0 flex gap-2 w-full md:w-auto">
-                    <button onclick="queryGroups(1)" class="btn-glow-primary flex-grow">
+                    <button class="btn-glow-primary flex-grow" onclick="queryGroups(1)">
                         <i class="fas fa-search mr-2"></i>
                         <span>查询</span>
                     </button>
@@ -141,8 +140,8 @@
             <table style="width:100%;" id="results-table">
                 <thead>
                 <tr>
-                    <th style="width:calc(100% - 220px)">分组名称</th>
-                    <th style="width:120px;">分组ID</th>
+                    <th style="width:100px;">ID</th>
+                    <th style="width:calc(100% - 200px)">套图名称</th>
                     <th style="width:100px;">操作</th>
                 </tr>
                 </thead>
@@ -203,8 +202,8 @@
                 if (listData && listData.length > 0) {
                     listData.forEach(function(item) {
                         const newRow = '<tr>' +
-                            '<td>' + (item.picName || '') + '</td>' +
                             '<td>' + (item.groupId || '') + '</td>' +
+                            '<td>' + (item.picName || '') + '</td>' +
                             '<td><button class="btn-glow-operation" onclick="viewGroup(\'' + (item.groupId || '') + '\')"><i class="fas fa-eye mr-1"></i>查看</button></td>' +
                             '</tr>';
                         resultsBody.append(newRow);
@@ -327,12 +326,6 @@
     function resetForm() {
         $('#picName').val('');
         $('#groupId').val('');
-        $('#results-body').empty();
-        $('#totalCount').text('0');
-        // 重置分页状态
-        currentPageIndex = 1;
-        totalPages = 0;
-        totalCount = 0;
         updatePagination();
     }
 
