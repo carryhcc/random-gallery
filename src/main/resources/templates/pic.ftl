@@ -49,15 +49,17 @@
             .btn-glow {
                 @apply w-full md:w-auto justify-center text-center font-medium py-3 px-6 rounded-full transition-all duration-300 flex items-center shadow-md hover:shadow-lg transform hover:scale-105;
             }
-            .btn-glow-primary {
-                @apply btn-glow bg-white/10 text-white border border-white/20;
-            }
-            .btn-glow-primary:hover {
-                background-color: rgba(255, 255, 255, 0.2);
-                box-shadow: 0 0 15px rgba(0, 170, 255, 0.6), 0 0 20px rgba(0, 170, 255, 0.4);
-            }
-        }
 
+        }
+        .btn-glow-primary {
+            @apply btn-glow bg-white/10 text-white border border-white/20;
+            padding: 0 12px;
+        }
+        .btn-glow-primary:hover {
+            background-color: rgba(255, 255, 255, 0.2);
+            box-shadow: 0 0 15px rgba(0, 170, 255, 0.2), 0 0 20px rgba(0, 170, 255, 0.2);
+            border-radius: 5px;
+        }
         /* --- 图片展示卡片和下载链接的样式 --- */
         .image-wrapper {
             /* FIX: Use flexbox to center the image inside */
