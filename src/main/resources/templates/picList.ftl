@@ -56,7 +56,7 @@
             .btn-glow:hover {
                 background: rgba(255, 255, 255, 0.2);
                 transform: translateY(-2px);
-                box-shadow: 0 0 15px rgba(0, 170, 255, 0.6);
+                box-shadow: 0 0 15px rgba(0, 170, 255, 0.1);
             }
             .btn-glow:disabled {
                 @apply opacity-50 cursor-not-allowed;
