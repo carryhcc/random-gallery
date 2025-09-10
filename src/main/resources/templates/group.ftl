@@ -100,11 +100,22 @@
         .table-container {
             @apply flex justify-center;
         }
+        /* 新增的按钮定位样式 */
+        .back-to-home-btn {
+            position: fixed;
+            top: 1rem; /* 距离顶部 1rem */
+            left: 1rem; /* 距离左侧 1rem */
+            z-index: 1000; /* 确保它在最上层 */
+        }
     </style>
 </head>
 <body class="min-h-screen p-4 flex justify-center items-start">
 
 <div class="aurora-background"></div>
+
+<button id="backToHomeBtn" class="btn-glow back-to-home-btn" onclick="window.location.href = '/'">
+    <i class="fa fa-arrow-left mr-2"></i><span>返回首页</span>
+</button>
 
 <div class="w-full max-w-4xl pt-12 md:pt-24">
     <div class="bg-white/10 backdrop-blur-xl border border-white/20 rounded-2xl shadow-2xl p-6 md:p-8 text-center transition-all duration-500 animate-fade-in-up">
@@ -135,7 +146,6 @@
             总条数: <span id="totalCount">0</span>
         </div>
 
-        <!-- 表格容器 -->
         <div class="table-container">
             <table style="width:100%;" id="results-table">
                 <thead>

@@ -170,7 +170,7 @@
             <span id="closeViewer" class="absolute top-4 right-4 text-white/80 text-3xl cursor-pointer hover:text-white transition-colors z-20"><i class="fa fa-times"></i></span>
             <span id="prevImage" class="nav-btn left-4 md:left-8"><i class="fa fa-chevron-left"></i></span>
             <span id="nextImage" class="nav-btn right-4 md:right-8"><i class="fa fa-chevron-right"></i></span>
-            <img id="fullsizeImage" src="" alt="大图预览" class="max-h-[90vh] max-w-[95vw] mx-auto rounded-lg shadow-2xl object-contain">
+            <img id="fullSizeImage" src="" alt="大图预览" class="max-h-[90vh] max-w-[95vw] mx-auto rounded-lg shadow-2xl object-contain">
         </div>
     </div>
 </div>
@@ -187,7 +187,7 @@
         const noMoreImages = document.getElementById('noMoreImages');
         const backToHomeBtn = document.getElementById('backToHomeBtn');
         const imageViewer = document.getElementById('imageViewer');
-        const fullSizeImage = document.getElementById('fullsizeImage');
+        const fullSizeImage = document.getElementById('fullSizeImage');
         const closeViewer = document.getElementById('closeViewer');
         const prevImage = document.getElementById('prevImage');
         const nextImage = document.getElementById('nextImage');
