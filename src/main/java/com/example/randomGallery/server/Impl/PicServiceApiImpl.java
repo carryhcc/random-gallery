@@ -15,19 +15,15 @@ import java.util.Objects;
 @Service
 public class PicServiceApiImpl implements PicServiceApi {
 
-    @Resource
-    private PicServiceMapper picServiceMapper;
+    private final PicServiceMapper picServiceMapper;
+    private final CacheService cacheService;
 
-    @Resource
-    private CacheService cacheService;
-
-    @Override
-    public void getTheLimitValue() {
-        Integer maxId = picServiceMapper.getMaxId(cacheService.getSqlName());
-        Integer minId = picServiceMapper.getMinId(cacheService.getSqlName());
-        Integer maxGroupId = picServiceMapper.getMaxGroupId(cacheService.getSqlName());
-        Integer minGroupId = picServiceMapper.getMinGroupId(cacheService.getSqlName());
+    public PicServiceApiImpl(PicServiceMapper picServiceMapper, CacheService cacheService) {
+        this.picServiceMapper = picServiceMapper;
+        this.cacheService = cacheService;
     }
+
+    
 
     @Override
     public String getUrlById(Integer id) {

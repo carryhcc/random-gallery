@@ -18,12 +18,13 @@ import java.util.Optional;
 @Controller
 public class PicController {
 
+    private final CacheService cacheService;
+    private final PicServiceApi picServiceApi;
 
-    @Resource
-    CacheService cacheService;
-
-    @Resource
-    PicServiceApi picServiceApi;
+    public PicController(CacheService cacheService, PicServiceApi picServiceApi) {
+        this.cacheService = cacheService;
+        this.picServiceApi = picServiceApi;
+    }
 
     /**
      * 获取当前环境
