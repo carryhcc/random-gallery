@@ -4,11 +4,9 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>图片列表展示 - 随机图库</title>
-
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap" rel="stylesheet">
-
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="/css/style.css">
@@ -29,10 +27,10 @@
                 </button>
             </div>
             <div id="navActions" class="flex flex-col md:flex-row items-center space-y-3 md:space-y-0 md:space-x-4 w-full md:w-auto mt-3 md:mt-0 hidden md:flex">
-                <button id="backToHomeBtn" class="btn-glow">
+                <button id="backToHomeBtn" class="btn btn-secondary">
                     <i class="fa fa-arrow-left mr-2"></i><span>返回首页</span>
                 </button>
-                <button id="refreshImageListBtn" class="btn-glow">
+                <button id="refreshImageListBtn" class="btn btn-secondary">
                     <i class="fa fa-refresh mr-2"></i><span>刷新图片</span>
                 </button>
                 <div id="galleryTitle" class="ml-2 text-white/80 font-medium text-base md:text-xl fade-in text-center md:text-left w-full md:w-auto">加载中...</div>
@@ -135,7 +133,6 @@
             img.alt = '套图图片';
             img.loading = 'lazy';
             img.onerror = function() { this.alt = '图片加载失败'; };
-
             img.onload = function() {
                 const ratio = this.naturalWidth / this.naturalHeight;
                 if (ratio > 1.8) imgContainer.classList.add('md:col-span-2');

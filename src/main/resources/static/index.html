@@ -7,13 +7,14 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
+    <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="/css/style.css">
 </head>
 <body>
 
 <div class="aurora-background"></div>
 
-<!-- 环境切换器 - 移至左上角 -->
 <div class="env-switcher">
     <div class="dropdown" id="env-dropdown">
         <div class="dropdown-toggle" onclick="toggleDropdown()">
@@ -30,12 +31,12 @@
     </div>
 </div>
 
-<div class="container">
-    <h1>随机图库</h1>
+<div class="glass-container">
+    <h1 class="text-4xl font-bold text-white mb-6">随机图库</h1>
     <div class="button-group">
-        <a href="/showPic" class="btn primary">获取随机图片</a>
-        <a href="/showPicList" class="btn primary">获取随机套图</a>
-        <a href="/groupList" class="btn primary">分组列表</a>
+        <a href="/showPic" class="btn btn-primary">获取随机图片</a>
+        <a href="/showPicList" class="btn btn-primary">获取随机套图</a>
+        <a href="/groupList" class="btn btn-primary">分组列表</a>
     </div>
 </div>
 
@@ -64,9 +65,8 @@
     /**
      * 处理环境选择
      * @param {string} targetEnv - 'dev', 'test', 或 'prod'
-     * @param {string} envText - '开发环境', '测试环境', '生产环境'
      */
-    function selectEnvironment(targetEnv, envText) {
+    function selectEnvironment(targetEnv) {
         // 立即关闭下拉菜单
         toggleDropdown();
         // 调用后端切换逻辑
