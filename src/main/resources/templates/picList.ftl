@@ -13,48 +13,55 @@
 </head>
 <body class="min-h-screen">
 
-<div class="aurora-background"></div>
-
-<div class="relative min-h-screen flex flex-col">
-    <header class="glass-header">
-        <div class="container mx-auto px-4 flex flex-col md:flex-row md:items-center justify-between">
-            <div class="flex items-center justify-between mb-3 md:mb-0 w-full md:w-auto">
-                <h1 class="text-[clamp(1.5rem,3vw,2.25rem)] font-bold text-white flex items-center">
-                    <i class="fa fa-images mr-3"></i>套图
+<div class="min-h-screen flex flex-col">
+    <!-- 导航栏 -->
+    <header class="navbar">
+        <div class="navbar-content">
+            <div class="flex items-center gap-4">
+                <h1 class="navbar-brand">
+                    <i class="fa fa-images"></i>
+                    <span>套图</span>
                 </h1>
-                <button id="mobileMenuBtn" class="md:hidden text-white/80 focus:outline-none p-2 rounded-md hover:bg-white/10 transition-colors">
-                    <i class="fa fa-bars text-xl"></i>
-                </button>
+                <div id="galleryTitle" class="text-secondary">加载中...</div>
             </div>
-            <div id="navActions" class="flex flex-col md:flex-row items-center space-y-3 md:space-y-0 md:space-x-4 w-full md:w-auto mt-3 md:mt-0 hidden md:flex">
+            <div class="navbar-actions">
                 <button id="backToHomeBtn" class="btn btn-secondary">
-                    <i class="fa fa-arrow-left mr-2"></i><span>返回首页</span>
+                    <i class="fa fa-arrow-left"></i>
+                    <span>返回首页</span>
                 </button>
                 <button id="refreshImageListBtn" class="btn btn-secondary">
-                    <i class="fa fa-refresh mr-2"></i><span>刷新图片</span>
+                    <i class="fa fa-refresh"></i>
+                    <span>刷新图片</span>
                 </button>
-                <div id="galleryTitle" class="ml-2 text-white/80 font-medium text-base md:text-xl fade-in text-center md:text-left w-full md:w-auto">加载中...</div>
             </div>
         </div>
     </header>
 
-    <main class="container mx-auto px-4 pt-32 pb-16 flex-grow">
-        <div id="statusMessage" class="mb-6 text-center py-3 px-4 rounded-lg hidden fade-in text-sm md:text-base bg-black/20 border border-white/10"></div>
-        <div id="imageGallery" class="image-grid fade-in"></div>
-        <div id="loadingIndicator" class="hidden mt-8 flex justify-center items-center p-2">
-            <div class="animate-spin rounded-full h-10 w-10 border-b-2 border-cyan-400"></div>
-            <p class="ml-4 text-neutral-300">加载更多图片中...</p>
+    <!-- 主内容 -->
+    <main class="container flex-grow" style="margin-top: 5rem; padding-bottom: 2rem;">
+        <div id="statusMessage" class="toast hidden"></div>
+        <div id="imageGallery" class="image-grid animate-fade-in"></div>
+        <div id="loadingIndicator" class="loading hidden">
+            <div class="spinner"></div>
+            <span>加载更多图片中...</span>
         </div>
-        <div id="noMoreImages" class="hidden text-center text-neutral-400 mt-8 py-4 border-t border-white/10">
+        <div id="noMoreImages" class="hidden text-center text-muted mt-8 py-4">
             所有图片已加载完毕 ✨
         </div>
     </main>
 
-    <div id="imageViewer" class="fixed inset-0 z-50 bg-black/90 flex items-center justify-center p-4 backdrop-blur-sm transition-opacity duration-300 opacity-0 invisible">
+    <!-- 图片查看器 -->
+    <div id="imageViewer" class="fixed inset-0 bg-overlay flex items-center justify-center p-4 transition-opacity duration-300 opacity-0 invisible" style="z-index: 1000;">
         <div class="relative max-w-full lg:max-w-6xl w-full h-full flex items-center justify-center">
-            <span id="closeViewer" class="absolute top-4 right-4 text-white/80 text-3xl cursor-pointer hover:text-white transition-colors z-20"><i class="fa fa-times"></i></span>
-            <span id="prevImage" class="nav-btn left-4 md:left-8"><i class="fa fa-chevron-left"></i></span>
-            <span id="nextImage" class="nav-btn right-4 md:right-8"><i class="fa fa-chevron-right"></i></span>
+            <button id="closeViewer" class="absolute top-4 right-4 text-white text-3xl cursor-pointer hover:text-gray-300 transition-colors z-20">
+                <i class="fa fa-times"></i>
+            </button>
+            <button id="prevImage" class="btn btn-secondary" style="position: absolute; left: 1rem; z-index: 10;">
+                <i class="fa fa-chevron-left"></i>
+            </button>
+            <button id="nextImage" class="btn btn-secondary" style="position: absolute; right: 1rem; z-index: 10;">
+                <i class="fa fa-chevron-right"></i>
+            </button>
             <img id="fullSizeImage" src="" alt="大图预览" class="max-h-[90vh] max-w-[95vw] mx-auto rounded-lg shadow-2xl object-contain">
         </div>
     </div>
@@ -84,9 +91,8 @@
 
         function showStatus(message, isError = false) {
             statusMessage.textContent = message;
-            statusMessage.className = isError ?
-                'mb-6 text-center py-3 px-4 rounded-lg bg-red-900/50 text-red-300 border border-red-500/30 fade-in' :
-                'mb-6 text-center py-3 px-4 rounded-lg bg-cyan-900/50 text-cyan-300 border border-cyan-500/30 fade-in';
+            statusMessage.className = 'toast';
+            statusMessage.classList.add(isError ? 'error' : 'success');
             statusMessage.classList.remove('hidden');
             gallery.innerHTML = '';
             loadingIndicator.classList.add('hidden');
@@ -125,31 +131,39 @@
 
         function createImageElement(url) {
             const imgContainer = document.createElement('div');
-            imgContainer.className = 'img-container group';
+            imgContainer.className = 'image-container';
 
             const img = document.createElement('img');
-            img.className = 'w-full h-full object-cover transition-transform duration-300 group-hover:scale-105';
+            img.className = 'image';
             img.src = url;
             img.alt = '套图图片';
             img.loading = 'lazy';
             img.onerror = function() { this.alt = '图片加载失败'; };
             img.onload = function() {
                 const ratio = this.naturalWidth / this.naturalHeight;
-                if (ratio > 1.8) imgContainer.classList.add('md:col-span-2');
-                else if (ratio < 0.6) imgContainer.classList.add('md:row-span-2');
-                imgContainer.classList.add('loaded');
+                if (ratio > 1.8) imgContainer.style.gridColumn = 'span 2';
+                else if (ratio < 0.6) imgContainer.style.gridRow = 'span 2';
             };
 
+            const overlay = document.createElement('div');
+            overlay.className = 'image-overlay';
+
+            const actions = document.createElement('div');
+            actions.className = 'image-actions';
+
             const downloadBtn = document.createElement('button');
-            downloadBtn.className = 'download-btn';
-            downloadBtn.innerHTML = '<i class="fa fa-download"></i>';
+            downloadBtn.className = 'btn btn-primary btn-sm';
+            downloadBtn.innerHTML = '<i class="fa fa-download"></i><span>下载</span>';
             downloadBtn.onclick = (e) => {
                 e.stopPropagation();
                 downloadImage(url);
             };
 
+            actions.appendChild(downloadBtn);
+            overlay.appendChild(actions);
             imgContainer.appendChild(img);
-            imgContainer.appendChild(downloadBtn);
+            imgContainer.appendChild(overlay);
+            
             imgContainer.addEventListener('click', () => {
                 currentImageIndex = allImageUrls.indexOf(url);
                 openImageViewer(url);

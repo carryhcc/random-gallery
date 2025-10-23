@@ -11,36 +11,49 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="/css/style.css">
 </head>
-<body>
+<body class="min-h-screen flex items-center justify-center p-4">
 
-<div class="aurora-background"></div>
+<!-- 环境切换器 -->
+<div class="dropdown" id="env-dropdown" style="position: fixed; top: 1rem; left: 1rem; z-index: 1000;">
+    <div class="dropdown-toggle" onclick="toggleDropdown()">
+        <span id="selected-env-text">加载中...</span>
+        <svg class="dropdown-arrow" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M7 10L12 15L17 10" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+    </div>
+    <div class="dropdown-menu">
+        <a href="#" data-env="dev" onclick="selectEnvironment('dev', '开发环境')" class="dropdown-item">开发环境</a>
+        <a href="#" data-env="test" onclick="selectEnvironment('test', '测试环境')" class="dropdown-item">测试环境</a>
+        <a href="#" data-env="prod" onclick="selectEnvironment('prod', '生产环境')" class="dropdown-item">生产环境</a>
+    </div>
+</div>
 
-<div class="env-switcher">
-    <div class="dropdown" id="env-dropdown">
-        <div class="dropdown-toggle" onclick="toggleDropdown()">
-            <span id="selected-env-text">加载中...</span>
-            <svg class="dropdown-arrow" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <path d="M7 10L12 15L17 10" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-            </svg>
+<!-- 主容器 -->
+<div class="home-container">
+    <!-- 主卡片 -->
+    <div class="card home-card animate-fade-in">
+        <div class="card-header">
+            <h1 class="card-title">随机图库</h1>
+            <p class="card-subtitle">发现和浏览精美的随机图片</p>
         </div>
-        <div class="dropdown-menu">
-            <a href="#" data-env="dev" onclick="selectEnvironment('dev', '开发环境')">开发环境</a>
-            <a href="#" data-env="test" onclick="selectEnvironment('test', '测试环境')">测试环境</a>
-            <a href="#" data-env="prod" onclick="selectEnvironment('prod', '生产环境')">生产环境</a>
+        <div class="button-group">
+            <a href="/showPic" class="btn btn-primary btn-full">
+                <i class="fas fa-image"></i>
+                获取随机图片
+            </a>
+            <a href="/showPicList" class="btn btn-primary btn-full">
+                <i class="fas fa-images"></i>
+                获取随机套图
+            </a>
+            <a href="/groupList" class="btn btn-primary btn-full">
+                <i class="fas fa-list"></i>
+                分组列表
+            </a>
         </div>
     </div>
 </div>
 
-<div class="glass-container">
-    <h1 class="text-4xl font-bold text-white mb-6">随机图库</h1>
-    <div class="button-group">
-        <a href="/showPic" class="btn btn-primary">获取随机图片</a>
-        <a href="/showPicList" class="btn btn-primary">获取随机套图</a>
-        <a href="/groupList" class="btn btn-primary">分组列表</a>
-    </div>
-</div>
-
-<div id="toast"></div>
+<div id="toast" class="toast"></div>
 
 <script>
     let toastTimer;
@@ -49,9 +62,9 @@
         const toast = document.getElementById('toast');
         clearTimeout(toastTimer);
         toast.textContent = message;
-        toast.className = 'show ' + type;
+        toast.className = 'toast show ' + type;
         toastTimer = setTimeout(function(){
-            toast.className = toast.className.replace('show', '');
+            toast.className = 'toast';
         }, 3000);
     }
 
@@ -116,7 +129,7 @@
      */
     async function switchEnvironment(targetEnv) {
         const envMap = { dev: '开发环境', test: '测试环境', prod: '生产环境' };
-        showToast(`正在切换到 ${envMap[targetEnv] || targetEnv} ...`);
+        showToast(`正在切换到 ${envMap[targetEnv] || targetEnv}...`, 'info');
         try {
             const response = await fetch('/' + targetEnv);
             if (!response.ok) {

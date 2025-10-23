@@ -11,47 +11,56 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="/css/style.css">
 </head>
-<body class="min-h-screen p-4 flex justify-center items-start">
+<body class="min-h-screen p-4">
 
-<div class="aurora-background"></div>
-
-<button id="backToHomeBtn" class="btn btn-secondary back-to-home-btn" onclick="window.location.href = '/'">
-    <i class="fa fa-arrow-left mr-2"></i><span>返回首页</span>
+<!-- 返回按钮 -->
+<button id="backToHomeBtn" class="btn btn-secondary" onclick="window.location.href = '/'" style="position: fixed; top: 1rem; left: 1rem; z-index: 1000;">
+    <i class="fa fa-arrow-left"></i>
+    <span>返回首页</span>
 </button>
 
-<div class="w-full max-w-4xl pt-12 md:pt-24">
-    <div class="glass-container">
-        <h1 class="text-3xl md:text-4xl font-bold text-white mb-2">图片分组查询</h1>
-        <p class="text-neutral-300 text-base md:text-lg mb-6">查询、浏览和管理图片分组</p>
+<div class="container" style="max-width: 1000px; margin-top: 4rem;">
+    <!-- 主卡片 -->
+    <div class="card animate-fade-in">
+        <div class="card-header">
+            <h1 class="card-title">图片分组查询</h1>
+            <p class="card-subtitle">查询、浏览和管理图片分组</p>
+        </div>
 
-        <div class="glass-card mb-6">
-            <div class="flex flex-col md:flex-row items-center justify-center gap-4">
-                <div class="flex-grow flex items-center gap-2 w-full md:w-auto">
-                    <label for="picName" class="text-neutral-300 whitespace-nowrap">名称:</label>
-                    <input type="text" id="picName" placeholder="输入名称" class="flex-grow w-full bg-white/5 text-white placeholder-neutral-500 border border-white/10 rounded-lg px-3 py-2 focus:outline-none focus:border-sky-500 transition-colors duration-200">
+        <!-- 搜索表单 -->
+        <div class="card mb-6">
+            <div class="search-form">
+                <div class="form-group">
+                    <label for="picName" class="form-label">名称</label>
+                    <input type="text" id="picName" placeholder="输入名称" class="form-input">
                 </div>
-                <div class="flex-shrink-0 flex gap-2 w-full md:w-auto">
-                    <button class="btn btn-primary flex-grow" onclick="queryGroups(1)">
-                        <i class="fas fa-search mr-2"></i><span>查询</span>
+                <div class="button-group">
+                    <button class="btn btn-primary" onclick="queryGroups(1)">
+                        <i class="fas fa-search"></i>
+                        <span>查询</span>
                     </button>
-                    <button class="btn btn-secondary flex-grow" onclick="resetForm()">
-                        <i class="fas fa-redo mr-2"></i><span>重置</span>
+                    <button class="btn btn-secondary" onclick="resetForm()">
+                        <i class="fas fa-redo"></i>
+                        <span>重置</span>
                     </button>
                 </div>
             </div>
         </div>
 
-        <div class="text-center font-bold text-neutral-300 mb-4">
-            总条数: <span id="totalCount">0</span>
+        <!-- 统计信息 -->
+        <div class="text-center mb-4">
+            <span class="text-secondary">总条数: </span>
+            <span id="totalCount" class="text-primary font-bold">0</span>
         </div>
 
+        <!-- 表格 -->
         <div class="table-container">
-            <table style="width:100%;" id="results-table">
+            <table class="table" id="results-table">
                 <thead>
                 <tr>
-                    <th style="width:100px;">ID</th>
-                    <th style="width:calc(100% - 200px)">套图名称</th>
-                    <th style="width:100px;">操作</th>
+                    <th style="width: 100px;">ID</th>
+                    <th>套图名称</th>
+                    <th style="width: 100px;">操作</th>
                 </tr>
                 </thead>
                 <tbody id="results-body">
@@ -59,17 +68,17 @@
             </table>
         </div>
 
-        <div class="pagination flex flex-col md:flex-row justify-center items-center gap-2 mt-6 text-xs md:text-sm">
-            <button id="prevPage" onclick="changePage(currentPageIndex - 1)" disabled class="flex-shrink-0">
+        <!-- 分页 -->
+        <div class="pagination">
+            <button id="prevPage" onclick="changePage(currentPageIndex - 1)" disabled class="pagination-btn">
                 <i class="fas fa-chevron-left"></i>
             </button>
-            <span class="page-info text-neutral-400 whitespace-nowrap" id="pageInfo">第 1 页 / 共 0 页</span>
-            <div id="pageNumbers" class="flex flex-wrap justify-center gap-2"></div>
-            <button id="nextPage" onclick="changePage(currentPageIndex + 1)" disabled class="flex-shrink-0">
+            <span class="pagination-btn" style="cursor: default; background: transparent; border: none;" id="pageInfo">第 1 页 / 共 0 页</span>
+            <div id="pageNumbers" class="flex gap-2"></div>
+            <button id="nextPage" onclick="changePage(currentPageIndex + 1)" disabled class="pagination-btn">
                 <i class="fas fa-chevron-right"></i>
             </button>
         </div>
-
     </div>
 </div>
 
