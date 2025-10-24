@@ -21,6 +21,6 @@ ENV DB_PASSWORD=root
 
 ENTRYPOINT ["java", "-jar", "app.jar"]
 # 导出镜像tar
-
+# mvn clean package -DskipTests
 # docker build -t helloworld:latest .
 # docker save -o helloworld.tar helloworld:latest
