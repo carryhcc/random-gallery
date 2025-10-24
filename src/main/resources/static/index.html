@@ -91,11 +91,12 @@
      */
     async function updateEnvStatus() {
         try {
-            const response = await fetch('/getEnv');
+            const response = await fetch('/api/system/env/current');
             if (!response.ok) {
                 throw new Error(`HTTP error! status: ${response.status}`);
             }
-            const currentEnv = (await response.text()).trim();
+            const result = await response.json();
+            const currentEnv = result.data;
 
             const selectedEnvText = document.getElementById('selected-env-text');
             const envOptions = document.querySelectorAll('.dropdown-menu a');
@@ -131,20 +132,24 @@
         const envMap = { dev: '开发环境', test: '测试环境', prod: '生产环境' };
         showToast(`正在切换到 ${envMap[targetEnv] || targetEnv}...`, 'info');
         try {
-            const response = await fetch('/' + targetEnv);
+            const response = await fetch('/api/system/env/' + targetEnv);
             if (!response.ok) {
                 throw new Error(`HTTP error! status: ${response.status}`);
             }
-
-            // 切换成功后，重新获取最新环境并更新UI
-            await updateEnvStatus();
-
-            const currentActiveButtonText = document.getElementById('selected-env-text').textContent;
-            showToast(`成功切换到 ${currentActiveButtonText}！`, 'success');
+            const result = await response.json();
+            
+            if (result.code === 200) {
+                // 切换成功后，重新获取最新环境并更新UI
+                await updateEnvStatus();
+                const currentActiveButtonText = document.getElementById('selected-env-text').textContent;
+                showToast(`成功切换到 ${currentActiveButtonText}！`, 'success');
+            } else {
+                throw new Error(result.message || '切换环境失败');
+            }
 
         } catch (error) {
             console.error("切换环境失败:", error);
-            showToast("切换环境失败", "error");
+            showToast("切换环境失败: " + error.message, "error");
             // 如果切换失败，刷新状态回退到真实环境
             await updateEnvStatus();
         }

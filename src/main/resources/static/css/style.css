@@ -518,16 +518,17 @@ body {
 .dropdown-toggle {
     display: flex;
     align-items: center;
-    gap: var(--space-2);
-    padding: var(--space-2) var(--space-3);
-    font-size: var(--text-sm);
+    gap: var(--space-1);
+    padding: var(--space-1) var(--space-2);
+    font-size: var(--text-xs);
     color: var(--text-primary);
     background: var(--bg-tertiary);
     border: 1px solid var(--border-primary);
     border-radius: var(--radius-lg);
     cursor: pointer;
     transition: all var(--transition-fast);
-    min-width: 140px;
+    min-width: 90px;
+    max-width: 100px;
 }
 
 .dropdown-toggle:hover {
@@ -549,7 +550,7 @@ body {
     position: absolute;
     top: calc(100% + var(--space-2));
     left: 0;
-    right: 0;
+    min-width: 120px;
     background: var(--bg-card);
     border: 1px solid var(--border-primary);
     border-radius: var(--radius-lg);
@@ -576,6 +577,8 @@ body {
     text-decoration: none;
     border-radius: var(--radius-md);
     transition: all var(--transition-fast);
+    white-space: nowrap;
+    min-width: 100px;
 }
 
 .dropdown-item:hover {
@@ -637,8 +640,58 @@ body {
 }
 
 .image-actions {
+    position: absolute;
+    bottom: 1rem;
+    left: 1rem;
     display: flex;
     gap: var(--space-2);
+    opacity: 0;
+    transform: translateY(10px);
+    transition: all 0.3s ease;
+}
+
+.image-container:hover .image-actions {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+/* 下载图标按钮样式 */
+.image-actions .btn.btn-primary.download-icon-btn,
+.image-actions .download-icon-btn,
+.btn.btn-primary.download-icon-btn,
+.download-icon-btn {
+    width: 2.5rem !important;
+    height: 2.5rem !important;
+    padding: 0 !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    border-radius: 50% !important;
+    min-width: auto !important;
+    background: rgba(0, 0, 0, 0.6) !important;
+    border: none !important;
+    color: white !important;
+    backdrop-filter: blur(4px) !important;
+    transition: all 0.2s ease !important;
+    box-shadow: none !important;
+}
+
+.image-actions .btn.btn-primary.download-icon-btn:hover,
+.image-actions .download-icon-btn:hover,
+.btn.btn-primary.download-icon-btn:hover,
+.download-icon-btn:hover {
+    background: rgba(0, 0, 0, 0.8) !important;
+    transform: scale(1.05) !important;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3) !important;
+}
+
+.download-icon-btn i {
+    font-size: 0.875rem;
+    margin: 0;
+}
+
+.download-icon-btn span {
+    display: none;
 }
 
 /* 图片网格 */
@@ -916,7 +969,8 @@ body {
     }
     
     .dropdown-toggle {
-        min-width: 120px;
+        min-width: 80px;
+        max-width: 90px;
         padding: var(--space-1) var(--space-2);
         font-size: var(--text-xs);
     }
@@ -1003,7 +1057,311 @@ body {
 }
 
 /* ========================================
-   15. 打印样式
+   15. 分组查询页面样式
+   ======================================== */
+
+/* 手机端分页组件优化 */
+@media (max-width: 640px) {
+    .pagination-container {
+        padding: 1rem;
+    }
+    
+    .pagination-buttons {
+        flex-wrap: nowrap !important;
+        justify-content: center;
+        gap: 0.25rem;
+        width: 100%;
+        overflow: visible;
+    }
+    
+    .pagination-button {
+        min-width: 28px;
+        height: 28px;
+        font-size: 0.7rem;
+        padding: 0.25rem 0.5rem;
+        flex-shrink: 0;
+    }
+    
+    .pagination-info {
+        margin-bottom: 0.75rem;
+        text-align: center;
+    }
+    
+    .page-numbers-container {
+        flex-wrap: nowrap !important;
+        justify-content: center;
+        align-items: center;
+        gap: 0.25rem;
+        flex: 1;
+        min-width: 0;
+        overflow: visible;
+    }
+}
+
+/* 手机端表格优化 */
+@media (max-width: 640px) {
+    .table-container {
+        overflow: visible !important;
+        width: 100%;
+    }
+    
+    .table {
+        width: 100% !important;
+        table-layout: fixed !important;
+    }
+    
+    .table th:nth-child(1),
+    .table td:nth-child(1) {
+        width: 15% !important;
+        min-width: 40px;
+        max-width: 60px;
+        padding: 0.5rem 0.25rem !important;
+        font-size: 0.75rem;
+    }
+    
+    .table th:nth-child(2),
+    .table td:nth-child(2) {
+        width: 70% !important;
+        min-width: 0;
+        max-width: none;
+        padding: 0.5rem 0.5rem !important;
+    }
+    
+    .table th:nth-child(3),
+    .table td:nth-child(3) {
+        width: 15% !important;
+        min-width: 60px;
+        max-width: 80px;
+        padding: 0.5rem 0.25rem !important;
+        white-space: nowrap;
+    }
+    
+    .table td:nth-child(2) {
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        cursor: pointer;
+        position: relative;
+        transition: background-color 0.2s ease;
+    }
+    
+    .table td:nth-child(2):hover {
+        background-color: rgba(59, 130, 246, 0.1);
+    }
+    
+    .name-text {
+        display: block;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        max-width: 100%;
+    }
+    
+    .btn-operation {
+        font-size: 0.65rem !important;
+        padding: 0.2rem 0.4rem !important;
+        min-height: auto !important;
+        white-space: nowrap;
+        width: 100%;
+        max-width: 100%;
+    }
+    
+    .table th {
+        font-size: 0.7rem !important;
+        padding: 0.5rem 0.25rem !important;
+    }
+}
+
+/* 手机端搜索表单优化 */
+@media (max-width: 640px) {
+    .search-form {
+        flex-direction: row !important;
+        align-items: center !important;
+        gap: 0.75rem !important;
+    }
+    
+    .search-form .form-group {
+        flex: 1 !important;
+        min-width: 0 !important;
+        margin-bottom: 0 !important;
+        display: flex !important;
+        align-items: center !important;
+        gap: 0.5rem !important;
+    }
+    
+    .search-form .form-label {
+        margin-bottom: 0 !important;
+        white-space: nowrap !important;
+        font-size: 0.875rem !important;
+    }
+    
+    .search-form .form-input {
+        flex: 1 !important;
+        min-width: 0 !important;
+    }
+    
+    .search-form .button-group {
+        flex-direction: row !important;
+        gap: 0.5rem !important;
+        margin-bottom: 0 !important;
+        flex-shrink: 0 !important;
+    }
+    
+    .search-form .btn {
+        min-width: auto !important;
+        flex: 1 !important;
+        font-size: 0.8rem !important;
+        padding: 0.5rem 0.75rem !important;
+    }
+}
+
+/* PC端搜索表单优化 */
+@media (min-width: 640px) {
+    .search-form {
+        flex-direction: row !important;
+        align-items: center !important;
+        gap: 1rem !important;
+    }
+    
+    .search-form .form-group {
+        flex: 1 !important;
+        min-width: 0 !important;
+        margin-bottom: 0 !important;
+        display: flex !important;
+        align-items: center !important;
+        gap: 0.75rem !important;
+    }
+    
+    .search-form .form-label {
+        margin-bottom: 0 !important;
+        white-space: nowrap !important;
+        font-size: 0.875rem !important;
+        min-width: 60px !important;
+    }
+    
+    .search-form .form-input {
+        flex: 1 !important;
+        min-width: 0 !important;
+    }
+    
+    .search-form .button-group {
+        flex-direction: row !important;
+        gap: 0.75rem !important;
+        margin-bottom: 0 !important;
+        flex-shrink: 0 !important;
+    }
+    
+    .search-form .btn {
+        min-width: auto !important;
+        flex: 1 !important;
+        font-size: 0.875rem !important;
+        padding: 0.5rem 1rem !important;
+    }
+}
+
+/* 强制所有分页元素在同一行 */
+.pagination-buttons {
+    display: flex !important;
+    flex-wrap: nowrap !important;
+    align-items: center;
+    white-space: nowrap;
+}
+
+.page-numbers-container {
+    display: flex !important;
+    flex-wrap: nowrap !important;
+    align-items: center;
+    white-space: nowrap;
+}
+
+/* ========================================
+   16. 图片展示页面样式
+   ======================================== */
+
+/* 图片展示页面容器 */
+.pic-container {
+    max-width: 800px;
+}
+
+/* ========================================
+   17. 图片列表页面样式
+   ======================================== */
+
+/* 图片列表主内容区域 */
+.piclist-main {
+    margin-top: 5rem;
+    padding-bottom: 2rem;
+}
+
+/* 图片查看器 */
+.image-viewer {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.8);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 1rem;
+    transition: opacity 0.3s;
+    z-index: 1000;
+}
+
+.image-viewer.hidden {
+    opacity: 0;
+    visibility: hidden;
+}
+
+.image-viewer.visible {
+    opacity: 1;
+    visibility: visible;
+}
+
+/* 图片查看器按钮 */
+.viewer-close {
+    position: absolute;
+    top: 1rem;
+    right: 1rem;
+    color: white;
+    font-size: 1.875rem;
+    cursor: pointer;
+    z-index: 20;
+}
+
+.viewer-close:hover {
+    color: #d1d5db;
+    transition: color 0.2s;
+}
+
+.viewer-prev,
+.viewer-next {
+    position: absolute;
+    z-index: 10;
+}
+
+.viewer-prev {
+    left: 1rem;
+}
+
+.viewer-next {
+    right: 1rem;
+}
+
+/* 全尺寸图片 */
+.full-size-image {
+    max-height: 90vh;
+    max-width: 95vw;
+    margin: 0 auto;
+    border-radius: 0.5rem;
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+    object-fit: contain;
+}
+
+
+/* ========================================
+   18. 打印样式
    ======================================== */
 
 @media print {

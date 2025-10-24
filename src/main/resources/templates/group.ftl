@@ -47,20 +47,14 @@
             </div>
         </div>
 
-        <!-- 统计信息 -->
-        <div class="text-center mb-4">
-            <span class="text-secondary">总条数: </span>
-            <span id="totalCount" class="text-primary font-bold">0</span>
-        </div>
-
         <!-- 表格 -->
         <div class="table-container">
             <table class="table" id="results-table">
                 <thead>
                 <tr>
-                    <th style="width: 100px;">ID</th>
-                    <th>套图名称</th>
-                    <th style="width: 100px;">操作</th>
+                    <th class="id-column">ID</th>
+                    <th class="name-column">套图名称</th>
+                    <th class="action-column">操作</th>
                 </tr>
                 </thead>
                 <tbody id="results-body">
@@ -68,16 +62,64 @@
             </table>
         </div>
 
-        <!-- 分页 -->
-        <div class="pagination">
-            <button id="prevPage" onclick="changePage(currentPageIndex - 1)" disabled class="pagination-btn">
-                <i class="fas fa-chevron-left"></i>
-            </button>
-            <span class="pagination-btn" style="cursor: default; background: transparent; border: none;" id="pageInfo">第 1 页 / 共 0 页</span>
-            <div id="pageNumbers" class="flex gap-2"></div>
-            <button id="nextPage" onclick="changePage(currentPageIndex + 1)" disabled class="pagination-btn">
-                <i class="fas fa-chevron-right"></i>
-            </button>
+        <!-- 加载状态 -->
+        <div id="loadingState" class="hidden text-center py-8">
+            <div class="inline-flex items-center gap-2 text-gray-500">
+                <div class="animate-spin rounded-full h-5 w-5 border-b-2 border-blue-600"></div>
+                <span>正在加载数据...</span>
+            </div>
+        </div>
+
+        <!-- 空状态 -->
+        <div id="emptyState" class="hidden text-center py-12">
+            <div class="text-gray-400 text-6xl mb-4">
+                <i class="fas fa-search"></i>
+            </div>
+            <h3 class="text-lg font-medium text-gray-600 mb-2">暂无数据</h3>
+            <p class="text-gray-500">没有找到匹配的分组数据</p>
+        </div>
+
+        <!-- 分页和统计信息 -->
+        <div class="pagination-container flex flex-col gap-4 mt-6 p-4 sm:p-6 bg-gradient-to-r from-slate-800/90 to-slate-700/90 backdrop-blur-sm rounded-xl border border-slate-600/50 shadow-xl">
+            <!-- 统计信息 -->
+            <div class="pagination-info flex items-center justify-center sm:justify-start gap-3 text-sm text-slate-300">
+                <div class="flex items-center justify-center w-6 h-6 sm:w-8 sm:h-8 bg-gradient-to-br from-blue-500 to-blue-600 rounded-full shadow-lg">
+                    <i class="fas fa-list-alt text-white text-xs sm:text-sm"></i>
+                </div>
+                <div class="flex items-center gap-2">
+                    <span>共</span>
+                    <span id="totalCount" class="font-bold text-blue-400 text-lg sm:text-xl">0</span>
+                    <span>条记录</span>
+                </div>
+            </div>
+            
+            <!-- 分页组件 -->
+            <div class="flex flex-col items-center gap-3">
+                <!-- 页码信息 - 单独一行 -->
+                <div class="flex items-center justify-center w-full">
+                    <span id="pageInfo" class="px-3 py-2 text-xs sm:text-sm text-slate-200 bg-slate-700/80 rounded-lg font-medium backdrop-blur-sm">
+                        第 1 页 / 共 0 页
+                    </span>
+                </div>
+                
+                <!-- 分页按钮组 - 所有按钮在同一行 -->
+                <div class="pagination-buttons flex items-center justify-center gap-1 sm:gap-2 w-full">
+                    <!-- 上一页按钮 -->
+                    <button id="prevPage" onclick="changePage(currentPageIndex - 1)" disabled 
+                            class="pagination-button px-2 py-1.5 sm:px-4 sm:py-2.5 text-xs sm:text-sm font-medium text-slate-300 bg-slate-600/80 rounded-lg hover:bg-slate-500 hover:text-white disabled:opacity-40 disabled:cursor-not-allowed transition-all duration-200 hover:shadow-lg hover:scale-105">
+                        <i class="fas fa-chevron-left"></i>
+                    </button>
+                    
+                    <!-- 页码按钮容器 - 直接包含所有页码按钮 -->
+                    <div id="pageNumbers" class="page-numbers-container flex gap-1 justify-center items-center flex-1"></div>
+                    
+                    <!-- 下一页按钮 -->
+                    <button id="nextPage" onclick="changePage(currentPageIndex + 1)" disabled 
+                            class="pagination-button px-2 py-1.5 sm:px-4 sm:py-2.5 text-xs sm:text-sm font-medium text-slate-300 bg-slate-600/80 rounded-lg hover:bg-slate-500 hover:text-white disabled:opacity-40 disabled:cursor-not-allowed transition-all duration-200 hover:shadow-lg hover:scale-105">
+                        <i class="fas fa-chevron-right"></i>
+                    </button>
+                </div>
+            </div>
         </div>
     </div>
 </div>
@@ -112,36 +154,69 @@
             pageIndex: currentPageIndex,
             pageSize: pageSize
         };
-        const resultsBody = document.getElementById('results-body');
-        resultsBody.innerHTML = '';
-
-        Promise.all([
-            postData('/queryGroupList', requestData),
-            postData('/queryGroupCount', requestData)
-        ]).then(([listData, countData]) => {
-            if (listData && listData.length > 0) {
-                listData.forEach(function(item) {
+        
+        // 显示加载状态
+        showLoadingState();
+        
+        // 使用新的分页接口，一次调用获取所有分页信息
+        postData('/api/group/list/paged', requestData).then(response => {
+            // 处理统一响应格式
+            const pageResult = response.data;
+            if (pageResult && pageResult.list && pageResult.list.length > 0) {
+                showTable();
+                const resultsBody = document.getElementById('results-body');
+                resultsBody.innerHTML = '';
+                
+                pageResult.list.forEach(function(item) {
                     const newRow = document.createElement('tr');
-                    newRow.innerHTML = '<td>' + (item.groupId || '') + '</td>' +
-                        '<td>' + (item.picName || '') + '</td>' +
-                        '<td><button class="btn-operation" onclick="viewGroup(\'' + (item.groupId || '') + '\')"><i class="fas fa-eye mr-1"></i>查看</button></td>';
+                    const groupId = item.groupId || '';
+                    const picName = item.picName || '';
+                    
+                    newRow.innerHTML = '<td class="id-cell">' + groupId + '</td>' +
+                        '<td class="name-cell" onclick="toggleNameExpansion(this)" title="点击查看完整名称">' + 
+                        '<span class="name-text">' + picName + '</span>' +
+                        '</td>' +
+                        '<td class="action-cell"><button class="btn-operation" onclick="viewGroup(\'' + groupId + '\')"><i class="fas fa-eye mr-1"></i>查看</button></td>';
                     resultsBody.appendChild(newRow);
                 });
             } else {
-                resultsBody.innerHTML = '<tr><td colspan="3" style="text-align: center;">未找到匹配的数据</td></tr>';
+                showEmptyState();
             }
 
-            totalCount = typeof countData === 'object' ? (countData.count || 0) : (countData || 0);
+            // 从分页结果中获取统计信息
+            totalCount = pageResult.total || 0;
+            totalPages = pageResult.pages || 1;
+            currentPageIndex = pageResult.pageNum || 1;
+            
             document.getElementById('totalCount').textContent = totalCount;
-            totalPages = Math.ceil(totalCount / pageSize);
-            if (totalPages === 0) totalPages = 1;
             updatePagination();
         }).catch(error => {
             console.error('Fetch Error:', error);
+            showTable();
+            const resultsBody = document.getElementById('results-body');
             resultsBody.innerHTML = '<tr><td colspan="3" style="text-align: center; color: #dc2626;">查询失败，请重试</td></tr>';
             document.getElementById('totalCount').textContent = '0';
+            totalPages = 1;
             updatePagination();
         });
+    }
+
+    function showLoadingState() {
+        document.getElementById('results-table').parentElement.classList.add('hidden');
+        document.getElementById('loadingState').classList.remove('hidden');
+        document.getElementById('emptyState').classList.add('hidden');
+    }
+
+    function showTable() {
+        document.getElementById('results-table').parentElement.classList.remove('hidden');
+        document.getElementById('loadingState').classList.add('hidden');
+        document.getElementById('emptyState').classList.add('hidden');
+    }
+
+    function showEmptyState() {
+        document.getElementById('results-table').parentElement.classList.add('hidden');
+        document.getElementById('loadingState').classList.add('hidden');
+        document.getElementById('emptyState').classList.remove('hidden');
     }
 
     function updatePagination() {
@@ -159,7 +234,11 @@
     function generatePageNumbers() {
         const pageNumbersContainer = document.getElementById('pageNumbers');
         pageNumbersContainer.innerHTML = '';
-        const maxVisiblePages = 5;
+        
+        // 手机端显示更少的页码，桌面端显示更多
+        const isMobile = window.innerWidth <= 640;
+        const maxVisiblePages = isMobile ? 3 : 5;
+        
         let startPage = Math.max(1, currentPageIndex - Math.floor(maxVisiblePages / 2));
         let endPage = startPage + maxVisiblePages - 1;
         if (endPage > totalPages) {
@@ -171,7 +250,7 @@
             addPageButton(1);
             if (startPage > 2) {
                 const span = document.createElement('span');
-                span.className = 'text-neutral-500';
+                span.className = 'px-0.5 py-0.5 sm:px-2 sm:py-2 text-xs sm:text-sm text-slate-400 flex items-center flex-shrink-0';
                 span.textContent = '...';
                 pageNumbersContainer.appendChild(span);
             }
@@ -182,7 +261,7 @@
         if (endPage < totalPages) {
             if (endPage < totalPages - 1) {
                 const span = document.createElement('span');
-                span.className = 'text-neutral-500';
+                span.className = 'px-0.5 py-0.5 sm:px-2 sm:py-2 text-xs sm:text-sm text-slate-400 flex items-center flex-shrink-0';
                 span.textContent = '...';
                 pageNumbersContainer.appendChild(span);
             }
@@ -194,9 +273,14 @@
         const pageNumbersContainer = document.getElementById('pageNumbers');
         const button = document.createElement('button');
         button.textContent = pageNum;
+        button.className = 'px-1 py-0.5 sm:px-3 sm:py-2.5 text-xs sm:text-sm font-medium rounded-lg hover:bg-slate-500 hover:text-white transition-all duration-200 hover:shadow-lg hover:scale-105 min-w-[20px] sm:min-w-[44px] flex-shrink-0';
+        
         if (pageNum === currentPageIndex) {
-            button.classList.add('active');
+            button.classList.add('bg-gradient-to-br', 'from-blue-500', 'to-blue-600', 'text-white', 'shadow-lg', 'scale-105');
+        } else {
+            button.classList.add('bg-slate-600/80', 'text-slate-300', 'backdrop-blur-sm');
         }
+        
         button.onclick = function() {
             changePage(pageNum);
         };
@@ -221,6 +305,23 @@
 
     function viewGroup(groupId) {
         window.location.href = '/showQueryList?groupId=' + groupId;
+    }
+
+    function toggleNameExpansion(cell) {
+        const nameText = cell.querySelector('.name-text');
+        if (nameText.style.whiteSpace === 'normal') {
+            // 收起
+            nameText.style.whiteSpace = 'nowrap';
+            nameText.style.overflow = 'hidden';
+            nameText.style.textOverflow = 'ellipsis';
+            cell.title = '点击查看完整名称';
+        } else {
+            // 展开
+            nameText.style.whiteSpace = 'normal';
+            nameText.style.overflow = 'visible';
+            nameText.style.textOverflow = 'unset';
+            cell.title = '点击收起名称';
+        }
     }
 
     document.addEventListener('DOMContentLoaded', function() {

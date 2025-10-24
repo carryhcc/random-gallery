@@ -1,0 +1,71 @@
+package com.example.randomGallery.controller;
+
+import com.example.randomGallery.server.CacheService;
+import com.example.randomGallery.server.PicServiceApi;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.stereotype.Controller;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.servlet.ModelAndView;
+
+/**
+ * 页面跳转控制器 - 处理页面跳转和视图渲染
+ */
+@Slf4j
+@Controller
+@RequiredArgsConstructor
+public class PageController {
+
+    private final CacheService cacheService;
+    private final PicServiceApi picServiceApi;
+
+    /**
+     * 首页
+     */
+    @GetMapping("/")
+    public String index() {
+        return "forward:/index.html";
+    }
+
+    /**
+     * 跳转到随机图片页面
+     */
+    @GetMapping("/showPic")
+    public ModelAndView showPic() {
+        log.debug("跳转到随机图片页面");
+        Integer randomId = cacheService.getRandomId();
+        String urlById = picServiceApi.getUrlById(randomId);
+        return new ModelAndView("pic").addObject("url", urlById);
+    }
+
+    /**
+     * 跳转到图片列表页面
+     */
+    @GetMapping("/showPicList")
+    public ModelAndView showPicListPage() {
+        log.debug("跳转到图片列表页面");
+        ModelAndView modelAndView = new ModelAndView("picList");
+        // 为模板传递初始数据
+        modelAndView.addObject("galleryName", "随机图库");
+        return modelAndView;
+    }
+
+    /**
+     * 跳转到分组列表页面
+     */
+    @GetMapping("/groupList")
+    public ModelAndView showGroupList() {
+        log.debug("跳转到分组列表页面");
+        return new ModelAndView("group");
+    }
+
+    /**
+     * 跳转到查询列表页面
+     */
+    @GetMapping("/showQueryList")
+    public ModelAndView showQueryList(@RequestParam("groupId") Integer groupId) {
+        log.debug("跳转到查询列表页面，groupId: {}", groupId);
+        return new ModelAndView("picList");
+    }
+}

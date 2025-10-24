@@ -1,11 +1,20 @@
 package com.example.randomGallery.entity.QO;
 
 import lombok.Data;
+import lombok.NoArgsConstructor;
+import lombok.AllArgsConstructor;
 
 import java.io.Serializable;
 
+/**
+ * 分组查询对象
+ */
 @Data
+@NoArgsConstructor
+@AllArgsConstructor
 public class GroupQry implements Serializable {
+
+    private static final long serialVersionUID = 1L;
 
     /**
      * 分组名称
@@ -13,7 +22,7 @@ public class GroupQry implements Serializable {
     private String picName;
 
     /**
-     * 分组id
+     * 分组ID
      */
     private String groupId;
 
@@ -21,6 +30,7 @@ public class GroupQry implements Serializable {
      * 页码，默认1
      */
     private Integer pageIndex = 1;
+    
     /**
      * 每页大小，默认10
      */

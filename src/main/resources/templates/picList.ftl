@@ -38,7 +38,7 @@
     </header>
 
     <!-- 主内容 -->
-    <main class="container flex-grow" style="margin-top: 5rem; padding-bottom: 2rem;">
+    <main class="container flex-grow piclist-main">
         <div id="statusMessage" class="toast hidden"></div>
         <div id="imageGallery" class="image-grid animate-fade-in"></div>
         <div id="loadingIndicator" class="loading hidden">
@@ -51,18 +51,18 @@
     </main>
 
     <!-- 图片查看器 -->
-    <div id="imageViewer" class="fixed inset-0 bg-overlay flex items-center justify-center p-4 transition-opacity duration-300 opacity-0 invisible" style="z-index: 1000;">
+    <div id="imageViewer" class="image-viewer hidden">
         <div class="relative max-w-full lg:max-w-6xl w-full h-full flex items-center justify-center">
-            <button id="closeViewer" class="absolute top-4 right-4 text-white text-3xl cursor-pointer hover:text-gray-300 transition-colors z-20">
+            <button id="closeViewer" class="viewer-close">
                 <i class="fa fa-times"></i>
             </button>
-            <button id="prevImage" class="btn btn-secondary" style="position: absolute; left: 1rem; z-index: 10;">
+            <button id="prevImage" class="btn btn-secondary viewer-prev">
                 <i class="fa fa-chevron-left"></i>
             </button>
-            <button id="nextImage" class="btn btn-secondary" style="position: absolute; right: 1rem; z-index: 10;">
+            <button id="nextImage" class="btn btn-secondary viewer-next">
                 <i class="fa fa-chevron-right"></i>
             </button>
-            <img id="fullSizeImage" src="" alt="大图预览" class="max-h-[90vh] max-w-[95vw] mx-auto rounded-lg shadow-2xl object-contain">
+            <img id="fullSizeImage" src="" alt="大图预览" class="full-size-image">
         </div>
     </div>
 </div>
@@ -73,8 +73,6 @@
         const refreshButton = document.getElementById('refreshImageListBtn');
         const statusMessage = document.getElementById('statusMessage');
         const galleryTitle = document.getElementById('galleryTitle');
-        const mobileMenuBtn = document.getElementById('mobileMenuBtn');
-        const navActions = document.getElementById('navActions');
         const loadingIndicator = document.getElementById('loadingIndicator');
         const noMoreImages = document.getElementById('noMoreImages');
         const backToHomeBtn = document.getElementById('backToHomeBtn');
@@ -86,8 +84,11 @@
         let currentImageIndex = 0;
         let allImageUrls = [];
         let displayedImagesCount = 0;
-        const imagesPerLoad = 5;
+        const imagesPerLoad = 6; // 每次加载6张图片
         let isLoading = false;
+        let hasMoreImages = true;
+        let currentPage = 1;
+        let totalPages = 1;
 
         function showStatus(message, isError = false) {
             statusMessage.textContent = message;
@@ -105,75 +106,108 @@
             allImageUrls = [];
             displayedImagesCount = 0;
             noMoreImages.classList.add('hidden');
+            currentPage = 1;
+            hasMoreImages = true;
+            totalPages = 1;
+
+            // 重置状态并开始流式加载
+            galleryTitle.textContent = '随机图库';
+            loadMoreImages();
+        }
+
+        function displayPagedImages(data) {
             try {
-                const parsedData = typeof data === 'string' ? JSON.parse(data) : data;
-                const galleryName = Object.keys(parsedData)[0];
-                let imageUrls = parsedData[galleryName];
-                if (typeof imageUrls === 'string') {
-                    imageUrls = imageUrls.replace(/^\[|\]$/g, '').split(',').map(url => url.trim());
-                }
+                const galleryName = data.groupName;
+                const images = data.images;
+                const hasMore = data.hasMore;
+                const totalImages = data.totalImages;
+                
                 galleryTitle.textContent = galleryName || '未命名图片组';
-                if (!imageUrls || imageUrls.length === 0) {
-                    showStatus('图片列表为空。');
+                
+                if (!images || images.length === 0) {
+                    if (currentPage === 1) {
+                        showStatus('图片列表为空。');
+                    } else {
+                        hasMoreImages = false;
+                        noMoreImages.classList.remove('hidden');
+                    }
                     return;
                 }
-                allImageUrls = imageUrls.filter(url => url && url.trim() !== '');
-                if (allImageUrls.length > 0) {
-                    loadMoreImages();
-                } else {
-                    showStatus('没有有效的图片URL。');
+                
+                // 将新图片添加到现有图片列表中
+                allImageUrls = allImageUrls.concat(images);
+                
+                // 显示新加载的图片
+                const fragment = document.createDocumentFragment();
+                images.forEach(imgUrl => {
+                    fragment.appendChild(createImageElement(imgUrl));
+                });
+                gallery.appendChild(fragment);
+                
+                displayedImagesCount = allImageUrls.length;
+                
+                // 更新状态
+                hasMoreImages = hasMore;
+                if (!hasMoreImages) {
+                    noMoreImages.classList.remove('hidden');
                 }
+                
+                // 更新标题显示总数
+                if (totalImages > 0) {
+                    galleryTitle.textContent = galleryName + ' (' + displayedImagesCount + '/' + totalImages + ')';
+                }
+                
             } catch (error) {
-                console.error('解析图片数据失败:', error);
-                showStatus('解析图片数据失败: ' + error.message, true);
+                console.error('解析分页图片数据失败:', error);
+                showStatus('解析分页图片数据失败: ' + error.message, true);
             }
         }
 
-        function createImageElement(url) {
+        function createImageElement(imgUrl) {
             const imgContainer = document.createElement('div');
-            imgContainer.className = 'image-container';
-
-            const img = document.createElement('img');
-            img.className = 'image';
-            img.src = url;
-            img.alt = '套图图片';
-            img.loading = 'lazy';
-            img.onerror = function() { this.alt = '图片加载失败'; };
-            img.onload = function() {
-                const ratio = this.naturalWidth / this.naturalHeight;
-                if (ratio > 1.8) imgContainer.style.gridColumn = 'span 2';
-                else if (ratio < 0.6) imgContainer.style.gridRow = 'span 2';
-            };
-
-            const overlay = document.createElement('div');
-            overlay.className = 'image-overlay';
-
-            const actions = document.createElement('div');
-            actions.className = 'image-actions';
-
-            const downloadBtn = document.createElement('button');
-            downloadBtn.className = 'btn btn-primary btn-sm';
-            downloadBtn.innerHTML = '<i class="fa fa-download"></i><span>下载</span>';
-            downloadBtn.onclick = (e) => {
-                e.stopPropagation();
-                downloadImage(url);
-            };
-
-            actions.appendChild(downloadBtn);
-            overlay.appendChild(actions);
-            imgContainer.appendChild(img);
-            imgContainer.appendChild(overlay);
+            imgContainer.className = 'image-item group cursor-pointer transform transition-all duration-300 hover:scale-105 hover:shadow-xl';
+            imgContainer.onclick = () => openImageViewer(imgUrl);
             
-            imgContainer.addEventListener('click', () => {
-                currentImageIndex = allImageUrls.indexOf(url);
-                openImageViewer(url);
-            });
+            // 创建图片容器（参考showPic页面结构）
+            const imageContainer = document.createElement('div');
+            imageContainer.className = 'image-container';
+            
+            const img = document.createElement('img');
+            img.src = imgUrl;
+            img.alt = '图片';
+            img.className = 'image';
+            img.loading = 'lazy';
+            
+            // 创建图片遮罩层
+            const imageOverlay = document.createElement('div');
+            imageOverlay.className = 'image-overlay';
+            
+            // 创建操作按钮区域
+            const imageActions = document.createElement('div');
+            imageActions.className = 'image-actions';
+            
+            // 创建下载按钮
+            const downloadBtn = document.createElement('button');
+            downloadBtn.className = 'btn btn-primary btn-sm download-icon-btn';
+            downloadBtn.innerHTML = '<i class="fa fa-download"></i>';
+            downloadBtn.style.cssText = 'background: rgba(0, 0, 0, 0.6) !important; border: none !important; color: white !important; width: 2.5rem !important; height: 2.5rem !important; border-radius: 50% !important; padding: 0 !important; display: flex !important; align-items: center !important; justify-content: center !important;';
+            downloadBtn.onclick = (e) => {
+                e.stopPropagation(); // 阻止触发图片查看器
+                downloadImage(imgUrl);
+            };
+            
+            imageActions.appendChild(downloadBtn);
+            imageOverlay.appendChild(imageActions);
+            imageContainer.appendChild(img);
+            imageContainer.appendChild(imageOverlay);
+            imgContainer.appendChild(imageContainer);
+            
             return imgContainer;
         }
 
         function loadMoreImages() {
-            if (isLoading || displayedImagesCount >= allImageUrls.length) {
-                if (!isLoading && displayedImagesCount === allImageUrls.length && allImageUrls.length > 0) {
+            if (isLoading || !hasMoreImages) {
+                if (!isLoading && !hasMoreImages && allImageUrls.length > 0) {
                     noMoreImages.classList.remove('hidden');
                 }
                 return;
@@ -181,29 +215,35 @@
             isLoading = true;
             loadingIndicator.classList.remove('hidden');
             noMoreImages.classList.add('hidden');
-            const imagesToLoad = allImageUrls.slice(displayedImagesCount, displayedImagesCount + imagesPerLoad);
-            const fragment = document.createDocumentFragment();
-            setTimeout(() => {
-                imagesToLoad.forEach(imgUrl => {
-                    fragment.appendChild(createImageElement(imgUrl));
-                });
-                gallery.appendChild(fragment);
-                displayedImagesCount += imagesToLoad.length;
-                isLoading = false;
-                loadingIndicator.classList.add('hidden');
-                if (displayedImagesCount >= allImageUrls.length) {
-                    noMoreImages.classList.remove('hidden');
-                }
-            }, 300);
+
+            fetchPagedImages();
         }
 
-        function downloadImage(url) {
-            const link = document.createElement('a');
-            link.href = url;
-            link.download = url.split('/').pop() || 'downloaded_image';
-            document.body.appendChild(link);
-            link.click();
-            document.body.removeChild(link);
+        function fetchPagedImages() {
+            const urlParams = new URLSearchParams(window.location.search);
+            const groupId = urlParams.get('groupId');
+            const fetchUrl = groupId 
+                ? '/api/pic/group/paged?groupId=' + groupId + '&page=' + currentPage + '&size=' + imagesPerLoad
+                : '/api/pic/group/paged?page=' + currentPage + '&size=' + imagesPerLoad;
+            
+            fetch(fetchUrl)
+                .then(response => response.json())
+                .then(result => {
+                    if (result.code === 200) {
+                        displayPagedImages(result.data);
+                        currentPage++;
+                    } else {
+                        throw new Error(result.message || '获取图片失败');
+                    }
+                })
+                .catch(error => {
+                    console.error('获取分页图片失败:', error);
+                    showStatus('获取图片失败: ' + error.message, true);
+                })
+                .finally(() => {
+                    isLoading = false;
+                    loadingIndicator.classList.add('hidden');
+                });
         }
 
         function fetchAndDisplayImages() {
@@ -213,83 +253,93 @@
             noMoreImages.classList.add('hidden');
             showStatus('正在加载图片列表...');
             galleryTitle.textContent = '加载中...';
-            const urlParams = new URLSearchParams(window.location.search);
-            const groupId = urlParams.get('groupId');
-            const fetchUrl = groupId ? `/pic/list?groupId=` + groupId : '/pic/list';
-            fetch(fetchUrl)
-                .then(response => {
-                    return response.text();
-                })
-                .then(displayImages)
-                .catch(error => {
-                    console.error('获取图片列表失败:', error);
-                    showStatus('获取图片列表失败: ' + error.message, true);
-                    galleryTitle.textContent = '加载失败';
-                })
-                .finally(() => {
-                    refreshButton.disabled = false;
-                    refreshButton.innerHTML = '<i class="fa fa-refresh mr-2"></i><span>刷新图片</span>';
-                });
+
+            // 重置状态
+            allImageUrls = [];
+            displayedImagesCount = 0;
+            currentPage = 1;
+            hasMoreImages = true;
+            totalPages = 1;
+
+            loadMoreImages();
+
+            refreshButton.disabled = false;
+            refreshButton.innerHTML = '<i class="fa fa-refresh mr-2"></i><span>刷新图片</span>';
         }
 
-        refreshButton.addEventListener('click', fetchAndDisplayImages);
-        fetchAndDisplayImages();
-        backToHomeBtn.addEventListener('click', () => window.location.href = '/');
-
         function openImageViewer(imgUrl) {
+            const imageIndex = allImageUrls.indexOf(imgUrl);
+            if (imageIndex !== -1) {
+                currentImageIndex = imageIndex;
+            }
             fullSizeImage.src = imgUrl;
-            imageViewer.classList.remove('invisible');
-            imageViewer.classList.add('opacity-100');
+            imageViewer.classList.remove('hidden');
+            imageViewer.classList.add('visible');
             document.body.style.overflow = 'hidden';
-            updateNavButtons();
         }
 
         function closeImageViewer() {
-            imageViewer.classList.add('invisible');
-            imageViewer.classList.remove('opacity-100');
+            imageViewer.classList.add('hidden');
+            imageViewer.classList.remove('visible');
             document.body.style.overflow = '';
         }
 
-        function updateNavButtons() {
-            const display = allImageUrls.length <= 1 ? 'none' : 'flex';
-            prevImage.style.display = display;
-            nextImage.style.display = display;
-        }
-
-        function showPreviousImage() {
-            if (allImageUrls.length > 0) {
-                currentImageIndex = (currentImageIndex - 1 + allImageUrls.length) % allImageUrls.length;
+        function showPrevImage() {
+            if (currentImageIndex > 0) {
+                currentImageIndex--;
                 fullSizeImage.src = allImageUrls[currentImageIndex];
             }
         }
 
         function showNextImage() {
-            if (allImageUrls.length > 0) {
-                currentImageIndex = (currentImageIndex + 1) % allImageUrls.length;
+            if (currentImageIndex < allImageUrls.length - 1) {
+                currentImageIndex++;
                 fullSizeImage.src = allImageUrls[currentImageIndex];
             }
         }
 
+        function downloadImage(imgUrl) {
+            const fileName = imgUrl.substring(imgUrl.lastIndexOf('/') + 1) || 'downloaded_image';
+            const link = document.createElement('a');
+            link.href = imgUrl;
+            link.download = fileName;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        }
+
+        // 事件监听器
+        refreshButton.addEventListener('click', fetchAndDisplayImages);
+        backToHomeBtn.addEventListener('click', () => window.location.href = '/');
         closeViewer.addEventListener('click', closeImageViewer);
-        prevImage.addEventListener('click', showPreviousImage);
+        prevImage.addEventListener('click', showPrevImage);
         nextImage.addEventListener('click', showNextImage);
-        imageViewer.addEventListener('click', e => {
-            if (e.target === imageViewer) closeImageViewer();
+
+        // 键盘事件
+        document.addEventListener('keydown', (e) => {
+            if (imageViewer.classList.contains('visible')) {
+                if (e.key === 'Escape') {
+                    closeImageViewer();
+                } else if (e.key === 'ArrowLeft') {
+                    showPrevImage();
+                } else if (e.key === 'ArrowRight') {
+                    showNextImage();
+                }
+            }
         });
-        document.addEventListener('keydown', e => {
-            if (imageViewer.classList.contains('invisible')) return;
-            if (e.key === 'Escape') closeImageViewer();
-            if (e.key === 'ArrowLeft') showPreviousImage();
-            if (e.key === 'ArrowRight') showNextImage();
-        });
-        mobileMenuBtn.addEventListener('click', () => navActions.classList.toggle('hidden'));
+
+        // 滚动加载
         window.addEventListener('scroll', () => {
-            if (isLoading || displayedImagesCount >= allImageUrls.length) return;
-            if (window.innerHeight + window.scrollY >= document.body.offsetHeight - 500) {
+            if (isLoading || !hasMoreImages) return;
+            if (window.innerHeight + window.scrollY >= document.body.offsetHeight - 300) {
                 loadMoreImages();
             }
         });
+
+        // 初始化加载
+        fetchAndDisplayImages();
     });
 </script>
+
 </body>
 </html>

@@ -13,7 +13,7 @@
 </head>
 <body class="min-h-screen flex items-center justify-center p-4">
 
-<div class="container" style="max-width: 800px;">
+<div class="container pic-container">
     <div class="card animate-fade-in">
         <div class="card-header">
             <h1 class="card-title">精选图片</h1>
@@ -24,9 +24,8 @@
             <img id="displayImage" src="${url}" alt="图片加载失败..." class="image">
             <div class="image-overlay">
                 <div class="image-actions">
-                    <button id="downloadBtn" class="btn btn-primary btn-sm">
+                    <button id="downloadBtn" class="btn btn-primary btn-sm download-icon-btn" style="background: rgba(0, 0, 0, 0.6) !important; border: none !important; color: white !important; width: 2.5rem !important; height: 2.5rem !important; border-radius: 50% !important; padding: 0 !important; display: flex !important; align-items: center !important; justify-content: center !important;">
                         <i class="fa fa-download"></i>
-                        <span>下载</span>
                     </button>
                 </div>
             </div>

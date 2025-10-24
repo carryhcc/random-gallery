@@ -16,6 +16,7 @@
             and pic_name like concat('%',#{qry.picName},'%')
         </if>
         group by group_id,pic_name
+        ORDER BY group_id
     </select>
     <select id="queryGroupCount" resultType="java.lang.Integer">
         SELECT COUNT(DISTINCT group_id, pic_name)
