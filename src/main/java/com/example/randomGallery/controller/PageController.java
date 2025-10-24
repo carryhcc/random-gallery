@@ -43,11 +43,14 @@ public class PageController {
      * 跳转到图片列表页面
      */
     @GetMapping("/showPicList")
-    public ModelAndView showPicListPage() {
-        log.debug("跳转到图片列表页面");
+    public ModelAndView showPicListPage(@RequestParam(value = "groupId", required = false) Integer groupId) {
+        log.debug("跳转到图片列表页面，groupId: {}", groupId);
         ModelAndView modelAndView = new ModelAndView("picList");
         // 为模板传递初始数据
         modelAndView.addObject("galleryName", "随机图库");
+        if (groupId != null) {
+            modelAndView.addObject("groupId", groupId);
+        }
         return modelAndView;
     }
 

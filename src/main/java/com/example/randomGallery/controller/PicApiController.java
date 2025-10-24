@@ -39,19 +39,25 @@ public class PicApiController {
      * 获取随机套图
      */
     @GetMapping("/group")
-    public Result<Map<String, String>> getRandomGroup(@RequestParam(value = "groupId", required = false) Integer groupId) {
+    public Result<Map<String, Object>> getRandomGroup(@RequestParam(value = "groupId", required = false) Integer groupId) {
         log.debug("获取随机套图，groupId: {}", groupId);
         cacheService.resetTimer();
         Integer finalGroupId = Optional.ofNullable(groupId).orElseGet(cacheService::getRandomGroupId);
         PicGroupVO randomGroupPicList = picServiceApi.getRandomGroupPicList(finalGroupId);
         
         if (randomGroupPicList == null) {
-            return Result.success("获取套图成功", Collections.emptyMap());
+            Map<String, Object> result = Map.of(
+                "groupId", finalGroupId,
+                "groupName", "无数据",
+                "images", Collections.emptyList()
+            );
+            return Result.success("获取套图成功", result);
         }
         
-        Map<String, String> result = Map.of(
-            randomGroupPicList.getGroupName(), 
-            randomGroupPicList.getUrlList().toString()
+        Map<String, Object> result = Map.of(
+            "groupId", finalGroupId,
+            "groupName", randomGroupPicList.getGroupName(),
+            "images", randomGroupPicList.getUrlList()
         );
         return Result.success("获取套图成功", result);
     }
@@ -117,14 +123,6 @@ public class PicApiController {
             return Result.success("获取套图成功", result);
         } catch (Exception e) {
             log.error("分页获取套图失败", e);
-            Map<String, Object> result = Map.of(
-                "groupName", "错误",
-                "images", Collections.emptyList(),
-                "currentPage", page,
-                "totalPages", 0,
-                "hasMore", false,
-                "totalImages", 0
-            );
             return Result.error(500, "获取套图失败: " + e.getMessage());
         }
     }

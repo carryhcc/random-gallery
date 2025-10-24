@@ -1121,7 +1121,7 @@ body {
     
     .table th:nth-child(2),
     .table td:nth-child(2) {
-        width: 70% !important;
+        width: 65% !important;
         min-width: 0;
         max-width: none;
         padding: 0.5rem 0.5rem !important;
@@ -1129,7 +1129,7 @@ body {
     
     .table th:nth-child(3),
     .table td:nth-child(3) {
-        width: 15% !important;
+        width: 20% !important;
         min-width: 60px;
         max-width: 80px;
         padding: 0.5rem 0.25rem !important;

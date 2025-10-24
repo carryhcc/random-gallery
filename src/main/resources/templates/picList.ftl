@@ -220,8 +220,12 @@
         }
 
         function fetchPagedImages() {
+            // 优先从模板变量获取groupId，其次从URL参数获取
+            const templateGroupId = ${groupId!null};
             const urlParams = new URLSearchParams(window.location.search);
-            const groupId = urlParams.get('groupId');
+            const urlGroupId = urlParams.get('groupId');
+            const groupId = templateGroupId || urlGroupId;
+            
             const fetchUrl = groupId 
                 ? '/api/pic/group/paged?groupId=' + groupId + '&page=' + currentPage + '&size=' + imagesPerLoad
                 : '/api/pic/group/paged?page=' + currentPage + '&size=' + imagesPerLoad;

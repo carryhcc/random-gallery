@@ -41,7 +41,7 @@
                 <i class="fas fa-image"></i>
                 获取随机图片
             </a>
-            <a href="/showPicList" class="btn btn-primary btn-full">
+            <a href="#" id="randomGroupBtn" class="btn btn-primary btn-full">
                 <i class="fas fa-images"></i>
                 获取随机套图
             </a>
@@ -157,6 +157,28 @@
 
     // 页面加载完成后立即执行
     document.addEventListener('DOMContentLoaded', updateEnvStatus);
+
+    // 处理随机套图按钮点击事件
+    document.getElementById('randomGroupBtn').addEventListener('click', function(e) {
+        e.preventDefault();
+        // 获取随机套图数据，然后跳转到对应页面
+        fetch('/api/pic/group')
+            .then(response => response.json())
+            .then(result => {
+                if (result.code === 200 && result.data && result.data.groupId) {
+                    // 从返回的数据中获取组ID并跳转
+                    window.location.href = '/showPicList?groupId=' + result.data.groupId;
+                } else {
+                    // 如果获取失败，直接跳转不传递groupId
+                    window.location.href = '/showPicList';
+                }
+            })
+            .catch(error => {
+                console.error('获取随机套图失败:', error);
+                // 出错时直接跳转
+                window.location.href = '/showPicList';
+            });
+    });
 
     // 点击页面其他地方关闭下拉菜单
     window.onclick = function(event) {
