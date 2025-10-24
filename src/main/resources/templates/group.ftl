@@ -176,7 +176,7 @@
                         '<td class="name-cell" onclick="toggleNameExpansion(this)" title="点击查看完整名称">' + 
                         '<span class="name-text">' + picName + '</span>' +
                         '</td>' +
-                        '<td class="action-cell"><button class="btn-operation" onclick="viewGroup(\'' + groupId + '\')"><i class="fas fa-eye mr-1"></i>查看</button></td>';
+                        '<td class="action-cell"><button class="btn-operation" onclick="viewGroup(\'' + groupId + '\', \'' + picName.replace(/'/g, "\\'") + '\')"><i class="fas fa-eye mr-1"></i>查看</button></td>';
                     resultsBody.appendChild(newRow);
                 });
             } else {
@@ -303,8 +303,8 @@
         queryGroups(1);
     }
 
-    function viewGroup(groupId) {
-        window.location.href = '/showQueryList?groupId=' + groupId;
+    function viewGroup(groupId, groupName) {
+        window.location.href = '/showPicList?groupId=' + groupId + '&groupName=' + encodeURIComponent(groupName);
     }
 
     function toggleNameExpansion(cell) {

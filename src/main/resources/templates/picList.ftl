@@ -89,6 +89,13 @@
         let hasMoreImages = true;
         let currentPage = 1;
         let totalPages = 1;
+        
+        // 从模板获取初始数据
+        const templateGroupId = ${groupId!null};
+        const templateGroupName = '${groupName!""}';
+        const isFromGroupList = ${isFromGroupList?c};
+        let currentGroupId = templateGroupId;
+        let currentGroupName = templateGroupName;
 
         function showStatus(message, isError = false) {
             statusMessage.textContent = message;
@@ -122,7 +129,14 @@
                 const hasMore = data.hasMore;
                 const totalImages = data.totalImages;
                 
-                galleryTitle.textContent = galleryName || '未命名图片组';
+                // 更新当前套图名称（如果是第一次加载）
+                if (currentPage === 1 && galleryName) {
+                    currentGroupName = galleryName;
+                }
+                
+                // 显示套图名称
+                const displayName = currentGroupName || galleryName || '未命名图片组';
+                galleryTitle.textContent = displayName;
                 
                 if (!images || images.length === 0) {
                     if (currentPage === 1) {
@@ -154,7 +168,7 @@
                 
                 // 更新标题显示总数
                 if (totalImages > 0) {
-                    galleryTitle.textContent = galleryName + ' (' + displayedImagesCount + '/' + totalImages + ')';
+                    galleryTitle.textContent = displayName + ' (' + displayedImagesCount + '/' + totalImages + ')';
                 }
                 
             } catch (error) {
@@ -220,14 +234,8 @@
         }
 
         function fetchPagedImages() {
-            // 优先从模板变量获取groupId，其次从URL参数获取
-            const templateGroupId = ${groupId!null};
-            const urlParams = new URLSearchParams(window.location.search);
-            const urlGroupId = urlParams.get('groupId');
-            const groupId = templateGroupId || urlGroupId;
-            
-            const fetchUrl = groupId 
-                ? '/api/pic/group/paged?groupId=' + groupId + '&page=' + currentPage + '&size=' + imagesPerLoad
+            const fetchUrl = currentGroupId 
+                ? '/api/pic/group/paged?groupId=' + currentGroupId + '&page=' + currentPage + '&size=' + imagesPerLoad
                 : '/api/pic/group/paged?page=' + currentPage + '&size=' + imagesPerLoad;
             
             fetch(fetchUrl)
@@ -340,8 +348,69 @@
             }
         });
 
-        // 初始化加载
-        fetchAndDisplayImages();
+        // 根据跳转场景初始化
+        if (isFromGroupList && currentGroupId && currentGroupName) {
+            // 从分组列表跳转，直接显示套图名称并开始加载
+            galleryTitle.textContent = currentGroupName;
+            loadMoreImages();
+        } else if (currentGroupId && currentGroupName) {
+            // 从主页跳转，有groupId和groupName，直接显示套图名称并开始加载
+            galleryTitle.textContent = currentGroupName;
+            loadMoreImages();
+        } else if (currentGroupId) {
+            // 从主页跳转，有groupId但没有groupName，需要先获取套图信息
+            fetchRandomGroupInfo();
+        } else {
+            // 随机套图，没有groupId，先获取随机分组ID
+            fetchRandomGroupId();
+        }
+        
+        // 获取随机分组信息的函数
+        function fetchRandomGroupId() {
+            showStatus('正在获取随机分组...');
+            galleryTitle.textContent = '加载中...';
+            
+            fetch('/api/pic/group/random-info')
+                .then(response => response.json())
+                .then(result => {
+                    if (result.code === 200 && result.data && result.data.groupId) {
+                        currentGroupId = result.data.groupId;
+                        currentGroupName = result.data.groupName || '随机套图';
+                        galleryTitle.textContent = currentGroupName;
+                        loadMoreImages();
+                    } else {
+                        throw new Error(result.message || '获取随机分组信息失败');
+                    }
+                })
+                .catch(error => {
+                    console.error('获取随机分组信息失败:', error);
+                    showStatus('获取随机分组信息失败: ' + error.message, true);
+                });
+        }
+        
+        // 获取随机套图信息的函数
+        function fetchRandomGroupInfo() {
+            showStatus('正在获取随机套图信息...');
+            galleryTitle.textContent = '加载中...';
+            
+            fetch('/api/pic/group?groupId=' + currentGroupId)
+                .then(response => response.json())
+                .then(result => {
+                    if (result.code === 200 && result.data) {
+                        currentGroupName = result.data.groupName || '随机套图';
+                        galleryTitle.textContent = currentGroupName;
+                        loadMoreImages();
+                    } else {
+                        throw new Error(result.message || '获取套图信息失败');
+                    }
+                })
+                .catch(error => {
+                    console.error('获取随机套图信息失败:', error);
+                    showStatus('获取套图信息失败: ' + error.message, true);
+                    // 失败时仍然尝试加载图片
+                    loadMoreImages();
+                });
+        }
     });
 </script>
 

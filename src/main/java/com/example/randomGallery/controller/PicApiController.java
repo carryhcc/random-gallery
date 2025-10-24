@@ -36,6 +36,38 @@ public class PicApiController {
     }
 
     /**
+     * 获取随机分组信息（只返回分组ID和分组名称）
+     */
+    @GetMapping("/group/random-info")
+    public Result<Map<String, Object>> getRandomGroupInfo() {
+        log.debug("获取随机分组信息");
+        cacheService.resetTimer();
+        Integer randomGroupId = cacheService.getRandomGroupId();
+        
+        if (randomGroupId == null) {
+            return Result.error(500, "获取随机分组ID失败");
+        }
+        
+        // 获取分组信息（只获取一条记录来获取分组名称）
+        PicGroupVO groupInfo = picServiceApi.getRandomGroupPicList(randomGroupId);
+        
+        if (groupInfo == null || groupInfo.getGroupName() == null) {
+            Map<String, Object> result = Map.of(
+                "groupId", randomGroupId,
+                "groupName", "未知分组"
+            );
+            return Result.success("获取随机分组信息成功", result);
+        }
+        
+        Map<String, Object> result = Map.of(
+            "groupId", randomGroupId,
+            "groupName", groupInfo.getGroupName()
+        );
+        return Result.success("获取随机分组信息成功", result);
+    }
+
+
+    /**
      * 获取随机套图
      */
     @GetMapping("/group")

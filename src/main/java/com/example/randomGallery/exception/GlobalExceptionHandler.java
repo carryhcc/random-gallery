@@ -8,6 +8,7 @@ import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
+import org.springframework.web.servlet.resource.NoResourceFoundException;
 
 import java.sql.SQLException;
 
@@ -37,6 +38,24 @@ public class GlobalExceptionHandler {
     public ResponseEntity<Result<Void>> handleTypeMismatchException(MethodArgumentTypeMismatchException e) {
         log.error("参数类型不匹配: {}", e.getMessage());
         return ResponseEntity.badRequest().body(Result.error(400, "参数类型不匹配"));
+    }
+
+    /**
+     * 处理静态资源未找到异常（过滤掉浏览器开发者工具请求）
+     */
+    @ExceptionHandler(NoResourceFoundException.class)
+    public ResponseEntity<Result<Void>> handleNoResourceFoundException(NoResourceFoundException e) {
+        // 过滤掉 Chrome DevTools 的请求，不记录日志
+        if (e.getResourcePath() != null && 
+            (e.getResourcePath().contains(".well-known") || 
+             e.getResourcePath().contains("favicon.ico") ||
+             e.getResourcePath().contains("robots.txt"))) {
+            return ResponseEntity.notFound().build();
+        }
+        
+        // 其他静态资源未找到的情况才记录日志
+        log.warn("静态资源未找到: {}", e.getResourcePath());
+        return ResponseEntity.notFound().build();
     }
 
     /**

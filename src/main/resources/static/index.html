@@ -161,20 +161,22 @@
     // 处理随机套图按钮点击事件
     document.getElementById('randomGroupBtn').addEventListener('click', function(e) {
         e.preventDefault();
-        // 获取随机套图数据，然后跳转到对应页面
-        fetch('/api/pic/group')
+        // 先获取随机分组信息（只包含ID和名称），然后跳转到对应页面
+        fetch('/api/pic/group/random-info')
             .then(response => response.json())
             .then(result => {
                 if (result.code === 200 && result.data && result.data.groupId) {
-                    // 从返回的数据中获取组ID并跳转
-                    window.location.href = '/showPicList?groupId=' + result.data.groupId;
+                    // 从返回的数据中获取组ID和组名称并跳转
+                    const groupId = result.data.groupId;
+                    const groupName = result.data.groupName || '随机套图';
+                    window.location.href = '/showPicList?groupId=' + groupId + '&groupName=' + encodeURIComponent(groupName);
                 } else {
-                    // 如果获取失败，直接跳转不传递groupId
+                    // 如果获取失败，直接跳转不传递参数
                     window.location.href = '/showPicList';
                 }
             })
             .catch(error => {
-                console.error('获取随机套图失败:', error);
+                console.error('获取随机分组信息失败:', error);
                 // 出错时直接跳转
                 window.location.href = '/showPicList';
             });
