@@ -3,6 +3,7 @@ package com.example.randomGallery.server.Impl;
 import com.example.randomGallery.entity.QO.GroupQry;
 import com.example.randomGallery.entity.VO.GroupVO;
 import com.example.randomGallery.entity.VO.PageResult;
+import com.example.randomGallery.entity.VO.RandomGalleryItemVO;
 import com.example.randomGallery.server.CacheService;
 import com.example.randomGallery.server.GroupServiceApi;
 import com.example.randomGallery.server.mapper.GroupServiceMapper;
@@ -77,5 +78,15 @@ public class GroupServiceApiImpl implements GroupServiceApi {
         log.debug("分页查询分组列表完成，返回 {} 条记录，共 {} 页", 
             result.getList().size(), result.getPages());
         return result;
+    }
+
+    @Override
+    public List<RandomGalleryItemVO> queryRandomGallery(GroupQry qry, Integer limit) {
+        log.debug("随机画廊查询，参数: {}，limit: {}", qry, limit);
+        String sqlName = cacheService.getSqlName();
+        int finalLimit = (limit == null || limit <= 0) ? 10 : limit;
+        List<RandomGalleryItemVO> list = groupServiceMapper.queryRandomGallery(qry, sqlName, finalLimit);
+        log.debug("随机画廊查询完成，返回 {} 条记录", list.size());
+        return list;
     }
 }

@@ -4,6 +4,7 @@ import com.example.randomGallery.common.Result;
 import com.example.randomGallery.entity.QO.GroupQry;
 import com.example.randomGallery.entity.VO.GroupVO;
 import com.example.randomGallery.entity.VO.PageResult;
+import com.example.randomGallery.entity.VO.RandomGalleryItemVO;
 import com.example.randomGallery.server.GroupServiceApi;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -50,5 +51,21 @@ public class GroupApiController {
         log.info("分页查询分组列表，参数: {}", qry);
         PageResult<GroupVO> result = groupServiceApi.queryGroupListWithPage(qry);
         return Result.success("查询成功", result);
+    }
+
+    /**
+     * 随机画廊查询：返回10条（或传入limit）分组数据，每组随机1张图
+     */
+    @GetMapping("/random-gallery")
+    public Result<List<RandomGalleryItemVO>> randomGallery(
+            @RequestParam(value = "groupId", required = false) String groupId,
+            @RequestParam(value = "groupName", required = false) String groupName,
+            @RequestParam(value = "limit", required = false) Integer limit
+    ) {
+        GroupQry qry = new GroupQry();
+        qry.setGroupId(groupId);
+        qry.setPicName(groupName);
+        List<RandomGalleryItemVO> list = groupServiceApi.queryRandomGallery(qry, limit == null ? 10 : limit);
+        return Result.success("查询成功", list);
     }
 }

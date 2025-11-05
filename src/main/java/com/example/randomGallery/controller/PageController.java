@@ -77,6 +77,19 @@ public class PageController {
     }
 
     /**
+     * 跳转到随机画廊页面
+     */
+    @GetMapping("/randomGallery")
+    public ModelAndView showRandomGalleryPage(@RequestParam(value = "groupName", required = false) String groupName) {
+        log.debug("跳转到随机画廊页面，groupName: {}", groupName);
+        ModelAndView mv = new ModelAndView("randomGallery");
+        if (groupName != null) {
+            mv.addObject("groupName", groupName);
+        }
+        return mv;
+    }
+
+    /**
      * 跳转到查询列表页面
      */
     @GetMapping("/showQueryList")

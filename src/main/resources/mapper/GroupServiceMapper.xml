@@ -30,4 +30,28 @@
             AND pic_name LIKE CONCAT('%', #{qry.picName}, '%')
         </if>
     </select>
+
+    <select id="queryRandomGallery" resultType="com.example.randomGallery.entity.VO.RandomGalleryItemVO">
+        SELECT
+        t.group_id AS groupId,
+        t.pic_name AS groupName,
+        (
+            SELECT p.pic_url
+            FROM ${tableName} p
+            WHERE p.is_delete = 0 AND p.group_id = t.group_id
+            ORDER BY RAND()
+            LIMIT 1
+        ) AS picUrl
+        FROM ${tableName} t
+        WHERE t.is_delete = 0
+        <if test="qry.groupId != null and qry.groupId != ''">
+            AND t.group_id = #{qry.groupId}
+        </if>
+        <if test="qry.picName != null and qry.picName != ''">
+            AND t.pic_name LIKE CONCAT('%', #{qry.picName}, '%')
+        </if>
+        GROUP BY t.group_id, t.pic_name
+        ORDER BY RAND()
+        LIMIT #{limit}
+    </select>
 </mapper>
