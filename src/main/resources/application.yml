@@ -18,6 +18,8 @@ mybatis:
   mapper-locations: classpath:mapper/*.xml
   configuration:
     map-underscore-to-camel-case: true
+    # 使用 Slf4j 输出 SQL（含参数）
+    log-impl: org.apache.ibatis.logging.slf4j.Slf4jImpl
 config:
   env: dev
 
@@ -25,6 +27,9 @@ logging:
   level:
     root: INFO
     com.example.service: DEBUG
+    # Mapper 包 SQL 日志
+    com.example.randomGallery.server.mapper: DEBUG
+    org.mybatis: INFO
   file:
     name: logs/app.log
   pattern:

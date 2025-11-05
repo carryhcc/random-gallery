@@ -279,6 +279,32 @@
             refreshButton.innerHTML = '<i class="fa fa-refresh mr-2"></i><span>刷新图片</span>';
         }
 
+        // 刷新时改为获取一个新的随机分组
+        function refreshWithRandomGroup() {
+            refreshButton.disabled = true;
+            refreshButton.innerHTML = '<i class="fa fa-spinner fa-spin mr-2"></i><span>加载中...</span>';
+            gallery.innerHTML = '';
+            noMoreImages.classList.add('hidden');
+            showStatus('正在获取随机分组...');
+            galleryTitle.textContent = '加载中...';
+
+            // 重置状态并清空当前分组
+            allImageUrls = [];
+            displayedImagesCount = 0;
+            currentPage = 1;
+            hasMoreImages = true;
+            totalPages = 1;
+            currentGroupId = null;
+            currentGroupName = '';
+
+            // 获取随机分组后加载
+            fetchRandomGroupId()
+                .finally(() => {
+                    refreshButton.disabled = false;
+                    refreshButton.innerHTML = '<i class=\"fa fa-refresh mr-2\"></i><span>刷新图片</span>';
+                });
+        }
+
         function openImageViewer(imgUrl) {
             const imageIndex = allImageUrls.indexOf(imgUrl);
             if (imageIndex !== -1) {
@@ -321,7 +347,8 @@
         }
 
         // 事件监听器
-        refreshButton.addEventListener('click', fetchAndDisplayImages);
+        // 刷新按钮改为获取新的随机分组
+        refreshButton.addEventListener('click', refreshWithRandomGroup);
         backToHomeBtn.addEventListener('click', () => window.location.href = '/');
         closeViewer.addEventListener('click', closeImageViewer);
         prevImage.addEventListener('click', showPrevImage);
@@ -370,7 +397,7 @@
             showStatus('正在获取随机分组...');
             galleryTitle.textContent = '加载中...';
             
-            fetch('/api/pic/group/random-info')
+            return fetch('/api/pic/group/random-info')
                 .then(response => response.json())
                 .then(result => {
                     if (result.code === 200 && result.data && result.data.groupId) {
