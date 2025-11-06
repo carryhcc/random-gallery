@@ -11,7 +11,6 @@ import java.io.Serializable;
  */
 @Data
 @NoArgsConstructor
-@AllArgsConstructor
 public class GroupVO implements Serializable {
 
     private static final long serialVersionUID = 1L;
@@ -19,7 +18,7 @@ public class GroupVO implements Serializable {
     /**
      * 分组ID
      */
-    private Integer groupId;
+    private Long groupId;
 
     /**
      * 分组名称
@@ -35,4 +34,11 @@ public class GroupVO implements Serializable {
      * 分组总数
      */
     private Integer groupCount;
+
+    public GroupVO(Long groupId, String groupName, String groupUrl, Integer groupCount) {
+        this.groupId = groupId;
+        this.groupName = groupName;
+        this.groupUrl = groupUrl;
+        this.groupCount = groupCount;
+    }
 }

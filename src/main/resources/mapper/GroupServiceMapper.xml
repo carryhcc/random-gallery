@@ -21,7 +21,9 @@
     <select id="queryGroupList" resultType="com.example.randomGallery.entity.VO.GroupVO">
         SELECT
         group_id AS groupId,
-        group_name AS picName
+        group_name AS groupName,
+        group_count AS groupCount,
+        group_url AS groupUrl
         FROM ${tableName}
         WHERE
         is_delete = 0
@@ -31,10 +33,15 @@
         <if test="qry.groupName !=null and qry.groupName !=''">
             and group_name like concat('%',#{qry.groupName},'%')
         </if>
-        ORDER BY group_id
+        <if test="qry.groupIdList != null and qry.groupIdList.size > 0">
+            and group_id in
+            <foreach collection="qry.groupIdList" item="item" open="(" separator="," close=")">
+                #{item}
+            </foreach>
+        </if>
     </select>
 
-    <select id="queryGroupCount" resultType="java.lang.Integer">
+    <select id="queryGroupCount" resultType="java.lang.Long">
         SELECT COUNT(DISTINCT group_id, pic_name)
         FROM ${tableName}
         WHERE
@@ -46,7 +53,7 @@
             AND pic_name LIKE CONCAT('%', #{qry.picName}, '%')
         </if>
     </select>
-    <select id="selectGroupIdList" resultType="java.lang.Integer">
+    <select id="selectGroupIdList" resultType="java.lang.Long">
         select group_id
         FROM ${tableName}
         WHERE is_delete = 0

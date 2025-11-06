@@ -1,8 +1,5 @@
 package com.example.randomGallery.controller;
 
-import com.example.randomGallery.entity.VO.PicVO;
-import com.example.randomGallery.service.CacheService;
-import com.example.randomGallery.service.PicServiceApi;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Controller;
@@ -16,10 +13,7 @@ import org.springframework.web.servlet.ModelAndView;
 @Slf4j
 @Controller
 @RequiredArgsConstructor
-public class PageController {
-
-    private final CacheService cacheService;
-    private final PicServiceApi picServiceApi;
+public class ModelAndViewController {
 
     /**
      * 首页
@@ -36,6 +30,15 @@ public class PageController {
     public ModelAndView showPic() {
         log.debug("跳转到随机图片页面");
         return new ModelAndView("pic");
+    }
+
+    /**
+     * 跳转到随机画廊页面
+     */
+    @GetMapping("/randomGallery")
+    public ModelAndView showRandomGalleryPage() {
+        log.debug("跳转到随机画廊页面");
+        return new ModelAndView("randomGallery");
     }
 
     /**
@@ -73,15 +76,6 @@ public class PageController {
     public ModelAndView showGroupList() {
         log.debug("跳转到分组列表页面");
         return new ModelAndView("group");
-    }
-
-    /**
-     * 跳转到随机画廊页面
-     */
-    @GetMapping("/randomGallery")
-    public ModelAndView showRandomGalleryPage() {
-        log.debug("跳转到随机画廊页面");
-        return new ModelAndView("randomGallery");
     }
 
     /**

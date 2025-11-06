@@ -11,7 +11,7 @@
         <result property="isDelete" column="is_delete"/>
     </resultMap>
 
-    <select id="getMaxId" resultType="java.lang.Integer">
+    <select id="getMaxId" resultType="java.lang.Long">
         SELECT id
         FROM ${tableName}
         WHERE is_delete = 0
@@ -19,7 +19,7 @@
         LIMIT 1
     </select>
 
-    <select id="getMinId" resultType="java.lang.Integer">
+    <select id="getMinId" resultType="java.lang.Long">
         SELECT id
         FROM ${tableName}
         WHERE is_delete = 0
@@ -27,7 +27,7 @@
         LIMIT 1
     </select>
 
-    <select id="getMaxGroupId" resultType="java.lang.Integer">
+    <select id="getMaxGroupId" resultType="java.lang.Long">
         SELECT group_id
         FROM ${tableName}
         WHERE is_delete = 0
@@ -35,7 +35,7 @@
         LIMIT 1
     </select>
 
-    <select id="getMinGroupId" resultType="java.lang.Integer">
+    <select id="getMinGroupId" resultType="java.lang.Long">
         SELECT group_id
         FROM ${tableName}
         WHERE is_delete = 0
@@ -58,7 +58,7 @@
         FROM ${tableName}
         WHERE id = #{id}
     </select>
-    <select id="getGroupCount" resultType="java.lang.Integer">
+    <select id="getGroupCount" resultType="java.lang.Long">
         SELECT count(*)
         FROM ${tableName}
         WHERE group_id = #{groupId}

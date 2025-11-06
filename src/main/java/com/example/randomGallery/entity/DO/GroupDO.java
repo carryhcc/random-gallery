@@ -19,7 +19,7 @@ public class GroupDO implements Serializable {
     /**
      * 分组ID
      */
-    private Integer groupId;
+    private Long groupId;
 
     /**
      * 分组URL

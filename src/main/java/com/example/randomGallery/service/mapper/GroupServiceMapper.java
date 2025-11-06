@@ -16,14 +16,14 @@ public interface GroupServiceMapper {
      * @param tableName
      * @return
      */
-    GroupVO queryGroupById(@Param("groupId") Integer groupId, @Param("tableName") String tableName);
+    GroupVO queryGroupById(@Param("groupId") Long groupId, @Param("tableName") String tableName);
 
     /**
      * 查询所有分组ID列表
      * @param tableName
      * @return
      */
-    List<Integer> selectGroupIdList(@Param("tableName") String tableName);
+    List<Long> selectGroupIdList(@Param("tableName") String tableName);
 
     /**
      * 条件查询分组列表

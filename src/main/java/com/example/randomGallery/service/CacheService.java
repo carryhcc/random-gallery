@@ -11,7 +11,9 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
 import java.sql.SQLException;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.ThreadLocalRandom;
 
@@ -26,16 +28,16 @@ public class CacheService {
     private final PicServiceMapper picServiceMapper;
 
     @Getter
-    private Integer maxId;
+    private Long maxId;
 
     @Getter
-    private Integer minId;
+    private Long minId;
 
     @Getter
-    private Integer maxGroupId;
+    private Long maxGroupId;
 
     @Getter
-    private Integer minGroupId;
+    private Long minGroupId;
 
     private ResettableTimer resettableTimer;
 
@@ -60,6 +62,7 @@ public class CacheService {
     public String getPicSqlName() {
         return picSqlName;
     }
+
     public String getGroupSqlName() {
         return groupSqlName;
     }
@@ -69,6 +72,7 @@ public class CacheService {
         try {
             initTimer();
             cachePicId();
+            buildGroupIDList();
             log.info("缓存服务初始化完成，当前环境: {}", getDefaultEnv());
         } catch (SQLException e) {
             log.error("缓存服务初始化失败", e);
@@ -83,7 +87,7 @@ public class CacheService {
     @PostConstruct
     public void cachePicId() throws SQLException {
         log.info("开始缓存图片ID和分组ID...");
-        
+
         // 缓存图片ID
         maxId = picServiceMapper.getMaxId(picSqlName);
         minId = picServiceMapper.getMinId(picSqlName);
@@ -98,23 +102,23 @@ public class CacheService {
     /**
      * 获取随机图片ID
      */
-    public Integer getRandomId() {
+    public Long getRandomId() {
         if (minId == null || maxId == null) {
             log.warn("图片ID缓存未初始化，返回null");
             return null;
         }
-        return ThreadLocalRandom.current().nextInt(minId, maxId + 1);
+        return ThreadLocalRandom.current().nextLong(minId, maxId + 1);
     }
 
     /**
      * 获取随机分组ID
      */
-    public Integer getRandomGroupId() {
+    public Long getRandomGroupId() {
         if (minGroupId == null || maxGroupId == null) {
             log.warn("分组ID缓存未初始化，返回null");
             return null;
         }
-        return ThreadLocalRandom.current().nextInt(minGroupId, maxGroupId + 1);
+        return ThreadLocalRandom.current().nextLong(minGroupId, maxGroupId + 1);
     }
 
     /**
@@ -122,7 +126,7 @@ public class CacheService {
      */
     public void switchSqlName(String env) throws SQLException {
         String newPicSqlName = "cc_pic_all_" + env;
-        String newGroupSqlName = "cc_pic_all_" + env;
+        String newGroupSqlName = "cc_pic_group_" + env;
 
         // 验证环境名
         if (!SUPPORTED_ENVS.contains(newPicSqlName)) {
@@ -133,14 +137,16 @@ public class CacheService {
         log.info("开始切换环境从 {} 到 {}", picSqlName, newPicSqlName);
 
         picSqlName = newPicSqlName;
+        groupSqlName = newGroupSqlName;
         defaultEnv = env;
 
         // 刷新缓存
         cachePicId();
-
+        // 刷新随机序列
+        buildGroupIDList();
         // 刷新定时器
         resetTimer();
-        
+
         log.info("环境切换完成: {}", newPicSqlName);
     }
 
@@ -152,5 +158,29 @@ public class CacheService {
             resettableTimer.reset();
             log.debug("定时器已重置");
         }
+    }
+
+    // 内存存储随机序列
+    @Getter
+    private List<Long> shuffledSeq;
+    // 总图片数
+    @Getter
+    public Long totalImageCount;
+    // 总分组数
+    @Getter
+    public Long totalGroupCount;
+
+    /**
+     * 初始化随机序列和总图片数（懒加载：首次调用时初始化）
+     */
+    public void buildGroupIDList() {
+        totalGroupCount = this.getMaxGroupId();
+        List<Long> seq = new ArrayList<>();
+        for (long i = 1; i <= totalGroupCount; i++) {
+            seq.add(i);
+        }
+        log.warn("初始化随机数列:{}", totalGroupCount);
+        Collections.shuffle(seq);
+        shuffledSeq = seq;
     }
 }

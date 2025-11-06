@@ -12,7 +12,7 @@ import java.io.Serializable;
 public class PicVO implements Serializable {
 
     private static final long serialVersionUID = 1L;
-    private Integer groupId;
+    private Long groupId;
     private String picName;
     private String picUrl;
 }

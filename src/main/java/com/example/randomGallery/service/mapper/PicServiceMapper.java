@@ -12,13 +12,13 @@ import java.util.List;
 @Mapper
 public interface PicServiceMapper {
 
-    Integer getMaxId(@Param("tableName") String tableName);
+    Long getMaxId(@Param("tableName") String tableName);
 
-    Integer getMinId(@Param("tableName") String tableName);
+    Long getMinId(@Param("tableName") String tableName);
 
-    Integer getMaxGroupId(@Param("tableName") String tableName);
+    Long getMaxGroupId(@Param("tableName") String tableName);
 
-    Integer getMinGroupId(@Param("tableName") String tableName);
+    Long getMinGroupId(@Param("tableName") String tableName);
 
     /**
      * 根据id获取图片信息
@@ -26,7 +26,7 @@ public interface PicServiceMapper {
      * @param id
      * @return
      */
-    PicVO getInfoById(@Param("tableName") String tableName, @Param("id") Integer id);
+    PicVO getInfoById(@Param("tableName") String tableName, @Param("id") Long id);
 
     /**
      * 获取分组总数
@@ -34,7 +34,7 @@ public interface PicServiceMapper {
      * @param groupId
      * @return
      */
-    Integer getGroupCount(@Param("tableName") String tableName, @Param("groupId") Integer groupId);
+    Integer getGroupCount(@Param("tableName") String tableName, @Param("groupId") Long groupId);
 
-    PicVO getGroupRandomPicInfo(@Param("tableName") String tableName, @Param("groupId") Integer groupId);
+    PicVO getGroupRandomPicInfo(@Param("tableName") String tableName, @Param("groupId") Long groupId);
 }

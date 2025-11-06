@@ -34,7 +34,7 @@ public class PicDO implements Serializable {
     /**
      * 分组ID
      */
-    private Integer groupId;
+    private Long groupId;
     
     /**
      * 是否删除 0-未删除 1-已删除

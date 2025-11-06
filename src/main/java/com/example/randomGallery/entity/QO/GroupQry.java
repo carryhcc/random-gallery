@@ -6,6 +6,7 @@ import lombok.NoArgsConstructor;
 import lombok.AllArgsConstructor;
 
 import java.io.Serializable;
+import java.util.List;
 
 /**
  * 分组查询对象
@@ -25,5 +26,10 @@ public class GroupQry extends PageQuery implements Serializable {
     /**
      * 分组ID
      */
-    private String groupId;
+    private Long groupId;
+
+    /**
+     * 分组ID
+     */
+    private List<Long> groupIdList;
 }
