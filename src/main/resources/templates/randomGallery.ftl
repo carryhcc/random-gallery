@@ -47,26 +47,13 @@
     <div class="card animate-fade-in">
         <div class="card-header">
             <h1 class="card-title">随机画廊</h1>
-            <p class="card-subtitle">按名称模糊查询，随机返回10条分组及代表图</p>
         </div>
 
-        <div class="card mb-4">
-            <div class="search-form toolbar">
-                <div class="form-group">
-                    <label for="groupName" class="form-label">名称</label>
-                    <input id="groupName" type="text" placeholder="输入分组名称（模糊）" class="form-input" value="${groupName!''}">
-                </div>
-                <div class="button-group">
-                    <button id="btnQuery" class="btn btn-primary">
-                        <i class="fas fa-search"></i>
-                        <span>查询</span>
-                    </button>
-                    <button id="btnRefresh" class="btn btn-secondary">
-                        <i class="fas fa-sync-alt"></i>
-                        <span>刷新</span>
-                    </button>
-                </div>
-            </div>
+        <div class="text-center mb-4">
+            <button id="btnRefresh" class="btn btn-secondary">
+                <i class="fas fa-sync-alt"></i>
+                <span>刷新</span>
+            </button>
         </div>
 
         <div id="tip" class="toast hidden"></div>
@@ -81,15 +68,11 @@
 <script>
     const gallery = document.getElementById('gallery');
     const tip = document.getElementById('tip');
-    const inputName = document.getElementById('groupName');
-    const btnQuery = document.getElementById('btnQuery');
     const btnRefresh = document.getElementById('btnRefresh');
     const loadingEl = document.getElementById('loading');
     const endEl = document.getElementById('end');
 
-    let pageIndex = 1;
-    const pageSize = 6;
-    let totalPages = 1;
+    let page = 0;
     let isLoading = false;
     let hasMore = true;
 
@@ -138,36 +121,74 @@
         endEl.classList.add('hidden');
         try{
             if (reset){
-                pageIndex = 1;
-                totalPages = 1;
+                page = 0;
                 gallery.innerHTML = '';
+                hasMore = true;
             }
-            const name = inputName.value && inputName.value.trim() !== '' ? encodeURIComponent(inputName.value.trim()) : '';
-            const params = 'pageIndex=' + pageIndex + '&pageSize=' + pageSize + (name ? ('&groupName=' + name) : '');
-            const url = '/api/group/random-gallery/paged?' + params;
+
+            // 使用新的接口格式
+            const url = '/api/group/loadMore?page=' + page;
             const res = await fetch(url);
             const result = await res.json();
+
             if (result.code === 200 && result.data){
-                const page = result.data;
-                totalPages = page.pages || 1;
-                appendList(page.list || []);
-                hasMore = pageIndex < totalPages;
-                if (!hasMore){
+                // 兼容新的接口返回格式
+                const images = result.data.images || [];
+                hasMore = result.data.hasMore || false;
+
+                if (images.length === 0) {
                     endEl.classList.remove('hidden');
+                } else {
+                    // 处理字段映射：提取图片URL和分组名称
+                    const processedList = images.map(item => ({
+                        groupId: item.groupId,
+                        groupName: item.groupUrl || '未命名分组', // 使用groupUrl作为分组名称
+                        picUrl: extractImageUrl(item.groupName) || '' // 从groupName中提取图片URL
+                    }));
+
+                    appendList(processedList);
+                    page++;
+                    
+                    if (!hasMore) {
+                        endEl.classList.remove('hidden');
+                    }
                 }
-                pageIndex++;
             } else {
-                showTip((result && result.message) || '查询失败', true);
+                showTip((result && result.message) || '获取图片失败', true);
                 if (reset){
                     endEl.classList.remove('hidden');
                 }
             }
         } catch (e){
-            showTip('请求失败', true);
-        } finally{
+            console.error('请求失败:', e);
+            showTip('网络请求失败', true);
+        } finally {
             isLoading = false;
             loadingEl.classList.add('hidden');
         }
+    }
+    
+    /**
+     * 从字符串中提取图片URL
+     * @param {string} text - 可能包含URL的文本
+     * @returns {string} - 提取的URL或空字符串
+     */
+    function extractImageUrl(text) {
+        if (!text) return '';
+        
+        // 尝试匹配反引号中的URL
+        const backtickMatch = text.match(/`([^`]+)`/);
+        if (backtickMatch && backtickMatch[1]) {
+            return backtickMatch[1];
+        }
+        
+        // 尝试直接匹配URL格式
+        const urlMatch = text.match(/https?:\/\/[^\s]+/);
+        if (urlMatch && urlMatch[0]) {
+            return urlMatch[0];
+        }
+        
+        return text; // 如果无法提取，返回原始文本
     }
 
     function getScrollHeights(){
@@ -195,7 +216,6 @@
         }
     }
 
-    btnQuery.addEventListener('click', ()=>{ loadPage(true); });
     btnRefresh.addEventListener('click', ()=>{ loadPage(true); });
 
     document.addEventListener('DOMContentLoaded', ()=>{

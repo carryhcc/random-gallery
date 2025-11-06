@@ -55,6 +55,10 @@ public class GroupApiController {
      */
     @GetMapping("/loadMore")
     public Result<GroupPageVO> loadMore(@RequestParam(defaultValue = "0") int page) {
+        if (page == 0) {
+            // 默认进入时候刷新顺序
+            cacheService.buildGroupIDList();
+        }
         GroupPageVO data = groupServiceApi.loadMore(page);
         return Result.success(data);
     }
