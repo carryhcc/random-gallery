@@ -3,7 +3,6 @@ package com.example.randomGallery.controller;
 import com.example.randomGallery.common.Result;
 import com.example.randomGallery.entity.QO.GroupQry;
 import com.example.randomGallery.entity.VO.GroupVO;
-import com.example.randomGallery.entity.common.PageResult;
 import com.example.randomGallery.service.CacheService;
 import com.example.randomGallery.service.GroupServiceApi;
 import lombok.RequiredArgsConstructor;
