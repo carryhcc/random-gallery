@@ -17,12 +17,22 @@ public class GroupVO implements Serializable {
     private static final long serialVersionUID = 1L;
 
     /**
-     * 分组名称
-     */
-    private String picName;
-
-    /**
      * 分组ID
      */
-    private String groupId;
+    private Integer groupId;
+
+    /**
+     * 分组名称
+     */
+    private String groupName;
+
+    /**
+     * 分组URL
+     */
+    private String groupUrl;
+
+    /**
+     * 分组总数
+     */
+    private Integer groupCount;
 }

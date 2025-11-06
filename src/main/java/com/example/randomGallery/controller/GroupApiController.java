@@ -3,9 +3,9 @@ package com.example.randomGallery.controller;
 import com.example.randomGallery.common.Result;
 import com.example.randomGallery.entity.QO.GroupQry;
 import com.example.randomGallery.entity.VO.GroupVO;
-import com.example.randomGallery.entity.VO.PageResult;
-import com.example.randomGallery.entity.VO.RandomGalleryItemVO;
-import com.example.randomGallery.server.GroupServiceApi;
+import com.example.randomGallery.entity.common.PageResult;
+import com.example.randomGallery.service.CacheService;
+import com.example.randomGallery.service.GroupServiceApi;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.bind.annotation.*;
@@ -23,6 +23,20 @@ public class GroupApiController {
 
     private final GroupServiceApi groupServiceApi;
 
+    private final CacheService cacheService;
+
+    /**
+     * 获取随机分组信息
+     */
+    @GetMapping("/randomGroupInfo")
+    public Result<GroupVO> getRandomGroupInfo() {
+        cacheService.resetTimer();
+        Integer randomGroupId = cacheService.getRandomGroupId();
+        GroupVO groupInfo = groupServiceApi.queryGroupById(randomGroupId);
+        return Result.success("获取随机分组信息成功", groupInfo);
+    }
+
+
     /**
      * 查询分组列表
      */
@@ -31,41 +45,5 @@ public class GroupApiController {
         log.info("查询分组列表，参数: {}", qry);
         List<GroupVO> result = groupServiceApi.queryGroupList(qry);
         return Result.success("查询成功", result);
-    }
-
-    /**
-     * 查询分组总数
-     */
-    @PostMapping("/count")
-    public Result<Integer> queryGroupCount(@RequestBody GroupQry qry) {
-        log.info("查询分组总数，参数: {}", qry);
-        Integer count = groupServiceApi.queryGroupCount(qry);
-        return Result.success("查询成功", count);
-    }
-    
-    /**
-     * 分页查询分组列表，返回分页信息（推荐使用）
-     */
-    @PostMapping("/list/paged")
-    public Result<PageResult<GroupVO>> queryGroupListWithPage(@RequestBody GroupQry qry) {
-        log.info("分页查询分组列表，参数: {}", qry);
-        PageResult<GroupVO> result = groupServiceApi.queryGroupListWithPage(qry);
-        return Result.success("查询成功", result);
-    }
-
-    /**
-     * 随机画廊查询：返回10条（或传入limit）分组数据，每组随机1张图
-     */
-    @GetMapping("/random-gallery")
-    public Result<List<RandomGalleryItemVO>> randomGallery(
-            @RequestParam(value = "groupId", required = false) String groupId,
-            @RequestParam(value = "groupName", required = false) String groupName,
-            @RequestParam(value = "limit", required = false) Integer limit
-    ) {
-        GroupQry qry = new GroupQry();
-        qry.setGroupId(groupId);
-        qry.setPicName(groupName);
-        List<RandomGalleryItemVO> list = groupServiceApi.queryRandomGallery(qry, limit == null ? 10 : limit);
-        return Result.success("查询成功", list);
     }
 }

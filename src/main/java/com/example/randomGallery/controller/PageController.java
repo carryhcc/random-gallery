@@ -1,7 +1,8 @@
 package com.example.randomGallery.controller;
 
-import com.example.randomGallery.server.CacheService;
-import com.example.randomGallery.server.PicServiceApi;
+import com.example.randomGallery.entity.VO.PicVO;
+import com.example.randomGallery.service.CacheService;
+import com.example.randomGallery.service.PicServiceApi;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Controller;
@@ -35,8 +36,8 @@ public class PageController {
     public ModelAndView showPic() {
         log.debug("跳转到随机图片页面");
         Integer randomId = cacheService.getRandomId();
-        String urlById = picServiceApi.getUrlById(randomId);
-        return new ModelAndView("pic").addObject("url", urlById);
+        PicVO picVO = picServiceApi.getInfoById(randomId);
+        return new ModelAndView("pic").addObject("url", picVO);
     }
 
     /**
@@ -80,13 +81,9 @@ public class PageController {
      * 跳转到随机画廊页面
      */
     @GetMapping("/randomGallery")
-    public ModelAndView showRandomGalleryPage(@RequestParam(value = "groupName", required = false) String groupName) {
-        log.debug("跳转到随机画廊页面，groupName: {}", groupName);
-        ModelAndView mv = new ModelAndView("randomGallery");
-        if (groupName != null) {
-            mv.addObject("groupName", groupName);
-        }
-        return mv;
+    public ModelAndView showRandomGalleryPage() {
+        log.debug("跳转到随机画廊页面");
+        return new ModelAndView("randomGallery");
     }
 
     /**

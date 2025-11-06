@@ -1,7 +1,7 @@
 package com.example.randomGallery.controller;
 
 import com.example.randomGallery.common.Result;
-import com.example.randomGallery.server.CacheService;
+import com.example.randomGallery.service.CacheService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.bind.annotation.*;

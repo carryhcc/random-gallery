@@ -397,7 +397,7 @@
             showStatus('正在获取随机分组...');
             galleryTitle.textContent = '加载中...';
             
-            return fetch('/api/pic/group/random-info')
+            return fetch('/api/pic/group/randomGroupInfo')
                 .then(response => response.json())
                 .then(result => {
                     if (result.code === 200 && result.data && result.data.groupId) {

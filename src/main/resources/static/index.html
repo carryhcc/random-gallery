@@ -166,7 +166,7 @@
     document.getElementById('randomGroupBtn').addEventListener('click', function(e) {
         e.preventDefault();
         // 先获取随机分组信息（只包含ID和名称），然后跳转到对应页面
-        fetch('/api/pic/group/random-info')
+        fetch('/api/pic/group/randomGroupInfo')
             .then(response => response.json())
             .then(result => {
                 if (result.code === 200 && result.data && result.data.groupId) {

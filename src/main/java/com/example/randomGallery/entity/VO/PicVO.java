@@ -9,15 +9,10 @@ import java.io.Serializable;
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-public class RandomGalleryItemVO implements Serializable {
+public class PicVO implements Serializable {
 
     private static final long serialVersionUID = 1L;
-
     private Integer groupId;
-
-    private String groupName;
-
+    private String picName;
     private String picUrl;
 }
-
-

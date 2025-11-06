@@ -1,23 +1,39 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
-<mapper namespace="com.example.randomGallery.server.mapper.GroupServiceMapper">
+<mapper namespace="com.example.randomGallery.service.mapper.GroupServiceMapper">
+    <update id="updateById">
+        UPDATE ${tableName}
+        SET group_name = #{vo.groupName},
+        group_url = #{vo.groupUrl},
+        group_count = #{vo.groupCount}
+        where group_id = #{vo.groupId}
+    </update>
+
+    <select id="queryGroupById" resultType="com.example.randomGallery.entity.VO.GroupVO">
+        SELECT group_id   AS groupId,
+               group_name AS groupName,
+               pic_name AS picName
+        FROM ${tableName}
+        WHERE is_delete = 0
+          AND group_id = #{qry.groupId}
+    </select>
 
     <select id="queryGroupList" resultType="com.example.randomGallery.entity.VO.GroupVO">
         SELECT
         group_id AS groupId,
-        pic_name AS picName
+        group_name AS picName
         FROM ${tableName}
         WHERE
         is_delete = 0
         <if test="qry.groupId != null">
             AND group_id = #{qry.groupId}
         </if>
-        <if test="qry.picName !=null and qry.picName !=''">
-            and pic_name like concat('%',#{qry.picName},'%')
+        <if test="qry.groupName !=null and qry.groupName !=''">
+            and group_name like concat('%',#{qry.groupName},'%')
         </if>
-        group by group_id,pic_name
         ORDER BY group_id
     </select>
+
     <select id="queryGroupCount" resultType="java.lang.Integer">
         SELECT COUNT(DISTINCT group_id, pic_name)
         FROM ${tableName}
@@ -30,28 +46,9 @@
             AND pic_name LIKE CONCAT('%', #{qry.picName}, '%')
         </if>
     </select>
-
-    <select id="queryRandomGallery" resultType="com.example.randomGallery.entity.VO.RandomGalleryItemVO">
-        SELECT
-        t.group_id AS groupId,
-        t.pic_name AS groupName,
-        (
-            SELECT p.pic_url
-            FROM ${tableName} p
-            WHERE p.is_delete = 0 AND p.group_id = t.group_id
-            ORDER BY RAND()
-            LIMIT 1
-        ) AS picUrl
-        FROM ${tableName} t
-        WHERE t.is_delete = 0
-        <if test="qry.groupId != null and qry.groupId != ''">
-            AND t.group_id = #{qry.groupId}
-        </if>
-        <if test="qry.picName != null and qry.picName != ''">
-            AND t.pic_name LIKE CONCAT('%', #{qry.picName}, '%')
-        </if>
-        GROUP BY t.group_id, t.pic_name
-        ORDER BY RAND()
-        LIMIT #{limit}
+    <select id="selectGroupIdList" resultType="java.lang.Integer">
+        select group_id
+        FROM ${tableName}
+        WHERE is_delete = 0
     </select>
 </mapper>

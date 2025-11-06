@@ -1,6 +1,6 @@
-package com.example.randomGallery.server;
+package com.example.randomGallery.service;
 
-import com.example.randomGallery.server.mapper.PicServiceMapper;
+import com.example.randomGallery.service.mapper.PicServiceMapper;
 import com.example.randomGallery.utils.ResettableTimer;
 import com.example.randomGallery.utils.StrUtils;
 import jakarta.annotation.PostConstruct;
@@ -39,7 +39,9 @@ public class CacheService {
 
     private ResettableTimer resettableTimer;
 
-    private String sqlName = "cc_pic_all_dev";
+    private String picSqlName = "cc_pic_all_dev";
+
+    private String groupSqlName = "cc_pic_group_dev";
 
     @Value("${config.env}")
     private String defaultEnv;
@@ -55,8 +57,11 @@ public class CacheService {
         return StrUtils.isEmpty(defaultEnv) ? "dev" : defaultEnv;
     }
 
-    public String getSqlName() {
-        return sqlName;
+    public String getPicSqlName() {
+        return picSqlName;
+    }
+    public String getGroupSqlName() {
+        return groupSqlName;
     }
 
     @PostConstruct
@@ -80,13 +85,13 @@ public class CacheService {
         log.info("开始缓存图片ID和分组ID...");
         
         // 缓存图片ID
-        maxId = picServiceMapper.getMaxId(sqlName);
-        minId = picServiceMapper.getMinId(sqlName);
+        maxId = picServiceMapper.getMaxId(picSqlName);
+        minId = picServiceMapper.getMinId(picSqlName);
         log.info("图片ID缓存完成 - 最小值: {}, 最大值: {}", minId, maxId);
 
         // 缓存分组ID
-        maxGroupId = picServiceMapper.getMaxGroupId(sqlName);
-        minGroupId = picServiceMapper.getMinGroupId(sqlName);
+        maxGroupId = picServiceMapper.getMaxGroupId(groupSqlName);
+        minGroupId = picServiceMapper.getMinGroupId(groupSqlName);
         log.info("分组ID缓存完成 - 最小值: {}, 最大值: {}", minGroupId, maxGroupId);
     }
 
@@ -116,17 +121,18 @@ public class CacheService {
      * 切换数据库环境
      */
     public void switchSqlName(String env) throws SQLException {
-        String newSqlName = "cc_pic_all_" + env;
+        String newPicSqlName = "cc_pic_all_" + env;
+        String newGroupSqlName = "cc_pic_all_" + env;
 
         // 验证环境名
-        if (!SUPPORTED_ENVS.contains(newSqlName)) {
+        if (!SUPPORTED_ENVS.contains(newPicSqlName)) {
             log.error("无效的环境名: {}, 支持的环境: {}", env, SUPPORTED_ENVS);
             throw new IllegalArgumentException("无效的环境名: " + env);
         }
 
-        log.info("开始切换环境从 {} 到 {}", sqlName, newSqlName);
-        
-        sqlName = newSqlName;
+        log.info("开始切换环境从 {} 到 {}", picSqlName, newPicSqlName);
+
+        picSqlName = newPicSqlName;
         defaultEnv = env;
 
         // 刷新缓存
@@ -135,7 +141,7 @@ public class CacheService {
         // 刷新定时器
         resetTimer();
         
-        log.info("环境切换完成: {}", sqlName);
+        log.info("环境切换完成: {}", newPicSqlName);
     }
 
     /**

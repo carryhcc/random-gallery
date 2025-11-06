@@ -1,7 +1,7 @@
 package com.example.randomGallery.utils;
 
 
-import com.example.randomGallery.server.CacheService;
+import com.example.randomGallery.service.CacheService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

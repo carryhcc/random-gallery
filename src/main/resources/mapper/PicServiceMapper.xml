@@ -1,9 +1,9 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 
-<mapper namespace="com.example.randomGallery.server.mapper.PicServiceMapper">
+<mapper namespace="com.example.randomGallery.service.mapper.PicServiceMapper">
 
-    <resultMap type="com.example.randomGallery.entity.DO.PicInfoDO" id="PicInfoMap">
+    <resultMap type="com.example.randomGallery.entity.DO.PicDO" id="PicInfoMap">
         <result property="id" column="id"/>
         <result property="picUrl" column="pic_url"/>
         <result property="picName" column="pic_name"/>
@@ -43,16 +43,33 @@
         LIMIT 1
     </select>
 
-    <select id="getUrlById" resultType="java.lang.String">
-        SELECT pic_url
-        FROM ${tableName}
-        WHERE id = #{id}
-    </select>
 
-    <select id="getRandomGroupPicList" resultType="com.example.randomGallery.entity.DO.PicInfoDO">
+    <select id="getRandomGroupPicList" resultType="com.example.randomGallery.entity.DO.PicDO">
         SELECT id, pic_url, pic_name, group_id, is_delete
         FROM ${tableName}
         WHERE is_delete = 0
           AND group_id = #{groupId}
+    </select>
+
+    <select id="getInfoById" resultType="com.example.randomGallery.entity.VO.PicVO">
+        SELECT pic_url,
+               pic_name,
+               group_id
+        FROM ${tableName}
+        WHERE id = #{id}
+    </select>
+    <select id="getGroupCount" resultType="java.lang.Integer">
+        SELECT count(*)
+        FROM ${tableName}
+        WHERE group_id = #{groupId}
+    </select>
+    <select id="getGroupRandomPicInfo" resultType="com.example.randomGallery.entity.VO.PicVO">
+        SELECT pic_url,
+               pic_name,
+               group_id
+        FROM ${tableName}
+        WHERE group_id = #{groupId}
+        ORDER BY RAND()
+        LIMIT 1;
     </select>
 </mapper>

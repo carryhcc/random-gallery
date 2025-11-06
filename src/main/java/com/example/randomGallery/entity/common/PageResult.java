@@ -1,4 +1,4 @@
-package com.example.randomGallery.entity.VO;
+package com.example.randomGallery.entity.common;
 
 import lombok.Data;
 import lombok.NoArgsConstructor;
