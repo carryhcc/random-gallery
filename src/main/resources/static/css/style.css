@@ -1283,6 +1283,60 @@ body {
     max-width: 800px;
 }
 
+/* 图片信息区域样式 */
+.pic-info {
+    background-color: rgba(248, 250, 252, 0.8);
+    border-radius: var(--radius-lg);
+    padding: var(--space-4);
+    margin: var(--space-4) 0;
+    box-shadow: var(--shadow-md);
+}
+
+.info-item {
+    display: flex;
+    align-items: center;
+    margin-bottom: var(--space-2);
+    font-size: var(--text-sm);
+}
+
+.info-item:last-child {
+    margin-bottom: 0;
+}
+
+.info-label {
+    font-weight: 600;
+    color: var(--text-secondary);
+    width: 80px;
+}
+
+.info-value {
+    color: var(--text-primary);
+    flex: 1;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+/* 图片加载状态样式 */
+.loading-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: var(--space-10);
+    color: var(--text-secondary);
+}
+
+.loading-spinner {
+    border: 3px solid var(--border-primary);
+    border-top: 3px solid var(--primary);
+    border-radius: 50%;
+    width: 40px;
+    height: 40px;
+    animation: spin 1s linear infinite;
+    margin-bottom: var(--space-4);
+}
+
 /* ========================================
    17. 图片列表页面样式
    ======================================== */

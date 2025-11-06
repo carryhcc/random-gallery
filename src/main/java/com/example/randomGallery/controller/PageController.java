@@ -35,9 +35,7 @@ public class PageController {
     @GetMapping("/showPic")
     public ModelAndView showPic() {
         log.debug("跳转到随机图片页面");
-        Integer randomId = cacheService.getRandomId();
-        PicVO picVO = picServiceApi.getInfoById(randomId);
-        return new ModelAndView("pic").addObject("url", picVO);
+        return new ModelAndView("pic");
     }
 
     /**
