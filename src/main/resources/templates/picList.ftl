@@ -27,7 +27,7 @@
             <div class="navbar-actions">
                 <button id="backToHomeBtn" class="btn btn-secondary">
                     <i class="fa fa-arrow-left"></i>
-                    <span>返回首页</span>
+                    <span>返回上级</span>
                 </button>
                 <button id="refreshImageListBtn" class="btn btn-secondary">
                     <i class="fa fa-refresh"></i>
@@ -81,6 +81,7 @@
         const closeViewer = document.getElementById('closeViewer');
         const prevImage = document.getElementById('prevImage');
         const nextImage = document.getElementById('nextImage');
+
         let currentImageIndex = 0;
         let allImageUrls = [];
         let displayedImagesCount = 0;
@@ -88,14 +89,11 @@
         let isLoading = false;
         let hasMoreImages = true;
         let currentPage = 1;
-        let totalPages = 1;
-        
+
         // 从模板获取初始数据
-        const templateGroupId = ${groupId!'null'};
-        const templateGroupName = '${groupName!""}';
-        const isFromGroupList = ${(isFromGroupList?c)!'false'};
+        let templateGroupId = ${groupId!'null'}; // 使用 let 允许后续修改
         let currentGroupId = templateGroupId;
-        let currentGroupName = templateGroupName;
+        let currentGroupName = ''; // 在顶层声明
 
         function showStatus(message, isError = false) {
             statusMessage.textContent = message;
@@ -107,34 +105,18 @@
             noMoreImages.classList.add('hidden');
         }
 
-        function displayImages(data) {
-            gallery.innerHTML = '';
-            statusMessage.classList.add('hidden');
-            allImageUrls = [];
-            displayedImagesCount = 0;
-            noMoreImages.classList.add('hidden');
-            currentPage = 1;
-            hasMoreImages = true;
-            totalPages = 1;
-
-            // 重置状态并开始流式加载
-            galleryTitle.textContent = '随机图库';
-            loadMoreImages();
-        }
-
         function displayPagedImages(data) {
             try {
-                // 新API直接返回图片数组，不需要再从data.images中获取
+                // 新API直接返回图片数组
                 const images = data || [];
-                
+
                 // 根据返回数据判断是否还有更多
-                // 如果返回数据少于pageSize，认为没有更多了
                 const hasMore = images.length === imagesPerLoad;
-                
-                // 显示套图名称（保持现有逻辑）
+
+                // 显示套图名称
                 const displayName = currentGroupName || '未命名图片组';
                 galleryTitle.textContent = displayName;
-                
+
                 if (images.length === 0) {
                     if (currentPage === 1) {
                         showStatus('图片列表为空。');
@@ -144,30 +126,29 @@
                     }
                     return;
                 }
-                
+
                 // 将新图片添加到现有图片列表中
-                // 从图片对象中提取picUrl作为显示URL
                 const imageUrls = images.map(item => item.picUrl).filter(Boolean);
                 allImageUrls = allImageUrls.concat(imageUrls);
-                
+
                 // 显示新加载的图片
                 const fragment = document.createDocumentFragment();
                 imageUrls.forEach(imgUrl => {
                     fragment.appendChild(createImageElement(imgUrl));
                 });
                 gallery.appendChild(fragment);
-                
+
                 displayedImagesCount = allImageUrls.length;
-                
+
                 // 更新状态
                 hasMoreImages = hasMore;
                 if (!hasMoreImages) {
                     noMoreImages.classList.remove('hidden');
                 }
-                
-                // 更新标题显示当前数量（由于没有totalImages，只显示已加载数量）
+
+                // 更新标题显示当前数量
                 galleryTitle.textContent = displayName + ' (' + displayedImagesCount + ')';
-                
+
             } catch (error) {
                 console.error('解析分页图片数据失败:', error);
                 showStatus('解析分页图片数据失败: ' + error.message, true);
@@ -178,26 +159,22 @@
             const imgContainer = document.createElement('div');
             imgContainer.className = 'image-item group cursor-pointer transform transition-all duration-300 hover:scale-105 hover:shadow-xl';
             imgContainer.onclick = () => openImageViewer(imgUrl);
-            
-            // 创建图片容器（参考showPic页面结构）
+
             const imageContainer = document.createElement('div');
             imageContainer.className = 'image-container';
-            
+
             const img = document.createElement('img');
             img.src = imgUrl;
             img.alt = '图片';
             img.className = 'image';
             img.loading = 'lazy';
-            
-            // 创建图片遮罩层
+
             const imageOverlay = document.createElement('div');
             imageOverlay.className = 'image-overlay';
-            
-            // 创建操作按钮区域
+
             const imageActions = document.createElement('div');
             imageActions.className = 'image-actions';
-            
-            // 创建下载按钮
+
             const downloadBtn = document.createElement('button');
             downloadBtn.className = 'btn btn-primary btn-sm download-icon-btn';
             downloadBtn.innerHTML = '<i class="fa fa-download"></i>';
@@ -206,13 +183,13 @@
                 e.stopPropagation(); // 阻止触发图片查看器
                 downloadImage(imgUrl);
             };
-            
+
             imageActions.appendChild(downloadBtn);
             imageOverlay.appendChild(imageActions);
             imageContainer.appendChild(img);
             imageContainer.appendChild(imageOverlay);
             imgContainer.appendChild(imageContainer);
-            
+
             return imgContainer;
         }
 
@@ -233,18 +210,18 @@
         function fetchPagedImages() {
             // 使用新的API接口格式和参数
             const fetchUrl = '/api/pic/list';
-            
+
             // 准备请求体数据
             const requestBody = {
                 pageIndex: currentPage,
                 pageSize: imagesPerLoad
             };
-            
+
             // 如果有分组ID，则添加到请求体
             if (currentGroupId) {
                 requestBody.groupId = currentGroupId;
             }
-            
+
             fetch(fetchUrl, {
                 method: 'POST',
                 headers: {
@@ -272,27 +249,6 @@
                 });
         }
 
-        function fetchAndDisplayImages() {
-            refreshButton.disabled = true;
-            refreshButton.innerHTML = '<i class="fa fa-spinner fa-spin mr-2"></i><span>加载中...</span>';
-            gallery.innerHTML = '';
-            noMoreImages.classList.add('hidden');
-            showStatus('正在加载图片列表...');
-            galleryTitle.textContent = '加载中...';
-
-            // 重置状态
-            allImageUrls = [];
-            displayedImagesCount = 0;
-            currentPage = 1;
-            hasMoreImages = true;
-            totalPages = 1;
-
-            loadMoreImages();
-
-            refreshButton.disabled = false;
-            refreshButton.innerHTML = '<i class="fa fa-refresh mr-2"></i><span>刷新图片</span>';
-        }
-
         // 刷新时改为获取一个新的随机分组
         function refreshWithRandomGroup() {
             refreshButton.disabled = true;
@@ -307,15 +263,15 @@
             displayedImagesCount = 0;
             currentPage = 1;
             hasMoreImages = true;
-            totalPages = 1;
             currentGroupId = null;
             currentGroupName = '';
+            templateGroupId = null; // 关键：将初始ID也清空
 
             // 获取随机分组后加载
             fetchRandomGroupId()
                 .finally(() => {
                     refreshButton.disabled = false;
-                    refreshButton.innerHTML = '<i class=\"fa fa-refresh mr-2\"></i><span>刷新图片</span>';
+                    refreshButton.innerHTML = '<i class="fa fa-refresh mr-2"></i><span>刷新图片</span>';
                 });
         }
 
@@ -360,12 +316,43 @@
             document.body.removeChild(link);
         }
 
-        // 事件监听器
-        // 刷新按钮改为获取新的随机分组
+        // 获取分组信息的函数
+        function fetchRandomGroupId() {
+            showStatus('正在获取分组信息...');
+            galleryTitle.textContent = '加载中...';
+
+            const apiUrl = templateGroupId ? '/api/group/randomGroupInfo?groupId=' + templateGroupId : '/api/group/randomGroupInfo';
+
+            return fetch(apiUrl)
+                .then(response => response.json())
+                .then(result => {
+                    if (result.code === 200 && result.data && result.data.groupId) {
+                        currentGroupId = result.data.groupId;
+                        currentGroupName = result.data.groupName || '随机套图';
+                        galleryTitle.textContent = currentGroupName;
+                        statusMessage.classList.add('hidden'); // 隐藏 "正在获取"
+                        loadMoreImages(); // 获取信息成功后，开始加载图片
+                    } else {
+                        throw new Error(result.message || '获取分组信息失败');
+                    }
+                })
+                .catch(error => {
+                    console.error('获取分组信息失败:', error);
+                    showStatus('获取分组信息失败: ' + error.message, true);
+                });
+        }
+
+        // --- 事件监听器 ---
+
+        // 刷新按钮
         refreshButton.addEventListener('click', refreshWithRandomGroup);
-        backToHomeBtn.addEventListener('click', () => window.location.href = '/');
+        // 返回上级
+        backToHomeBtn.addEventListener('click', () => window.history.back());
+        // 关闭查看器
         closeViewer.addEventListener('click', closeImageViewer);
+        // 上一张
         prevImage.addEventListener('click', showPrevImage);
+        // 下一张
         nextImage.addEventListener('click', showNextImage);
 
         // 键盘事件
@@ -389,69 +376,13 @@
             }
         });
 
-        // 根据跳转场景初始化
-        if (isFromGroupList && currentGroupId && currentGroupName) {
-            // 从分组列表跳转，直接显示套图名称并开始加载
-            galleryTitle.textContent = currentGroupName;
-            loadMoreImages();
-        } else if (currentGroupId && currentGroupName) {
-            // 从主页跳转，有groupId和groupName，直接显示套图名称并开始加载
-            galleryTitle.textContent = currentGroupName;
-            loadMoreImages();
-        } else if (currentGroupId) {
-            // 从主页跳转，有groupId但没有groupName，需要先获取套图信息
-            fetchRandomGroupInfo();
-        } else {
-            // 随机套图，没有groupId，先获取随机分组ID
-            fetchRandomGroupId();
-        }
-        
-        // 获取随机分组信息的函数
-        function fetchRandomGroupId() {
-            showStatus('正在获取随机分组...');
-            galleryTitle.textContent = '加载中...';
-            
-            return fetch('/api/group/randomGroupInfo')
-                .then(response => response.json())
-                .then(result => {
-                    if (result.code === 200 && result.data && result.data.groupId) {
-                        currentGroupId = result.data.groupId;
-                        currentGroupName = result.data.groupName || '随机套图';
-                        galleryTitle.textContent = currentGroupName;
-                        loadMoreImages();
-                    } else {
-                        throw new Error(result.message || '获取随机分组信息失败');
-                    }
-                })
-                .catch(error => {
-                    console.error('获取随机分组信息失败:', error);
-                    showStatus('获取随机分组信息失败: ' + error.message, true);
-                });
-        }
-        
-        // 获取随机套图信息的函数
-        function fetchRandomGroupInfo() {
-            showStatus('正在获取随机套图信息...');
-            galleryTitle.textContent = '加载中...';
-            
-            fetch('/api/pic/group?groupId=' + currentGroupId)
-                .then(response => response.json())
-                .then(result => {
-                    if (result.code === 200 && result.data) {
-                        currentGroupName = result.data.groupName || '随机套图';
-                        galleryTitle.textContent = currentGroupName;
-                        loadMoreImages();
-                    } else {
-                        throw new Error(result.message || '获取套图信息失败');
-                    }
-                })
-                .catch(error => {
-                    console.error('获取随机套图信息失败:', error);
-                    showStatus('获取套图信息失败: ' + error.message, true);
-                    // 失败时仍然尝试加载图片
-                    loadMoreImages();
-                });
-        }
+        // --- 初始加载 ---
+        // 页面加载时，统一调用此函数
+        // 它会检查 templateGroupId 是否存在：
+        // - 如果存在，它会获取该
+        // - 如果不存在 (null)，它会获取一个随机
+        fetchRandomGroupId();
+
     });
 </script>
 

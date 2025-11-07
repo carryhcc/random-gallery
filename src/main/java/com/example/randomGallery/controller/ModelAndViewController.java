@@ -45,9 +45,13 @@ public class ModelAndViewController {
      * 跳转到随机套图页面
      */
     @GetMapping("/showPicList")
-    public ModelAndView showPicList() {
-        log.debug("跳转到随机套图页面");
-        return new ModelAndView("picList");
+    public ModelAndView showPicList(@RequestParam(required = false) Long groupId) {
+        log.debug("跳转到随机套图页面, groupId: {}", groupId);
+        ModelAndView modelAndView = new ModelAndView("picList");
+        if (groupId != null) {
+            modelAndView.addObject("groupId", groupId);
+        }
+        return modelAndView;
     }
 
     /**
