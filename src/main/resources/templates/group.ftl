@@ -415,8 +415,8 @@
      * @param {HTMLElement} cell - 单元格元素
      */
     function navigateToPicPage(groupId, groupName, cell) {
-        // 跳转到新的页面，使用/showPic而不是/showPicList
-        window.location.href = '/showPic?groupId=' + groupId + '&groupName=' + encodeURIComponent(groupName);
+        // 跳转到 picList 页面
+        window.location.href = '/showPicList?groupId=' + groupId + '&groupName=' + encodeURIComponent(groupName);
     }
     
     /**

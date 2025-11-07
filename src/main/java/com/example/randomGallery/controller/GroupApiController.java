@@ -29,7 +29,7 @@ public class GroupApiController {
      * 获取随机分组信息
      */
     @GetMapping("/randomGroupInfo")
-    public Result<GroupVO> getRandomGroupInfo(@RequestParam("groupId") Long groupId) {
+    public Result<GroupVO> getRandomGroupInfo(@RequestParam(value = "groupId", required = false) Long groupId) {
         cacheService.resetTimer();
         groupId = groupId != null ? groupId : cacheService.getRandomGroupId();
         GroupVO groupInfo = groupServiceApi.queryGroupById(groupId);
