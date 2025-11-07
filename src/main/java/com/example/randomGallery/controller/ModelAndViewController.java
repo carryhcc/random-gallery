@@ -58,13 +58,4 @@ public class ModelAndViewController {
         log.debug("跳转到分组列表页面");
         return new ModelAndView("group");
     }
-
-    /**
-     * 跳转到查询列表页面
-     */
-    @GetMapping("/showQueryList")
-    public ModelAndView showQueryList(@RequestParam("groupId") Integer groupId) {
-        log.debug("跳转到查询列表页面，groupId: {}", groupId);
-        return new ModelAndView("picList");
-    }
 }
