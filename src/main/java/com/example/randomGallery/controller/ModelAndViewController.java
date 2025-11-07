@@ -42,31 +42,12 @@ public class ModelAndViewController {
     }
 
     /**
-     * 跳转到图片列表页面
+     * 跳转到随机套图页面
      */
     @GetMapping("/showPicList")
-    public ModelAndView showPicListPage(
-            @RequestParam(value = "groupId", required = false) Integer groupId,
-            @RequestParam(value = "groupName", required = false) String groupName) {
-        log.debug("跳转到图片列表页面，groupId: {}, groupName: {}", groupId, groupName);
-        ModelAndView modelAndView = new ModelAndView("picList");
-        
-        // 为模板传递初始数据
-        if (groupId != null && groupName != null) {
-            // 从分组列表跳转，有具体的套图信息
-            modelAndView.addObject("groupId", groupId);
-            modelAndView.addObject("groupName", groupName);
-            modelAndView.addObject("isFromGroupList", true);
-        } else if (groupId != null) {
-            // 从主页跳转，只有groupId
-            modelAndView.addObject("groupId", groupId);
-            modelAndView.addObject("isFromGroupList", false);
-        } else {
-            // 随机套图，没有groupId
-            modelAndView.addObject("isFromGroupList", false);
-        }
-        
-        return modelAndView;
+    public ModelAndView showPicList() {
+        log.debug("跳转到随机套图页面");
+        return new ModelAndView("picList");
     }
 
     /**

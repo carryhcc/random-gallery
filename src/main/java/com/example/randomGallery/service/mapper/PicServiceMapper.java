@@ -2,6 +2,7 @@ package com.example.randomGallery.service.mapper;
 
 
 import com.example.randomGallery.entity.DO.PicDO;
+import com.example.randomGallery.entity.QO.PicQry;
 import com.example.randomGallery.entity.VO.PicVO;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
@@ -35,6 +36,15 @@ public interface PicServiceMapper {
      * @return
      */
     Integer getGroupCount(@Param("tableName") String tableName, @Param("groupId") Long groupId);
+
+    /**
+     * 查询图片列表
+     * @param tableName
+     * @param qry
+     * @return
+     */
+    List<PicVO> list(@Param("tableName") String tableName, @Param("qry") PicQry qry);
+
 
     PicVO getGroupRandomPicInfo(@Param("tableName") String tableName, @Param("groupId") Long groupId);
 }

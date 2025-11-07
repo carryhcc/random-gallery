@@ -58,7 +58,7 @@
         FROM ${tableName}
         WHERE id = #{id}
     </select>
-    <select id="getGroupCount" resultType="java.lang.Long">
+    <select id="getGroupCount" resultType="java.lang.Integer">
         SELECT count(*)
         FROM ${tableName}
         WHERE group_id = #{groupId}
@@ -68,8 +68,19 @@
                pic_name,
                group_id
         FROM ${tableName}
-        WHERE group_id = #{groupId}
+        WHERE is_delete = 0
+          AND group_id = #{groupId}
         ORDER BY RAND()
         LIMIT 1;
+    </select>
+    <select id="list" resultType="com.example.randomGallery.entity.VO.PicVO">
+        SELECT pic_url,
+        pic_name,
+        group_id
+        FROM ${tableName}
+        WHERE is_delete = 0
+        <if test="qry.groupId != null">
+            and group_id = #{qry.groupId}
+        </if>
     </select>
 </mapper>
