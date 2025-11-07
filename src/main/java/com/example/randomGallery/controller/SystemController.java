@@ -2,6 +2,7 @@ package com.example.randomGallery.controller;
 
 import com.example.randomGallery.common.Result;
 import com.example.randomGallery.service.CacheService;
+import com.example.randomGallery.service.GroupServiceApi;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.bind.annotation.*;
@@ -18,6 +19,7 @@ import java.sql.SQLException;
 public class SystemController {
 
     private final CacheService cacheService;
+    private final GroupServiceApi groupServiceApi;
 
     /**
      * 获取当前环境
@@ -64,5 +66,12 @@ public class SystemController {
     public Result<String> switchToProd() throws SQLException {
         log.info("切换到生产环境");
         return switchEnv("prod");
+    }
+    /**
+     * 更新分组数据
+     */
+    @GetMapping("/up/group")
+    public void upGroup(){
+        groupServiceApi.updateGroupInfo();
     }
 }

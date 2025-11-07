@@ -2,7 +2,6 @@ package com.example.randomGallery.entity.VO;
 
 import lombok.Data;
 import lombok.NoArgsConstructor;
-import lombok.AllArgsConstructor;
 
 import java.io.Serializable;
 

@@ -42,18 +42,6 @@
         </if>
     </select>
 
-    <select id="queryGroupCount" resultType="java.lang.Long">
-        SELECT COUNT(DISTINCT group_id, pic_name)
-        FROM ${tableName}
-        WHERE
-        is_delete = 0
-        <if test="qry.groupId != null">
-            AND group_id = #{qry.groupId}
-        </if>
-        <if test="qry.picName !=null and qry.picName !=''">
-            AND pic_name LIKE CONCAT('%', #{qry.picName}, '%')
-        </if>
-    </select>
     <select id="selectGroupIdList" resultType="java.lang.Long">
         select group_id
         FROM ${tableName}

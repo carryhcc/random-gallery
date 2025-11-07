@@ -3,7 +3,6 @@ package com.example.randomGallery.service.Impl;
 import com.example.randomGallery.entity.QO.GroupQry;
 import com.example.randomGallery.entity.VO.GroupPageVO;
 import com.example.randomGallery.entity.VO.GroupVO;
-import com.example.randomGallery.entity.VO.PicVO;
 import com.example.randomGallery.entity.common.PageResult;
 
 import com.example.randomGallery.service.CacheService;
@@ -64,17 +63,13 @@ public class GroupServiceApiImpl implements GroupServiceApi {
     @Override
     public void updateGroupInfo() {
         // 定时任务更新分组图片/总数信息
-        String sqlName = cacheService.getGroupSqlName();
-        List<Long> groupIdList = groupServiceMapper.selectGroupIdList(sqlName);
+        String sqlGroupName = cacheService.getGroupSqlName();
+        String sqlPicName = cacheService.getPicSqlName();
+        List<Long> groupIdList = groupServiceMapper.selectGroupIdList(sqlGroupName);
         for (Long groupId : groupIdList) {
-            Integer count = picServiceMapper.getGroupCount(sqlName, groupId);
-            PicVO picVO = picServiceMapper.getGroupRandomPicInfo(sqlName, groupId);
-            GroupVO groupVO = new GroupVO();
-            groupVO.setGroupId(groupId);
-            groupVO.setGroupName(picVO.getPicName());
-            groupVO.setGroupUrl(picVO.getPicUrl());
-            groupVO.setGroupCount(count);
-            groupServiceMapper.updateById(groupVO, sqlName);
+            GroupVO groupVO = picServiceMapper.queryPicCountInfo(sqlPicName, groupId);
+            groupServiceMapper.updateById(groupVO, sqlGroupName);
+            log.warn("定时任务更新分组图片/总数信息: {}", groupVO);
         }
     }
 

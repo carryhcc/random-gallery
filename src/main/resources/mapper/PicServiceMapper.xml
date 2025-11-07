@@ -3,14 +3,6 @@
 
 <mapper namespace="com.example.randomGallery.service.mapper.PicServiceMapper">
 
-    <resultMap type="com.example.randomGallery.entity.DO.PicDO" id="PicInfoMap">
-        <result property="id" column="id"/>
-        <result property="picUrl" column="pic_url"/>
-        <result property="picName" column="pic_name"/>
-        <result property="groupId" column="group_id"/>
-        <result property="isDelete" column="is_delete"/>
-    </resultMap>
-
     <select id="getMaxId" resultType="java.lang.Long">
         SELECT id
         FROM ${tableName}
@@ -43,35 +35,12 @@
         LIMIT 1
     </select>
 
-
-    <select id="getRandomGroupPicList" resultType="com.example.randomGallery.entity.DO.PicDO">
-        SELECT id, pic_url, pic_name, group_id, is_delete
-        FROM ${tableName}
-        WHERE is_delete = 0
-          AND group_id = #{groupId}
-    </select>
-
     <select id="getInfoById" resultType="com.example.randomGallery.entity.VO.PicVO">
         SELECT pic_url,
                pic_name,
                group_id
         FROM ${tableName}
         WHERE id = #{id}
-    </select>
-    <select id="getGroupCount" resultType="java.lang.Integer">
-        SELECT count(*)
-        FROM ${tableName}
-        WHERE group_id = #{groupId}
-    </select>
-    <select id="getGroupRandomPicInfo" resultType="com.example.randomGallery.entity.VO.PicVO">
-        SELECT pic_url,
-               pic_name,
-               group_id
-        FROM ${tableName}
-        WHERE is_delete = 0
-          AND group_id = #{groupId}
-        ORDER BY RAND()
-        LIMIT 1;
     </select>
     <select id="list" resultType="com.example.randomGallery.entity.VO.PicVO">
         SELECT
@@ -84,5 +53,25 @@
         <if test="qry.groupId != null">
             and group_id = #{qry.groupId}
         </if>
+    </select>
+    <select id="queryPicCountInfo" resultType="com.example.randomGallery.entity.VO.GroupVO">
+        SELECT
+            p.pic_url AS groupUrl,
+            p.pic_name AS groupName,
+            p.group_id AS groupId,
+            t.total_count AS groupCount
+        FROM (
+                 SELECT id
+                 FROM ${tableName}
+                 WHERE is_delete = 0 AND group_id = #{groupId}
+                 ORDER BY RAND()
+                 LIMIT 1
+             ) AS rand_id
+                 LEFT JOIN ${tableName} p ON rand_id.id = p.id
+                 CROSS JOIN (
+            SELECT COUNT(1) AS total_count
+            FROM ${tableName}
+            WHERE is_delete = 0 AND group_id = #{groupId}
+        ) AS t;
     </select>
 </mapper>
