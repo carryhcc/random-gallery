@@ -3,68 +3,110 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>图片展示 - 随机图库</title>
+    <title>随机图片 - 随机图库</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Poppins:wght@600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
-    <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="/css/style.css">
+    <style>
+        .pic-container {
+            max-width: 900px;
+            margin: 0 auto;
+            padding: var(--spacing-xl) var(--spacing-md);
+        }
+        
+        .image-wrapper {
+            position: relative;
+            border-radius: var(--radius-xl);
+            overflow: hidden;
+            background: var(--color-bg-tertiary);
+            border: 1px solid var(--color-border);
+            box-shadow: var(--shadow-xl);
+            margin-bottom: var(--spacing-lg);
+        }
+        
+        .image-wrapper img {
+            width: 100%;
+            height: auto;
+            display: block;
+        }
+        
+        .image-overlay {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: linear-gradient(to top, rgba(0, 0, 0, 0.8) 0%, transparent 100%);
+            padding: var(--spacing-lg);
+            display: flex;
+            justify-content: center;
+            opacity: 0;
+            transition: opacity var(--transition-base);
+        }
+        
+        .image-wrapper:hover .image-overlay {
+            opacity: 1;
+        }
+        
+        #groupName {
+            transition: all var(--transition-fast);
+        }
+        
+        #groupName:hover {
+            opacity: 0.8;
+            transform: translateX(2px);
+        }
+    </style>
 </head>
 <body class="min-h-screen flex items-center justify-center p-4">
 
-<div class="container pic-container">
+<div class="pic-container">
     <div class="card animate-fade-in">
         <div class="card-header">
-            <h1 class="card-title">精选图片</h1>
+            <h1 class="card-title">
+                <i class="fas fa-image" style="margin-right: 0.5rem;"></i>
+                精选图片
+            </h1>
             <p class="card-subtitle">希望你喜欢这张随机展示的图片</p>
         </div>
         
-        <div class="image-container mb-6">
-            <!-- 初始显示加载状态 -->
-            <div id="loadingState" class="loading-container">
-                <div class="loading-spinner"></div>
-                <p>正在加载图片...</p>
-            </div>
-            
-            <!-- 图片显示区域，初始隐藏 -->
-            <div id="imageContainer" style="display: none;">
-                <img id="displayImage" src="" alt="图片加载失败..." class="image">
-                <div class="image-overlay">
-                    <div class="image-actions">
-                        <button id="downloadBtn" class="btn btn-primary btn-sm download-icon-btn" style="background: rgba(0, 0, 0, 0.6) !important; border: none !important; color: white !important; width: 2.5rem !important; height: 2.5rem !important; border-radius: 50% !important; padding: 0 !important; display: flex !important; align-items: center !important; justify-content: center !important;">
-                            <i class="fa fa-download"></i>
-                        </button>
-                    </div>
-                </div>
-            </div>
-            
-            <!-- 错误状态，初始隐藏 -->
-            <div id="errorState" class="loading-container" style="display: none;">
-                <i class="fa fa-exclamation-circle" style="font-size: 40px; margin-bottom: 16px; color: #ef4444;"></i>
-                <p id="errorMessage">加载失败，请重试</p>
+        <div class="image-wrapper" id="imageWrapper" style="display: none;">
+            <img id="displayImage" src="" alt="图片加载失败..." class="image">
+            <div class="image-overlay">
+                <button id="downloadBtn" class="download-icon-btn">
+                    <i class="fas fa-download"></i>
+                </button>
             </div>
         </div>
         
-        <!-- 图片信息区域，初始隐藏 -->
-        <div id="picInfo" class="pic-info mb-4" style="display: none;">
+        <!-- 加载状态 -->
+        <div id="loadingState" class="loading-container">
+            <div class="loading-spinner"></div>
+            <p>正在加载图片...</p>
+        </div>
+        
+        <!-- 错误状态 -->
+        <div id="errorState" class="loading-container" style="display: none;">
+            <i class="fas fa-exclamation-circle" style="font-size: 3rem; color: var(--color-error); margin-bottom: var(--spacing-md);"></i>
+            <p id="errorMessage" style="color: var(--color-text-secondary);">加载失败，请重试</p>
+        </div>
+        
+        <!-- 图片信息 -->
+        <div id="picInfo" class="pic-info" style="display: none;">
             <div class="info-item">
-                <span class="info-label">图片ID：</span>
-                <span id="picId" class="info-value">--</span>
-            </div>
-            <div class="info-item">
-                <span class="info-label">图片名称：</span>
-                <span id="picName" class="info-value">--</span>
+                <span class="info-label">分组名称：</span>
+                <span id="groupName" class="info-value" style="color: var(--color-primary); cursor: pointer; text-decoration: underline;">--</span>
             </div>
         </div>
         
-        <div class="button-row">
+        <div class="button-row" style="display: flex; gap: var(--spacing-md); flex-wrap: wrap; justify-content: center;">
             <button id="backToHomeBtn" class="btn btn-secondary">
-                <i class="fa fa-arrow-left"></i>
+                <i class="fas fa-arrow-left"></i>
                 <span>返回首页</span>
             </button>
-            <button id="refreshBtn" class="btn btn-secondary">
-                <i class="fa fa-sync-alt"></i>
+            <button id="refreshBtn" class="btn btn-primary">
+                <i class="fas fa-sync-alt"></i>
                 <span>刷新</span>
             </button>
         </div>
@@ -77,23 +119,19 @@
         const refreshBtn = document.getElementById('refreshBtn');
         const downloadBtn = document.getElementById('downloadBtn');
         const displayImage = document.getElementById('displayImage');
-        const picIdElement = document.getElementById('picId');
-        const picNameElement = document.getElementById('picName');
+        const groupNameElement = document.getElementById('groupName');
         const loadingState = document.getElementById('loadingState');
-        const imageContainer = document.getElementById('imageContainer');
+        const imageWrapper = document.getElementById('imageWrapper');
         const errorState = document.getElementById('errorState');
         const errorMessage = document.getElementById('errorMessage');
         const picInfo = document.getElementById('picInfo');
+        
+        let currentGroupId = null;
+        let currentGroupName = '';
 
-        /**
-         * 从API获取随机图片数据
-         * 通过调用/api/pic/random/one接口获取图片信息
-         */
         function fetchRandomPic() {
-            // 显示加载状态，隐藏其他状态
             showLoadingState();
             
-            // 调用API获取随机图片数据
             fetch('/api/pic/random/one')
                 .then(response => {
                     if (!response.ok) {
@@ -102,85 +140,117 @@
                     return response.json();
                 })
                 .then(data => {
-                    // 成功获取数据后渲染页面
                     renderPicData(data.data);
                 })
                 .catch(error => {
-                    // 处理错误
                     console.error('获取图片数据失败:', error);
                     showErrorState('获取图片失败: ' + error.message);
                 });
         }
 
-        /**
-         * 渲染图片数据到页面
-         * @param {Object} data - 包含图片信息的对象
-         */
         function renderPicData(data) {
             try {
-                // 设置图片信息
                 if (data && data.picUrl) {
                     displayImage.src = data.picUrl;
                 } else {
                     throw new Error('无效的图片数据格式');
                 }
                 
-                // 设置图片ID和名称
-                picIdElement.textContent = data.groupId || '未知';
-                picNameElement.textContent = data.picName || '未知';
+                currentGroupId = data.groupId;
                 
-                // 显示图片和信息，隐藏加载状态
-                showImageState();
+                // 如果有groupId，获取分组信息
+                if (currentGroupId) {
+                    fetchGroupInfo(currentGroupId);
+                } else {
+                    groupNameElement.textContent = '未知分组';
+                    groupNameElement.style.cursor = 'default';
+                    groupNameElement.style.textDecoration = 'none';
+                    groupNameElement.style.color = 'var(--color-text-primary)';
+                    showImageState();
+                }
                 
             } catch (error) {
                 console.error('渲染图片数据失败:', error);
                 showErrorState('渲染失败: ' + error.message);
             }
         }
+        
+        function fetchGroupInfo(groupId) {
+            fetch('/api/group/randomGroupInfo?groupId=' + encodeURIComponent(groupId))
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('HTTP error! Status: ' + response.status);
+                    }
+                    return response.json();
+                })
+                .then(result => {
+                    if (result.code === 200 && result.data) {
+                        currentGroupName = result.data.groupName || '未命名分组';
+                        groupNameElement.textContent = currentGroupName;
+                        groupNameElement.style.cursor = 'pointer';
+                        groupNameElement.style.textDecoration = 'underline';
+                        groupNameElement.style.color = 'var(--color-primary)';
+                    } else {
+                        groupNameElement.textContent = '未知分组';
+                        groupNameElement.style.cursor = 'default';
+                        groupNameElement.style.textDecoration = 'none';
+                        groupNameElement.style.color = 'var(--color-text-primary)';
+                    }
+                    showImageState();
+                })
+                .catch(error => {
+                    console.error('获取分组信息失败:', error);
+                    groupNameElement.textContent = '未知分组';
+                    groupNameElement.style.cursor = 'default';
+                    groupNameElement.style.textDecoration = 'none';
+                    groupNameElement.style.color = 'var(--color-text-primary)';
+                    showImageState();
+                });
+        }
+        
+        function navigateToGroup() {
+            if (currentGroupId && currentGroupName) {
+                window.location.href = '/showPicList?groupId=' + currentGroupId + '&groupName=' + encodeURIComponent(currentGroupName);
+            }
+        }
+        
+        // 为分组名称元素添加点击事件（使用事件委托，确保动态更新后仍能工作）
+        groupNameElement.addEventListener('click', function() {
+            if (currentGroupId && currentGroupName) {
+                navigateToGroup();
+            }
+        });
 
-        /**
-         * 显示加载状态
-         */
         function showLoadingState() {
             loadingState.style.display = 'flex';
-            imageContainer.style.display = 'none';
+            imageWrapper.style.display = 'none';
             errorState.style.display = 'none';
             picInfo.style.display = 'none';
         }
 
-        /**
-         * 显示图片状态
-         */
         function showImageState() {
             loadingState.style.display = 'none';
-            imageContainer.style.display = 'block';
+            imageWrapper.style.display = 'block';
             errorState.style.display = 'none';
             picInfo.style.display = 'block';
         }
 
-        /**
-         * 显示错误状态
-         * @param {string} message - 错误消息
-         */
         function showErrorState(message) {
             errorMessage.textContent = message || '加载失败，请重试';
             loadingState.style.display = 'none';
-            imageContainer.style.display = 'none';
+            imageWrapper.style.display = 'none';
             errorState.style.display = 'flex';
             picInfo.style.display = 'none';
         }
 
-        // 返回首页按钮逻辑
         backToHomeBtn.addEventListener('click', function() {
-            window.location.href = '/'; // 跳转到根路径
+            window.location.href = '/';
         });
 
-        // 刷新按钮逻辑
         refreshBtn.addEventListener('click', function() {
-            fetchRandomPic(); // 重新获取图片数据
+            fetchRandomPic();
         });
 
-        // 下载按钮逻辑
         downloadBtn.addEventListener('click', function() {
             const imageUrl = displayImage.src;
             if (imageUrl) {
@@ -194,21 +264,15 @@
             }
         });
 
-        // 图片加载失败处理
         displayImage.addEventListener('error', function() {
             showErrorState('图片加载失败，请点击刷新重试');
         });
 
-        /**
-         * 页面初始化
-         * 加载页面时立即获取随机图片数据
-         */
         function initPage() {
             console.log('页面加载完成，开始获取随机图片');
             fetchRandomPic();
         }
 
-        // 初始化页面
         initPage();
     });
 </script>

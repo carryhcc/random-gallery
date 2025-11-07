@@ -1,20 +1,27 @@
 <!DOCTYPE html>
-<html lang="zh">
+<html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>随机图库</title>
+    <title>随机图库 - 专业图片浏览平台</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Poppins:wght@600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
-    <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="/css/style.css">
+    <style>
+        body {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+        }
+    </style>
 </head>
-<body class="min-h-screen flex items-center justify-center p-4">
+<body>
 
 <!-- 环境切换器 -->
-<div class="dropdown" id="env-dropdown" style="position: fixed; top: 1rem; left: 1rem; z-index: 1000;">
+<div class="dropdown" id="env-dropdown" style="position: fixed; top: 1.5rem; left: 1.5rem; z-index: 1030;">
     <div class="dropdown-toggle" onclick="toggleDropdown()">
         <span id="selected-env-text">加载中...</span>
         <svg class="dropdown-arrow" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -22,36 +29,39 @@
         </svg>
     </div>
     <div class="dropdown-menu">
-        <a href="#" data-env="dev" onclick="selectEnvironment('dev', '开发环境')" class="dropdown-item">开发环境</a>
-        <a href="#" data-env="test" onclick="selectEnvironment('test', '测试环境')" class="dropdown-item">测试环境</a>
-        <a href="#" data-env="prod" onclick="selectEnvironment('prod', '生产环境')" class="dropdown-item">生产环境</a>
+        <a href="#" data-env="dev" onclick="selectEnvironment('dev')" class="dropdown-item">开发环境</a>
+        <a href="#" data-env="test" onclick="selectEnvironment('test')" class="dropdown-item">测试环境</a>
+        <a href="#" data-env="prod" onclick="selectEnvironment('prod')" class="dropdown-item">生产环境</a>
     </div>
 </div>
 
 <!-- 主容器 -->
 <div class="home-container">
-    <!-- 主卡片 -->
     <div class="card home-card animate-fade-in">
         <div class="card-header">
-            <h1 class="card-title">随机图库</h1>
-            <p class="card-subtitle">发现和浏览精美的随机图片</p>
+            <h1 class="card-title">
+                <i class="fas fa-images" style="margin-right: 0.5rem;"></i>
+                随机图库
+            </h1>
+            <p class="card-subtitle">发现和浏览精美的随机图片集合</p>
         </div>
+        
         <div class="button-group">
             <a href="/showPic" class="btn btn-primary btn-full">
                 <i class="fas fa-image"></i>
-                随机图片
+                <span>随机图片</span>
             </a>
             <a href="/randomGallery" class="btn btn-primary btn-full">
                 <i class="fas fa-th"></i>
-                随机画廊
+                <span>随机画廊</span>
             </a>
             <a href="#" id="randomGroupBtn" class="btn btn-primary btn-full">
                 <i class="fas fa-images"></i>
-                随机套图
+                <span>随机套图</span>
             </a>
             <a href="/groupList" class="btn btn-primary btn-full">
                 <i class="fas fa-list"></i>
-                分组列表
+                <span>分组列表</span>
             </a>
         </div>
     </div>
@@ -72,27 +82,15 @@
         }, 3000);
     }
 
-    /**
-     * 切换下拉菜单的显示/隐藏
-     */
     function toggleDropdown() {
         document.getElementById('env-dropdown').classList.toggle('open');
     }
 
-    /**
-     * 处理环境选择
-     * @param {string} targetEnv - 'dev', 'test', 或 'prod'
-     */
     function selectEnvironment(targetEnv) {
-        // 立即关闭下拉菜单
         toggleDropdown();
-        // 调用后端切换逻辑
         switchEnvironment(targetEnv);
     }
 
-    /**
-     * 获取当前环境并更新下拉菜单的状态
-     */
     async function updateEnvStatus() {
         try {
             const response = await fetch('/api/system/env/current');
@@ -109,11 +107,11 @@
             envOptions.forEach(option => {
                 const optionEnv = option.dataset.env;
                 if (optionEnv === currentEnv) {
-                    option.classList.add('active'); // 激活当前选项
-                    selectedEnvText.textContent = option.textContent; // 更新显示文本
+                    option.classList.add('active');
+                    selectedEnvText.textContent = option.textContent;
                     found = true;
                 } else {
-                    option.classList.remove('active'); // 移除其他选项的激活状态
+                    option.classList.remove('active');
                 }
             });
 
@@ -128,10 +126,6 @@
         }
     }
 
-    /**
-     * 切换环境的函数
-     * @param {string} targetEnv - 目标环境
-     */
     async function switchEnvironment(targetEnv) {
         const envMap = { dev: '开发环境', test: '测试环境', prod: '生产环境' };
         showToast(`正在切换到 ${envMap[targetEnv] || targetEnv}...`, 'info');
@@ -143,7 +137,6 @@
             const result = await response.json();
             
             if (result.code === 200) {
-                // 切换成功后，重新获取最新环境并更新UI
                 await updateEnvStatus();
                 const currentActiveButtonText = document.getElementById('selected-env-text').textContent;
                 showToast(`成功切换到 ${currentActiveButtonText}！`, 'success');
@@ -154,47 +147,37 @@
         } catch (error) {
             console.error("切换环境失败:", error);
             showToast("切换环境失败: " + error.message, "error");
-            // 如果切换失败，刷新状态回退到真实环境
             await updateEnvStatus();
         }
     }
 
-    // 页面加载完成后立即执行
     document.addEventListener('DOMContentLoaded', updateEnvStatus);
 
-    // 处理随机套图按钮点击事件
     document.getElementById('randomGroupBtn').addEventListener('click', function(e) {
         e.preventDefault();
-        // 先获取随机分组信息（只包含ID和名称），然后跳转到对应页面
         fetch('/api/group/randomGroupInfo')
             .then(response => response.json())
             .then(result => {
                 if (result.code === 200 && result.data && result.data.groupId) {
-                    // 从返回的数据中获取组ID和组名称并跳转
                     const groupId = result.data.groupId;
                     const groupName = result.data.groupName || '随机套图';
                     window.location.href = '/showPicList?groupId=' + groupId + '&groupName=' + encodeURIComponent(groupName);
                 } else {
-                    // 如果获取失败，直接跳转不传递参数
                     window.location.href = '/showPicList';
                 }
             })
             .catch(error => {
                 console.error('获取随机分组信息失败:', error);
-                // 出错时直接跳转
                 window.location.href = '/showPicList';
             });
     });
 
-    // 点击页面其他地方关闭下拉菜单
     window.onclick = function(event) {
         const dropdown = document.getElementById('env-dropdown');
-        // 检查点击的不是下拉菜单本身或其子元素
         if (dropdown && !dropdown.contains(event.target)) {
             dropdown.classList.remove('open');
         }
     }
 </script>
-
 </body>
 </html>
