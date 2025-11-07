@@ -228,8 +228,10 @@
             
             // 使用新的API接口
             postData('/api/group/list', requestData).then(response => {
-                // 直接使用response.data作为数据数组
-                const groups = response.data || [];
+                // 新的返回结构：response.data 包含 list 和分页信息
+                const pageData = response.data || {};
+                const groups = pageData.list || [];
+                
                 if (groups.length > 0) {
                     showTable();
                     const resultsBody = document.getElementById('results-body');
@@ -266,11 +268,10 @@
                     showEmptyState();
                 }
 
-                // 使用groups数组长度作为总记录数
-                totalCount = groups.length;
-                // 由于接口返回全部数据，只有一页
-                totalPages = 1;
-                currentPageIndex = 1;
+                // 使用返回的分页信息
+                totalCount = pageData.total || 0;
+                totalPages = pageData.pages || 1;
+                currentPageIndex = pageData.pageNum || 1;
                 
                 document.getElementById('totalCount').textContent = totalCount;
                 updatePagination();
@@ -309,8 +310,9 @@
         const nextPageBtn = document.getElementById('nextPage');
 
         pageInfoSpan.textContent = '第 ' + currentPageIndex + ' 页 / 共 ' + totalPages + ' 页';
+        // 使用分页信息判断按钮状态，如果没有分页信息则使用默认逻辑
         prevPageBtn.disabled = currentPageIndex <= 1;
-        nextPageBtn.disabled = currentPageIndex >= totalPages;
+        nextPageBtn.disabled = currentPageIndex >= totalPages || totalPages === 0;
 
         generatePageNumbers();
     }

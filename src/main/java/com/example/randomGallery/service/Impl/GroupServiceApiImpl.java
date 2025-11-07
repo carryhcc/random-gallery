@@ -4,12 +4,14 @@ import com.example.randomGallery.entity.QO.GroupQry;
 import com.example.randomGallery.entity.VO.GroupPageVO;
 import com.example.randomGallery.entity.VO.GroupVO;
 import com.example.randomGallery.entity.VO.PicVO;
+import com.example.randomGallery.entity.common.PageResult;
 
 import com.example.randomGallery.service.CacheService;
 import com.example.randomGallery.service.GroupServiceApi;
 import com.example.randomGallery.service.mapper.GroupServiceMapper;
 import com.example.randomGallery.service.mapper.PicServiceMapper;
 import com.github.pagehelper.PageHelper;
+import com.github.pagehelper.PageInfo;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -40,17 +42,23 @@ public class GroupServiceApiImpl implements GroupServiceApi {
      * 查询分组列表，支持分页
      *
      * @param qry 查询条件，包含分页参数
-     * @return 分页后的分组列表
+     * @return 分页后的分组列表，包含分页信息
      */
     @Override
-    public List<GroupVO> queryGroupList(GroupQry qry) {
+    public PageResult<GroupVO> queryGroupList(GroupQry qry) {
         log.debug("查询分组列表，参数: {}", qry);
         String sqlName = cacheService.getGroupSqlName();
         PageHelper.startPage(qry.getPageIndex(), qry.getPageSize());
         List<GroupVO> result = groupServiceMapper.queryGroupList(qry, sqlName);
+        PageInfo<GroupVO> pageInfo = new PageInfo<>(result);
 
-        log.debug("查询分组列表完成，返回 {} 条记录", result.size());
-        return result;
+        log.debug("查询分组列表完成，返回 {} 条记录，共 {} 页", result.size(), pageInfo.getPages());
+        return new PageResult<>(
+                pageInfo.getList(),
+                pageInfo.getTotal(),
+                pageInfo.getPageNum(),
+                pageInfo.getPageSize()
+        );
     }
 
     @Override

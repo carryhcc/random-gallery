@@ -4,9 +4,8 @@ package com.example.randomGallery.service;
 import com.example.randomGallery.entity.QO.GroupQry;
 import com.example.randomGallery.entity.VO.GroupPageVO;
 import com.example.randomGallery.entity.VO.GroupVO;
+import com.example.randomGallery.entity.common.PageResult;
 import org.springframework.stereotype.Service;
-
-import java.util.List;
 
 @Service
 public interface GroupServiceApi {
@@ -14,7 +13,7 @@ public interface GroupServiceApi {
 
     GroupVO queryGroupById(Long groupId);
 
-    List<GroupVO> queryGroupList(GroupQry qry);
+    PageResult<GroupVO> queryGroupList(GroupQry qry);
 
     void updateGroupInfo();
 
