@@ -10,6 +10,83 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="/css/style.css">
+    <style>
+        /* 表格列样式 */
+        .count-column {
+            width: 120px;
+            text-align: center;
+        }
+        .image-column {
+            width: 100px;
+            text-align: center;
+        }
+        .name-column {
+            width: 250px;
+        }
+
+        
+        /* 单元格样式 */
+        .count-cell {
+            text-align: center;
+            font-weight: 500;
+            color: #4f46e5;
+        }
+        .image-cell {
+            text-align: center;
+            padding: 4px;
+        }
+        
+        /* 分组图片样式 */
+        .group-image-container {
+            display: inline-block;
+            border-radius: 4px;
+            overflow: hidden;
+            border: 1px solid #e5e7eb;
+            transition: all 0.2s;
+        }
+        .group-image-container:hover {
+            border-color: #4f46e5;
+            box-shadow: 0 2px 8px rgba(79, 70, 229, 0.2);
+        }
+        .group-image {
+            width: 60px;
+            height: 60px;
+            object-fit: cover;
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+        .group-image:hover {
+            transform: scale(1.05);
+        }
+        .no-image {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 60px;
+            height: 60px;
+            background-color: #f3f4f6;
+            color: #9ca3af;
+            font-size: 12px;
+            border-radius: 4px;
+            border: 1px dashed #d1d5db;
+        }
+        
+        /* 图片预览样式 */
+        .image-preview-overlay {
+            animation: fadeIn 0.2s ease-out;
+        }
+        .image-preview-content {
+            animation: scaleIn 0.2s ease-out;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+        @keyframes scaleIn {
+            from { transform: scale(0.9); opacity: 0; }
+            to { transform: scale(1); opacity: 1; }
+        }
+    </style>
 </head>
 <body class="min-h-screen p-4">
 
@@ -31,18 +108,8 @@
         <div class="card mb-6">
             <div class="search-form">
                 <div class="form-group">
-                    <label for="picName" class="form-label">名称</label>
-                    <input type="text" id="picName" placeholder="输入名称" class="form-input">
-                </div>
-                <div class="button-group">
-                    <button class="btn btn-primary" onclick="queryGroups(1)">
-                        <i class="fas fa-search"></i>
-                        <span>查询</span>
-                    </button>
-                    <button class="btn btn-secondary" onclick="resetForm()">
-                        <i class="fas fa-redo"></i>
-                        <span>重置</span>
-                    </button>
+                    <label for="groupName" class="form-label">名称</label>
+                    <input type="text" id="groupName" placeholder="输入名称" class="form-input" onkeyup="if(event.key === 'Enter') queryGroups(1)">
                 </div>
             </div>
         </div>
@@ -54,7 +121,8 @@
                 <tr>
                     <th class="id-column">ID</th>
                     <th class="name-column">套图名称</th>
-                    <th class="action-column">操作</th>
+                    <th class="count-column">分组条数</th>
+                    <th class="image-column">分组图片</th>
                 </tr>
                 </thead>
                 <tbody id="results-body">
@@ -146,59 +214,75 @@
     }
 
     function queryGroups(pageIndex) {
-        currentPageIndex = pageIndex || 1;
-        const picNameInput = document.getElementById('picName').value;
-        const picName = picNameInput === '' ? null : picNameInput;
-        const requestData = {
-            picName: picName,
-            pageIndex: currentPageIndex,
-            pageSize: pageSize
-        };
-        
-        // 显示加载状态
-        showLoadingState();
-        
-        // 使用新的分页接口，一次调用获取所有分页信息
-        postData('/api/group/list/paged', requestData).then(response => {
-            // 处理统一响应格式
-            const pageResult = response.data;
-            if (pageResult && pageResult.list && pageResult.list.length > 0) {
+            currentPageIndex = pageIndex || 1;
+            const groupNameInput = document.getElementById('groupName').value;
+            const groupName = groupNameInput === '' ? null : groupNameInput;
+            const requestData = {
+                groupName: groupName,
+                pageIndex: currentPageIndex,
+                pageSize: pageSize
+            };
+            
+            // 显示加载状态
+            showLoadingState();
+            
+            // 使用新的API接口
+            postData('/api/group/list', requestData).then(response => {
+                // 直接使用response.data作为数据数组
+                const groups = response.data || [];
+                if (groups.length > 0) {
+                    showTable();
+                    const resultsBody = document.getElementById('results-body');
+                    resultsBody.innerHTML = '';
+                    
+                    groups.forEach(function(item) {
+                        const newRow = document.createElement('tr');
+                        const groupId = item.groupId || '';
+                        const groupName = item.groupName || '';
+                        const groupCount = item.groupCount || 0;
+                        const groupUrl = item.groupUrl ? item.groupUrl.trim().replace(/^`|`$/g, '') : '';
+                        
+                        // 创建图片展示部分
+                        let imageHtml = '';
+                        if (groupUrl) {
+                            // 在JavaScript中直接拼接字符串，避免FreeMarker模板引擎解析
+                            imageHtml = '<div class="group-image-container">' +
+                                '<img src="' + groupUrl + '" alt="' + groupName + '" class="group-image" ' +
+                                     'onclick="previewImage(\'' + groupUrl + '\')" title="点击预览">' +
+                            '</div>';
+                        } else {
+                            imageHtml = '<div class="no-image">暂无图片</div>';
+                        }
+                        
+                        newRow.innerHTML = '<td class="id-cell">' + groupId + '</td>' +
+                            '<td class="name-cell" onclick="navigateToPicPage(\'' + groupId + '\', \'' + groupName.replace(/'/g, "\\'") + '\', this)" title="点击查看套图">' + 
+                            '<span class="name-text">' + groupName + '</span>' +
+                            '</td>' +
+                            '<td class="count-cell">' + groupCount + '</td>' +
+                            '<td class="image-cell">' + imageHtml + '</td>';
+                        resultsBody.appendChild(newRow);
+                    });
+                } else {
+                    showEmptyState();
+                }
+
+                // 使用groups数组长度作为总记录数
+                totalCount = groups.length;
+                // 由于接口返回全部数据，只有一页
+                totalPages = 1;
+                currentPageIndex = 1;
+                
+                document.getElementById('totalCount').textContent = totalCount;
+                updatePagination();
+            }).catch(error => {
+                console.error('Fetch Error:', error);
                 showTable();
                 const resultsBody = document.getElementById('results-body');
-                resultsBody.innerHTML = '';
-                
-                pageResult.list.forEach(function(item) {
-                    const newRow = document.createElement('tr');
-                    const groupId = item.groupId || '';
-                    const picName = item.picName || '';
-                    
-                    newRow.innerHTML = '<td class="id-cell">' + groupId + '</td>' +
-                        '<td class="name-cell" onclick="toggleNameExpansion(this)" title="点击查看完整名称">' + 
-                        '<span class="name-text">' + picName + '</span>' +
-                        '</td>' +
-                        '<td class="action-cell"><button class="btn-operation" onclick="viewGroup(\'' + groupId + '\', \'' + picName.replace(/'/g, "\\'") + '\')"><i class="fas fa-eye mr-1"></i>查看</button></td>';
-                    resultsBody.appendChild(newRow);
-                });
-            } else {
-                showEmptyState();
-            }
-
-            // 从分页结果中获取统计信息
-            totalCount = pageResult.total || 0;
-            totalPages = pageResult.pages || 1;
-            currentPageIndex = pageResult.pageNum || 1;
-            
-            document.getElementById('totalCount').textContent = totalCount;
-            updatePagination();
-        }).catch(error => {
-            console.error('Fetch Error:', error);
-            showTable();
-            const resultsBody = document.getElementById('results-body');
-            resultsBody.innerHTML = '<tr><td colspan="3" style="text-align: center; color: #dc2626;">查询失败，请重试</td></tr>';
-            document.getElementById('totalCount').textContent = '0';
-            totalPages = 1;
-            updatePagination();
-        });
+                resultsBody.innerHTML = '<tr><td colspan="4" style="text-align: center; color: #dc2626;">查询失败，请重试</td></tr>';
+                document.getElementById('totalCount').textContent = '0';
+                totalPages = 1;
+                updatePagination();
+            });
     }
 
     function showLoadingState() {
@@ -299,14 +383,14 @@
     }
 
     function resetForm() {
-        document.getElementById('picName').value = '';
+        document.getElementById('groupName').value = '';
         queryGroups(1);
     }
 
-    function viewGroup(groupId, groupName) {
-        window.location.href = '/showPicList?groupId=' + groupId + '&groupName=' + encodeURIComponent(groupName);
-    }
-
+    /**
+     * 切换名称展开/收起状态
+     * @param {HTMLElement} cell - 单元格元素
+     */
     function toggleNameExpansion(cell) {
         const nameText = cell.querySelector('.name-text');
         if (nameText.style.whiteSpace === 'normal') {
@@ -314,14 +398,66 @@
             nameText.style.whiteSpace = 'nowrap';
             nameText.style.overflow = 'hidden';
             nameText.style.textOverflow = 'ellipsis';
-            cell.title = '点击查看完整名称';
+            cell.title = '点击查看套图';
         } else {
             // 展开
             nameText.style.whiteSpace = 'normal';
             nameText.style.overflow = 'visible';
             nameText.style.textOverflow = 'unset';
-            cell.title = '点击收起名称';
+            cell.title = '点击查看套图';
         }
+    }
+    
+    /**
+     * 跳转到图片页面
+     * @param {string} groupId - 套图ID
+     * @param {string} groupName - 套图名称
+     * @param {HTMLElement} cell - 单元格元素
+     */
+    function navigateToPicPage(groupId, groupName, cell) {
+        // 跳转到新的页面，使用/showPic而不是/showPicList
+        window.location.href = '/showPic?groupId=' + groupId + '&groupName=' + encodeURIComponent(groupName);
+    }
+    
+    /**
+     * 预览图片功能
+     * @param {string} imageUrl - 图片URL
+     */
+    function previewImage(imageUrl) {
+        // 创建预览容器
+        const previewContainer = document.createElement('div');
+        previewContainer.className = 'image-preview-overlay fixed inset-0 z-50 flex items-center justify-center bg-black/80';
+        
+        // 创建预览内容
+        const previewContent = document.createElement('div');
+        previewContent.className = 'image-preview-content relative max-w-3xl max-h-[80vh]';
+        
+        // 创建关闭按钮
+        const closeButton = document.createElement('button');
+        closeButton.className = 'absolute top-2 right-2 w-10 h-10 bg-white/20 rounded-full flex items-center justify-center text-white hover:bg-white/30 transition-all';
+        closeButton.innerHTML = '<i class="fas fa-times"></i>';
+        closeButton.onclick = function() {
+            document.body.removeChild(previewContainer);
+        };
+        
+        // 创建图片元素
+        const img = document.createElement('img');
+        img.src = imageUrl;
+        img.className = 'max-w-full max-h-[80vh] object-contain';
+        img.alt = '预览图片';
+        
+        // 组装预览内容
+        previewContent.appendChild(closeButton);
+        previewContent.appendChild(img);
+        previewContainer.appendChild(previewContent);
+        
+        // 添加到页面并添加点击外部关闭功能
+        document.body.appendChild(previewContainer);
+        previewContainer.addEventListener('click', function(e) {
+            if (e.target === previewContainer) {
+                document.body.removeChild(previewContainer);
+            }
+        });
     }
 
     document.addEventListener('DOMContentLoaded', function() {

@@ -35,7 +35,7 @@ public class PicApiController {
     /**
      * 根据分组id查询图片列表
      */
-    @GetMapping("/list")
+    @PostMapping("/list")
     public Result<List<PicVO>> list(@RequestBody PicQry qry) {
         List<PicVO> list = picServiceApi.list(qry);
         return Result.success("获取图片成功", list);

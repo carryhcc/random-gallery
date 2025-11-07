@@ -74,7 +74,9 @@
         LIMIT 1;
     </select>
     <select id="list" resultType="com.example.randomGallery.entity.VO.PicVO">
-        SELECT pic_url,
+        SELECT
+        id,
+        pic_url,
         pic_name,
         group_id
         FROM ${tableName}

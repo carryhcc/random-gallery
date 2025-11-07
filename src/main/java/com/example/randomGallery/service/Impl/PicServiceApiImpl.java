@@ -35,7 +35,7 @@ public class PicServiceApiImpl implements PicServiceApi {
 
     @Override
     public List<PicVO> list(PicQry qry) {
-        String sqlName = cacheService.getGroupSqlName();
+        String sqlName = cacheService.getPicSqlName();
         PageHelper.startPage(qry.getPageIndex(), qry.getPageSize());
         return picServiceMapper.list(sqlName, qry);
     }

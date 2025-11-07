@@ -29,10 +29,10 @@ public class GroupApiController {
      * 获取随机分组信息
      */
     @GetMapping("/randomGroupInfo")
-    public Result<GroupVO> getRandomGroupInfo() {
+    public Result<GroupVO> getRandomGroupInfo(@RequestParam("groupId") Long groupId) {
         cacheService.resetTimer();
-        Long randomGroupId = cacheService.getRandomGroupId();
-        GroupVO groupInfo = groupServiceApi.queryGroupById(randomGroupId);
+        groupId = groupId != null ? groupId : cacheService.getRandomGroupId();
+        GroupVO groupInfo = groupServiceApi.queryGroupById(groupId);
         return Result.success("获取随机分组信息成功", groupInfo);
     }
 

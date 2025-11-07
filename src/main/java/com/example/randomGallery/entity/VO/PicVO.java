@@ -5,6 +5,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import java.io.Serializable;
+import java.security.PrivateKey;
 
 @Data
 @NoArgsConstructor
@@ -12,6 +13,7 @@ import java.io.Serializable;
 public class PicVO implements Serializable {
 
     private static final long serialVersionUID = 1L;
+    private Long id;
     private Long groupId;
     private String picName;
     private String picUrl;

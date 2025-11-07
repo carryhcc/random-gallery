@@ -12,10 +12,11 @@
     <select id="queryGroupById" resultType="com.example.randomGallery.entity.VO.GroupVO">
         SELECT group_id   AS groupId,
                group_name AS groupName,
-               pic_name AS picName
+               group_url AS groupUrl,
+               group_count AS groupCount
         FROM ${tableName}
         WHERE is_delete = 0
-          AND group_id = #{qry.groupId}
+          AND group_id = #{groupId}
     </select>
 
     <select id="queryGroupList" resultType="com.example.randomGallery.entity.VO.GroupVO">

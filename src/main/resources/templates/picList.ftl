@@ -91,9 +91,9 @@
         let totalPages = 1;
         
         // 从模板获取初始数据
-        const templateGroupId = ${groupId!null};
+        const templateGroupId = ${groupId!'null'};
         const templateGroupName = '${groupName!""}';
-        const isFromGroupList = ${isFromGroupList?c};
+        const isFromGroupList = ${(isFromGroupList?c)!'false'};
         let currentGroupId = templateGroupId;
         let currentGroupName = templateGroupName;
 
@@ -124,21 +124,18 @@
 
         function displayPagedImages(data) {
             try {
-                const galleryName = data.groupName;
-                const images = data.images;
-                const hasMore = data.hasMore;
-                const totalImages = data.totalImages;
+                // 新API直接返回图片数组，不需要再从data.images中获取
+                const images = data || [];
                 
-                // 更新当前套图名称（如果是第一次加载）
-                if (currentPage === 1 && galleryName) {
-                    currentGroupName = galleryName;
-                }
+                // 根据返回数据判断是否还有更多
+                // 如果返回数据少于pageSize，认为没有更多了
+                const hasMore = images.length === imagesPerLoad;
                 
-                // 显示套图名称
-                const displayName = currentGroupName || galleryName || '未命名图片组';
+                // 显示套图名称（保持现有逻辑）
+                const displayName = currentGroupName || '未命名图片组';
                 galleryTitle.textContent = displayName;
                 
-                if (!images || images.length === 0) {
+                if (images.length === 0) {
                     if (currentPage === 1) {
                         showStatus('图片列表为空。');
                     } else {
@@ -149,11 +146,13 @@
                 }
                 
                 // 将新图片添加到现有图片列表中
-                allImageUrls = allImageUrls.concat(images);
+                // 从图片对象中提取picUrl作为显示URL
+                const imageUrls = images.map(item => item.picUrl).filter(Boolean);
+                allImageUrls = allImageUrls.concat(imageUrls);
                 
                 // 显示新加载的图片
                 const fragment = document.createDocumentFragment();
-                images.forEach(imgUrl => {
+                imageUrls.forEach(imgUrl => {
                     fragment.appendChild(createImageElement(imgUrl));
                 });
                 gallery.appendChild(fragment);
@@ -166,10 +165,8 @@
                     noMoreImages.classList.remove('hidden');
                 }
                 
-                // 更新标题显示总数
-                if (totalImages > 0) {
-                    galleryTitle.textContent = displayName + ' (' + displayedImagesCount + '/' + totalImages + ')';
-                }
+                // 更新标题显示当前数量（由于没有totalImages，只显示已加载数量）
+                galleryTitle.textContent = displayName + ' (' + displayedImagesCount + ')';
                 
             } catch (error) {
                 console.error('解析分页图片数据失败:', error);
@@ -234,14 +231,31 @@
         }
 
         function fetchPagedImages() {
-            const fetchUrl = currentGroupId 
-                ? '/api/pic/group/paged?groupId=' + currentGroupId + '&page=' + currentPage + '&size=' + imagesPerLoad
-                : '/api/pic/group/paged?page=' + currentPage + '&size=' + imagesPerLoad;
+            // 使用新的API接口格式和参数
+            const fetchUrl = '/api/pic/list';
             
-            fetch(fetchUrl)
+            // 准备请求体数据
+            const requestBody = {
+                pageIndex: currentPage,
+                pageSize: imagesPerLoad
+            };
+            
+            // 如果有分组ID，则添加到请求体
+            if (currentGroupId) {
+                requestBody.groupId = currentGroupId;
+            }
+            
+            fetch(fetchUrl, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(requestBody)
+            })
                 .then(response => response.json())
                 .then(result => {
-                    if (result.code === 200) {
+                    if (result.code === 200 && result.success) {
+                        // 新接口直接使用result.data作为图片数组
                         displayPagedImages(result.data);
                         currentPage++;
                     } else {
@@ -397,7 +411,7 @@
             showStatus('正在获取随机分组...');
             galleryTitle.textContent = '加载中...';
             
-            return fetch('/api/pic/group/randomGroupInfo')
+            return fetch('/api/group/randomGroupInfo')
                 .then(response => response.json())
                 .then(result => {
                     if (result.code === 200 && result.data && result.data.groupId) {
