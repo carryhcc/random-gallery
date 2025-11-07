@@ -9,6 +9,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Poppins:wght@600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
     <link rel="stylesheet" href="/css/style.css">
+    <script src="/js/theme.js"></script>
     <style>
         body {
             display: flex;
@@ -16,9 +17,47 @@
             justify-content: center;
             min-height: 100vh;
         }
+        
+        .theme-toggle {
+            position: fixed;
+            top: 1.5rem;
+            right: 1.5rem;
+            z-index: 1030;
+            width: 44px;
+            height: 44px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: var(--color-bg-tertiary);
+            border: 1px solid var(--color-border);
+            border-radius: var(--radius-lg);
+            cursor: pointer;
+            transition: all var(--transition-fast);
+            color: var(--color-text-primary);
+            font-size: var(--font-size-lg);
+        }
+        
+        .theme-toggle:hover {
+            background: var(--color-bg-hover);
+            border-color: var(--color-border-hover);
+            transform: scale(1.05);
+        }
+        
+        .theme-toggle i {
+            transition: transform var(--transition-base);
+        }
+        
+        .theme-toggle:hover i {
+            transform: rotate(180deg);
+        }
     </style>
 </head>
 <body>
+
+<!-- 主题切换按钮 -->
+<button class="theme-toggle" id="themeToggle" onclick="toggleTheme()" title="切换主题">
+    <i class="fas fa-moon" id="themeIcon"></i>
+</button>
 
 <!-- 环境切换器 -->
 <div class="dropdown" id="env-dropdown" style="position: fixed; top: 1.5rem; left: 1.5rem; z-index: 1030;">
@@ -178,6 +217,31 @@
             dropdown.classList.remove('open');
         }
     }
+
+    // 主题切换功能
+    function toggleTheme() {
+        const newTheme = window.themeManager.toggle();
+        updateThemeIcon(newTheme);
+    }
+
+    function updateThemeIcon(theme) {
+        const themeIcon = document.getElementById('themeIcon');
+        if (themeIcon) {
+            if (theme === 'light') {
+                themeIcon.className = 'fas fa-sun';
+                themeIcon.parentElement.title = '切换到深色模式';
+            } else {
+                themeIcon.className = 'fas fa-moon';
+                themeIcon.parentElement.title = '切换到浅色模式';
+            }
+        }
+    }
+
+    // 页面加载时更新图标
+    document.addEventListener('DOMContentLoaded', function() {
+        const currentTheme = window.themeManager.get();
+        updateThemeIcon(currentTheme);
+    });
 </script>
 </body>
 </html>

@@ -23,7 +23,11 @@
     --color-warning: #f59e0b;
     --color-error: #ef4444;
     --color-info: #06b6d4;
-    
+}
+
+/* 深色主题（默认） */
+:root,
+[data-theme="dark"] {
     /* 中性色 - 深色主题 */
     --color-bg-primary: #0a0e27;
     --color-bg-secondary: #151b2e;
@@ -42,7 +46,34 @@
     --color-border: rgba(148, 163, 184, 0.1);
     --color-border-hover: rgba(148, 163, 184, 0.2);
     --color-border-focus: var(--color-primary);
+}
+
+/* 浅色主题 */
+[data-theme="light"] {
+    /* 中性色 - 浅色主题 */
+    --color-bg-primary: #f8fafc;
+    --color-bg-secondary: #f1f5f9;
+    --color-bg-tertiary: #e2e8f0;
+    --color-bg-card: #ffffff;
+    --color-bg-hover: #f1f5f9;
+    --color-bg-overlay: rgba(248, 250, 252, 0.95);
     
+    /* 文字色 */
+    --color-text-primary: #1e293b;
+    --color-text-secondary: #475569;
+    --color-text-tertiary: #64748b;
+    --color-text-muted: #94a3b8;
+    
+    /* 边框色 */
+    --color-border: rgba(148, 163, 184, 0.2);
+    --color-border-hover: rgba(148, 163, 184, 0.3);
+    --color-border-focus: var(--color-primary);
+}
+
+/* ========================================
+   阴影系统
+   ======================================== */
+:root {
     /* 阴影系统 */
     --shadow-xs: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
     --shadow-sm: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px -1px rgba(0, 0, 0, 0.1);
@@ -139,6 +170,14 @@ body {
         radial-gradient(at 100% 100%, rgba(236, 72, 153, 0.1) 0px, transparent 50%);
     min-height: 100vh;
     overflow-x: hidden;
+    transition: background-color var(--transition-base), color var(--transition-base);
+}
+
+/* 浅色主题下的背景渐变调整 */
+[data-theme="light"] body {
+    background-image: 
+        radial-gradient(at 0% 0%, rgba(99, 102, 241, 0.05) 0px, transparent 50%),
+        radial-gradient(at 100% 100%, rgba(236, 72, 153, 0.05) 0px, transparent 50%);
 }
 
 /* ========================================
@@ -307,7 +346,7 @@ body {
    6. 表单组件
    ======================================== */
 .form-group {
-    margin-bottom: var(--spacing-md);
+    /*margin-bottom: var(--spacing-md);*/
 }
 
 .form-label {
@@ -356,6 +395,7 @@ body {
     width: 100%;
     border-collapse: collapse;
     font-size: var(--font-size-sm);
+    table-layout: fixed;
 }
 
 .table th,
@@ -363,6 +403,7 @@ body {
     padding: var(--spacing-md);
     text-align: left;
     border-bottom: 1px solid var(--color-border);
+    vertical-align: middle;
 }
 
 .table th {
@@ -375,6 +416,11 @@ body {
     position: sticky;
     top: 0;
     z-index: var(--z-base);
+    box-sizing: border-box;
+}
+
+.table td {
+    box-sizing: border-box;
 }
 
 .table tbody tr {
@@ -1044,7 +1090,7 @@ body {
 .search-form {
     display: flex;
     flex-direction: row;
-    align-items: flex-end;
+    align-items: center;
     gap: var(--spacing-md);
     flex-wrap: wrap;
 }
@@ -1052,12 +1098,28 @@ body {
 .search-form .form-group {
     flex: 1;
     min-width: 200px;
+    display: flex;
+    align-items: center;
+}
+
+.search-form .form-input {
+    height: 44px;
+    box-sizing: border-box;
 }
 
 .search-form .button-group {
     display: flex;
     gap: var(--spacing-sm);
     flex-shrink: 0;
+    align-items: center;
+}
+
+.search-form .button-group .btn {
+    height: 44px;
+    box-sizing: border-box;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
 }
 
 @media (max-width: 640px) {
@@ -1070,12 +1132,17 @@ body {
         min-width: auto;
     }
     
+    .search-form .form-input {
+        height: 44px;
+    }
+    
     .search-form .button-group {
         width: 100%;
     }
     
     .search-form .btn {
         flex: 1;
+        height: 44px;
     }
 }
 

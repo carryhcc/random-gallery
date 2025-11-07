@@ -9,6 +9,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Poppins:wght@600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
     <link rel="stylesheet" href="/css/style.css">
+    <script src="/js/theme.js"></script>
     <style>
         .back-button {
             position: fixed;
@@ -77,7 +78,7 @@
         
         .image-cell {
             text-align: center;
-            padding: var(--spacing-sm);
+            padding: var(--spacing-md);
         }
         
         @media (max-width: 640px) {
@@ -112,15 +113,13 @@
                 <i class="fas fa-folder-open" style="margin-right: 0.5rem;"></i>
                 图片分组查询
             </h1>
-            <p class="card-subtitle">查询、浏览和管理图片分组</p>
         </div>
 
         <!-- 搜索表单 -->
         <div class="card" style="margin-bottom: var(--spacing-lg); padding: var(--spacing-lg);">
             <div class="search-form">
                 <div class="form-group">
-                    <label for="groupName" class="form-label">名称</label>
-                    <input type="text" id="groupName" placeholder="输入分组名称" class="form-input" 
+                    <input type="text" id="groupName" placeholder="输入分组名称" class="form-input"
                            onkeyup="if(event.key === 'Enter') queryGroups(1)">
                 </div>
                 <div class="button-group">
@@ -141,10 +140,10 @@
             <table class="table" id="results-table">
                 <thead>
                 <tr>
-                    <th>ID</th>
-                    <th>套图名称</th>
-                    <th style="text-align: center;">分组条数</th>
-                    <th style="text-align: center;">分组图片</th>
+                    <th style="width: 10%;">ID</th>
+                    <th style="width: 50%;">套图名称</th>
+                    <th style="width: 15%; text-align: center;">分组条数</th>
+                    <th style="width: 25%; text-align: center;">分组图片</th>
                 </tr>
                 </thead>
                 <tbody id="results-body">
