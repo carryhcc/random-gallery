@@ -69,7 +69,7 @@ public class GroupServiceApiImpl implements GroupServiceApi {
         for (Long groupId : groupIdList) {
             GroupVO groupVO = picServiceMapper.queryPicCountInfo(sqlPicName, groupId);
             groupServiceMapper.updateById(groupVO, sqlGroupName);
-            log.warn("定时任务更新分组图片/总数信息: {}", groupVO);
+            log.info("定时任务更新分组图片/总数信息: {}", groupVO);
         }
     }
 

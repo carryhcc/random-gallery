@@ -56,8 +56,8 @@ public class PageResult<T> implements Serializable {
         this.list = list;
         this.total = total;
         this.pageNum = pageNum;
-        this.pageSize = pageSize;
-        this.pages = (int) Math.ceil((double) total / pageSize);
+        this.pageSize = Math.max(pageSize, 1); // 确保pageSize至少为1
+        this.pages = (int) Math.ceil((double) total / this.pageSize);
         this.hasNextPage = pageNum < pages;
         this.hasPreviousPage = pageNum > 1;
     }

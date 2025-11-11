@@ -1,5 +1,6 @@
 package com.example.randomGallery.service;
 
+import com.example.randomGallery.service.mapper.GroupServiceMapper;
 import com.example.randomGallery.service.mapper.PicServiceMapper;
 import com.example.randomGallery.utils.ResettableTimer;
 import com.example.randomGallery.utils.StrUtils;
@@ -25,6 +26,7 @@ import java.util.concurrent.ThreadLocalRandom;
 @RequiredArgsConstructor
 public class CacheService {
 
+    private final GroupServiceMapper groupServiceMapper;
     private final PicServiceMapper picServiceMapper;
 
     @Getter
@@ -174,13 +176,12 @@ public class CacheService {
      * 初始化随机序列和总图片数（懒加载：首次调用时初始化）
      */
     public void buildGroupIDList() {
-        totalGroupCount = this.getMaxGroupId();
-        List<Long> seq = new ArrayList<>();
-        for (long i = 1; i <= totalGroupCount; i++) {
-            seq.add(i);
-        }
-        log.warn("初始化随机数列:{}", totalGroupCount);
-        Collections.shuffle(seq);
-        shuffledSeq = seq;
+        // 从数据库中查询所有实际存在的group_id
+        List<Long> groupIdList = groupServiceMapper.selectGroupIdList(getGroupSqlName());
+        totalGroupCount = (long) groupIdList.size();
+        // 打乱顺序
+        Collections.shuffle(groupIdList);
+        shuffledSeq = groupIdList;
+        log.info("初始化随机数列: {}", totalGroupCount);
     }
 }
