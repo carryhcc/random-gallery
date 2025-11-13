@@ -84,8 +84,9 @@ public class GroupServiceApiImpl implements GroupServiceApi {
 
     @Override
     public GroupPageVO loadMore(int page) {
+        // 默认进入时候刷新顺序
+        if (page == 0) cacheService.buildGroupIDList();
         Long totalImageCount = cacheService.getTotalGroupCount();
-
         // 无图片数据时直接返回
         if (totalImageCount == 0) {
             return new GroupPageVO(Collections.emptyList(), false);

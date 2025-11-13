@@ -13,7 +13,4 @@ public class GroupPageVO {
         this.images = images;
         this.hasMore = hasMore;
     }
-
-    public GroupPageVO() {
-    }
 }

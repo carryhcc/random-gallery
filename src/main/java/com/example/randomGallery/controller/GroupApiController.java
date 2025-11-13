@@ -29,7 +29,6 @@ public class GroupApiController {
      */
     @GetMapping("/randomGroupInfo")
     public Result<GroupVO> getRandomGroupInfo(@RequestParam(value = "groupId", required = false) Long groupId) {
-        cacheService.resetTimer();
         groupId = groupId != null ? groupId : cacheService.getRandomGroupId();
         GroupVO groupInfo = groupServiceApi.queryGroupById(groupId);
         return Result.success("获取随机分组信息成功", groupInfo);
@@ -54,10 +53,6 @@ public class GroupApiController {
      */
     @GetMapping("/loadMore")
     public Result<GroupPageVO> loadMore(@RequestParam(defaultValue = "0") int page) {
-        if (page == 0) {
-            // 默认进入时候刷新顺序
-            cacheService.buildGroupIDList();
-        }
         GroupPageVO data = groupServiceApi.loadMore(page);
         return Result.success(data);
     }

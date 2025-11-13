@@ -12,7 +12,6 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
 import java.sql.SQLException;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
@@ -43,8 +42,10 @@ public class CacheService {
 
     private ResettableTimer resettableTimer;
 
+    @Getter
     private String picSqlName = "cc_pic_all_dev";
 
+    @Getter
     private String groupSqlName = "cc_pic_group_dev";
 
     @Value("${config.env}")
@@ -59,14 +60,6 @@ public class CacheService {
 
     public String getDefaultEnv() {
         return StrUtils.isEmpty(defaultEnv) ? "dev" : defaultEnv;
-    }
-
-    public String getPicSqlName() {
-        return picSqlName;
-    }
-
-    public String getGroupSqlName() {
-        return groupSqlName;
     }
 
     @PostConstruct
