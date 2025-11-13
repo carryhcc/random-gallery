@@ -169,8 +169,8 @@
                 } else {
                     const processedList = images.map(item => ({
                         groupId: item.groupId,
-                        groupName: item.groupUrl || '未命名分组',
-                        picUrl: extractImageUrl(item.groupName) || ''
+                        groupName: item.groupName || '未命名分组',
+                        picUrl: sanitizeUrl(item.groupUrl) || ''
                     }));
 
                     appendList(processedList);
@@ -195,20 +195,9 @@
         }
     }
     
-    function extractImageUrl(text) {
-        if (!text) return '';
-        
-        const backtickMatch = text.match(/`([^`]+)`/);
-        if (backtickMatch && backtickMatch[1]) {
-            return backtickMatch[1];
-        }
-        
-        const urlMatch = text.match(/https?:\/\/[^\s]+/);
-        if (urlMatch && urlMatch[0]) {
-            return urlMatch[0];
-        }
-        
-        return text;
+    function sanitizeUrl(url) {
+        if (!url) return '';
+        return String(url).trim().replace(/^[`\s]+|[`\s]+$/g, '');
     }
 
     function getScrollHeights() {

@@ -107,7 +107,7 @@ public class GroupServiceApiImpl implements GroupServiceApi {
         List<GroupVO> imageList = groupServiceMapper.queryGroupList(groupQry, sqlName);
         // 转换为前端需要的VO
         List<GroupVO> imageVOList = imageList.stream()
-                .map(img -> new GroupVO(img.getGroupId(), img.getGroupUrl(), img.getGroupName(), img.getGroupCount()))
+                .map(img -> new GroupVO(img.getGroupId(), img.getGroupName(), img.getGroupUrl(), img.getGroupCount()))
                 .collect(Collectors.toList());
         // 判断是否还有更多数据（下一页是否超出总数量）
         boolean hasMore = (long) (page + 1) * PAGE_SIZE < totalImageCount;
