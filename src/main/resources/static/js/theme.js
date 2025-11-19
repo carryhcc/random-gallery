@@ -3,7 +3,7 @@
  * 支持深色/浅色模式切换，自动检测系统偏好，保存用户选择
  */
 
-(function() {
+(function () {
     'use strict';
 
     const THEME_STORAGE_KEY = 'random-gallery-theme';
@@ -61,7 +61,7 @@
     function initTheme() {
         const theme = getCurrentTheme();
         applyTheme(theme);
-        
+
         // 监听系统主题变化（仅在用户未手动设置时）
         if (window.matchMedia) {
             const mediaQuery = window.matchMedia('(prefers-color-scheme: light)');

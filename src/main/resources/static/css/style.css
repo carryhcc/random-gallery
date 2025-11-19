@@ -13,11 +13,11 @@
     --color-primary-light: #818cf8;
     --color-primary-dark: #4338ca;
     --color-primary-bg: rgba(99, 102, 241, 0.1);
-    
+
     /* 辅助色 */
     --color-accent: #ec4899;
     --color-accent-hover: #db2777;
-    
+
     /* 语义色 */
     --color-success: #10b981;
     --color-warning: #f59e0b;
@@ -35,13 +35,13 @@
     --color-bg-card: #1a1f35;
     --color-bg-hover: #252b42;
     --color-bg-overlay: rgba(10, 14, 39, 0.95);
-    
+
     /* 文字色 */
     --color-text-primary: #f1f5f9;
     --color-text-secondary: #cbd5e1;
     --color-text-tertiary: #94a3b8;
     --color-text-muted: #64748b;
-    
+
     /* 边框色 */
     --color-border: rgba(148, 163, 184, 0.1);
     --color-border-hover: rgba(148, 163, 184, 0.2);
@@ -57,13 +57,13 @@
     --color-bg-card: #ffffff;
     --color-bg-hover: #f1f5f9;
     --color-bg-overlay: rgba(248, 250, 252, 0.95);
-    
+
     /* 文字色 */
     --color-text-primary: #1e293b;
     --color-text-secondary: #475569;
     --color-text-tertiary: #64748b;
     --color-text-muted: #94a3b8;
-    
+
     /* 边框色 */
     --color-border: rgba(148, 163, 184, 0.2);
     --color-border-hover: rgba(148, 163, 184, 0.3);
@@ -82,7 +82,7 @@
     --shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.15), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
     --shadow-2xl: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
     --shadow-glow: 0 0 20px rgba(99, 102, 241, 0.3);
-    
+
     /* 圆角 */
     --radius-sm: 6px;
     --radius-md: 8px;
@@ -90,7 +90,7 @@
     --radius-xl: 16px;
     --radius-2xl: 20px;
     --radius-full: 9999px;
-    
+
     /* 间距系统 */
     --spacing-xs: 4px;
     --spacing-sm: 8px;
@@ -99,35 +99,35 @@
     --spacing-xl: 32px;
     --spacing-2xl: 48px;
     --spacing-3xl: 64px;
-    
+
     /* 字体系统 */
     --font-family-base: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', sans-serif;
     --font-family-display: 'Poppins', var(--font-family-base);
-    
-    --font-size-xs: 0.75rem;    /* 12px */
-    --font-size-sm: 0.875rem;    /* 14px */
-    --font-size-base: 1rem;      /* 16px */
-    --font-size-lg: 1.125rem;    /* 18px */
-    --font-size-xl: 1.25rem;     /* 20px */
-    --font-size-2xl: 1.5rem;     /* 24px */
-    --font-size-3xl: 1.875rem;   /* 30px */
-    --font-size-4xl: 2.25rem;    /* 36px */
-    --font-size-5xl: 3rem;       /* 48px */
-    
+
+    --font-size-xs: 0.75rem; /* 12px */
+    --font-size-sm: 0.875rem; /* 14px */
+    --font-size-base: 1rem; /* 16px */
+    --font-size-lg: 1.125rem; /* 18px */
+    --font-size-xl: 1.25rem; /* 20px */
+    --font-size-2xl: 1.5rem; /* 24px */
+    --font-size-3xl: 1.875rem; /* 30px */
+    --font-size-4xl: 2.25rem; /* 36px */
+    --font-size-5xl: 3rem; /* 48px */
+
     --font-weight-normal: 400;
     --font-weight-medium: 500;
     --font-weight-semibold: 600;
     --font-weight-bold: 700;
-    
+
     --line-height-tight: 1.25;
     --line-height-normal: 1.5;
     --line-height-relaxed: 1.75;
-    
+
     /* 过渡动画 */
     --transition-fast: 150ms cubic-bezier(0.4, 0, 0.2, 1);
     --transition-base: 250ms cubic-bezier(0.4, 0, 0.2, 1);
     --transition-slow: 350ms cubic-bezier(0.4, 0, 0.2, 1);
-    
+
     /* Z-index 层级 */
     --z-base: 1;
     --z-dropdown: 1000;
@@ -165,9 +165,8 @@ body {
     line-height: var(--line-height-normal);
     color: var(--color-text-primary);
     background: var(--color-bg-primary);
-    background-image: 
-        radial-gradient(at 0% 0%, rgba(99, 102, 241, 0.1) 0px, transparent 50%),
-        radial-gradient(at 100% 100%, rgba(236, 72, 153, 0.1) 0px, transparent 50%);
+    background-image: radial-gradient(at 0% 0%, rgba(99, 102, 241, 0.1) 0px, transparent 50%),
+    radial-gradient(at 100% 100%, rgba(236, 72, 153, 0.1) 0px, transparent 50%);
     min-height: 100vh;
     overflow-x: hidden;
     transition: background-color var(--transition-base), color var(--transition-base);
@@ -175,9 +174,8 @@ body {
 
 /* 浅色主题下的背景渐变调整 */
 [data-theme="light"] body {
-    background-image: 
-        radial-gradient(at 0% 0%, rgba(99, 102, 241, 0.05) 0px, transparent 50%),
-        radial-gradient(at 100% 100%, rgba(236, 72, 153, 0.05) 0px, transparent 50%);
+    background-image: radial-gradient(at 0% 0%, rgba(99, 102, 241, 0.05) 0px, transparent 50%),
+    radial-gradient(at 100% 100%, rgba(236, 72, 153, 0.05) 0px, transparent 50%);
 }
 
 /* ========================================
@@ -792,8 +790,12 @@ body {
 }
 
 @keyframes spin {
-    0% { transform: rotate(0deg); }
-    100% { transform: rotate(360deg); }
+    0% {
+        transform: rotate(0deg);
+    }
+    100% {
+        transform: rotate(360deg);
+    }
 }
 
 .loading-container {
@@ -983,46 +985,46 @@ body {
     .container {
         padding: 0 var(--spacing-md);
     }
-    
+
     .card {
         padding: var(--spacing-md);
         border-radius: var(--radius-lg);
     }
-    
+
     .card-title {
         font-size: var(--font-size-2xl);
     }
-    
+
     .card-subtitle {
         font-size: var(--font-size-base);
     }
-    
+
     .btn {
         padding: var(--spacing-sm) var(--spacing-md);
         font-size: var(--font-size-sm);
     }
-    
+
     .navbar {
         padding: var(--spacing-sm);
     }
-    
+
     .navbar-brand {
         font-size: var(--font-size-lg);
     }
-    
+
     .table {
         font-size: var(--font-size-xs);
     }
-    
+
     .table th,
     .table td {
         padding: var(--spacing-sm);
     }
-    
+
     .pagination-container {
         padding: var(--spacing-md);
     }
-    
+
     .pagination-button {
         padding: var(--spacing-xs) var(--spacing-sm);
         font-size: var(--font-size-xs);
@@ -1127,19 +1129,19 @@ body {
         flex-direction: column;
         align-items: stretch;
     }
-    
+
     .search-form .form-group {
         min-width: auto;
     }
-    
+
     .search-form .form-input {
         height: 44px;
     }
-    
+
     .search-form .button-group {
         width: 100%;
     }
-    
+
     .search-form .btn {
         flex: 1;
         height: 44px;
@@ -1203,4 +1205,129 @@ body {
     .gallery-grid {
         column-count: 4;
     }
+}
+
+/* ========================================
+   19. 页面特定样式 (Page Specific)
+   ======================================== */
+
+/* Group List Page */
+.group-image-container {
+    display: inline-block;
+    border-radius: var(--radius-md);
+    overflow: hidden;
+    border: 1px solid var(--color-border);
+    transition: all var(--transition-base);
+    vertical-align: middle;
+}
+
+.group-image-container:hover {
+    border-color: var(--color-primary);
+    box-shadow: var(--shadow-md);
+}
+
+.group-image {
+    width: 60px;
+    height: 60px;
+    object-fit: cover;
+    cursor: pointer;
+    transition: transform var(--transition-base);
+    display: block;
+}
+
+.group-image:hover {
+    transform: scale(1.1);
+}
+
+.no-image {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 60px;
+    height: 60px;
+    background: var(--color-bg-tertiary);
+    color: var(--color-text-tertiary);
+    font-size: var(--font-size-xs);
+    border-radius: var(--radius-md);
+    border: 1px dashed var(--color-border);
+}
+
+.name-cell {
+    cursor: pointer;
+    transition: all var(--transition-fast);
+    font-weight: var(--font-weight-medium);
+}
+
+.name-cell:hover {
+    color: var(--color-primary);
+}
+
+.count-cell {
+    text-align: center;
+    font-weight: var(--font-weight-semibold);
+    color: var(--color-primary);
+    background: var(--color-primary-bg);
+    padding: var(--spacing-xs) var(--spacing-sm);
+    border-radius: var(--radius-full);
+    display: inline-block;
+    min-width: 32px;
+}
+
+/* Single Pic Page */
+.pic-container {
+    max-width: 1000px;
+    margin: 0 auto;
+    padding: var(--spacing-xl) var(--spacing-md);
+    min-height: calc(100vh - 80px); /* Adjust for navbar */
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+}
+
+.image-wrapper {
+    position: relative;
+    border-radius: var(--radius-xl);
+    overflow: hidden;
+    background: var(--color-bg-tertiary);
+    border: 1px solid var(--color-border);
+    box-shadow: var(--shadow-2xl);
+    margin-bottom: var(--spacing-lg);
+    min-height: 300px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.image-wrapper img {
+    width: 100%;
+    height: auto;
+    max-height: 80vh;
+    object-fit: contain;
+    display: block;
+}
+
+/* Floating Action Button (if needed) */
+.fab {
+    position: fixed;
+    bottom: var(--spacing-xl);
+    right: var(--spacing-xl);
+    width: 56px;
+    height: 56px;
+    border-radius: 50%;
+    background: var(--color-primary);
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: var(--shadow-lg);
+    cursor: pointer;
+    transition: all var(--transition-base);
+    z-index: var(--z-sticky);
+    border: none;
+}
+
+.fab:hover {
+    transform: translateY(-4px) rotate(90deg);
+    box-shadow: var(--shadow-xl);
+    background: var(--color-primary-hover);
 }

@@ -6,79 +6,52 @@
     <title>随机画廊 - 随机图库</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Poppins:wght@600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Poppins:wght@600;700&display=swap"
+          rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
     <link rel="stylesheet" href="/css/style.css">
     <script src="/js/theme.js"></script>
-    <style>
-        .back-button {
-            position: fixed;
-            top: 1.5rem;
-            left: 1.5rem;
-            z-index: 1030;
-        }
-        
-        .main-content {
-            margin-top: 5rem;
-            padding-bottom: 2rem;
-        }
-        
-        .gallery-card {
-            cursor: pointer;
-            transition: all var(--transition-base);
-        }
-        
-        .gallery-card:hover {
-            transform: translateY(-4px);
-        }
-        
-        .gallery-card img {
-            transition: transform var(--transition-slow);
-        }
-        
-        .gallery-card:hover img {
-            transform: scale(1.05);
-        }
-    </style>
 </head>
-<body class="min-h-screen p-4">
+<body>
 
-<button class="btn btn-secondary back-button" onclick="window.location.href='/'">
-    <i class="fas fa-arrow-left"></i>
-    <span>返回首页</span>
-</button>
-
-<div class="container main-content">
-    <div class="card animate-fade-in">
-        <div class="card-header">
-            <h1 class="card-title">
-                <i class="fas fa-th" style="margin-right: 0.5rem;"></i>
-                随机画廊
-            </h1>
-            <p class="card-subtitle">浏览精美的图片集合</p>
+<!-- 导航栏 -->
+<header class="navbar">
+    <div class="navbar-content">
+        <div class="navbar-brand">
+            <i class="fas fa-th"></i>
+            <span>随机画廊</span>
         </div>
-
-        <div class="text-center" style="margin-bottom: var(--spacing-lg);">
-            <button id="btnRefresh" class="btn btn-primary">
+        <div class="navbar-actions">
+            <button class="btn btn-secondary btn-sm" onclick="window.location.href='/'">
+                <i class="fas fa-home"></i>
+                <span class="hidden-mobile">首页</span>
+            </button>
+            <button id="btnRefresh" class="btn btn-primary btn-sm">
                 <i class="fas fa-sync-alt"></i>
-                <span>刷新</span>
+                <span class="hidden-mobile">刷新</span>
             </button>
         </div>
-
-        <div id="tip" class="toast hidden"></div>
-
-        <div id="gallery" class="gallery-grid"></div>
-        <div id="loading" class="text-center" style="padding: var(--spacing-xl); color: var(--color-text-tertiary); display: none;">
-            <div class="spinner" style="margin: 0 auto var(--spacing-md);"></div>
-            <span>加载中...</span>
-        </div>
-        <div id="end" class="text-center" style="padding: var(--spacing-xl); color: var(--color-text-tertiary); display: none;">
-            <i class="fas fa-check-circle" style="font-size: 2rem; margin-bottom: var(--spacing-sm);"></i>
-            <p>已加载全部</p>
-        </div>
-        <div id="sentinel" style="height: 1px;"></div>
     </div>
-</div>
+</header>
+
+<!-- 主内容 -->
+<main class="container" style="margin-top: 80px; padding-bottom: var(--spacing-xl);">
+    <div id="tip" class="toast hidden"></div>
+
+    <div id="gallery" class="gallery-grid animate-fade-in"></div>
+
+    <div id="loading" class="loading hidden">
+        <div class="spinner"></div>
+        <span>加载更多精彩图片...</span>
+    </div>
+
+    <div id="end" class="text-center hidden" style="padding: var(--spacing-xl); color: var(--color-text-tertiary);">
+        <i class="fas fa-check-circle" style="font-size: 2rem; margin-bottom: var(--spacing-sm);"></i>
+        <p>已加载全部图片</p>
+    </div>
+
+    <div id="sentinel" style="height: 1px;"></div>
+</main>
 
 <script>
     const gallery = document.getElementById('gallery');
@@ -102,34 +75,34 @@
     function createCard(item) {
         const div = document.createElement('div');
         div.className = 'gallery-card';
-        
+
         const img = document.createElement('img');
         img.src = item.picUrl || '';
         img.alt = item.groupName || '';
         img.loading = 'lazy';
-        
+
         const meta = document.createElement('div');
         meta.className = 'meta';
-        
+
         const name = document.createElement('div');
         name.className = 'name';
         name.textContent = item.groupName || '未命名分组';
-        
+
         const id = document.createElement('div');
         id.className = 'id';
         id.textContent = 'ID: ' + (item.groupId ?? '-');
-        
+
         meta.appendChild(name);
         meta.appendChild(id);
         div.appendChild(img);
         div.appendChild(meta);
-        
-        div.onclick = function() {
+
+        div.onclick = function () {
             if (item.groupId) {
                 window.location.href = '/showPicList?groupId=' + item.groupId + '&groupName=' + encodeURIComponent(item.groupName || '');
             }
         };
-        
+
         return div;
     }
 
@@ -146,9 +119,9 @@
     async function loadPage(reset) {
         if (isLoading) return;
         isLoading = true;
-        loadingEl.style.display = 'block';
-        endEl.style.display = 'none';
-        
+        loadingEl.classList.remove('hidden');
+        endEl.classList.add('hidden');
+
         try {
             if (reset) {
                 page = 0;
@@ -165,7 +138,7 @@
                 hasMore = result.data.hasMore || false;
 
                 if (images.length === 0) {
-                    endEl.style.display = 'block';
+                    endEl.classList.remove('hidden');
                 } else {
                     const processedList = images.map(item => ({
                         groupId: item.groupId,
@@ -175,15 +148,15 @@
 
                     appendList(processedList);
                     page++;
-                    
+
                     if (!hasMore) {
-                        endEl.style.display = 'block';
+                        endEl.classList.remove('hidden');
                     }
                 }
             } else {
                 showTip((result && result.message) || '获取图片失败', true);
                 if (reset) {
-                    endEl.style.display = 'block';
+                    endEl.classList.remove('hidden');
                 }
             }
         } catch (e) {
@@ -191,10 +164,10 @@
             showTip('网络请求失败', true);
         } finally {
             isLoading = false;
-            loadingEl.style.display = 'none';
+            loadingEl.classList.add('hidden');
         }
     }
-    
+
     function sanitizeUrl(url) {
         if (!url) return '';
         return String(url).trim().replace(/^[`\s]+|[`\s]+$/g, '');
@@ -230,7 +203,7 @@
 
     document.addEventListener('DOMContentLoaded', () => {
         loadPage(true);
-        
+
         const sentinel = document.getElementById('sentinel');
         if ('IntersectionObserver' in window && sentinel) {
             const io = new IntersectionObserver((entries) => {
@@ -239,23 +212,23 @@
                         loadPage(false);
                     }
                 });
-            }, { root: null, rootMargin: '400px', threshold: 0 });
+            }, {root: null, rootMargin: '400px', threshold: 0});
             io.observe(sentinel);
         }
-        
+
         window.addEventListener('scroll', () => {
             if (isLoading || !hasMore) return;
             if (nearBottomThreshold(300)) {
                 loadPage(false);
             }
-        }, { passive: true });
-        
+        }, {passive: true});
+
         window.addEventListener('touchmove', () => {
             if (isLoading || !hasMore) return;
             if (nearBottomThreshold(300)) {
                 loadPage(false);
             }
-        }, { passive: true });
+        }, {passive: true});
     });
 </script>
 </body>
