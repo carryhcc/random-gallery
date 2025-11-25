@@ -120,7 +120,9 @@
         if (isLoading) return;
         isLoading = true;
         loadingEl.classList.remove('hidden');
-        endEl.classList.add('hidden');
+        if (reset) {
+            endEl.classList.add('hidden');
+        }
 
         try {
             if (reset) {
@@ -138,7 +140,7 @@
                 hasMore = result.data.hasMore || false;
 
                 if (images.length === 0) {
-                    endEl.classList.remove('hidden');
+                    if (!reset) endEl.classList.remove('hidden');
                 } else {
                     const processedList = images.map(item => ({
                         groupId: item.groupId,

@@ -11,193 +11,10 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
     <link rel="stylesheet" href="/css/style.css">
     <script src="/js/theme.js"></script>
-    <style>
-        .navbar {
-            position: fixed;
-            top: 0;
-            left: 0;
-            right: 0;
-            height: 60px;
-            background: rgba(255, 255, 255, 0.9);
-            backdrop-filter: blur(10px);
-            border-bottom: 1px solid var(--color-border);
-            z-index: 1000;
-            display: flex;
-            align-items: center;
-            padding: 0 var(--spacing-lg);
-            box-shadow: var(--shadow-sm);
-        }
-
-        .dark-mode .navbar {
-            background: rgba(30, 30, 30, 0.9);
-        }
-
-        .navbar-content {
-            width: 100%;
-            max-width: 1400px;
-            margin: 0 auto;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-
-        .navbar-title {
-            font-family: 'Poppins', sans-serif;
-            font-weight: 600;
-            font-size: 1.25rem;
-            color: var(--color-text-primary);
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-        }
-
-        .gallery-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-            gap: var(--spacing-md);
-            padding: var(--spacing-md);
-            margin-top: 70px; /* Navbar height + spacing */
-        }
-
-        .pic-card {
-            position: relative;
-            border-radius: var(--radius-md);
-            overflow: hidden;
-            aspect-ratio: 2/3; /* 假设大多是竖图，或者自适应 */
-            background: var(--color-bg-tertiary);
-            box-shadow: var(--shadow-sm);
-            transition: all var(--transition-base);
-            cursor: pointer;
-        }
-
-        .pic-card:hover {
-            transform: translateY(-4px);
-            box-shadow: var(--shadow-lg);
-        }
-
-        .pic-image {
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-            transition: transform var(--transition-slow);
-        }
-
-        .pic-card:hover .pic-image {
-            transform: scale(1.05);
-        }
-
-        .image-viewer {
-            position: fixed;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background: rgba(0, 0, 0, 0.95);
-            z-index: 2000;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            opacity: 0;
-            pointer-events: none;
-            transition: opacity var(--transition-base);
-        }
-
-        .image-viewer.visible {
-            opacity: 1;
-            pointer-events: auto;
-        }
-
-        .viewer-content {
-            max-width: 95vw;
-            max-height: 95vh;
-            position: relative;
-        }
-
-        .viewer-content img {
-            max-width: 100%;
-            max-height: 95vh;
-            object-fit: contain;
-            border-radius: var(--radius-sm);
-            box-shadow: 0 0 20px rgba(0, 0, 0, 0.5);
-        }
-
-        .viewer-close {
-            position: absolute;
-            top: 20px;
-            right: 20px;
-            background: rgba(255, 255, 255, 0.1);
-            border: none;
-            color: white;
-            width: 40px;
-            height: 40px;
-            border-radius: 50%;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            transition: background var(--transition-fast);
-            z-index: 2010;
-        }
-
-        .viewer-close:hover {
-            background: rgba(255, 255, 255, 0.2);
-        }
-
-        .viewer-nav {
-            position: absolute;
-            top: 50%;
-            transform: translateY(-50%);
-            background: rgba(255, 255, 255, 0.1);
-            border: none;
-            color: white;
-            width: 50px;
-            height: 50px;
-            border-radius: 50%;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            transition: background var(--transition-fast);
-            z-index: 2010;
-        }
-
-        .viewer-nav:hover {
-            background: rgba(255, 255, 255, 0.2);
-        }
-
-        .viewer-prev {
-            left: 20px;
-        }
-
-        .viewer-next {
-            right: 20px;
-        }
-
-        @media (max-width: 768px) {
-            .gallery-grid {
-                grid-template-columns: repeat(2, 1fr);
-                gap: var(--spacing-sm);
-                padding: var(--spacing-sm);
-            }
-
-            .viewer-nav {
-                width: 40px;
-                height: 40px;
-            }
-
-            .viewer-prev {
-                left: 10px;
-            }
-
-            .viewer-next {
-                right: 10px;
-            }
-        }
-    </style>
 </head>
 <body>
 
-<nav class="navbar">
+<nav class="navbar-fixed">
     <div class="navbar-content">
         <div class="navbar-title">
             <button class="btn btn-ghost btn-sm" onclick="window.history.back()" style="margin-right: 1rem;">
@@ -214,7 +31,7 @@
     </div>
 </nav>
 
-<div id="gallery" class="gallery-grid">
+<div id="gallery" class="gallery-grid-pic">
     <!-- 图片将在这里动态加载 -->
 </div>
 
@@ -226,6 +43,9 @@
 <div id="no-more" class="text-center hidden" style="padding: 2rem; color: var(--color-text-tertiary);">
     <p>已经到底了</p>
 </div>
+
+<!-- 底部哨兵元素，用于触发 IntersectionObserver -->
+<div id="sentinel" style="height: 1px;"></div>
 
 <!-- 图片查看器 -->
 <div id="viewer" class="image-viewer">
@@ -421,13 +241,6 @@
         if (e.key === 'ArrowRight') changeImage(1);
     });
 
-    // 无限滚动
-    window.addEventListener('scroll', () => {
-        if ((window.innerHeight + window.scrollY) >= document.body.offsetHeight - 1000) {
-            loadImages();
-        }
-    });
-
     // 初始化加载
     document.addEventListener('DOMContentLoaded', () => {
         // 获取URL参数
@@ -448,6 +261,26 @@
             window.currentGroupId = groupId;
             fetchGroupInfo(groupId);
             loadImages();
+            
+            // 使用 IntersectionObserver 实现无限滚动
+            const sentinel = document.getElementById('sentinel');
+            if ('IntersectionObserver' in window && sentinel) {
+                const io = new IntersectionObserver((entries) => {
+                    entries.forEach(entry => {
+                        if (entry.isIntersecting && !isLoading && hasMore) {
+                            loadImages();
+                        }
+                    });
+                }, {root: null, rootMargin: '400px', threshold: 0});
+                io.observe(sentinel);
+            } else {
+                // 降级方案：滚动监听
+                window.addEventListener('scroll', () => {
+                    if ((window.innerHeight + window.scrollY) >= document.body.offsetHeight - 1000) {
+                        loadImages();
+                    }
+                });
+            }
         } else {
             document.getElementById('gallery').innerHTML = '<div class="text-center" style="grid-column: 1/-1; padding: 2rem;">无效的分组ID</div>';
         }

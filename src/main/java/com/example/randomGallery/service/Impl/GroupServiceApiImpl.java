@@ -56,8 +56,7 @@ public class GroupServiceApiImpl implements GroupServiceApi {
                 pageInfo.getList(),
                 pageInfo.getTotal(),
                 pageInfo.getPageNum(),
-                pageInfo.getPageSize()
-        );
+                pageInfo.getPageSize());
     }
 
     @Override

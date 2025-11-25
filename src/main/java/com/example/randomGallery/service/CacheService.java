@@ -55,8 +55,7 @@ public class CacheService {
      * 支持的环境列表
      */
     private static final List<String> SUPPORTED_ENVS = Arrays.asList(
-            "cc_pic_all_dev", "cc_pic_all_test", "cc_pic_all_prod"
-    );
+            "cc_pic_all_dev", "cc_pic_all_test", "cc_pic_all_prod");
 
     public String getDefaultEnv() {
         return StrUtils.isEmpty(defaultEnv) ? "dev" : defaultEnv;
@@ -65,10 +64,15 @@ public class CacheService {
     @PostConstruct
     public void init() {
         try {
+            // 初始化环境名称
+            String env = getDefaultEnv();
+            this.picSqlName = "cc_pic_all_" + env;
+            this.groupSqlName = "cc_pic_group_" + env;
+
             initTimer();
             cachePicId();
             buildGroupIDList();
-            log.info("缓存服务初始化完成，当前环境: {}", getDefaultEnv());
+            log.info("缓存服务初始化完成，当前环境: {}", env);
         } catch (SQLException e) {
             log.error("缓存服务初始化失败", e);
             throw new RuntimeException("缓存服务初始化失败", e);
@@ -102,6 +106,10 @@ public class CacheService {
             log.warn("图片ID缓存未初始化，返回null");
             return null;
         }
+        if (minId > maxId) {
+            log.warn("图片ID范围无效 (min: {}, max: {})", minId, maxId);
+            return null;
+        }
         return ThreadLocalRandom.current().nextLong(minId, maxId + 1);
     }
 
@@ -111,6 +119,10 @@ public class CacheService {
     public Long getRandomGroupId() {
         if (minGroupId == null || maxGroupId == null) {
             log.warn("分组ID缓存未初始化，返回null");
+            return null;
+        }
+        if (minGroupId > maxGroupId) {
+            log.warn("分组ID范围无效 (min: {}, max: {})", minGroupId, maxGroupId);
             return null;
         }
         return ThreadLocalRandom.current().nextLong(minGroupId, maxGroupId + 1);
