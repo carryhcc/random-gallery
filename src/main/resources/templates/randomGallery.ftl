@@ -35,7 +35,7 @@
 </header>
 
 <!-- 主内容 -->
-<main class="container" style="margin-top: 80px; padding-bottom: var(--spacing-xl);">
+<main class="container gallery-container">
     <div id="tip" class="toast hidden"></div>
 
     <div id="gallery" class="gallery-grid animate-fade-in"></div>
@@ -45,12 +45,12 @@
         <span>加载更多精彩图片...</span>
     </div>
 
-    <div id="end" class="text-center hidden" style="padding: var(--spacing-xl); color: var(--color-text-tertiary);">
-        <i class="fas fa-check-circle" style="font-size: 2rem; margin-bottom: var(--spacing-sm);"></i>
+    <div id="end" class="text-center hidden end-message">
+        <i class="fas fa-check-circle end-icon"></i>
         <p>已加载全部图片</p>
     </div>
 
-    <div id="sentinel" style="height: 1px;"></div>
+    <div id="sentinel" class="sentinel"></div>
 </main>
 
 <script>
@@ -76,26 +76,30 @@
         const div = document.createElement('div');
         div.className = 'gallery-card';
 
+        const imgContainer = document.createElement('div');
+        imgContainer.className = 'gallery-image-container';
+
         const img = document.createElement('img');
         img.src = item.picUrl || '';
         img.alt = item.groupName || '';
         img.loading = 'lazy';
 
-        const meta = document.createElement('div');
-        meta.className = 'meta';
+        const overlay = document.createElement('div');
+        overlay.className = 'gallery-overlay';
 
         const name = document.createElement('div');
-        name.className = 'name';
+        name.className = 'group-name';
         name.textContent = item.groupName || '未命名分组';
 
         const id = document.createElement('div');
-        id.className = 'id';
+        id.className = 'group-id';
         id.textContent = 'ID: ' + (item.groupId ?? '-');
 
-        meta.appendChild(name);
-        meta.appendChild(id);
-        div.appendChild(img);
-        div.appendChild(meta);
+        overlay.appendChild(name);
+        overlay.appendChild(id);
+        imgContainer.appendChild(img);
+        imgContainer.appendChild(overlay);
+        div.appendChild(imgContainer);
 
         div.onclick = function () {
             if (item.groupId) {
