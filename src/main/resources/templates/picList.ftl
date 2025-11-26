@@ -19,14 +19,14 @@
     <div class="navbar-content">
         <div class="navbar-brand">
             <i class="fas fa-th"></i>
-            <span>套图详情</span>
+            <span id="pageTitle">套图详情</span>
         </div>
-            <div class="navbar-actions">
+        <div class="navbar-actions">
             <button class="btn btn-secondary btn-sm" onclick="window.location.href='/'">
                 <i class="fas fa-home"></i>
                 <span class="hidden-mobile">首页</span>
             </button>
-                <button id="btnRefresh" class="btn btn-primary btn-sm">
+            <button id="btnRefresh" class="btn btn-primary btn-sm">
                 <i class="fas fa-sync-alt"></i>
                 <span class="hidden-mobile">刷新</span>
             </button>
@@ -286,7 +286,7 @@
         // 为刷新按钮添加点击事件
         const randomGroupBtn = document.getElementById('randomGroupBtn');
         if (randomGroupBtn) {
-            randomGroupBtn.addEventListener('click', function() {
+            randomGroupBtn.addEventListener('click', function () {
                 fetch('/api/group/randomGroupInfo')
                     .then(response => response.json())
                     .then(result => {
