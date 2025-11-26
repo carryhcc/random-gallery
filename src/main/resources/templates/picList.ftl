@@ -72,6 +72,7 @@
     let currentImageIndex = 0;
     let currentGroupName = '';
     let totalGroupCount = 0;
+    const scrollThreshold = 400;
 
     // logic moved to DOMContentLoaded
 
@@ -135,6 +136,7 @@
             .finally(() => {
                 isLoading = false;
                 document.getElementById('loading').classList.add('hidden');
+                checkScrollForMore();
             });
     }
 
@@ -168,6 +170,41 @@
         });
 
         updatePageTitle();
+    }
+
+    function getScrollContainer() {
+        return document.scrollingElement || document.body || document.documentElement;
+    }
+
+    function checkScrollForMore() {
+        if (isLoading || !hasMore) return;
+        const scrollContainer = getScrollContainer();
+        if (!scrollContainer) return;
+        const distanceToBottom = scrollContainer.scrollHeight - (scrollContainer.scrollTop + window.innerHeight);
+        if (distanceToBottom <= scrollThreshold) {
+            loadImages();
+        }
+    }
+
+    function setupInfiniteScroll() {
+        const sentinel = document.getElementById('sentinel');
+        if (sentinel && 'IntersectionObserver' in window) {
+            const observer = new IntersectionObserver((entries) => {
+                entries.forEach(entry => {
+                    if (entry.isIntersecting) {
+                        checkScrollForMore();
+                    }
+                });
+            }, {
+                root: null,
+                rootMargin: '400px 0px 400px 0px',
+                threshold: 0
+            });
+            observer.observe(sentinel);
+        }
+
+        window.addEventListener('scroll', checkScrollForMore, {passive: true});
+        window.addEventListener('resize', checkScrollForMore, {passive: true});
     }
 
     function fetchGroupInfo(id) {
@@ -260,27 +297,8 @@
             // Make variables available to loadImages
             window.currentGroupId = groupId;
             fetchGroupInfo(groupId);
+            setupInfiniteScroll();
             loadImages();
-            
-            // 使用 IntersectionObserver 实现无限滚动
-            const sentinel = document.getElementById('sentinel');
-            if ('IntersectionObserver' in window && sentinel) {
-                const io = new IntersectionObserver((entries) => {
-                    entries.forEach(entry => {
-                        if (entry.isIntersecting && !isLoading && hasMore) {
-                            loadImages();
-                        }
-                    });
-                }, {root: null, rootMargin: '400px', threshold: 0});
-                io.observe(sentinel);
-            } else {
-                // 降级方案：滚动监听
-                window.addEventListener('scroll', () => {
-                    if ((window.innerHeight + window.scrollY) >= document.body.offsetHeight - 1000) {
-                        loadImages();
-                    }
-                });
-            }
         } else {
             document.getElementById('gallery').innerHTML = '<div class="text-center" style="grid-column: 1/-1; padding: 2rem;">无效的分组ID</div>';
         }
