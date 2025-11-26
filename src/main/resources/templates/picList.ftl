@@ -14,13 +14,12 @@
 </head>
 <body>
 
+<!-- 导航栏 -->
 <nav class="navbar">
     <div class="navbar-content">
-        <div class="navbar-title">
-            <button class="btn btn-ghost btn-sm" onclick="window.history.back()" style="margin-right: 1rem;">
-                <i class="fas fa-arrow-left"></i>
-            </button>
-            <span id="pageTitle">套图详情</span>
+        <div class="navbar-brand">
+            <i class="fas fa-th"></i>
+            <span>套图详情</span>
         </div>
             <div class="navbar-actions">
             <button class="btn btn-secondary btn-sm" onclick="window.location.href='/'">
