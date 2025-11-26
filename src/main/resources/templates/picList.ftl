@@ -14,7 +14,7 @@
 </head>
 <body>
 
-<nav class="navbar-fixed">
+<nav class="navbar">
     <div class="navbar-content">
         <div class="navbar-title">
             <button class="btn btn-ghost btn-sm" onclick="window.history.back()" style="margin-right: 1rem;">
@@ -22,10 +22,14 @@
             </button>
             <span id="pageTitle">套图详情</span>
         </div>
-        <div>
+            <div class="navbar-actions">
             <button class="btn btn-secondary btn-sm" onclick="window.location.href='/'">
                 <i class="fas fa-home"></i>
                 <span class="hidden-mobile">首页</span>
+            </button>
+                <button id="btnRefresh" class="btn btn-primary btn-sm">
+                <i class="fas fa-sync-alt"></i>
+                <span class="hidden-mobile">刷新</span>
             </button>
         </div>
     </div>
@@ -278,8 +282,29 @@
         if (e.key === 'ArrowRight') changeImage(1);
     });
 
-    // 初始化加载
+    // 刷新按钮功能 - 与首页随机套图按钮相同效果
     document.addEventListener('DOMContentLoaded', () => {
+        // 为刷新按钮添加点击事件
+        const randomGroupBtn = document.getElementById('randomGroupBtn');
+        if (randomGroupBtn) {
+            randomGroupBtn.addEventListener('click', function() {
+                fetch('/api/group/randomGroupInfo')
+                    .then(response => response.json())
+                    .then(result => {
+                        if (result.code === 200 && result.data && result.data.groupId) {
+                            const groupId = result.data.groupId;
+                            const groupName = result.data.groupName || '随机套图';
+                            window.location.href = '/showPicList?groupId=' + groupId + '&groupName=' + encodeURIComponent(groupName);
+                        } else {
+                            window.location.href = '/showPicList';
+                        }
+                    })
+                    .catch(error => {
+                        console.error('获取随机分组信息失败:', error);
+                        window.location.href = '/showPicList';
+                    });
+            });
+        }
         // 获取URL参数
         const urlParams = new URLSearchParams(window.location.search);
         const groupId = urlParams.get('groupId');

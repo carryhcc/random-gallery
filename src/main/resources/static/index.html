@@ -10,40 +10,6 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
     <link rel="stylesheet" href="/css/style.css">
     <script src="/js/theme.js"></script>
-    <style>
-        .theme-toggle {
-            position: fixed;
-            top: 1.5rem;
-            right: 1.5rem;
-            z-index: 1030;
-            width: 44px;
-            height: 44px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            background: var(--color-bg-tertiary);
-            border: 1px solid var(--color-border);
-            border-radius: var(--radius-lg);
-            cursor: pointer;
-            transition: all var(--transition-fast);
-            color: var(--color-text-primary);
-            font-size: var(--font-size-lg);
-        }
-        
-        .theme-toggle:hover {
-            background: var(--color-bg-hover);
-            border-color: var(--color-border-hover);
-            transform: scale(1.05);
-        }
-        
-        .theme-toggle i {
-            transition: transform var(--transition-base);
-        }
-        
-        .theme-toggle:hover i {
-            transform: rotate(180deg);
-        }
-    </style>
 </head>
 <body>
 
@@ -76,8 +42,12 @@
                 随机图库
             </h1>
             <p class="card-subtitle">发现和浏览精美的随机图片集合</p>
+            <!-- 环境统计信息显示（已居中） -->
+            <p class="env-stats" id="envStats">
+                <i class="fas fa-spinner fa-spin"></i> 加载统计信息中...
+            </p>
         </div>
-        
+
         <div class="button-group">
             <a href="/showPic" class="btn btn-primary btn-full">
                 <i class="fas fa-image"></i>
@@ -125,15 +95,19 @@
 
     async function updateEnvStatus() {
         try {
-            const response = await fetch('/api/system/env/current');
+            // 调用新接口获取环境详情
+            const response = await fetch('/api/system/env/currentInfo');
             if (!response.ok) {
                 throw new Error(`HTTP error! status: ${response.status}`);
             }
             const result = await response.json();
-            const currentEnv = result.data;
+            const picCount = result.data; // PicCount对象
+            const currentEnv = picCount.env;
 
+            // 更新环境选择器显示
             const selectedEnvText = document.getElementById('selected-env-text');
             const envOptions = document.querySelectorAll('.dropdown-menu a');
+            const envStats = document.getElementById('envStats');
 
             let found = false;
             envOptions.forEach(option => {
@@ -151,10 +125,19 @@
                 selectedEnvText.textContent = "未知环境";
             }
 
+            // 更新环境统计信息显示
+            envStats.innerHTML = `
+                <i class="fas fa-folder"></i> 分组总数: ${picCount.groupCount || 0}
+                <i class="fas fa-image"></i> 图片总数: ${picCount.picCount || 0}
+            `;
+
         } catch (error) {
             console.error("获取环境状态失败:", error);
             showToast("获取环境状态失败", "error");
             document.getElementById('selected-env-text').textContent = "获取失败";
+            // 显示错误状态的统计信息（保持居中）
+            document.getElementById('envStats').innerHTML =
+                '<i class="fas fa-exclamation-circle"></i> 统计信息加载失败';
         }
     }
 
@@ -167,9 +150,9 @@
                 throw new Error(`HTTP error! status: ${response.status}`);
             }
             const result = await response.json();
-            
+
             if (result.code === 200) {
-                await updateEnvStatus();
+                await updateEnvStatus(); // 切换后重新获取环境详情
                 const currentActiveButtonText = document.getElementById('selected-env-text').textContent;
                 showToast(`成功切换到 ${currentActiveButtonText}！`, 'success');
             } else {

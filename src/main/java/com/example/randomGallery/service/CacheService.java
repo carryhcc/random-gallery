@@ -1,5 +1,6 @@
 package com.example.randomGallery.service;
 
+import com.example.randomGallery.entity.VO.PicCount;
 import com.example.randomGallery.service.mapper.GroupServiceMapper;
 import com.example.randomGallery.service.mapper.PicServiceMapper;
 import com.example.randomGallery.utils.ResettableTimer;
@@ -59,6 +60,16 @@ public class CacheService {
 
     public String getDefaultEnv() {
         return StrUtils.isEmpty(defaultEnv) ? "dev" : defaultEnv;
+    }
+    /**
+     * 获取当前环境信息
+     */
+    public PicCount getDefaultEnvInfo() {
+        PicCount picCount = new PicCount();
+        picCount.setEnv(getDefaultEnv());
+        picCount.setGroupCount(maxGroupId);
+        picCount.setPicCount(maxId);
+        return picCount;
     }
 
     @PostConstruct

@@ -1,6 +1,7 @@
 package com.example.randomGallery.controller;
 
 import com.example.randomGallery.common.Result;
+import com.example.randomGallery.entity.VO.PicCount;
 import com.example.randomGallery.service.CacheService;
 import com.example.randomGallery.service.GroupServiceApi;
 import lombok.RequiredArgsConstructor;
@@ -29,6 +30,16 @@ public class SystemController {
         log.debug("获取当前环境");
         String currentEnv = cacheService.getDefaultEnv();
         return Result.success("获取当前环境成功", currentEnv);
+    }
+
+    /**
+     * 获取当前环境详情
+     */
+    @GetMapping("/env/currentInfo")
+    public Result<PicCount> getCurrentEnvInfo() {
+        log.debug("获取当前环境信息详情");
+        PicCount picCount = cacheService.getDefaultEnvInfo();
+        return Result.success("获取当前环境信息成功", picCount);
     }
 
     /**

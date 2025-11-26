@@ -23,8 +23,8 @@
         </div>
         <div class="navbar-actions">
             <button id="backToHomeBtn" class="btn btn-secondary btn-sm">
-                <i class="fas fa-arrow-left"></i>
-                <span class="hidden-mobile">返回首页</span>
+                <i class="fas fa-home"></i>
+                <span class="hidden-mobile">首页</span>
             </button>
             <button id="refreshBtn" class="btn btn-primary btn-sm">
                 <i class="fas fa-sync-alt"></i>
