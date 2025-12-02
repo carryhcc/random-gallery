@@ -1,5 +1,6 @@
 package com.example.randomGallery.controller;
 
+import com.example.randomGallery.annotation.PreventDuplicateSubmit;
 import com.example.randomGallery.common.Result;
 import com.example.randomGallery.entity.VO.PicCount;
 import com.example.randomGallery.service.CacheService;
@@ -84,5 +85,17 @@ public class SystemController {
     @GetMapping("/up/group")
     public void upGroup(){
         groupServiceApi.updateGroupInfo();
+    }
+
+
+    /**
+     * 测试防重复提交功能
+     * 演示如何使用@PreventDuplicateSubmit注解
+     */
+    @PreventDuplicateSubmit
+    @PostMapping("/test")
+    public Result<String> testDuplicateSubmit(@RequestBody String testData) {
+        log.info("测试防重复提交，收到数据: {}", testData);
+        return Result.success("操作成功，数据已处理");
     }
 }

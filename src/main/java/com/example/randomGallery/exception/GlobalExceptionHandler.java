@@ -69,6 +69,16 @@ public class GlobalExceptionHandler {
     }
 
     /**
+     * 处理重复提交异常
+     */
+    @ExceptionHandler(DuplicateSubmitException.class)
+    public ResponseEntity<Result<Void>> handleDuplicateSubmitException(DuplicateSubmitException e) {
+        log.warn("重复提交异常: {}", e.getMessage());
+        return ResponseEntity.status(HttpStatus.TOO_MANY_REQUESTS)
+            .body(Result.error(e.getCode() != null ? e.getCode() : 429, e.getMessage()));
+    }
+
+    /**
      * 处理运行时异常
      */
     @ExceptionHandler(RuntimeException.class)
