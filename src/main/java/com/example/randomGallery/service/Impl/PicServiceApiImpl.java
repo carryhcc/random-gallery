@@ -37,4 +37,16 @@ public class PicServiceApiImpl implements PicServiceApi {
         PageHelper.startPage(qry.getPageIndex(), qry.getPageSize());
         return picServiceMapper.list(sqlName, qry);
     }
+
+
+    @Override
+    public List<String> downLoadGroup(Long groupId) {
+        // 批量查询图片信息（主键IN查询，性能极高）
+        PicQry picQry = new PicQry();
+        picQry.setGroupId(groupId);
+        String sqlName = cacheService.getPicSqlName();
+        List<PicVO> imageList = picServiceMapper.list(sqlName, picQry);
+        // 获取所有图片地址
+        return imageList.stream().map(PicVO::getPicUrl).toList();
+    }
 }
