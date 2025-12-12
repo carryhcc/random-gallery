@@ -46,10 +46,7 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(NoResourceFoundException.class)
     public ResponseEntity<Result<Void>> handleNoResourceFoundException(NoResourceFoundException e) {
         // 过滤掉 Chrome DevTools 的请求，不记录日志
-        if (e.getResourcePath() != null && 
-            (e.getResourcePath().contains(".well-known") || 
-             e.getResourcePath().contains("favicon.ico") ||
-             e.getResourcePath().contains("robots.txt"))) {
+        if (e.getResourcePath().contains(".well-known") || e.getResourcePath().contains("favicon.ico") || e.getResourcePath().contains("robots.txt")) {
             return ResponseEntity.notFound().build();
         }
         

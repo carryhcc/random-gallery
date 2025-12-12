@@ -85,8 +85,7 @@ public class ApiLoggingAspect {
     private String toSafeJson(Object obj) {
         try {
             if (obj == null) return "null";
-            if (obj instanceof Object[]) {
-                Object[] args = (Object[]) obj;
+            if (obj instanceof Object[] args) {
                 Object[] filtered = Arrays.stream(args)
                         .map(this::maskIfSensitive)
                         .toArray();

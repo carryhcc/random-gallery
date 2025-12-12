@@ -3,6 +3,7 @@ package com.example.randomGallery.entity.VO;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.io.Serial;
 import java.io.Serializable;
 
 /**
@@ -12,6 +13,7 @@ import java.io.Serializable;
 @NoArgsConstructor
 public class GroupVO implements Serializable {
 
+    @Serial
     private static final long serialVersionUID = 1L;
 
     /**

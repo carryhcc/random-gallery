@@ -1,15 +1,31 @@
 package com.example.randomGallery.exception;
 
+import lombok.Getter;
+import lombok.Setter;
+
+import java.io.Serial;
+
 /**
  * 重复提交异常类
  * 用于标识由于重复提交操作而产生的异常
  */
+@Setter
+@Getter
 public class DuplicateSubmitException extends RuntimeException {
 
+    @Serial
     private static final long serialVersionUID = 1L;
 
     /**
      * 错误码
+     * -- GETTER --
+     *  获取错误码
+     *
+     * -- SETTER --
+     *  设置错误码
+     *
+
+
      */
     private Integer code;
 
@@ -42,19 +58,4 @@ public class DuplicateSubmitException extends RuntimeException {
         this.code = 429;
     }
 
-    /**
-     * 获取错误码
-     * @return 错误码
-     */
-    public Integer getCode() {
-        return code;
-    }
-
-    /**
-     * 设置错误码
-     * @param code 错误码
-     */
-    public void setCode(Integer code) {
-        this.code = code;
-    }
 }
