@@ -12,7 +12,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.client.RestTemplate;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ThreadPoolExecutor;
@@ -54,7 +53,6 @@ public class PicApiController {
         return Result.success("获取图片成功", list);
     }
 
-
     /**
      * 批量下载分组图片（多线程处理）
      *
@@ -70,24 +68,20 @@ public class PicApiController {
         }
 
         // 使用线程池并发下载
-        List<CompletableFuture<ImageData>> futures = new ArrayList<>();
-
-        for (int i = 0; i < picUrlList.size(); i++) {
-            final int index = i;
-            final String url = picUrlList.get(i);
-
-            CompletableFuture<ImageData> future = CompletableFuture.supplyAsync(() -> {
-                try {
-                    byte[] bytes = restTemplate.getForObject(url, byte[].class);
-                    return new ImageData(index, bytes);
-                } catch (Exception e) {
-                    log.error("下载失败: {}", url, e);
-                    return new ImageData(index, null);
-                }
-            }, threadPoolExecutor);
-
-            futures.add(future);
-        }
+        List<CompletableFuture<ImageData>> futures = picUrlList.stream()
+                .map(url -> {
+                    int index = picUrlList.indexOf(url);
+                    return CompletableFuture.supplyAsync(() -> {
+                        try {
+                            byte[] bytes = restTemplate.getForObject(url, byte[].class);
+                            return new ImageData(index, bytes);
+                        } catch (Exception e) {
+                            log.error("下载失败: {}", url, e);
+                            return new ImageData(index, null);
+                        }
+                    }, threadPoolExecutor);
+                })
+                .toList();
 
         // 等待所有下载完成
         List<ImageData> images = futures.stream().map(CompletableFuture::join).toList();
@@ -98,7 +92,8 @@ public class PicApiController {
 
         try (ZipOutputStream zipOut = new ZipOutputStream(response.getOutputStream())) {
             for (ImageData img : images) {
-                if (img.bytes == null) continue;
+                if (img.bytes == null)
+                    continue;
 
                 String fileName = "image_" + (img.index + 1) + ".jpg";
                 zipOut.putNextEntry(new ZipEntry(fileName));
@@ -112,7 +107,6 @@ public class PicApiController {
         }
     }
 
-
     private void writeText(HttpServletResponse response, String msg) {
         try {
             response.setContentType("text/plain;charset=UTF-8");
@@ -120,6 +114,5 @@ public class PicApiController {
         } catch (Exception ignore) {
         }
     }
-
 
 }

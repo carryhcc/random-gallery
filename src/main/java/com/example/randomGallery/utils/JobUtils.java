@@ -12,7 +12,7 @@ import java.sql.SQLException;
 @Component
 public class JobUtils {
 
-    private final long switchInterval = 10 * 60 * 1000;
+    private static final long SWITCH_INTERVAL = 10 * 60 * 1000;
 
     private static final Logger log = LoggerFactory.getLogger(JobUtils.class);
 
@@ -20,7 +20,7 @@ public class JobUtils {
     private CacheService cacheService;
 
     // 直接在方法上使用@Scheduled注解
-    @Scheduled(fixedRate = switchInterval, initialDelay = switchInterval)
+    @Scheduled(fixedRate = SWITCH_INTERVAL, initialDelay = SWITCH_INTERVAL)
     public void switchToDevEnvironment() {
         try {
             cacheService.switchSqlName("dev");
