@@ -92,7 +92,7 @@ public class CacheService {
     }
 
     private void initTimer() {
-        this.resettableTimer = new ResettableTimer(this, 5, "dev");
+        this.resettableTimer = new ResettableTimer(this, 10, "dev");
     }
 
     public void cachePicId() throws SQLException {
