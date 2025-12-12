@@ -33,9 +33,11 @@ public class PicServiceApiImpl implements PicServiceApi {
 
     @Override
     public List<PicVO> list(PicQry qry) {
+        log.debug("查询图片列表，参数: {}", qry);
         String sqlName = cacheService.getPicSqlName();
-        PageHelper.startPage(qry.getPageIndex(), qry.getPageSize());
-        return picServiceMapper.list(sqlName, qry);
+        try (var ignored = PageHelper.startPage(qry.getPageIndex(), qry.getPageSize())) {
+            return picServiceMapper.list(sqlName, qry);
+        }
     }
 
 

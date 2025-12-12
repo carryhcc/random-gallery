@@ -47,16 +47,16 @@ public class GroupServiceApiImpl implements GroupServiceApi {
     public PageResult<GroupVO> queryGroupList(GroupQry qry) {
         log.debug("查询分组列表，参数: {}", qry);
         String sqlName = cacheService.getGroupSqlName();
-        PageHelper.startPage(qry.getPageIndex(), qry.getPageSize());
-        List<GroupVO> result = groupServiceMapper.queryGroupList(qry, sqlName);
-        PageInfo<GroupVO> pageInfo = new PageInfo<>(result);
-
-        log.debug("查询分组列表完成，返回 {} 条记录，共 {} 页", result.size(), pageInfo.getPages());
-        return new PageResult<>(
-                pageInfo.getList(),
-                pageInfo.getTotal(),
-                pageInfo.getPageNum(),
-                pageInfo.getPageSize());
+        try (var ignored = PageHelper.startPage(qry.getPageIndex(), qry.getPageSize())) {
+            List<GroupVO> result = groupServiceMapper.queryGroupList(qry, sqlName);
+            PageInfo<GroupVO> pageInfo = new PageInfo<>(result);
+            log.debug("查询分组列表完成，返回 {} 条记录，共 {} 页", result.size(), pageInfo.getPages());
+            return new PageResult<>(
+                    pageInfo.getList(),
+                    pageInfo.getTotal(),
+                    pageInfo.getPageNum(),
+                    pageInfo.getPageSize());
+        }
     }
 
     @Override

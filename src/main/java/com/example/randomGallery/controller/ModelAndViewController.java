@@ -2,6 +2,7 @@ package com.example.randomGallery.controller;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.owasp.encoder.Encode;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -49,7 +50,9 @@ public class ModelAndViewController {
         log.debug("跳转到随机套图页面, groupId: {}", groupId);
         ModelAndView modelAndView = new ModelAndView("picList");
         if (groupId != null) {
-            modelAndView.addObject("groupId", groupId);
+            // 转换为String，避免前端渲染时触发XSS攻击
+            String escapedGroupId = Encode.forHtml(Long.toString(groupId));
+            modelAndView.addObject("groupId", escapedGroupId);
         }
         return modelAndView;
     }
