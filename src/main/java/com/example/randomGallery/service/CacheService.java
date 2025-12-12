@@ -61,6 +61,7 @@ public class CacheService {
     public String getDefaultEnv() {
         return StrUtils.isEmpty(defaultEnv) ? "dev" : defaultEnv;
     }
+
     /**
      * 获取当前环境信息
      */
@@ -94,7 +95,6 @@ public class CacheService {
         this.resettableTimer = new ResettableTimer(this, 5, "dev");
     }
 
-    @PostConstruct
     public void cachePicId() throws SQLException {
         log.info("开始缓存图片ID和分组ID...");
 
