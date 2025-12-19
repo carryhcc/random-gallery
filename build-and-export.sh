@@ -1,50 +1,47 @@
 #!/bin/bash
+set -e
 
-# 随机图库 - 一键构建和导出脚本
-# 功能：Maven打包 -> Docker构建 -> 导出tar文件
+# 设置镜像名称
+IMAGE_NAME="random-gallery:latest"
+TAR_NAME="random-gallery.tar"
 
-set -e  # 遇到错误立即退出
+echo "🚀 开始跨平台构建流程 (复用本地 Maven 缓存)..."
 
-echo "🚀 开始构建随机图库应用..."
+# 1. 获取本地 .m2 路径
+LOCAL_M2="$HOME/.m2"
 
-# 步骤1: Maven打包
-echo "📦 步骤1: Maven打包..."
-mvn clean package -DskipTests
+# 2. 步骤1: 容器内编译 (解决 JDK 21 兼容性问题)
+echo "📦 步骤1: 正在容器内编译..."
+docker run --rm \
+    -v "$LOCAL_M2":/root/.m2 \
+    -v "$(pwd)":/app \
+    -w /app \
+    maven:3.9-eclipse-temurin-21-alpine \
+    mvn clean package -DskipTests
+
 if [ $? -eq 0 ]; then
-    echo "✅ Maven打包成功"
+    echo "✅ Maven 编译打包成功"
 else
-    echo "❌ Maven打包失败"
+    echo "❌ Maven 编译失败"
     exit 1
 fi
 
-# 步骤2: Docker构建
-echo "🐳 步骤2: Docker镜像构建..."
-docker build -t helloworld:latest .
+# 3. 步骤2: 构建 AMD64 运行镜像 (使用默认 Dockerfile)
+echo "🐳 步骤2: 正在构建 AMD64 运行镜像..."
+docker build --platform linux/amd64 -t $IMAGE_NAME .
+
+# 4. 步骤3: 导出镜像
+echo "📁 步骤3: 导出 Docker 镜像..."
+docker save -o $TAR_NAME $IMAGE_NAME
+
 if [ $? -eq 0 ]; then
-    echo "✅ Docker镜像构建成功"
+    echo "✅ 镜像导出成功: $TAR_NAME"
+    echo "📊 验证镜像架构:"
+    docker inspect $IMAGE_NAME | grep Architecture
 else
-    echo "❌ Docker镜像构建失败"
+    echo "❌ 镜像导出失败"
     exit 1
 fi
 
-# 步骤3: 导出tar文件
-echo "📁 步骤3: 导出Docker镜像为tar文件..."
-docker save -o helloworld.tar helloworld:latest
-if [ $? -eq 0 ]; then
-    echo "✅ Docker镜像导出成功"
-else
-    echo "❌ Docker镜像导出失败"
-    exit 1
-fi
-
-# 显示文件信息
 echo ""
 echo "🎉 构建完成！"
-echo "📊 文件信息："
-ls -lh helloworld.tar
-echo ""
-echo "📋 使用说明："
-echo "   导入镜像: docker load -i helloworld.tar"
-echo "   运行容器: docker run -p 8086:8086 helloworld:latest"
-echo "   自定义数据库: docker run -p 8086:8086 -e DB_HOST=your_host -e DB_USERNAME=your_user -e DB_PASSWORD=your_pass helloworld:latest"
-
