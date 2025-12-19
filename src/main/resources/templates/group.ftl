@@ -34,10 +34,6 @@
 <main class="container" style="margin-top: 80px; padding-bottom: var(--spacing-xl);">
     <div class="card animate-fade-in">
         <div class="card-header">
-            <h1 class="card-title">
-                图片分组查询
-            </h1>
-            <p class="card-subtitle">查找并浏览特定的图片套图</p>
         </div>
 
         <!-- 搜索表单 -->
@@ -57,6 +53,7 @@
                 </button>
             </div>
         </div>
+
 
         <!-- 表格 -->
         <div class="table-container">
@@ -166,18 +163,29 @@
                     const groupCount = item.groupCount || 0;
                     const groupUrl = item.groupUrl ? item.groupUrl.trim().replace(/^`|`$/g, '') : '';
 
+                    // 添加背景图变量
+                    if (groupUrl) {
+                        newRow.style.setProperty('--bg-image', 'url(' + groupUrl + ')');
+                    }
+
+                    // 设置行点击事件
+                    newRow.onclick = function() {
+                        navigateToPicPage(groupId, groupName);
+                    };
+                    newRow.style.cursor = 'pointer';
+
                     let imageHtml = '';
                     if (groupUrl) {
                         imageHtml = '<div class="group-image-container">' +
                             '<img src="' + groupUrl + '" alt="' + groupName + '" class="group-image" ' +
-                            'onclick="previewImage(\'' + groupUrl + '\')" title="点击预览">' +
+                            'onclick="event.stopPropagation(); previewImage(\'' + groupUrl + '\')" title="点击预览">' +
                             '</div>';
                     } else {
                         imageHtml = '<div class="no-image">暂无</div>';
                     }
 
                     newRow.innerHTML = '<td>' + groupId + '</td>' +
-                        '<td class="name-cell" onclick="navigateToPicPage(\'' + groupId + '\', \'' + groupName.replace(/'/g, "\\'") + '\')" title="点击查看套图">' +
+                        '<td class="name-cell" title="点击查看套图">' +
                         groupName +
                         '</td>' +
                         '<td style="text-align: center;"><span class="count-cell">' + groupCount + '</span></td>' +

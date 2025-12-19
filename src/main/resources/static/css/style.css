@@ -1614,3 +1614,116 @@ body {
     margin-top: 80px;
     padding-bottom: var(--spacing-xl);
 }
+/* ========================================
+   14. 移动端列表卡片视图 (来自 group.ftl)
+   ======================================== */
+@media (max-width: 640px) {
+    /* 隐藏表头 */
+    #results-table thead {
+        display: none;
+    }
+    
+    #results-table tbody {
+        display: flex;
+        flex-direction: column;
+        gap: var(--spacing-md);
+    }
+
+    #results-table tbody tr {
+        display: flex;
+        flex-direction: row; /* 横向排列 ID/Name/Count */
+        align-items: flex-end; /* 底部对齐 */
+        background-color: var(--color-bg-card);
+        min-height: 200px; /* 卡片高度 */
+        border-radius: var(--radius-lg);
+        overflow: hidden;
+        position: relative;
+        box-shadow: var(--shadow-md);
+        padding: 0;
+        border: none;
+    }
+
+    /* 当有背景图时的样式 */
+    #results-table tbody tr[style*="--bg-image"] {
+        background-image: var(--bg-image);
+        background-size: cover;
+        background-position: center;
+    }
+
+    /* 统一的底部半透明条背景 */
+    #results-table tbody tr::after {
+        content: '';
+        position: absolute;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        height: 44px;
+        background: rgba(0, 0, 0, 0.6);
+        backdrop-filter: blur(8px);
+        z-index: 1;
+        pointer-events: none; /* 让点击穿透到下面的单元格 */
+    }
+
+    /* 单元格样式 - 移除独立背景，统一风格 */
+    #results-table tbody tr td {
+        background: transparent !important; /* 移除单元格背景 */
+        color: white;
+        padding: 0 var(--spacing-sm); /* 减小内边距 */
+        border: none;
+        height: 44px; /* 高度与背景条一致 */
+        display: flex;
+        align-items: center;
+        font-size: var(--font-size-sm);
+        position: relative;
+        z-index: 2; /* 确保文字在背景之上 */
+    }
+
+    /* ID 列 */
+    #results-table tbody tr td:nth-child(1) {
+        width: auto;
+        min-width: 30px;
+        justify-content: center;
+        font-weight: bold;
+        opacity: 0.9;
+        padding-left: var(--spacing-md); /* 左侧增加一点间距 */
+    }
+
+    /* 名称列 - 占据剩余空间 */
+    #results-table tbody tr td:nth-child(2) {
+        flex: 1;
+        min-width: 0; 
+        font-weight: var(--font-weight-medium);
+    }
+    
+    /* 名称文本截断 */
+    #results-table tbody tr td:nth-child(2) {
+        display: block; 
+        line-height: 44px; 
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    /* 数量列 */
+    #results-table tbody tr td:nth-child(3) {
+        width: auto;
+        min-width: 50px;
+        justify-content: flex-end; /* 右对齐 */
+        padding-right: var(--spacing-md); /* 右侧增加一点间距 */
+    }
+    
+    /* 数量加图标 */
+    #results-table tbody tr td:nth-child(3)::before {
+        content: '\f03e'; /* FontAwesome image icon */
+        font-family: 'Font Awesome 6 Free';
+        font-weight: 900;
+        margin-right: 4px;
+        opacity: 0.8;
+        font-size: 0.8em;
+    }
+
+    /* 隐藏原来的图片预览列 */
+    #results-table tbody tr td:nth-child(4) {
+        display: none;
+    }
+}
