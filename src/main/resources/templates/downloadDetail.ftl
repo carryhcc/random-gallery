@@ -10,6 +10,8 @@
           rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
     <link rel="stylesheet" href="/css/style.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/masonry/4.2.2/masonry.pkgd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery.imagesloaded/5.0.0/imagesloaded.pkgd.min.js"></script>
     <script src="/js/theme.js"></script>
 </head>
 <body>
@@ -308,6 +310,10 @@
                     mediaGrid.className = 'masonry-grid'; // 使用新的瀑布流类
                     
                     images.forEach(function(img, index) {
+                        // 创建 wrapper
+                        const wrapper = document.createElement('div');
+                        wrapper.className = 'masonry-item-wrapper';
+
                         const mediaItem = document.createElement('div');
                         mediaItem.className = 'media-item';
                         
@@ -338,7 +344,9 @@
                         overlay.appendChild(downloadBtn);
                         mediaItem.appendChild(imgElement);
                         mediaItem.appendChild(overlay);
-                        mediaGrid.appendChild(mediaItem);
+                        
+                        wrapper.appendChild(mediaItem);
+                        mediaGrid.appendChild(wrapper);
                     });
                     
                     imagesSection.innerHTML = '';
@@ -365,10 +373,15 @@
                     
                     // 创建图片网格 (改为瀑布流)
                     const mediaGrid = document.createElement('div');
-                    mediaGrid.className = 'masonry-grid'; // 使用新的瀑布流类
+                    mediaGrid.className = 'masonry-grid'; // 使用新的 瀑布流容器
                     
                     gifs.forEach(function(gif, index) {
                         const videoId = 'live-video-' + index;
+                        
+                        // 创建 wrapper
+                        const wrapper = document.createElement('div');
+                        wrapper.className = 'masonry-item-wrapper';
+                        
                         const mediaItem = document.createElement('div');
                         mediaItem.className = 'media-item live-photo';
                         mediaItem.setAttribute('data-video-id', videoId);
@@ -388,20 +401,9 @@
                         video.muted = true;
                         video.preload = 'metadata';
                         
-                        // 为视频添加点击事件也打开查看器 (如果需要支持 GIF 预览)
-                        video.parentElement.addEventListener('click', function(e) {
-                             // 只有点击不是下载按钮时才打开预览
-                             if (!e.target.closest('.download-btn')) {
-                                // 注意：这里需要考虑 gifs 和 images 的索引合并问题，
-                                // 如果 gifs 单独展示，需要把 gifs 也加入 allImages 或者单独处理
-                                // 这里简化处理，暂不预览 GIF 视频，或者需要将 GIF 也加入 allImages array
-                                // 根据当前逻辑 allImages 只填充了 images。
-                                // 如果用户也想预览 GIF (作为视频或图片帧)，需要扩展逻辑。
-                                // 目前 allImages 只包含 images.map，所以这里暂时不添加 click 预览，或者只能预览图片。
-                                // 用户的需求主要是"图片可以点击放大"，GIF 已经是播放的视频了，通常不需要"放大查看静态图"。
-                                // 如果要全屏播放视频，那是另一个需求。
-                                // 所以这里暂时不给 GIF 添加 openViewer，除非用户明确要求。
-                             }
+                        // 绑定点击事件到 mediaItem
+                        mediaItem.addEventListener('click', function(e) {
+                             // 预留位置，防止报错
                         });
                         
                         const overlay = document.createElement('div');
@@ -420,7 +422,9 @@
                         mediaItem.appendChild(hint);
                         mediaItem.appendChild(video);
                         mediaItem.appendChild(overlay);
-                        mediaGrid.appendChild(mediaItem);
+                        
+                        wrapper.appendChild(mediaItem);
+                        mediaGrid.appendChild(wrapper);
                     });
                     
                     gifsSection.innerHTML = '';
@@ -440,6 +444,13 @@
                             '<p>暂无实况照片</p>' +
                         '</div>';
                 }
+                
+                // 触发 Masonry 布局初始化
+                // 延迟执行确保 DOM 已插入
+                 setTimeout(function() {
+                    initMasonry();
+                 }, 100);
+
             } else {
                 detailHeader.innerHTML = '<div class="empty-section"><i class="fas fa-exclamation-circle"></i><p>' + (result.message || '加载失败') + '</p></div>';
             }
@@ -447,6 +458,26 @@
             console.error('加载失败:', error);
             detailHeader.innerHTML = '<div class="empty-section"><i class="fas fa-exclamation-circle"></i><p>网络请求失败</p></div>';
         }
+    }
+    
+    // 初始化 Masonry 布局 (使用 Masonry.js 库)
+    function initMasonry() {
+        const grids = document.querySelectorAll('.masonry-grid');
+        grids.forEach(function(grid) {
+            // 初始化 Masonry
+            const msnry = new Masonry(grid, {
+                itemSelector: '.masonry-item-wrapper',
+                percentPosition: true,
+                // gutter 由 wrapper padding 控制，这里设为0或不设
+            });
+            
+            // 使用 imagesLoaded 确保图片加载后重新布局
+            if (typeof imagesLoaded === 'function') {
+                imagesLoaded(grid).on('progress', function() {
+                    msnry.layout();
+                });
+            }
+        });
     }
 
     // 页面加载时获取详情

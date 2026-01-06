@@ -10,6 +10,8 @@
           rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
     <link rel="stylesheet" href="/css/style.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/masonry/4.2.2/masonry.pkgd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery.imagesloaded/5.0.0/imagesloaded.pkgd.min.js"></script>
     <script src="/js/theme.js"></script>
 </head>
 <body>
@@ -34,7 +36,7 @@
     </div>
 </nav>
 
-<div id="gallery" class="gallery-grid-pic">
+<div id="gallery" class="masonry-grid">
     <!-- 图片将在这里动态加载 -->
 </div>
 
@@ -76,6 +78,7 @@
     let currentGroupName = '';
     let totalGroupCount = 0;
     const scrollThreshold = 400;
+    let msnry; // Masonry instance
 
     // logic moved to DOMContentLoaded
 
@@ -146,6 +149,7 @@
     function renderImages(images) {
         const gallery = document.getElementById('gallery');
         const startIndex = allImages.length;
+        const newWrappers = [];
 
         images.forEach((img, index) => {
             // 确保图片对象有url属性，兼容 picUrl
@@ -156,21 +160,45 @@
             allImages.push(img);
             const globalIndex = startIndex + index;
 
-            const card = document.createElement('div');
-            card.className = 'pic-card animate-scale-in';
-            card.style.animationDelay = (index * 0.05) + 's';
+            // 创建 wrapper
+            const wrapper = document.createElement('div');
+            wrapper.className = 'masonry-item-wrapper';
 
+            // 使用 media-item 样式 (统一风格)，并保留动画
+            const card = document.createElement('div');
+            card.className = 'media-item animate-scale-in'; 
+            card.style.animationDelay = (index * 0.05) + 's';
+            
             const imgElement = document.createElement('img');
             imgElement.src = img.url;
             imgElement.alt = img.picName || img.name || '图片';
-            imgElement.className = 'pic-image';
             imgElement.loading = 'lazy';
-
-            card.onclick = () => openViewer(globalIndex);
+            
+            // 绑定点击事件
+            card.addEventListener('click', () => openViewer(globalIndex));
 
             card.appendChild(imgElement);
-            gallery.appendChild(card);
+            wrapper.appendChild(card);
+            gallery.appendChild(wrapper);
+            newWrappers.push(wrapper);
         });
+        
+        // 初始化或更新 Masonry
+        if (!msnry) {
+             msnry = new Masonry(gallery, {
+                itemSelector: '.masonry-item-wrapper',
+                percentPosition: true
+            });
+        } else {
+            msnry.appended(newWrappers);
+        }
+        
+        // 图片加载进度更新布局
+        if (typeof imagesLoaded === 'function') {
+            imagesLoaded(newWrappers).on('progress', function() {
+                msnry.layout();
+            });
+        }
 
         updatePageTitle();
     }

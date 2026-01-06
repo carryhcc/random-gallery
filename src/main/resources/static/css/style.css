@@ -2007,31 +2007,26 @@ body {
     color: var(--color-primary);
 }
 
-/* 瀑布流布局 */
+/* 详情页网格布局 (Masonry.js) */
 .masonry-grid {
-    column-count: 4;
-    column-gap: var(--spacing-md);
+    display: block;
+    margin: 0 -8px;
+    /* 抵消 wrapper 的 padding */
     padding: var(--spacing-md);
 }
 
-@media (max-width: 1200px) {
-    .masonry-grid {
-        column-count: 3;
-    }
+/* 布局包裹层 (用于 Masonry.js定位) */
+.masonry-item-wrapper {
+    width: 25%;
+    /* 4列 */
+    padding: 8px;
+    /* 间距的一半 */
+    float: left;
+    /* Masonry 前的降级处理 */
+    box-sizing: border-box;
 }
 
-@media (max-width: 768px) {
-    .masonry-grid {
-        column-count: 2;
-    }
-}
-
-@media (max-width: 480px) {
-    .masonry-grid {
-        column-count: 1;
-    }
-}
-
+/* 媒体项内容卡片 */
 .media-item {
     position: relative;
     background: var(--color-bg-secondary);
@@ -2039,11 +2034,10 @@ body {
     overflow: hidden;
     box-shadow: var(--shadow-sm);
     transition: all var(--transition-base);
-    break-inside: avoid;
-    /* 防止在列之间断裂 */
-    margin-bottom: var(--spacing-md);
-    height: auto !important;
-    /* 强制高度自适应 */
+    width: 100%;
+    height: auto;
+    margin-bottom: 0;
+    /* 由 wrapper padding 控制间距 */
 }
 
 .media-item:hover {
@@ -2054,11 +2048,47 @@ body {
 .media-item img,
 .media-item video {
     width: 100%;
-    height: auto !important;
+    height: auto;
     display: block;
     cursor: pointer;
     background: var(--color-bg-tertiary);
 }
+
+/* 响应式列宽 */
+@media (max-width: 1200px) {
+    .masonry-item-wrapper {
+        width: 33.333%;
+        /* 3列 */
+    }
+}
+
+@media (max-width: 768px) {
+    .masonry-item-wrapper {
+        width: 50%;
+        /* 2列 */
+    }
+}
+
+@media (max-width: 480px) {
+    .masonry-grid {
+        display: block;
+        padding: 0;
+        margin: 0;
+    }
+
+    .masonry-item-wrapper {
+        width: 100%;
+        /* 单列 */
+        padding: 0;
+        margin-bottom: var(--spacing-md);
+    }
+
+    .media-item {
+        background: transparent;
+    }
+}
+
+
 
 .media-overlay {
     position: absolute;
@@ -2214,24 +2244,13 @@ body {
 }
 
 /* 移动端响应式 */
-@media (max-width: 768px) {
-    .detail-header {
-        padding: 1.5rem;
-    }
+.detail-header {
+    padding: 1.5rem;
+}
 
-    .detail-title {
-        font-size: var(--font-size-xl);
-    }
-
-    .media-grid {
-        grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
-        gap: 1rem;
-    }
-
-    .media-item img,
-    .media-item video {
-        max-height: 250px;
-    }
+.detail-title {
+    font-size: var(--font-size-xl);
+}
 }
 
 /* Live Photo 效果 - 动图实况 */
