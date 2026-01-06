@@ -23,6 +23,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
+import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Objects;
@@ -43,10 +44,8 @@ public class DownloadApiImpl implements DownloadApi {
             String paramMap = buildParamMap(qry);
             // 下载地址拼接
             String downUrl = "http://" + dbHost + ":5556" + "/xhs/detail";
-            log.warn("下载地址：{}", downUrl);
-            log.warn("请求参数：{}", paramMap);
+            log.warn("下载地址:{},请求参数:{}", downUrl, paramMap);
             String result = HttpUtil.post(downUrl, paramMap);
-
             log.info("添加下载任务结果：{}", result);
             saveXhsData(result);
         });
@@ -92,7 +91,7 @@ public class DownloadApiImpl implements DownloadApi {
      * 核心逻辑：JSON解析 → VO转DO → 入库（事务保证一致性）
      */
     @Transactional(rollbackFor = Exception.class) // 事务注解，异常时回滚
-    public Long saveXhsData(String jsonStr) {
+    public void saveXhsData(String jsonStr) {
         try {
             // 步骤1：解析JSON字符串为VO对象
             DownLoadInfo downLoadInfo = objectMapper.readValue(jsonStr, DownLoadInfo.class);
@@ -121,13 +120,11 @@ public class DownloadApiImpl implements DownloadApi {
             }
 
             // 步骤4：处理图片地址（下载地址），转换为媒体DO并入库
-            saveMediaData(workBaseId, workBaseDO.getWorkId(), downLoadInfo.getData().getDownloadUrls(),
-                    MediaTypeEnum.IMAGE);
+            saveMediaData(workBaseId, workBaseDO.getWorkId(), downLoadInfo.getData().getDownloadUrls(), MediaTypeEnum.IMAGE);
 
             // 步骤5：处理动图地址，转换为媒体DO并入库
             saveMediaData(workBaseId, workBaseDO.getWorkId(), downLoadInfo.getData().getGifUrls(), MediaTypeEnum.GIF);
 
-            return workBaseId;
         } catch (JsonProcessingException e) {
             log.error("JSON解析失败，原始数据：{}", jsonStr, e);
             throw new RuntimeException("JSON解析失败", e);
@@ -175,6 +172,7 @@ public class DownloadApiImpl implements DownloadApi {
         workBaseDO.setAuthorNickname(data.getAuthorNickname());
         workBaseDO.setAuthorId(data.getAuthorId());
         workBaseDO.setAuthorUrl(data.getAuthorUrl());
+        workBaseDO.setCreateTime(LocalDateTime.now());
 
         return workBaseDO;
     }
@@ -219,6 +217,7 @@ public class DownloadApiImpl implements DownloadApi {
             mediaDO.setMediaType(mediaType);
             mediaDO.setMediaUrl(mediaUrl);
             mediaDO.setSortIndex(i); // 保留原始排序索引
+            mediaDO.setCreateTime(LocalDateTime.now());
 
             // 插入媒体表
             workMediaMapper.insert(mediaDO);
