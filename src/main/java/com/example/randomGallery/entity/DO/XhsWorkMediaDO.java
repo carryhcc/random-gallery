@@ -26,6 +26,12 @@ public class XhsWorkMediaDO {
     private Long workBaseId;
 
     /**
+     * 作品唯一ID（平台ID，用于关联和去重）
+     */
+    @TableField(value = "work_id")
+    private String workId;
+
+    /**
      * 媒体类型（image=图片地址，gif=动图/视频地址）
      */
     @TableField(value = "media_type")

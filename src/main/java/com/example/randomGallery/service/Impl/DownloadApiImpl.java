@@ -4,7 +4,6 @@ import cn.hutool.core.collection.CollUtil;
 import cn.hutool.core.util.StrUtil;
 import cn.hutool.http.HttpUtil;
 import cn.hutool.json.JSONUtil;
-import cn.hutool.json.ObjectMapper;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import com.example.randomGallery.entity.DO.XhsWorkBaseDO;
@@ -15,6 +14,8 @@ import com.example.randomGallery.entity.common.MediaTypeEnum;
 import com.example.randomGallery.service.DownloadApi;
 import com.example.randomGallery.service.mapper.XhsWorkBaseMapper;
 import com.example.randomGallery.service.mapper.XhsWorkMediaMapper;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
@@ -35,7 +36,6 @@ public class DownloadApiImpl implements DownloadApi {
     @Value("${db.host}")
     private String dbHost;
 
-
     @Override
     @Transactional(rollbackFor = Exception.class)
     public void addDownloadTask(DownLoadQry qry) {
@@ -51,7 +51,6 @@ public class DownloadApiImpl implements DownloadApi {
             saveXhsData(result);
         });
     }
-
 
     private String buildParamMap(DownLoadQry qry) {
         // 构建请求参数
@@ -87,6 +86,7 @@ public class DownloadApiImpl implements DownloadApi {
 
     private final XhsWorkBaseMapper workBaseMapper;
     private final XhsWorkMediaMapper workMediaMapper;
+    private final ObjectMapper objectMapper;
 
     /**
      * 核心逻辑：JSON解析 → VO转DO → 入库（事务保证一致性）
@@ -95,7 +95,7 @@ public class DownloadApiImpl implements DownloadApi {
     public Long saveXhsData(String jsonStr) {
         try {
             // 步骤1：解析JSON字符串为VO对象
-            DownLoadInfo downLoadInfo = JSONUtil.toBean(jsonStr, DownLoadInfo.class);
+            DownLoadInfo downLoadInfo = objectMapper.readValue(jsonStr, DownLoadInfo.class);
             if (downLoadInfo == null || downLoadInfo.getData() == null) {
                 log.error("JSON解析结果为空");
                 throw new IllegalArgumentException("JSON解析结果为空");
@@ -121,15 +121,19 @@ public class DownloadApiImpl implements DownloadApi {
             }
 
             // 步骤4：处理图片地址（下载地址），转换为媒体DO并入库
-            saveMediaData(workBaseId, downLoadInfo.getData().getDownloadUrls(), MediaTypeEnum.IMAGE);
+            saveMediaData(workBaseId, workBaseDO.getWorkId(), downLoadInfo.getData().getDownloadUrls(),
+                    MediaTypeEnum.IMAGE);
 
             // 步骤5：处理动图地址，转换为媒体DO并入库
-            saveMediaData(workBaseId, downLoadInfo.getData().getGifUrls(), MediaTypeEnum.GIF);
+            saveMediaData(workBaseId, workBaseDO.getWorkId(), downLoadInfo.getData().getGifUrls(), MediaTypeEnum.GIF);
 
             return workBaseId;
+        } catch (JsonProcessingException e) {
+            log.error("JSON解析失败，原始数据：{}", jsonStr, e);
+            throw new RuntimeException("JSON解析失败", e);
         } catch (Exception e) {
-            log.error("数据入库失败", e);
-            throw new RuntimeException("数据入库失败", e);
+            log.error("小红书数据入库失败", e);
+            throw new RuntimeException("小红书数据入库失败", e);
         }
     }
 
@@ -179,11 +183,12 @@ public class DownloadApiImpl implements DownloadApi {
      * 批量保存媒体地址数据（图片/动图）
      *
      * @param workBaseId 基础表ID
+     * @param workId     作品唯一ID（平台ID）
      * @param mediaUrls  媒体地址列表
      * @param mediaType  媒体类型
      */
-    private void saveMediaData(Long workBaseId, List<String> mediaUrls, MediaTypeEnum mediaType) {
-        if (CollUtil.isEmpty(mediaUrls)) {
+    private void saveMediaData(Long workBaseId, String workId, List<String> mediaUrls, MediaTypeEnum mediaType) {
+        if (CollUtil.isEmpty(mediaUrls) || StrUtil.isEmpty(workId)) {
             log.info("{}类型媒体地址为空，无需入库", mediaType.getValue());
             return;
         }
@@ -196,9 +201,21 @@ public class DownloadApiImpl implements DownloadApi {
                 continue;
             }
 
+            // 去重查询：检查是否已存在相同 work_id + media_url 的记录
+            LambdaQueryWrapper<XhsWorkMediaDO> queryWrapper = Wrappers.lambdaQuery();
+            queryWrapper.eq(XhsWorkMediaDO::getWorkId, workId)
+                    .eq(XhsWorkMediaDO::getMediaUrl, mediaUrl);
+            XhsWorkMediaDO existMedia = workMediaMapper.selectOne(queryWrapper);
+
+            if (existMedia != null) {
+                log.debug("{}类型媒体已存在，跳过入库，索引：{}，URL：{}", mediaType.getValue(), i, mediaUrl);
+                continue;
+            }
+
             // 构建媒体DO
             XhsWorkMediaDO mediaDO = new XhsWorkMediaDO();
             mediaDO.setWorkBaseId(workBaseId);
+            mediaDO.setWorkId(workId);
             mediaDO.setMediaType(mediaType);
             mediaDO.setMediaUrl(mediaUrl);
             mediaDO.setSortIndex(i); // 保留原始排序索引
@@ -210,4 +227,3 @@ public class DownloadApiImpl implements DownloadApi {
         log.info("{}类型媒体入库完成，共{}条有效地址", mediaType.getValue(), mediaUrls.stream().filter(Objects::nonNull).count());
     }
 }
-

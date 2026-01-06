@@ -1,6 +1,6 @@
 package com.example.randomGallery.entity.common;
 
-
+import com.baomidou.mybatisplus.annotation.EnumValue;
 import lombok.Getter;
 
 /**
@@ -17,6 +17,7 @@ public enum MediaTypeEnum {
      */
     GIF("gif");
 
+    @EnumValue // 标记此字段为数据库存储值
     private final String value;
 
     MediaTypeEnum(String value) {
