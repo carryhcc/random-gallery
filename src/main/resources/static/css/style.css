@@ -104,15 +104,24 @@
     --font-family-base: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', sans-serif;
     --font-family-display: 'Poppins', var(--font-family-base);
 
-    --font-size-xs: 0.75rem; /* 12px */
-    --font-size-sm: 0.875rem; /* 14px */
-    --font-size-base: 1rem; /* 16px */
-    --font-size-lg: 1.125rem; /* 18px */
-    --font-size-xl: 1.25rem; /* 20px */
-    --font-size-2xl: 1.5rem; /* 24px */
-    --font-size-3xl: 1.875rem; /* 30px */
-    --font-size-4xl: 2.25rem; /* 36px */
-    --font-size-5xl: 3rem; /* 48px */
+    --font-size-xs: 0.75rem;
+    /* 12px */
+    --font-size-sm: 0.875rem;
+    /* 14px */
+    --font-size-base: 1rem;
+    /* 16px */
+    --font-size-lg: 1.125rem;
+    /* 18px */
+    --font-size-xl: 1.25rem;
+    /* 20px */
+    --font-size-2xl: 1.5rem;
+    /* 24px */
+    --font-size-3xl: 1.875rem;
+    /* 30px */
+    --font-size-4xl: 2.25rem;
+    /* 36px */
+    --font-size-5xl: 3rem;
+    /* 48px */
 
     --font-weight-normal: 400;
     --font-weight-medium: 500;
@@ -166,7 +175,7 @@ body {
     color: var(--color-text-primary);
     background: var(--color-bg-primary);
     background-image: radial-gradient(at 0% 0%, rgba(99, 102, 241, 0.1) 0px, transparent 50%),
-    radial-gradient(at 100% 100%, rgba(236, 72, 153, 0.1) 0px, transparent 50%);
+        radial-gradient(at 100% 100%, rgba(236, 72, 153, 0.1) 0px, transparent 50%);
     min-height: 100vh;
     overflow-x: hidden;
     transition: background-color var(--transition-base), color var(--transition-base);
@@ -175,7 +184,7 @@ body {
 /* 浅色主题下的背景渐变调整 */
 [data-theme="light"] body {
     background-image: radial-gradient(at 0% 0%, rgba(99, 102, 241, 0.05) 0px, transparent 50%),
-    radial-gradient(at 100% 100%, rgba(236, 72, 153, 0.05) 0px, transparent 50%);
+        radial-gradient(at 100% 100%, rgba(236, 72, 153, 0.05) 0px, transparent 50%);
 }
 
 /* ========================================
@@ -793,6 +802,7 @@ body {
     0% {
         transform: rotate(0deg);
     }
+
     100% {
         transform: rotate(360deg);
     }
@@ -938,6 +948,7 @@ body {
         opacity: 0;
         transform: translateY(20px);
     }
+
     to {
         opacity: 1;
         transform: translateY(0);
@@ -949,6 +960,7 @@ body {
         opacity: 0;
         transform: translateX(-20px);
     }
+
     to {
         opacity: 1;
         transform: translateX(0);
@@ -960,6 +972,7 @@ body {
         opacity: 0;
         transform: scale(0.9);
     }
+
     to {
         opacity: 1;
         transform: scale(1);
@@ -1278,7 +1291,8 @@ body {
     max-width: 1000px;
     margin: 0 auto;
     padding: var(--spacing-xl) var(--spacing-md);
-    min-height: calc(100vh - 80px); /* Adjust for navbar */
+    min-height: calc(100vh - 80px);
+    /* Adjust for navbar */
     display: flex;
     flex-direction: column;
     justify-content: center;
@@ -1370,7 +1384,8 @@ body {
     grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
     gap: var(--spacing-md);
     padding: var(--spacing-md);
-    margin-top: 70px; /* Navbar height + spacing */
+    margin-top: 70px;
+    /* Navbar height + spacing */
 }
 
 .pic-card {
@@ -1614,15 +1629,17 @@ body {
     margin-top: 80px;
     padding-bottom: var(--spacing-xl);
 }
+
 /* ========================================
    14. 移动端列表卡片视图 (来自 group.ftl)
    ======================================== */
 @media (max-width: 640px) {
+
     /* 隐藏表头 */
     #results-table thead {
         display: none;
     }
-    
+
     #results-table tbody {
         display: flex;
         flex-direction: column;
@@ -1631,10 +1648,13 @@ body {
 
     #results-table tbody tr {
         display: flex;
-        flex-direction: row; /* 横向排列 ID/Name/Count */
-        align-items: flex-end; /* 底部对齐 */
+        flex-direction: row;
+        /* 横向排列 ID/Name/Count */
+        align-items: flex-end;
+        /* 底部对齐 */
         background-color: var(--color-bg-card);
-        min-height: 200px; /* 卡片高度 */
+        min-height: 200px;
+        /* 卡片高度 */
         border-radius: var(--radius-lg);
         overflow: hidden;
         position: relative;
@@ -1661,21 +1681,26 @@ body {
         background: rgba(0, 0, 0, 0.6);
         backdrop-filter: blur(8px);
         z-index: 1;
-        pointer-events: none; /* 让点击穿透到下面的单元格 */
+        pointer-events: none;
+        /* 让点击穿透到下面的单元格 */
     }
 
     /* 单元格样式 - 移除独立背景，统一风格 */
     #results-table tbody tr td {
-        background: transparent !important; /* 移除单元格背景 */
+        background: transparent !important;
+        /* 移除单元格背景 */
         color: white;
-        padding: 0 var(--spacing-sm); /* 减小内边距 */
+        padding: 0 var(--spacing-sm);
+        /* 减小内边距 */
         border: none;
-        height: 44px; /* 高度与背景条一致 */
+        height: 44px;
+        /* 高度与背景条一致 */
         display: flex;
         align-items: center;
         font-size: var(--font-size-sm);
         position: relative;
-        z-index: 2; /* 确保文字在背景之上 */
+        z-index: 2;
+        /* 确保文字在背景之上 */
     }
 
     /* ID 列 */
@@ -1685,20 +1710,21 @@ body {
         justify-content: center;
         font-weight: bold;
         opacity: 0.9;
-        padding-left: var(--spacing-md); /* 左侧增加一点间距 */
+        padding-left: var(--spacing-md);
+        /* 左侧增加一点间距 */
     }
 
     /* 名称列 - 占据剩余空间 */
     #results-table tbody tr td:nth-child(2) {
         flex: 1;
-        min-width: 0; 
+        min-width: 0;
         font-weight: var(--font-weight-medium);
     }
-    
+
     /* 名称文本截断 */
     #results-table tbody tr td:nth-child(2) {
-        display: block; 
-        line-height: 44px; 
+        display: block;
+        line-height: 44px;
         white-space: nowrap;
         overflow: hidden;
         text-overflow: ellipsis;
@@ -1708,13 +1734,16 @@ body {
     #results-table tbody tr td:nth-child(3) {
         width: auto;
         min-width: 50px;
-        justify-content: flex-end; /* 右对齐 */
-        padding-right: var(--spacing-md); /* 右侧增加一点间距 */
+        justify-content: flex-end;
+        /* 右对齐 */
+        padding-right: var(--spacing-md);
+        /* 右侧增加一点间距 */
     }
-    
+
     /* 数量加图标 */
     #results-table tbody tr td:nth-child(3)::before {
-        content: '\f03e'; /* FontAwesome image icon */
+        content: '\f03e';
+        /* FontAwesome image icon */
         font-family: 'Font Awesome 6 Free';
         font-weight: 900;
         margin-right: 4px;
@@ -1978,11 +2007,29 @@ body {
     color: var(--color-primary);
 }
 
-.media-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
-    gap: 1.5rem;
-    margin-bottom: 2rem;
+/* 瀑布流布局 */
+.masonry-grid {
+    column-count: 4;
+    column-gap: var(--spacing-md);
+    padding: var(--spacing-md);
+}
+
+@media (max-width: 1200px) {
+    .masonry-grid {
+        column-count: 3;
+    }
+}
+
+@media (max-width: 768px) {
+    .masonry-grid {
+        column-count: 2;
+    }
+}
+
+@media (max-width: 480px) {
+    .masonry-grid {
+        column-count: 1;
+    }
 }
 
 .media-item {
@@ -1992,6 +2039,11 @@ body {
     overflow: hidden;
     box-shadow: var(--shadow-sm);
     transition: all var(--transition-base);
+    break-inside: avoid;
+    /* 防止在列之间断裂 */
+    margin-bottom: var(--spacing-md);
+    height: auto !important;
+    /* 强制高度自适应 */
 }
 
 .media-item:hover {
@@ -2002,9 +2054,7 @@ body {
 .media-item img,
 .media-item video {
     width: 100%;
-    height: auto;
-    max-height: 400px;
-    object-fit: contain;
+    height: auto !important;
     display: block;
     cursor: pointer;
     background: var(--color-bg-tertiary);
@@ -2016,13 +2066,15 @@ body {
     left: 0;
     right: 0;
     bottom: 0;
-    background: linear-gradient(to bottom, transparent 60%, rgba(0,0,0,0.7));
+    background: linear-gradient(to bottom, transparent 60%, rgba(0, 0, 0, 0.7));
     opacity: 0;
     transition: opacity var(--transition-base);
     display: flex;
     align-items: flex-end;
-    justify-content: center;
-    padding: 1rem;
+    justify-content: flex-end;
+    padding: 0.75rem;
+    pointer-events: none;
+    /* 让点击穿透遮罩层 */
 }
 
 .media-item:hover .media-overlay {
@@ -2030,22 +2082,27 @@ body {
 }
 
 .download-btn {
-    padding: 0.5rem 1rem;
-    background: var(--color-primary);
+    width: 36px;
+    height: 36px;
+    padding: 0;
+    background: rgba(0, 0, 0, 0.6);
+    backdrop-filter: blur(10px);
     color: white;
     border: none;
-    border-radius: var(--radius-md);
+    border-radius: 50%;
     cursor: pointer;
     display: flex;
     align-items: center;
-    gap: 0.5rem;
-    font-size: var(--font-size-sm);
+    justify-content: center;
+    font-size: 16px;
     transition: all var(--transition-fast);
+    pointer-events: auto;
+    /* 恢复按钮点击 */
 }
 
 .download-btn:hover {
-    background: var(--color-primary-dark);
-    transform: scale(1.05);
+    background: rgba(0, 0, 0, 0.8);
+    transform: scale(1.1);
 }
 
 .empty-section {
@@ -2108,6 +2165,52 @@ body {
 .modal-close:hover {
     background: rgba(0, 0, 0, 0.8);
     transform: scale(1.1);
+}
+
+.modal-nav {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    font-size: 2rem;
+    color: white;
+    cursor: pointer;
+    background: rgba(0, 0, 0, 0.5);
+    border: none;
+    border-radius: var(--radius-full);
+    width: 48px;
+    height: 48px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all var(--transition-fast);
+    z-index: 10000;
+}
+
+.modal-nav:hover {
+    background: rgba(0, 0, 0, 0.8);
+    transform: translateY(-50%) scale(1.1);
+}
+
+.modal-prev {
+    left: 2rem;
+}
+
+.modal-next {
+    right: 2rem;
+}
+
+.modal-counter {
+    position: absolute;
+    bottom: 2rem;
+    left: 50%;
+    transform: translateX(-50%);
+    color: white;
+    background: rgba(0, 0, 0, 0.6);
+    padding: 0.5rem 1rem;
+    border-radius: var(--radius-lg);
+    font-size: var(--font-size-sm);
+    backdrop-filter: blur(10px);
+    z-index: 10000;
 }
 
 /* 移动端响应式 */
