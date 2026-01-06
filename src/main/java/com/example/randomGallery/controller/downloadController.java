@@ -16,14 +16,13 @@ import org.springframework.web.bind.annotation.*;
 @RequiredArgsConstructor
 public class downloadController {
 
-
     private final DownloadApi downloadApi;
 
     /**
      * 下载图片
      */
-    @GetMapping("/download")
-    public Result<String> download (@RequestBody DownLoadQry qry) {
+    @PostMapping("/xhs")
+    public Result<String> download(@RequestBody DownLoadQry qry) {
         downloadApi.addDownloadTask(qry);
         return Result.success("下载任务添加成功");
     }

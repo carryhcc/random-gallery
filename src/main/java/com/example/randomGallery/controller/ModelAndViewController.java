@@ -65,4 +65,24 @@ public class ModelAndViewController {
         log.debug("跳转到分组列表页面");
         return new ModelAndView("group");
     }
+
+    /**
+     * 跳转到下载管理页面
+     */
+    @GetMapping("/download")
+    public ModelAndView showDownloadPage() {
+        log.debug("跳转到下载管理页面");
+        return new ModelAndView("download");
+    }
+
+    /**
+     * 跳转到作品详情页面
+     */
+    @GetMapping("/downloadDetail")
+    public ModelAndView showDownloadDetail(@RequestParam String workId) {
+        log.debug("跳转到作品详情页面, workId: {}", workId);
+        ModelAndView mav = new ModelAndView("downloadDetail");
+        mav.addObject("workId", Encode.forHtml(workId));
+        return mav;
+    }
 }

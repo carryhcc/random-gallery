@@ -57,7 +57,7 @@ public class DownloadApiImpl implements DownloadApi {
         HashMap<String, Object> paramMap = new HashMap<>();
         paramMap.put("url", qry.getUrl());
         if (qry.getDownload() == null) {
-            paramMap.put("download", false);
+            paramMap.put("download", true);
         } else {
             paramMap.put("download", qry.getDownload());
         }
@@ -77,7 +77,7 @@ public class DownloadApiImpl implements DownloadApi {
             paramMap.put("proxy", qry.getProxy());
         }
         if (qry.getSkip() == null) {
-            paramMap.put("skip", false);
+            paramMap.put("skip", true);
         } else {
             paramMap.put("skip", qry.getSkip());
         }
@@ -132,8 +132,8 @@ public class DownloadApiImpl implements DownloadApi {
             log.error("JSON解析失败，原始数据：{}", jsonStr, e);
             throw new RuntimeException("JSON解析失败", e);
         } catch (Exception e) {
-            log.error("小红书数据入库失败", e);
-            throw new RuntimeException("小红书数据入库失败", e);
+            log.error("数据入库失败", e);
+            throw new RuntimeException("数据入库失败", e);
         }
     }
 
