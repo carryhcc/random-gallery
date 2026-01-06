@@ -36,7 +36,7 @@
     </div>
 </nav>
 
-<div id="gallery" class="masonry-grid">
+<div id="gallery" class="masonry-grid piclist-offset">
     <!-- 图片将在这里动态加载 -->
 </div>
 

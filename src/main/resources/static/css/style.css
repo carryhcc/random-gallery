@@ -646,27 +646,7 @@ body {
     transform: scale(1.1) !important;
 }
 
-/* 图片网格 */
-.image-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-    gap: var(--spacing-lg);
-    padding: var(--spacing-lg);
-}
-
-@media (max-width: 640px) {
-    .image-grid {
-        grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
-        gap: var(--spacing-md);
-        padding: var(--spacing-md);
-    }
-}
-
-@media (min-width: 1024px) {
-    .image-grid {
-        grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
-    }
-}
+/* Image Grid Removed */
 
 /* ========================================
    11. 分页组件
@@ -1161,64 +1141,7 @@ body {
     }
 }
 
-/* 瀑布流布局 */
-.gallery-grid {
-    column-count: 3;
-    column-gap: var(--spacing-md);
-}
-
-.gallery-card {
-    break-inside: avoid;
-    margin-bottom: var(--spacing-md);
-    background: var(--color-bg-card);
-    border: 1px solid var(--color-border);
-    border-radius: var(--radius-lg);
-    overflow: hidden;
-    transition: all var(--transition-base);
-}
-
-.gallery-card:hover {
-    transform: translateY(-4px);
-    box-shadow: var(--shadow-xl);
-    border-color: var(--color-primary);
-}
-
-.gallery-card img {
-    width: 100%;
-    height: auto;
-    display: block;
-}
-
-.gallery-card .meta {
-    padding: var(--spacing-md);
-}
-
-.gallery-card .meta .name {
-    color: var(--color-text-primary);
-    font-weight: var(--font-weight-medium);
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    margin-bottom: var(--spacing-xs);
-}
-
-.gallery-card .meta .id {
-    color: var(--color-text-tertiary);
-    font-size: var(--font-size-xs);
-}
-
-@media (max-width: 640px) {
-    .gallery-grid {
-        column-count: 2;
-        column-gap: var(--spacing-sm);
-    }
-}
-
-@media (min-width: 1024px) {
-    .gallery-grid {
-        column-count: 4;
-    }
-}
+/* Gallery Grid Removed */
 
 /* ========================================
    19. 页面特定样式 (Page Specific)
@@ -1379,129 +1302,12 @@ body {
     gap: 0.5rem;
 }
 
-.gallery-grid-pic {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-    gap: var(--spacing-md);
-    padding: var(--spacing-md);
-    margin-top: 70px;
-    /* Navbar height + spacing */
+/* PicList Offset for Fixed Navbar */
+.piclist-offset {
+    margin-top: 80px;
 }
 
-.pic-card {
-    position: relative;
-    border-radius: var(--radius-md);
-    overflow: hidden;
-    aspect-ratio: 2/3;
-    background: var(--color-bg-tertiary);
-    box-shadow: var(--shadow-sm);
-    transition: all var(--transition-base);
-    cursor: pointer;
-}
-
-.pic-card:hover {
-    transform: translateY(-4px);
-    box-shadow: var(--shadow-lg);
-}
-
-.pic-image {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-    transition: transform var(--transition-slow);
-}
-
-.pic-card:hover .pic-image {
-    transform: scale(1.05);
-}
-
-/* 图片查看器 */
-.image-viewer {
-    position: fixed;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background: rgba(0, 0, 0, 0.95);
-    z-index: 2000;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    opacity: 0;
-    pointer-events: none;
-    transition: opacity var(--transition-base);
-}
-
-.image-viewer.visible {
-    opacity: 1;
-    pointer-events: auto;
-}
-
-.viewer-content {
-    max-width: 95vw;
-    max-height: 95vh;
-    position: relative;
-}
-
-.viewer-content img {
-    max-width: 100%;
-    max-height: 95vh;
-    object-fit: contain;
-    border-radius: var(--radius-sm);
-    box-shadow: 0 0 20px rgba(0, 0, 0, 0.5);
-}
-
-.viewer-close {
-    position: absolute;
-    top: 20px;
-    right: 20px;
-    background: rgba(255, 255, 255, 0.1);
-    border: none;
-    color: white;
-    width: 40px;
-    height: 40px;
-    border-radius: 50%;
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    transition: background var(--transition-fast);
-    z-index: 2010;
-}
-
-.viewer-close:hover {
-    background: rgba(255, 255, 255, 0.2);
-}
-
-.viewer-nav {
-    position: absolute;
-    top: 50%;
-    transform: translateY(-50%);
-    background: rgba(255, 255, 255, 0.1);
-    border: none;
-    color: white;
-    width: 50px;
-    height: 50px;
-    border-radius: 50%;
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    transition: background var(--transition-fast);
-    z-index: 2010;
-}
-
-.viewer-nav:hover {
-    background: rgba(255, 255, 255, 0.2);
-}
-
-.viewer-prev {
-    left: 20px;
-}
-
-.viewer-next {
-    right: 20px;
-}
+/* Duplicate Image Viewer Removed (Refer to section 14) */
 
 @media (max-width: 768px) {
     .gallery-grid-pic {
@@ -2151,106 +1957,17 @@ body {
 }
 
 /* 图片预览模态框 */
-.modal {
-    display: none;
-    position: fixed;
-    z-index: 9999;
-    left: 0;
-    top: 0;
-    width: 100%;
-    height: 100%;
-    background: rgba(0, 0, 0, 0.9);
-    align-items: center;
-    justify-content: center;
-}
-
-.modal.show {
-    display: flex;
-}
-
-.modal-content {
-    max-width: 90%;
-    max-height: 90%;
-    object-fit: contain;
-}
-
-.modal-close {
-    position: absolute;
-    top: 2rem;
-    right: 2rem;
-    font-size: 2rem;
-    color: white;
-    cursor: pointer;
-    background: rgba(0, 0, 0, 0.5);
-    border: none;
-    border-radius: var(--radius-full);
-    width: 48px;
-    height: 48px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    transition: all var(--transition-fast);
-}
-
-.modal-close:hover {
-    background: rgba(0, 0, 0, 0.8);
-    transform: scale(1.1);
-}
-
-.modal-nav {
-    position: absolute;
-    top: 50%;
-    transform: translateY(-50%);
-    font-size: 2rem;
-    color: white;
-    cursor: pointer;
-    background: rgba(0, 0, 0, 0.5);
-    border: none;
-    border-radius: var(--radius-full);
-    width: 48px;
-    height: 48px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    transition: all var(--transition-fast);
-    z-index: 10000;
-}
-
-.modal-nav:hover {
-    background: rgba(0, 0, 0, 0.8);
-    transform: translateY(-50%) scale(1.1);
-}
-
-.modal-prev {
-    left: 2rem;
-}
-
-.modal-next {
-    right: 2rem;
-}
-
-.modal-counter {
-    position: absolute;
-    bottom: 2rem;
-    left: 50%;
-    transform: translateX(-50%);
-    color: white;
-    background: rgba(0, 0, 0, 0.6);
-    padding: 0.5rem 1rem;
-    border-radius: var(--radius-lg);
-    font-size: var(--font-size-sm);
-    backdrop-filter: blur(10px);
-    z-index: 10000;
-}
+/* Modal Removed */
 
 /* 移动端响应式 */
-.detail-header {
-    padding: 1.5rem;
-}
+@media (max-width: 768px) {
+    .detail-header {
+        padding: 1.5rem;
+    }
 
-.detail-title {
-    font-size: var(--font-size-xl);
-}
+    .detail-title {
+        font-size: var(--font-size-xl);
+    }
 }
 
 /* Live Photo 效果 - 动图实况 */
