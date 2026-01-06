@@ -2130,3 +2130,63 @@ body {
         max-height: 250px;
     }
 }
+
+/* Live Photo 效果 - 动图实况 */
+.live-photo {
+    position: relative;
+    cursor: pointer;
+}
+
+.live-photo video {
+    pointer-events: none;
+}
+
+.live-photo-badge {
+    position: absolute;
+    top: 0.5rem;
+    left: 0.5rem;
+    background: rgba(0, 0, 0, 0.6);
+    color: white;
+    padding: 0.25rem 0.5rem;
+    border-radius: var(--radius-sm);
+    font-size: var(--font-size-xs);
+    font-weight: 500;
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+    backdrop-filter: blur(10px);
+    z-index: 2;
+}
+
+.live-photo-badge i {
+    font-size: 0.875em;
+}
+
+.live-photo.playing .live-photo-badge {
+    background: rgba(99, 102, 241, 0.8);
+}
+
+.live-photo-overlay-hint {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background: rgba(0, 0, 0, 0.7);
+    color: white;
+    padding: 0.5rem 1rem;
+    border-radius: var(--radius-md);
+    font-size: var(--font-size-sm);
+    opacity: 0;
+    transition: opacity var(--transition-fast);
+    pointer-events: none;
+    z-index: 3;
+    backdrop-filter: blur(10px);
+}
+
+.live-photo:hover .live-photo-overlay-hint {
+    opacity: 1;
+}
+
+.live-photo.playing .live-photo-overlay-hint {
+    opacity: 0;
+}

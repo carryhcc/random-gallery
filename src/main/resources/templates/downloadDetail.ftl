@@ -124,7 +124,7 @@
         }).join('');
     }
 
-    // 处理描述：去掉 # 和 [话题]，生成带颜色的标签
+    // 处理描述:去掉 # 和 [话题]，生成带颜色的标签
     function processDescription(desc) {
         if (!desc || desc.trim() === '') return '';
         // 匹配 #xxx[话题]# 或 ##xxx[话题]# 格式
@@ -138,6 +138,49 @@
         return tags.map(function(tag) {
             return '<span class="tag">' + tag + '</span>';
         }).join('');
+    }
+
+    // 初始化 Live Photo 交互效果
+    function initializeLivePhotos() {
+        const livePhotos = document.querySelectorAll('.live-photo');
+        
+        livePhotos.forEach(function(livePhoto) {
+            const videoId = livePhoto.getAttribute('data-video-id');
+            const video = document.getElementById(videoId);
+            
+            if (!video) return;
+            
+            // 鼠标进入时播放
+            livePhoto.addEventListener('mouseenter', function() {
+                video.currentTime = 0; // 从头开始
+                video.play().catch(function(err) {
+                    console.log('播放失败:', err);
+                });
+                livePhoto.classList.add('playing');
+            });
+            
+            // 鼠标离开时暂停并重置
+            livePhoto.addEventListener('mouseleave', function() {
+                video.pause();
+                video.currentTime = 0; // 重置到第一帧
+                livePhoto.classList.remove('playing');
+            });
+            
+            // 触摸设备支持
+            livePhoto.addEventListener('touchstart', function(e) {
+                if (video.paused) {
+                    video.currentTime = 0;
+                    video.play().catch(function(err) {
+                        console.log('播放失败:', err);
+                    });
+                    livePhoto.classList.add('playing');
+                } else {
+                    video.pause();
+                    video.currentTime = 0;
+                    livePhoto.classList.remove('playing');
+                }
+            });
+        });
     }
 
     // 加载作品详情
@@ -221,17 +264,23 @@
                         '</div>';
                 }
 
-                // 渲染动图区
+                // 渲染动图区（Live Photo 效果）
                 if (gifs.length > 0) {
                     gifsSection.innerHTML =
                         '<h2 class="section-title">' +
                             '<i class="fas fa-film"></i>' +
-                            '动图 (' + gifs.length + ')' +
+                            '实况照片 (' + gifs.length + ')' +
                         '</h2>' +
                         '<div class="media-grid">' +
                             gifs.map(function(gif, index) {
-                                return '<div class="media-item">' +
-                                    '<video src="' + gif.mediaUrl + '" controls loop muted></video>' +
+                                const videoId = 'live-video-' + index;
+                                return '<div class="media-item live-photo" data-video-id="' + videoId + '">' +
+                                    '<span class="live-photo-badge">' +
+                                        '<i class="fas fa-circle"></i>' +
+                                        'LIVE' +
+                                    '</span>' +
+                                    '<span class="live-photo-overlay-hint">悬停播放</span>' +
+                                    '<video id="' + videoId + '" src="' + gif.mediaUrl + '" loop muted preload="metadata"></video>' +
                                     '<div class="media-overlay">' +
                                         '<button class="download-btn" onclick="downloadMedia(\'' + gif.mediaUrl + '\', ' + (index + 1) + ')">' +
                                             '<i class="fas fa-download"></i>' +
@@ -241,15 +290,18 @@
                                 '</div>';
                             }).join('') +
                         '</div>';
+                    
+                    // 初始化 Live Photo 交互
+                    initializeLivePhotos();
                 } else {
                     gifsSection.innerHTML =
                         '<h2 class="section-title">' +
                             '<i class="fas fa-film"></i>' +
-                            '动图' +
+                            '实况照片' +
                         '</h2>' +
                         '<div class="empty-section">' +
                             '<i class="fas fa-film"></i>' +
-                            '<p>暂无动图</p>' +
+                            '<p>暂无实况照片</p>' +
                         '</div>';
                 }
             } else {

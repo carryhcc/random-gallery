@@ -125,12 +125,8 @@
 
             const result = await response.json();
             if (result.code === 200) {
-                showToast('解析任务已添加，稍后刷新查看', 'success');
+                showToast('解析任务已添加，请稍后手动刷新查看', 'success');
                 urlInput.value = '';
-                // 3秒后自动刷新列表
-                setTimeout(() => {
-                    loadPage(true);
-                }, 3000);
             } else {
                 showToast(result.message || '解析失败', 'error');
             }
