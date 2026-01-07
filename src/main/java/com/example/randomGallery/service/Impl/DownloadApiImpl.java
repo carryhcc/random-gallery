@@ -51,10 +51,10 @@ public class DownloadApiImpl implements DownloadApi {
         CompletableFuture.runAsync(() -> {
             try {
                 log.info("开始下载任务，参数: {}", qry);
-                String result = HttpUtil.post(xhsDetailUrl, JSONUtil.toJsonStr(qry),60000);
+                String result = HttpUtil.post(xhsDetailUrl, JSONUtil.toJsonStr(qry));
 
                 // 通过代理对象调用，确保 @Transactional 生效
-                selfProvider.getIfAvailable().saveXhsData(result);
+                Objects.requireNonNull(selfProvider.getIfAvailable()).saveXhsData(result);
 
             } catch (Exception e) {
                 log.error("下载任务异步处理异常: {}", qry.getUrl(), e);
@@ -112,12 +112,14 @@ public class DownloadApiImpl implements DownloadApi {
     }
 
     private void collectMediaList(List<XhsWorkMediaDO> list, Long workBaseId, String workId,
-                                  List<String> urls, MediaTypeEnum type) {
-        if (CollUtil.isEmpty(urls)) return;
+            List<String> urls, MediaTypeEnum type) {
+        if (CollUtil.isEmpty(urls))
+            return;
 
         for (int i = 0; i < urls.size(); i++) {
             String url = urls.get(i);
-            if (StrUtil.isBlank(url)) continue;
+            if (StrUtil.isBlank(url))
+                continue;
 
             XhsWorkMediaDO mediaDO = new XhsWorkMediaDO();
             mediaDO.setWorkBaseId(workBaseId);
@@ -146,8 +148,6 @@ public class DownloadApiImpl implements DownloadApi {
 
         // 3. 批量插入
         if (CollUtil.isNotEmpty(waitToInsert)) {
-            // 注意：这里需要 Mapper 继承 IService 或在 Mapper 中实现批量插入
-            // 简单起见可以使用 MyBatis Plus 的 Db.saveBatch(waitToInsert)
             waitToInsert.forEach(workMediaMapper::insert);
             log.info("作品 {} 批量插入媒体数据 {} 条", workId, waitToInsert.size());
         }
@@ -155,10 +155,8 @@ public class DownloadApiImpl implements DownloadApi {
 
     private XhsWorkBaseDO convertToWorkBaseDO(DownLoadInfo info) {
         XhsWorkBaseDO res = new XhsWorkBaseDO();
-        // 使用 Hutool 的 BeanUtil 快速拷贝相同字段，减少代码量
         BeanUtil.copyProperties(info.getData(), res);
         BeanUtil.copyProperties(info.getParams(), res, "url"); // 排除重名但逻辑不同的字段
-
         res.setMessage(info.getMessage());
         res.setParamsUrl(info.getParams().getUrl());
         res.setTimestamp(BigDecimal.valueOf(info.getData().getTimestamp()));

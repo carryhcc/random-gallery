@@ -83,7 +83,7 @@ public class SystemController {
      * 更新分组数据
      */
     @GetMapping("/up/group")
-    public void upGroup(){
+    public void upGroup() {
         groupServiceApi.updateGroupInfo();
     }
 

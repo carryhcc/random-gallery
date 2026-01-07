@@ -18,7 +18,7 @@ public class DownLoadQry {
     /**
      * 是否下载作品文件；设置为 true 将会耗费更多时间；可选参数	false
      */
-    private Boolean download;
+    private Boolean download = true;
     /**
      * 下载指定序号的图片文件，仅对图文作品生效；download 参数设置为 false 时不生效；可选参数	null
      */
