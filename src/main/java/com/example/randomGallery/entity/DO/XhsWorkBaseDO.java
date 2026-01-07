@@ -162,4 +162,10 @@ public class XhsWorkBaseDO {
      */
     @TableField(value = "create_time", fill = FieldFill.INSERT) // 插入时自动填充
     private LocalDateTime createTime;
+
+    /**
+     * 是否删除
+     */
+     @TableField(value = "is_delete")
+    private Boolean isDelete;
 }

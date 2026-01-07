@@ -54,7 +54,26 @@
 
     <!-- 动图区 -->
     <div id="gifsSection"></div>
+
 </main>
+
+<!-- 确认模态框 -->
+<div id="confirmModal" class="confirm-modal">
+    <div class="confirm-backdrop" onclick="closeConfirm()"></div>
+    <div class="confirm-box">
+        <div class="confirm-header">
+            <i class="fas fa-exclamation-triangle"></i>
+            <span>确认操作</span>
+        </div>
+        <div id="confirmMessage" class="confirm-body">
+            <!-- 消息内容 -->
+        </div>
+        <div class="confirm-footer">
+            <button class="btn btn-secondary btn-sm" onclick="closeConfirm()">取消</button>
+            <button id="confirmBtn" class="btn btn-danger btn-sm">删除</button>
+        </div>
+    </div>
+</div>
 
 <!-- 图片预览模态框 -->
 <!-- 图片查看器 -->
@@ -294,7 +313,20 @@
                         '</div>' +
                     '</div>' +
                     (descHtml ? '<div class="work-description">' + descHtml + '</div>' : '') +
-                    (tagsHtml ? '<div class="work-description">' + tagsHtml + '</div>' : '');
+                    (tagsHtml ? '<div class="work-description">' + tagsHtml + '</div>' : '') +
+                    '<div style="margin-top: 20px; padding-top: 20px; border-top: 1px solid var(--border-color);">' +
+                        '<button class="btn btn-danger btn-sm" id="deleteWorkBtn" style="width: auto;">' +
+                            '<i class="fas fa-trash-alt"></i> 删除作品' +
+                        '</button>' +
+                    '</div>';
+                
+                // 绑定删除作品按钮事件
+                const deleteWorkBtn = document.getElementById('deleteWorkBtn');
+                if (deleteWorkBtn) {
+                    deleteWorkBtn.addEventListener('click', function() {
+                        confirmDeleteWork();
+                    });
+                }
 
                 // 填充图片数组用于轮播
                 allImages = images.map(img => img.mediaUrl);
@@ -334,6 +366,16 @@
                         const overlay = document.createElement('div');
                         overlay.className = 'media-overlay';
                         
+                        const deleteBtn = document.createElement('button');
+                        deleteBtn.className = 'download-btn delete-btn'; // 复用样式，添加 delete-btn 类
+                        deleteBtn.style.marginRight = '8px'; // 与下载按钮的间距
+                        deleteBtn.innerHTML = '<i class="fas fa-trash"></i>';
+                        deleteBtn.title = '删除图片';
+                        deleteBtn.addEventListener('click', function(e) {
+                            e.stopPropagation();
+                            confirmDeleteMedia(img.id, 'image', wrapper);
+                        });
+
                         const downloadBtn = document.createElement('button');
                         downloadBtn.className = 'download-btn';
                         downloadBtn.innerHTML = '<i class="fas fa-download"></i>';
@@ -342,6 +384,7 @@
                             downloadMedia(img.mediaUrl, index + 1, 'image');
                         });
                         
+                        overlay.appendChild(deleteBtn);
                         overlay.appendChild(downloadBtn);
                         mediaItem.appendChild(imgElement);
                         mediaItem.appendChild(overlay);
@@ -410,6 +453,16 @@
                         const overlay = document.createElement('div');
                         overlay.className = 'media-overlay';
                         
+                        const deleteBtn = document.createElement('button');
+                        deleteBtn.className = 'download-btn delete-btn';
+                        deleteBtn.style.marginRight = '8px';
+                        deleteBtn.innerHTML = '<i class="fas fa-trash"></i>';
+                        deleteBtn.title = '删除';
+                        deleteBtn.addEventListener('click', function(e) {
+                            e.stopPropagation();
+                            confirmDeleteMedia(gif.id, 'gif', wrapper);
+                        });
+
                         const downloadBtn = document.createElement('button');
                         downloadBtn.className = 'download-btn';
                         downloadBtn.innerHTML = '<i class="fas fa-download"></i>';
@@ -418,6 +471,7 @@
                             downloadMedia(gif.mediaUrl, index + 1, 'gif');
                         });
                         
+                        overlay.appendChild(deleteBtn);
                         overlay.appendChild(downloadBtn);
                         mediaItem.appendChild(badge);
                         mediaItem.appendChild(hint);
@@ -483,6 +537,138 @@
 
     // 页面加载时获取详情
     document.addEventListener('DOMContentLoaded', loadDetail);
+
+    // 确认模态框逻辑
+    let confirmCallback = null;
+    const confirmModal = document.getElementById('confirmModal');
+    const confirmMessage = document.getElementById('confirmMessage');
+    const confirmBtn = document.getElementById('confirmBtn');
+
+    // 暴露给全局，防止作用域问题
+    window.showConfirm = function(message, callback) {
+        confirmMessage.textContent = message;
+        confirmCallback = callback;
+        confirmModal.classList.add('visible');
+        document.body.style.overflow = 'hidden';
+    };
+
+    window.closeConfirm = function() {
+        confirmModal.classList.remove('visible');
+        confirmCallback = null;
+        document.body.style.overflow = '';
+    };
+
+    // 绑定确认按钮事件
+    if (confirmBtn) {
+        confirmBtn.addEventListener('click', function() {
+            if (confirmCallback) {
+                confirmCallback();
+            }
+            closeConfirm();
+        });
+    }
+
+    // 这里处理一下Esc关闭
+    document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape' && confirmModal && confirmModal.classList.contains('visible')) {
+            closeConfirm();
+        }
+    });
+
+    // 删除逻辑 - 挂载到 window
+    window.confirmDeleteWork = function() {
+        showConfirm('确定要删除这个作品吗？删除后将无法查看。', function() {
+            showToast('正在删除...', 'info');
+            fetch('/api/xhsWork/delete/' + workId, {
+                method: 'POST'
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.code === 200) {
+                    showToast('作品已删除');
+                    setTimeout(() => {
+                        window.location.href = '/download';
+                    }, 1000);
+                } else {
+                    showToast(data.message || '删除失败', 'error');
+                }
+            })
+            .catch(err => {
+                console.error('Delete error:', err);
+                showToast('网络请求失败', 'error');
+            });
+        });
+    };
+
+    window.confirmDeleteMedia = function(mediaId, type, itemElement) {
+        // mediaId 是数据库ID (Long)
+        if (!mediaId) {
+            showToast('无法删除：缺少ID', 'error');
+            return;
+        }
+        
+        showConfirm('确定要删除这张' + (type==='gif'?'实况照片':'图片') + '吗？', function() {
+            // showToast('正在删除...', 'info');
+            fetch('/api/xhsWork/media/delete/' + mediaId, {
+                method: 'POST'
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.code === 200) {
+                    showToast('已删除');
+                    
+                    // 获取容器和 section
+                    const grid = itemElement.parentElement;
+                    const section = grid.parentElement;
+
+                    // 先直接从DOM移除元素
+                    itemElement.remove();
+                    
+                    // 然后更新Masonry布局
+                    const msnry = Masonry.data(grid);
+                    if (msnry) {
+                        msnry.layout();
+                    }
+
+                    // 使用 setTimeout 确保 DOM 更新完成后再统计数量并更新标题
+                    setTimeout(function() {
+                        const remainingItems = grid.querySelectorAll('.masonry-item-wrapper');
+                        const newCount = remainingItems.length;
+                        
+                        // 查找标题元素并更新
+                        const titleEl = section.querySelector('.section-title');
+                        const iconClass = type === 'gif' ? 'fa-film' : 'fa-image';
+                        const textType = type === 'gif' ? '实况照片' : '图片';
+
+                        if (titleEl) {
+                            titleEl.innerHTML = '<i class="fas ' + iconClass + '"></i> ' + textType + ' (' + newCount + ')';
+                        }
+
+                        // 如果数量为0，显示占位图
+                        if (newCount === 0) {
+                             section.innerHTML = 
+                                '<h2 class="section-title">' +
+                                    '<i class="fas ' + iconClass + '"></i> ' +
+                                    textType +
+                                '</h2>' +
+                                '<div class="empty-section">' +
+                                    '<i class="fas ' + iconClass + '"></i>' +
+                                    '<p>暂无' + textType + '</p>' +
+                                '</div>';
+                        }
+                    }, 100);
+                    // --- 更新数量逻辑 结束 ---
+
+                } else {
+                    showToast(data.message || '删除失败', 'error');
+                }
+            })
+            .catch(err => {
+                console.error('Delete media error:', err);
+                showToast('网络请求失败', 'error');
+            });
+        });
+    };
 </script>
 </body>
 </html>

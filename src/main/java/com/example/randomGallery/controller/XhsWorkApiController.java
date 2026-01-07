@@ -41,4 +41,22 @@ public class XhsWorkApiController {
         }
         return Result.success(detail);
     }
+
+    /**
+     * 删除作品
+     */
+    @PostMapping("/delete/{workId}")
+    public Result<String> deleteWork(@PathVariable String workId) {
+        xhsWorkService.deleteWork(workId);
+        return Result.success("删除成功");
+    }
+
+    /**
+     * 删除媒体
+     */
+    @PostMapping("/media/delete/{id}")
+    public Result<String> deleteMedia(@PathVariable Long id) {
+        xhsWorkService.deleteMedia(id);
+        return Result.success("删除成功");
+    }
 }

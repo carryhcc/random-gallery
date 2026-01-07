@@ -54,4 +54,10 @@ public class XhsWorkMediaDO {
      */
     @TableField(value = "create_time", fill = FieldFill.INSERT)
     private LocalDateTime createTime;
+
+    /**
+     * 是否删除
+     */
+    @TableField(value = "is_delete")
+    private Boolean isDelete;
 }

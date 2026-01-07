@@ -26,4 +26,18 @@ public interface XhsWorkService {
      * @return 作品详情
      */
     XhsWorkDetailVO getXhsWorkDetail(String workId);
+
+    /**
+     * 删除作品（软删除）
+     * 
+     * @param workId 作品ID
+     */
+    void deleteWork(String workId);
+
+    /**
+     * 删除媒体（软删除）
+     * 
+     * @param mediaUrl 媒体URL (或者根据ID删除，Plan说是根据MediaID，这里确认用MediaID更安全)
+     */
+    void deleteMedia(Long id);
 }

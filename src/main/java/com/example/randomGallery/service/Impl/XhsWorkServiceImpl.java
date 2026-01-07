@@ -40,6 +40,8 @@ public class XhsWorkServiceImpl implements XhsWorkService {
                 Page<XhsWorkBaseDO> pageParam = new Page<>(page + 1, pageSize); // MyBatis-Plus 页码从1开始
                 LambdaQueryWrapper<XhsWorkBaseDO> wrapper = Wrappers.lambdaQuery();
                 wrapper.orderByDesc(XhsWorkBaseDO::getId); // 按 ID 倒序，后添加的排前面
+                // 过滤已删除的数据 (兼容旧数据 null 情况)
+                wrapper.and(w -> w.eq(XhsWorkBaseDO::getIsDelete, false).or().isNull(XhsWorkBaseDO::getIsDelete));
                 Page<XhsWorkBaseDO> pageResult = workBaseMapper.selectPage(pageParam, wrapper);
 
                 // 转换为 VO
@@ -52,6 +54,9 @@ public class XhsWorkServiceImpl implements XhsWorkService {
 
                         LambdaQueryWrapper<XhsWorkMediaDO> mediaWrapper = Wrappers.lambdaQuery();
                         mediaWrapper.in(XhsWorkMediaDO::getWorkId, workIds);
+                        // 过滤已删除的媒体
+                        mediaWrapper.and(w -> w.eq(XhsWorkMediaDO::getIsDelete, false).or()
+                                        .isNull(XhsWorkMediaDO::getIsDelete));
                         List<XhsWorkMediaDO> allMedia = workMediaMapper.selectList(mediaWrapper);
 
                         // 按 workId 分组
@@ -112,6 +117,8 @@ public class XhsWorkServiceImpl implements XhsWorkService {
                 // 查询所有媒体
                 LambdaQueryWrapper<XhsWorkMediaDO> mediaWrapper = Wrappers.lambdaQuery();
                 mediaWrapper.eq(XhsWorkMediaDO::getWorkId, workId)
+                                .and(w -> w.eq(XhsWorkMediaDO::getIsDelete, false).or()
+                                                .isNull(XhsWorkMediaDO::getIsDelete)) // 过滤已删除
                                 .orderByAsc(XhsWorkMediaDO::getSortIndex); // 按索引排序
                 List<XhsWorkMediaDO> allMedia = workMediaMapper.selectList(mediaWrapper);
 
@@ -131,5 +138,25 @@ public class XhsWorkServiceImpl implements XhsWorkService {
                 vo.setGifs(gifs);
 
                 return vo;
+        }
+
+        @Override
+        public void deleteWork(String workId) {
+                // 软删除作品
+                XhsWorkBaseDO updateDO = new XhsWorkBaseDO();
+                updateDO.setIsDelete(true);
+
+                LambdaQueryWrapper<XhsWorkBaseDO> wrapper = Wrappers.lambdaQuery();
+                wrapper.eq(XhsWorkBaseDO::getWorkId, workId);
+                workBaseMapper.update(updateDO, wrapper);
+        }
+
+        @Override
+        public void deleteMedia(Long id) {
+                // 软删除媒体
+                XhsWorkMediaDO updateDO = new XhsWorkMediaDO();
+                updateDO.setId(id);
+                updateDO.setIsDelete(true);
+                workMediaMapper.updateById(updateDO);
         }
 }
