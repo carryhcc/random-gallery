@@ -20,6 +20,17 @@ public interface XhsWorkService {
     XhsWorkPageVO pageXhsWorks(int page, int pageSize);
 
     /**
+     * 分页查询作品列表（支持筛选）
+     * 
+     * @param page     页码（从0开始）
+     * @param pageSize 每页数量
+     * @param authorId 作者ID（可选）
+     * @param tagId    标签ID（可选）
+     * @return 作品分页数据
+     */
+    XhsWorkPageVO pageXhsWorksWithFilter(int page, int pageSize, String authorId, Long tagId);
+
+    /**
      * 获取作品详情
      * 
      * @param workId 作品ID

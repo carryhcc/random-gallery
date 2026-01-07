@@ -4,6 +4,7 @@ import cn.hutool.core.collection.CollUtil;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
+import com.example.randomGallery.entity.DO.TagWorkDO;
 import com.example.randomGallery.entity.DO.XhsWorkBaseDO;
 import com.example.randomGallery.entity.DO.XhsWorkMediaDO;
 import com.example.randomGallery.entity.VO.XhsWorkDetailVO;
@@ -11,6 +12,7 @@ import com.example.randomGallery.entity.VO.XhsWorkListVO;
 import com.example.randomGallery.entity.VO.XhsWorkPageVO;
 import com.example.randomGallery.entity.common.MediaTypeEnum;
 import com.example.randomGallery.service.XhsWorkService;
+import com.example.randomGallery.service.mapper.TagWorkMapper;
 import com.example.randomGallery.service.mapper.XhsWorkBaseMapper;
 import com.example.randomGallery.service.mapper.XhsWorkMediaMapper;
 import lombok.RequiredArgsConstructor;
@@ -33,15 +35,51 @@ public class XhsWorkServiceImpl implements XhsWorkService {
 
         private final XhsWorkBaseMapper workBaseMapper;
         private final XhsWorkMediaMapper workMediaMapper;
+        private final TagWorkMapper tagWorkMapper;
 
         @Override
         public XhsWorkPageVO pageXhsWorks(int page, int pageSize) {
+                return pageXhsWorksWithFilter(page, pageSize, null, null);
+        }
+
+        @Override
+        public XhsWorkPageVO pageXhsWorksWithFilter(int page, int pageSize, String authorId, Long tagId) {
                 // 分页查询基础表
                 Page<XhsWorkBaseDO> pageParam = new Page<>(page + 1, pageSize); // MyBatis-Plus 页码从1开始
                 LambdaQueryWrapper<XhsWorkBaseDO> wrapper = Wrappers.lambdaQuery();
                 wrapper.orderByDesc(XhsWorkBaseDO::getId); // 按 ID 倒序，后添加的排前面
                 // 过滤已删除的数据 (兼容旧数据 null 情况)
                 wrapper.and(w -> w.eq(XhsWorkBaseDO::getIsDelete, false).or().isNull(XhsWorkBaseDO::getIsDelete));
+
+                // 如果指定了作者ID，添加筛选条件
+                if (authorId != null && !authorId.trim().isEmpty()) {
+                        wrapper.eq(XhsWorkBaseDO::getAuthorId, authorId);
+                }
+
+                // 如果指定了标签ID，需要通过tag_work关联表查询work_id列表
+                if (tagId != null) {
+                        // 查询tag_work表获取该标签关联的所有work_id
+                        LambdaQueryWrapper<TagWorkDO> tagWorkWrapper = Wrappers.lambdaQuery();
+                        tagWorkWrapper.eq(TagWorkDO::getTagId, tagId);
+                        List<TagWorkDO> tagWorkList = tagWorkMapper.selectList(tagWorkWrapper);
+
+                        if (CollUtil.isEmpty(tagWorkList)) {
+                                // 如果该标签没有关联任何作品，返回空结果
+                                XhsWorkPageVO emptyResult = new XhsWorkPageVO();
+                                emptyResult.setWorks(new ArrayList<>());
+                                emptyResult.setHasMore(false);
+                                return emptyResult;
+                        }
+
+                        // 提取work_id列表
+                        List<String> workIds = tagWorkList.stream()
+                                        .map(TagWorkDO::getWorkId)
+                                        .collect(Collectors.toList());
+
+                        // 添加work_id的in条件
+                        wrapper.in(XhsWorkBaseDO::getWorkId, workIds);
+                }
+
                 Page<XhsWorkBaseDO> pageResult = workBaseMapper.selectPage(pageParam, wrapper);
 
                 // 转换为 VO

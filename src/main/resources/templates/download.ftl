@@ -55,6 +55,40 @@
         </div>
     </div>
 
+    <!-- 筛选区域 -->
+    <div class="filter-section animate-fade-in">
+        <div class="filter-wrapper">
+            <div class="filter-item">
+                <label class="filter-label">
+                    <i class="fas fa-user"></i>
+                    <span>作者筛选</span>
+                </label>
+                <select id="authorFilter" class="filter-select">
+                    <option value="">全部作者</option>
+                </select>
+            </div>
+            <div class="filter-item">
+                <label class="filter-label">
+                    <i class="fas fa-tag"></i>
+                    <span>标签筛选</span>
+                </label>
+                <select id="tagFilter" class="filter-select">
+                    <option value="">全部标签</option>
+                </select>
+            </div>
+            <div class="filter-actions">
+                <button id="btnQuery" class="btn btn-primary btn-sm">
+                    <i class="fas fa-search"></i>
+                    <span>查询</span>
+                </button>
+                <button id="btnResetFilter" class="btn btn-secondary btn-sm">
+                    <i class="fas fa-redo"></i>
+                    <span>重置</span>
+                </button>
+            </div>
+        </div>
+    </div>
+
     <!-- 作品列表 -->
     <div id="worksGrid" class="works-grid animate-fade-in"></div>
 
@@ -87,6 +121,8 @@
     const emptyState = document.getElementById('emptyState');
     const toast = document.getElementById('toast');
     const btnRefresh = document.getElementById('btnRefresh');
+    const btnQuery = document.getElementById('btnQuery');
+    const btnResetFilter = document.getElementById('btnResetFilter');
     const loadingEl = document.getElementById('loading');
     const endEl = document.getElementById('end');
 
@@ -94,6 +130,8 @@
     let isLoading = false;
     let hasMore = true;
     let toastTimer;
+    let currentAuthorId = null;
+    let currentTagId = null;
 
     function showToast(message, type = 'success') {
         clearTimeout(toastTimer);
@@ -102,6 +140,42 @@
         toastTimer = setTimeout(() => {
             toast.className = 'toast';
         }, 3000);
+    }
+
+    // 加载作者和标签筛选列表
+    async function loadFilters() {
+        try {
+            // 加载作者列表
+            const authorsRes = await fetch('/api/xhsWork/authors');
+            const authorsData = await authorsRes.json();
+            if (authorsData.code === 200 && authorsData.data) {
+                const authorSelect = document.getElementById('authorFilter');
+                authorsData.data.forEach(author => {
+                    const option = document.createElement('option');
+                    option.value = author.authorId;
+                    const displayName = author.authorNickname || author.authorId;
+                    const count = author.workCount || 0;
+                    option.textContent = displayName + ' (' + count + ')';
+                    authorSelect.appendChild(option);
+                });
+            }
+
+            // 加载标签列表
+            const tagsRes = await fetch('/api/xhsWork/tags');
+            const tagsData = await tagsRes.json();
+            if (tagsData.code === 200 && tagsData.data) {
+                const tagSelect = document.getElementById('tagFilter');
+                tagsData.data.forEach(tag => {
+                    const option = document.createElement('option');
+                    option.value = tag.id;
+                    const count = tag.workCount || 0;
+                    option.textContent = tag.tagName + ' (' + count + ')';
+                    tagSelect.appendChild(option);
+                });
+            }
+        } catch (error) {
+            console.error('加载筛选条件失败:', error);
+        }
     }
 
     // 解析 URL
@@ -197,7 +271,15 @@
                 hasMore = true;
             }
 
-            const response = await fetch('/api/xhsWork/list?page=' + page);
+            // 构建URL，添加筛选参数
+            let url = '/api/xhsWork/list?page=' + page;
+            if (currentAuthorId) {
+                url += '&authorId=' + encodeURIComponent(currentAuthorId);
+            }
+            if (currentTagId) {
+                url += '&tagId=' + encodeURIComponent(currentTagId);
+            }
+            const response = await fetch(url);
             const result = await response.json();
 
             if (result.code === 200 && result.data) {
@@ -234,9 +316,34 @@
         loadPage(true);
     });
 
+    // 查询按钮 - 应用筛选条件并查询
+    btnQuery.addEventListener('click', () => {
+        const authorSelect = document.getElementById('authorFilter');
+        const tagSelect = document.getElementById('tagFilter');
+        currentAuthorId = authorSelect.value || null;
+        currentTagId = tagSelect.value || null;
+        loadPage(true);
+    });
+
+    // 重置筛选
+    btnResetFilter.addEventListener('click', () => {
+        document.getElementById('authorFilter').value = '';
+        document.getElementById('tagFilter').value = '';
+        currentAuthorId = null;
+        currentTagId = null;
+        // 重置后清空列表，不自动查询
+        worksGrid.innerHTML = '';
+        emptyState.classList.remove('hidden');
+        endEl.classList.add('hidden');
+    });
+
     // 无限滚动
     document.addEventListener('DOMContentLoaded', () => {
-        loadPage(true);
+        // 加载筛选选项
+        loadFilters();
+        
+        // 默认显示空状态，不自动查询
+        emptyState.classList.remove('hidden');
 
         const sentinel = document.getElementById('sentinel');
         if ('IntersectionObserver' in window && sentinel) {
