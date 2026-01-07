@@ -25,7 +25,7 @@ public class XhsWorkApiController {
     @GetMapping("/list")
     public Result<XhsWorkPageVO> listWorks(@RequestParam(defaultValue = "0") int page) {
         log.info("查询作品列表，page={}", page);
-        XhsWorkPageVO result = xhsWorkService.pageXhsWorks(page, 24);
+        XhsWorkPageVO result = xhsWorkService.pageXhsWorks(page, 3);
         return Result.success(result);
     }
 

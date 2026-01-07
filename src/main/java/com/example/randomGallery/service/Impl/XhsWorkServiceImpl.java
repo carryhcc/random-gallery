@@ -18,6 +18,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -67,16 +68,11 @@ public class XhsWorkServiceImpl implements XhsWorkService {
                                 vo.setPublishTime(baseDO.getPublishTime());
 
                                 // 获取该作品的媒体列表
-                                List<XhsWorkMediaDO> mediaList = mediaMap.getOrDefault(baseDO.getWorkId(),
-                                                new ArrayList<>());
+                                List<XhsWorkMediaDO> mediaList = mediaMap.getOrDefault(baseDO.getWorkId(), new ArrayList<>());
 
                                 // 统计图片和动图数量
-                                long imageCount = mediaList.stream()
-                                                .filter(m -> MediaTypeEnum.IMAGE.equals(m.getMediaType()))
-                                                .count();
-                                long gifCount = mediaList.stream()
-                                                .filter(m -> MediaTypeEnum.GIF.equals(m.getMediaType()))
-                                                .count();
+                                long imageCount = mediaList.stream().filter(m -> MediaTypeEnum.IMAGE.equals(m.getMediaType())).count();
+                                long gifCount = mediaList.stream().filter(m -> MediaTypeEnum.GIF.equals(m.getMediaType())).count();
 
                                 vo.setImageCount((int) imageCount);
                                 vo.setGifCount((int) gifCount);
@@ -84,9 +80,8 @@ public class XhsWorkServiceImpl implements XhsWorkService {
                                 // 获取第一张图片作为封面
                                 mediaList.stream()
                                                 .filter(m -> MediaTypeEnum.IMAGE.equals(m.getMediaType()))
-                                                .min((m1, m2) -> Integer.compare(m1.getSortIndex(), m2.getSortIndex()))
+                                                .min(Comparator.comparingInt(XhsWorkMediaDO::getSortIndex))
                                                 .ifPresent(m -> vo.setCoverImageUrl(m.getMediaUrl()));
-
                                 voList.add(vo);
                         }
                 }
