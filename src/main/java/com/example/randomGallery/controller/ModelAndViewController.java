@@ -85,4 +85,13 @@ public class ModelAndViewController {
         mav.addObject("workId", Encode.forHtml(workId));
         return mav;
     }
+
+    /**
+     * 跳转到随机动图页面
+     */
+    @GetMapping("/randomGif")
+    public ModelAndView showRandomGif() {
+        log.debug("跳转到随机动图页面");
+        return new ModelAndView("randomGif");
+    }
 }

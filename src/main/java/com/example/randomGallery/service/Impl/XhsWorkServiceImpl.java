@@ -8,6 +8,7 @@ import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.example.randomGallery.entity.DO.TagWorkDO;
 import com.example.randomGallery.entity.DO.XhsWorkBaseDO;
 import com.example.randomGallery.entity.DO.XhsWorkMediaDO;
+import com.example.randomGallery.entity.VO.RandomGifVO;
 import com.example.randomGallery.entity.VO.XhsWorkDetailVO;
 import com.example.randomGallery.entity.VO.XhsWorkListVO;
 import com.example.randomGallery.entity.VO.XhsWorkPageVO;
@@ -197,5 +198,34 @@ public class XhsWorkServiceImpl implements XhsWorkService {
                 updateDO.setId(id);
                 updateDO.setIsDelete(true);
                 workMediaMapper.updateById(updateDO);
+        }
+
+        @Override
+        public RandomGifVO getRandomGif() {
+                // 查询所有GIF类型且未删除的媒体
+                LambdaQueryWrapper<XhsWorkMediaDO> wrapper = Wrappers.lambdaQuery();
+                wrapper.eq(XhsWorkMediaDO::getMediaType, MediaTypeEnum.GIF)
+                                .and(w -> w.eq(XhsWorkMediaDO::getIsDelete, false).or()
+                                                .isNull(XhsWorkMediaDO::getIsDelete)); // 过滤已删除，兼容null
+
+                List<XhsWorkMediaDO> gifList = workMediaMapper.selectList(wrapper);
+
+                if (CollUtil.isEmpty(gifList)) {
+                        log.warn("数据库中没有可用的GIF");
+                        return null;
+                }
+
+                // 随机选择一个GIF（使用Java随机，避免数据库兼容性问题）
+                int randomIndex = (int) (Math.random() * gifList.size());
+                XhsWorkMediaDO randomGif = gifList.get(randomIndex);
+
+                // 转换为VO
+                RandomGifVO vo = new RandomGifVO();
+                vo.setId(randomGif.getId());
+                vo.setMediaUrl(randomGif.getMediaUrl());
+                vo.setWorkId(randomGif.getWorkId());
+                vo.setWorkBaseId(randomGif.getWorkBaseId());
+
+                return vo;
         }
 }

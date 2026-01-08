@@ -3,6 +3,7 @@ package com.example.randomGallery.controller;
 import cn.hutool.core.util.ObjectUtil;
 import com.example.randomGallery.common.Result;
 import com.example.randomGallery.entity.VO.AuthorVO;
+import com.example.randomGallery.entity.VO.RandomGifVO;
 import com.example.randomGallery.entity.VO.TagVO;
 import com.example.randomGallery.entity.VO.XhsWorkDetailVO;
 import com.example.randomGallery.entity.VO.XhsWorkPageVO;
@@ -110,5 +111,18 @@ public class XhsWorkApiController {
     public Result<String> deleteMedia(@PathVariable Long id) {
         xhsWorkService.deleteMedia(id);
         return Result.success("删除成功");
+    }
+
+    /**
+     * 获取随机GIF
+     */
+    @GetMapping("/randomGif")
+    public Result<RandomGifVO> getRandomGif() {
+        log.info("获取随机GIF");
+        RandomGifVO randomGif = xhsWorkService.getRandomGif();
+        if (randomGif == null) {
+            return Result.error("暂无可用的GIF");
+        }
+        return Result.success(randomGif);
     }
 }

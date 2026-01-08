@@ -1,5 +1,6 @@
 package com.example.randomGallery.service;
 
+import com.example.randomGallery.entity.VO.RandomGifVO;
 import com.example.randomGallery.entity.VO.XhsWorkDetailVO;
 import com.example.randomGallery.entity.VO.XhsWorkPageVO;
 import org.springframework.stereotype.Service;
@@ -51,4 +52,11 @@ public interface XhsWorkService {
      * @param mediaUrl 媒体URL (或者根据ID删除，Plan说是根据MediaID，这里确认用MediaID更安全)
      */
     void deleteMedia(Long id);
+
+    /**
+     * 获取随机GIF
+     * 
+     * @return 随机GIF数据，如果没有GIF则返回null
+     */
+    RandomGifVO getRandomGif();
 }
