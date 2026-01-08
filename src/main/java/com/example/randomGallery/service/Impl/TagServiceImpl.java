@@ -7,13 +7,11 @@ import com.example.randomGallery.entity.VO.TagVO;
 import com.example.randomGallery.service.TagService;
 import com.example.randomGallery.service.mapper.TagMapper;
 import com.example.randomGallery.service.mapper.TagWorkMapper;
-import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
-import java.util.stream.Collectors;
 
 /**
  * 标签服务实现类
@@ -29,19 +27,8 @@ public class TagServiceImpl implements TagService {
 
     @Override
     public List<TagVO> getAllTags() {
-        List<TagDO> tagList = tagMapper.selectList(null);
-        return tagList.stream().map(tagDO -> {
-            TagVO tagVO = new TagVO();
-            BeanUtils.copyProperties(tagDO, tagVO);
-
-            // 统计该标签的作品数量
-            QueryWrapper<TagWorkDO> countWrapper = new QueryWrapper<>();
-            countWrapper.eq("tag_id", tagDO.getId());
-            Long count = tagWorkMapper.selectCount(countWrapper);
-            tagVO.setWorkCount(count);
-
-            return tagVO;
-        }).collect(Collectors.toList());
+        // 使用自定义SQL一次性查询标签及其作品数量，避免N+1问题
+        return tagMapper.selectTagsWithWorkCount();
     }
 
     @Override

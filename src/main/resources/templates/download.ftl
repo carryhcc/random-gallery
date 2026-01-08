@@ -57,34 +57,42 @@
 
     <!-- 筛选区域 -->
     <div class="filter-section animate-fade-in">
-        <div class="filter-wrapper">
-            <div class="filter-item">
-                <label class="filter-label">
-                    <i class="fas fa-user"></i>
-                    <span>作者筛选</span>
-                </label>
-                <select id="authorFilter" class="filter-select">
-                    <option value="">全部作者</option>
-                </select>
+        <!-- Tab切换头部 -->
+        <div class="filter-tabs">
+            <button class="filter-tab active" data-tab="author" id="tabAuthor">
+                <i class="fas fa-user"></i>
+                <span>按作者筛选</span>
+            </button>
+            <button class="filter-tab" data-tab="tag" id="tabTag">
+                <i class="fas fa-tag"></i>
+                <span>按标签筛选</span>
+            </button>
+        </div>
+        
+        <!-- Tab内容区 -->
+        <div class="filter-content">
+            <!-- 作者筛选面板 -->
+            <div class="filter-panel active" data-panel="author">
+                <div class="select-wrapper">
+                    <select id="authorFilter" class="filter-select">
+                        <option value="">请选择作者</option>
+                    </select>
+                    <button id="btnClearAuthor" class="btn-clear" title="清空筛选">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
             </div>
-            <div class="filter-item">
-                <label class="filter-label">
-                    <i class="fas fa-tag"></i>
-                    <span>标签筛选</span>
-                </label>
-                <select id="tagFilter" class="filter-select">
-                    <option value="">全部标签</option>
-                </select>
-            </div>
-            <div class="filter-actions">
-                <button id="btnQuery" class="btn btn-primary btn-sm">
-                    <i class="fas fa-search"></i>
-                    <span>查询</span>
-                </button>
-                <button id="btnResetFilter" class="btn btn-secondary btn-sm">
-                    <i class="fas fa-redo"></i>
-                    <span>重置</span>
-                </button>
+            
+            <!-- 标签筛选面板 -->
+            <div class="filter-panel" data-panel="tag">
+                <div class="select-wrapper">
+                    <select id="tagFilter" class="filter-select">
+                        <option value="">请选择标签</option>
+                    </select>
+                    <button id="btnClearTag" class="btn-clear" title="清空筛选">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
             </div>
         </div>
     </div>
@@ -121,8 +129,12 @@
     const emptyState = document.getElementById('emptyState');
     const toast = document.getElementById('toast');
     const btnRefresh = document.getElementById('btnRefresh');
-    const btnQuery = document.getElementById('btnQuery');
-    const btnResetFilter = document.getElementById('btnResetFilter');
+    const tabAuthor = document.getElementById('tabAuthor');
+    const tabTag = document.getElementById('tabTag');
+    const authorFilter = document.getElementById('authorFilter');
+    const tagFilter = document.getElementById('tagFilter');
+    const btnClearAuthor = document.getElementById('btnClearAuthor');
+    const btnClearTag = document.getElementById('btnClearTag');
     const loadingEl = document.getElementById('loading');
     const endEl = document.getElementById('end');
 
@@ -132,6 +144,7 @@
     let toastTimer;
     let currentAuthorId = null;
     let currentTagId = null;
+    let currentTab = 'author';
 
     function showToast(message, type = 'success') {
         clearTimeout(toastTimer);
@@ -316,34 +329,169 @@
         loadPage(true);
     });
 
-    // 查询按钮 - 应用筛选条件并查询
-    btnQuery.addEventListener('click', () => {
-        const authorSelect = document.getElementById('authorFilter');
-        const tagSelect = document.getElementById('tagFilter');
-        currentAuthorId = authorSelect.value || null;
-        currentTagId = tagSelect.value || null;
-        loadPage(true);
+    // 辅助函数：更新清除按钮可见性
+    function updateClearButtonVisibility(selectId, btnId) {
+        const select = document.getElementById(selectId);
+        const btn = document.getElementById(btnId);
+        if (select && btn) {
+            if (select.value) {
+                btn.classList.add('show');
+            } else {
+                btn.classList.remove('show');
+            }
+        }
+    }
+
+    // Tab切换
+    function switchTab(tabName) {
+        currentTab = tabName;
+        
+        // 更新Tab按钮状态
+        document.querySelectorAll('.filter-tab').forEach(tab => {
+            tab.classList.remove('active');
+        });
+        document.querySelector('[data-tab="' + tabName + '"]').classList.add('active');
+        
+        // 更新面板显示
+        document.querySelectorAll('.filter-panel').forEach(panel => {
+            panel.classList.remove('active');
+        });
+        document.querySelector('[data-panel="' + tabName + '"]').classList.add('active');
+        
+        // 切换Tab时，清空另一个Tab的选择状态
+        if (tabName === 'author') {
+            if (tagFilter) {
+                tagFilter.value = '';
+                updateClearButtonVisibility('tagFilter', 'btnClearTag');
+                currentTagId = null;
+            }
+        } else if (tabName === 'tag') {
+            if (authorFilter) {
+                authorFilter.value = '';
+                updateClearButtonVisibility('authorFilter', 'btnClearAuthor');
+                currentAuthorId = null;
+            }
+        }
+    }
+
+    // Tab点击事件
+    tabAuthor.addEventListener('click', () => {
+        switchTab('author');
     });
 
-    // 重置筛选
-    btnResetFilter.addEventListener('click', () => {
-        document.getElementById('authorFilter').value = '';
-        document.getElementById('tagFilter').value = '';
-        currentAuthorId = null;
-        currentTagId = null;
-        // 重置后清空列表，不自动查询
+    tabTag.addEventListener('click', () => {
+        switchTab('tag');
+    });
+
+    // 作者筛选自动查询
+    authorFilter.addEventListener('change', function() {
+        updateClearButtonVisibility('authorFilter', 'btnClearAuthor');
+        if (this.value) {
+            currentAuthorId = this.value;
+            currentTagId = null;
+            loadPage(true);
+        } else {
+             currentAuthorId = null;
+             showEmptyState();
+        }
+    });
+
+    // 标签筛选自动查询
+    tagFilter.addEventListener('change', function() {
+        updateClearButtonVisibility('tagFilter', 'btnClearTag');
+        if (this.value) {
+            currentTagId = this.value;
+            currentAuthorId = null;
+            loadPage(true);
+        } else {
+            currentTagId = null;
+            showEmptyState();
+        }
+    });
+    
+    function showEmptyState() {
         worksGrid.innerHTML = '';
+        loadMoreBtn.classList.add('hidden');
         emptyState.classList.remove('hidden');
         endEl.classList.add('hidden');
+    }
+
+    // 清除按钮点击事件
+    btnClearAuthor.addEventListener('click', function(e) {
+        e.stopPropagation();
+        authorFilter.value = '';
+        updateClearButtonVisibility('authorFilter', 'btnClearAuthor');
+        currentAuthorId = null;
+        showEmptyState();
+    });
+
+    btnClearTag.addEventListener('click', function(e) {
+        e.stopPropagation();
+        tagFilter.value = '';
+        updateClearButtonVisibility('tagFilter', 'btnClearTag');
+        currentTagId = null;
+        showEmptyState();
     });
 
     // 无限滚动
-    document.addEventListener('DOMContentLoaded', () => {
-        // 加载筛选选项
-        loadFilters();
+    document.addEventListener('DOMContentLoaded', async () => {
+        // 加载筛选选项（等待加载完成）
+        await loadFilters();
         
-        // 默认显示空状态，不自动查询
-        emptyState.classList.remove('hidden');
+        // 读取URL参数
+        const urlParams = new URLSearchParams(window.location.search);
+        const authorIdParam = urlParams.get('authorId');
+        const tagIdParam = urlParams.get('tagId');
+        const tagNameParam = urlParams.get('tag'); // 支持通过tag名称筛选
+        
+        if (authorIdParam) {
+            // 通过作者ID筛选
+            switchTab('author');
+            authorFilter.value = authorIdParam;
+            updateClearButtonVisibility('authorFilter', 'btnClearAuthor');
+            currentAuthorId = authorIdParam;
+            loadPage(true);
+        } else if (tagIdParam) {
+            // 通过标签ID筛选
+            switchTab('tag');
+            tagFilter.value = tagIdParam;
+            updateClearButtonVisibility('tagFilter', 'btnClearTag');
+            currentTagId = tagIdParam;
+            loadPage(true);
+        } else if (tagNameParam) {
+            // 通过标签名称筛选（详情页跳转时使用）
+            switchTab('tag');
+            // 数据已经加载完成，直接查找
+            const options = tagFilter.options;
+            let found = false;
+            console.log('查找标签:', tagNameParam, '总选项数:', options.length);
+            
+            for (let i = 0; i < options.length; i++) {
+                const optionText = options[i].textContent.trim();
+                // 提取标签名称（去掉数量部分）
+                const tagName = optionText.split(' (')[0];
+                
+                console.log('比对选项:', optionText, '提取标签名:', tagName);
+                
+                if (tagName === tagNameParam) {
+                    tagFilter.value = options[i].value;
+                    updateClearButtonVisibility('tagFilter', 'btnClearTag');
+                    currentTagId = options[i].value;
+                    console.log('找到匹配标签, tagId:', currentTagId);
+                    loadPage(true);
+                    found = true;
+                    break;
+                }
+            }
+            
+            if (!found) {
+                console.warn('未找到匹配的标签:', tagNameParam);
+                showToast('未找到标签: ' + tagNameParam, 'error');
+            }
+        } else {
+            // 默认显示空状态，不自动查询
+            emptyState.classList.remove('hidden');
+        }
 
         const sentinel = document.getElementById('sentinel');
         if ('IntersectionObserver' in window && sentinel) {

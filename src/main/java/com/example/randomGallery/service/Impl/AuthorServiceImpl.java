@@ -7,13 +7,11 @@ import com.example.randomGallery.entity.VO.AuthorVO;
 import com.example.randomGallery.service.AuthorService;
 import com.example.randomGallery.service.mapper.AuthorMapper;
 import com.example.randomGallery.service.mapper.AuthorWorkMapper;
-import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
-import java.util.stream.Collectors;
 
 /**
  * 作者服务实现类
@@ -29,19 +27,8 @@ public class AuthorServiceImpl implements AuthorService {
 
     @Override
     public List<AuthorVO> getAllAuthors() {
-        List<AuthorDO> authorList = authorMapper.selectList(null);
-        return authorList.stream().map(authorDO -> {
-            AuthorVO authorVO = new AuthorVO();
-            BeanUtils.copyProperties(authorDO, authorVO);
-
-            // 统计该作者的作品数量
-            QueryWrapper<AuthorWorkDO> countWrapper = new QueryWrapper<>();
-            countWrapper.eq("author_id", authorDO.getAuthorId());
-            Long count = authorWorkMapper.selectCount(countWrapper);
-            authorVO.setWorkCount(count);
-
-            return authorVO;
-        }).collect(Collectors.toList());
+        // 使用自定义SQL一次性查询作者及其作品数量，避免N+1问题
+        return authorMapper.selectAuthorsWithWorkCount();
     }
 
     @Override

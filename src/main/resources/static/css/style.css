@@ -2216,3 +2216,157 @@ body {
     box-shadow: var(--shadow-lg);
     transform: translateY(-2px);
 }
+
+/* Tab切换样式补充 - 直接添加到style.css文件末尾 */
+
+/* 重定义筛选Tab样式 */
+.filter-tabs {
+    display: flex;
+    gap: 0.5rem;
+    margin-bottom: 1.5rem;
+    border-bottom: 2px solid var(--color-border);
+}
+
+.filter-tab {
+    flex: 1;
+    padding: 0.875rem 1.5rem;
+    border: none;
+    background: transparent;
+    color: var(--color-text-secondary);
+    cursor: pointer;
+    transition: all var(--transition-fast);
+    border-bottom: 3px solid transparent;
+    margin-bottom: -2px;
+    font-weight: 500;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+}
+
+.filter-tab:hover {
+    color: var(--color-text-primary);
+    background: rgba(99, 102, 241, 0.05);
+}
+
+.filter-tab.active {
+    color: var(--color-primary);
+    border-bottom-color: var(--color-primary);
+    background: rgba(99, 102, 241, 0.08);
+}
+
+.filter-tab i {
+    font-size: 0.9rem;
+}
+
+/* 筛选内容区 */
+.filter-content {
+    margin-top: 0.5rem;
+}
+
+.filter-panel {
+    display: none;
+    width: 100%;
+}
+
+.filter-panel.active {
+    display: block;
+}
+
+/* 包装容器，用于定位清除按钮 */
+.select-wrapper {
+    position: relative;
+    width: 100%;
+    display: flex;
+    align-items: center;
+}
+
+/* 修改filter-select样式 */
+.filter-panel .filter-select {
+    width: 100%;
+    padding-right: 2.5rem;
+    /* 给清除按钮留出空间 */
+    /* 移除默认箭头（可选，这里为了避免重叠可以保留默认箭头，只是清除按钮靠左一点，或者隐藏默认箭头自己画） */
+    appearance: none;
+    -webkit-appearance: none;
+    background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
+    background-repeat: no-repeat;
+    background-position: right 0.7rem center;
+    background-size: 1em;
+}
+
+/* 删除按钮样式 - 改为类似Input Clearable的样式 */
+.btn-clear {
+    position: absolute;
+    right: 2.2rem;
+    /* 放在自定义箭头左侧 */
+    top: 50%;
+    transform: translateY(-50%);
+
+    padding: 4px;
+    border: none;
+    background: transparent;
+    color: var(--color-text-tertiary);
+    cursor: pointer;
+    transition: all var(--transition-fast);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 20px;
+    height: 20px;
+
+    /* 默认隐藏，有值时通过JS显示 */
+    opacity: 0;
+    pointer-events: none;
+}
+
+.btn-clear.show {
+    opacity: 1;
+    pointer-events: auto;
+}
+
+.btn-clear:hover {
+    background: var(--color-bg-secondary);
+    color: var(--color-text-primary);
+}
+
+.btn-clear i {
+    font-size: 0.8rem;
+}
+
+/* 移动端优化 */
+@media (max-width: 768px) {
+    .filter-tab {
+        flex-direction: column;
+        padding: 0.75rem 1rem;
+        font-size: var(--font-size-sm);
+    }
+
+    .filter-tab span {
+        display: none;
+    }
+}
+
+/* 详情页可点击元素样式 */
+.detail-author-name {
+    color: var(--color-primary);
+    cursor: pointer;
+    text-decoration: none;
+    transition: all var(--transition-fast);
+}
+
+.detail-author-name:hover {
+    text-decoration: underline;
+}
+
+.tag.clickable {
+    cursor: pointer;
+    transition: all var(--transition-fast);
+}
+
+.tag.clickable:hover {
+    background: var(--color-primary);
+    color: white;
+    transform: translateY(-2px);
+}

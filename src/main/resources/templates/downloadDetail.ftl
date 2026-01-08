@@ -203,7 +203,7 @@
         if (!tags || tags.trim() === '') return '';
         const tagArray = tags.trim().split(/\s+/);
         return tagArray.map(function(tag) {
-            return '<span class="tag">' + tag + '</span>';
+            return '<span class="tag clickable" data-tag-name="' + tag + '">' + tag + '</span>';
         }).join('');
     }
 
@@ -293,7 +293,10 @@
                     '<div class="detail-meta">' +
                         '<div class="meta-item">' +
                             '<i class="fas fa-user"></i>' +
-                            '<a href="' + (base.authorUrl || '#') + '" target="_blank" class="author-link">' + (base.authorNickname || '未知作者') + '</a>' +
+                            '<a href="#" class="detail-author-name" data-author-id="' + (base.authorId || '') + '">' + (base.authorNickname || '未知作者') + '</a>' +
+                            '<a href="' + (base.authorUrl || '#') + '" target="_blank" class="btn btn-sm btn-secondary" style="margin-left: 0.5rem;" title="访问作者主页">' +
+                                '<i class="fas fa-external-link-alt"></i>' +
+                            '</a>' +
                         '</div>' +
                         '<div class="meta-item">' +
                             '<i class="fas fa-calendar"></i>' +
@@ -327,6 +330,29 @@
                         confirmDeleteWork();
                     });
                 }
+                
+                // 绑定作者名称点击事件
+                const authorNameEl = document.querySelector('.detail-author-name');
+                if (authorNameEl) {
+                    authorNameEl.addEventListener('click', function(e) {
+                        e.preventDefault();
+                        const authorId = this.dataset.authorId;
+                        if (authorId) {
+                            window.location.href = '/download?authorId=' + encodeURIComponent(authorId);
+                        }
+                    });
+                }
+                
+                // 绑定标签点击事件
+                const tagElements = document.querySelectorAll('.tag.clickable');
+                tagElements.forEach(function(tagEl) {
+                    tagEl.addEventListener('click', function() {
+                        const tagName = this.dataset.tagName;
+                        if (tagName) {
+                            window.location.href = '/download?tag=' + encodeURIComponent(tagName);
+                        }
+                    });
+                });
 
                 // 填充图片数组用于轮播
                 allImages = images.map(img => img.mediaUrl);
