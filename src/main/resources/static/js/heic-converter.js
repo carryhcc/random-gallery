@@ -6,7 +6,7 @@
  */
 
 /**
- * 检测 URL 是否为 HEIC 格式图片
+ * 检测 URL 是否为 HEIC 格式图片（基于URL后缀）
  * @param {string} url - 图片 URL
  * @returns {boolean} 是否为 HEIC 格式
  */
@@ -17,16 +17,62 @@ function isHeicImage(url) {
 }
 
 /**
+ * 通过下载文件头部检测实际的MIME类型
+ * @param {string} url - 图片 URL
+ * @returns {Promise<string>} MIME类型，例如 'image/heic' 或 'image/jpeg'
+ */
+async function detectMimeType(url) {
+    try {
+        // 只下载前1KB来检测MIME类型，节省带宽
+        const response = await fetch(url, {
+            method: 'HEAD' // 先尝试HEAD请求
+        });
+
+        const contentType = response.headers.get('Content-Type');
+        if (contentType) {
+            return contentType.split(';')[0].trim().toLowerCase();
+        }
+
+        // 如果HEAD请求没有返回Content-Type，尝试Range请求获取文件头
+        const rangeResponse = await fetch(url, {
+            headers: {
+                'Range': 'bytes=0-1023' // 只下载前1KB
+            }
+        });
+
+        const rangeContentType = rangeResponse.headers.get('Content-Type');
+        if (rangeContentType) {
+            return rangeContentType.split(';')[0].trim().toLowerCase();
+        }
+
+        return 'unknown';
+    } catch (error) {
+        console.warn('检测MIME类型失败:', url, error);
+        return 'unknown';
+    }
+}
+
+/**
+ * 检查MIME类型是否为HEIC/HEIF
+ * @param {string} mimeType - MIME类型
+ * @returns {boolean} 是否为HEIC/HEIF格式
+ */
+function isHeicMimeType(mimeType) {
+    const heicMimeTypes = [
+        'image/heic',
+        'image/heif',
+        'image/heic-sequence',
+        'image/heif-sequence'
+    ];
+    return heicMimeTypes.includes(mimeType.toLowerCase());
+}
+
+/**
  * 将 HEIC 图片 URL 转换为可显示的 JPEG 格式
  * @param {string} imageUrl - 原始图片 URL
  * @returns {Promise<string>} 转换后的图片 URL (Blob URL) 或原始 URL
  */
 async function convertImageSrc(imageUrl) {
-    // 如果不是 HEIC 格式，直接返回原始 URL
-    if (!isHeicImage(imageUrl)) {
-        return imageUrl;
-    }
-
     // 检查 heic2any 库是否已加载
     if (typeof heic2any === 'undefined') {
         console.warn('heic2any 库未加载，无法转换 HEIC 图片，将使用原始 URL');
@@ -34,7 +80,28 @@ async function convertImageSrc(imageUrl) {
     }
 
     try {
-        console.log('检测到 HEIC 格式图片，开始转换:', imageUrl);
+        // 方式1: 先检查URL后缀（快速判断）
+        const hasHeicExtension = isHeicImage(imageUrl);
+
+        // 方式2: 检测实际的MIME类型（针对无后缀名的URL）
+        let needsConversion = hasHeicExtension;
+
+        if (!hasHeicExtension) {
+            // URL没有HEIC后缀，需要检查实际MIME类型
+            const mimeType = await detectMimeType(imageUrl);
+            needsConversion = isHeicMimeType(mimeType);
+
+            if (needsConversion) {
+                console.log('检测到无后缀名的HEIC图片 (MIME:', mimeType + '):', imageUrl);
+            }
+        }
+
+        // 如果不是 HEIC 格式，直接返回原始 URL
+        if (!needsConversion) {
+            return imageUrl;
+        }
+
+        console.log('开始转换HEIC图片:', imageUrl);
 
         // 下载 HEIC 图片
         const response = await fetch(imageUrl);
@@ -70,15 +137,11 @@ async function convertImageSrc(imageUrl) {
  * @returns {Promise<void>}
  */
 async function setImageSrc(imgElement, imageUrl) {
-    // 如果是 HEIC 格式，在转换期间显示加载占位符
-    if (isHeicImage(imageUrl)) {
-        // 设置加载中的占位图（使用 SVG data URI）
-        imgElement.src = getLoadingPlaceholder();
-        // 添加加载中的 CSS 类（如果页面有定义相关样式）
-        imgElement.classList.add('heic-loading');
-    }
+    // 显示加载占位符
+    imgElement.src = getLoadingPlaceholder();
+    imgElement.classList.add('heic-loading');
 
-    // 执行转换
+    // 执行转换（内部会自动检测是否为HEIC）
     const convertedUrl = await convertImageSrc(imageUrl);
 
     // 移除加载状态
