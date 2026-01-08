@@ -11,6 +11,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 /**
@@ -47,6 +48,7 @@ public class AuthorServiceImpl implements AuthorService {
             // 更新作者信息
             existingAuthor.setAuthorNickname(authorNickname);
             existingAuthor.setAuthorUrl(authorUrl);
+            existingAuthor.setUpdateTime(LocalDateTime.now());
             authorMapper.updateById(existingAuthor);
         } else {
             // 新增作者
@@ -54,6 +56,8 @@ public class AuthorServiceImpl implements AuthorService {
             authorDO.setAuthorId(authorId);
             authorDO.setAuthorNickname(authorNickname);
             authorDO.setAuthorUrl(authorUrl);
+            authorDO.setCreateTime(LocalDateTime.now());
+            authorDO.setUpdateTime(LocalDateTime.now());
             authorMapper.insert(authorDO);
         }
     }
@@ -76,6 +80,7 @@ public class AuthorServiceImpl implements AuthorService {
             AuthorWorkDO authorWorkDO = new AuthorWorkDO();
             authorWorkDO.setAuthorId(authorId);
             authorWorkDO.setWorkId(workId);
+            authorWorkDO.setCreateTime(LocalDateTime.now());
             authorWorkMapper.insert(authorWorkDO);
         }
     }

@@ -36,8 +36,8 @@ public class DataMigrationServiceImpl implements DataMigrationService {
 
     @Override
     @Transactional
-    public void migrateHistoricalTags() {
-        log.info("开始迁移历史标签数据...");
+    public void migrateData() {
+        log.info("开始执行数据迁移任务...");
 
         // 查询所有未删除的作品
         LambdaQueryWrapper<XhsWorkBaseDO> wrapper = Wrappers.lambdaQuery();
@@ -70,7 +70,7 @@ public class DataMigrationServiceImpl implements DataMigrationService {
             }
         }
 
-        log.info("历史标签数据迁移完成！");
+        log.info("数据迁移任务完成！");
         log.info("总共处理了 {} 个作品", processedCount);
         log.info(getMigrationInfo());
     }

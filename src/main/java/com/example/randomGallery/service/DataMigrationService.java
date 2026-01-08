@@ -10,7 +10,7 @@ public interface DataMigrationService {
      * 迁移历史标签数据
      * 从xhs_work_base表的work_tags字段提取标签，并创建关联
      */
-    void migrateHistoricalTags();
+    void migrateData();
 
     /**
      * 获取迁移进度信息

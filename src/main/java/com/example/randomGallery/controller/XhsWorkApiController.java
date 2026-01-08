@@ -36,7 +36,7 @@ public class XhsWorkApiController {
     public Result<String> migrateData() {
         log.info("开始执行历史数据迁移");
         try {
-            dataMigrationService.migrateHistoricalTags();
+            dataMigrationService.migrateData();
             String info = dataMigrationService.getMigrationInfo();
             return Result.success(info);
         } catch (Exception e) {

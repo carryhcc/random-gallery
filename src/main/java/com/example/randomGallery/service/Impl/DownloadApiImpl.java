@@ -12,7 +12,9 @@ import com.example.randomGallery.entity.DO.XhsWorkMediaDO;
 import com.example.randomGallery.entity.QO.DownLoadQry;
 import com.example.randomGallery.entity.VO.DownLoadInfo;
 import com.example.randomGallery.entity.common.MediaTypeEnum;
+import com.example.randomGallery.service.AuthorService;
 import com.example.randomGallery.service.DownloadApi;
+import com.example.randomGallery.service.TagService;
 import com.example.randomGallery.service.mapper.XhsWorkBaseMapper;
 import com.example.randomGallery.service.mapper.XhsWorkMediaMapper;
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -37,6 +39,8 @@ public class DownloadApiImpl implements DownloadApi {
 
     private final XhsWorkBaseMapper workBaseMapper;
     private final XhsWorkMediaMapper workMediaMapper;
+    private final AuthorService authorService;
+    private final TagService tagService;
     private final ObjectMapper objectMapper;
 
     // 注入自身以解决内部调用事务失效问题（或者将 saveXhsData 移至另一个 Service）
@@ -78,6 +82,27 @@ public class DownloadApiImpl implements DownloadApi {
 
             // 1. 处理基础信息（利用 MyBatis Plus 的唯一索引冲突处理或先查后改）
             Long workBaseId = saveOrUpdateWorkBase(downLoadInfo);
+
+            // 1.5 保存作者信息及关联
+            if (StrUtil.isNotEmpty(data.getAuthorId())) {
+                try {
+                    authorService.saveOrUpdateAuthor(data.getAuthorId(), data.getAuthorNickname(), data.getAuthorUrl());
+                    authorService.createAuthorWorkRelation(data.getAuthorId(), workId);
+                } catch (Exception e) {
+                    log.error("保存作者信息失败: {}", e.getMessage());
+                    // 不中断主流程
+                }
+            }
+
+            // 1.6 处理标签及关联
+            if (StrUtil.isNotEmpty(data.getWorkTags())) {
+                try {
+                    tagService.processWorkTags(data.getWorkTags(), workId);
+                } catch (Exception e) {
+                    log.error("保存标签信息失败: {}", e.getMessage());
+                    // 不中断主流程
+                }
+            }
 
             // 2. 收集并批量保存媒体数据
             List<XhsWorkMediaDO> mediaList = new ArrayList<>();

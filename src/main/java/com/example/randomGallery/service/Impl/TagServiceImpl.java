@@ -11,6 +11,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 /**
@@ -52,6 +53,7 @@ public class TagServiceImpl implements TagService {
             // 创建新标签
             TagDO tagDO = new TagDO();
             tagDO.setTagName(tagName);
+            tagDO.setCreateTime(LocalDateTime.now());
             tagMapper.insert(tagDO);
             return tagDO.getId();
         }
@@ -75,6 +77,7 @@ public class TagServiceImpl implements TagService {
             TagWorkDO tagWorkDO = new TagWorkDO();
             tagWorkDO.setTagId(tagId);
             tagWorkDO.setWorkId(workId);
+            tagWorkDO.setCreateTime(LocalDateTime.now());
             tagWorkMapper.insert(tagWorkDO);
         }
     }
