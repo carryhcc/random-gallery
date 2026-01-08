@@ -24,10 +24,11 @@ public class DataMigrationRunner implements CommandLineRunner {
         // 使用 CompletableFuture 异步执行，不阻塞项目启动
         CompletableFuture.runAsync(() -> {
             try {
-                log.info("启动数据迁移任务...");
-                dataMigrationService.migrateData();
+                log.info("异步任务执行开始...");
+//                dataMigrationService.migrateData();
+                log.info("异步任务执行结束...");
             } catch (Exception e) {
-                log.error("数据迁移任务执行异常", e);
+                log.error("异步任务执行异常", e);
             }
         });
     }
