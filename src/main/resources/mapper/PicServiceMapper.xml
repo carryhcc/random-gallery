@@ -3,52 +3,13 @@
 
 <mapper namespace="com.example.randomGallery.service.mapper.PicServiceMapper">
 
-    <select id="getMaxId" resultType="java.lang.Long">
-        SELECT id
-        FROM ${tableName}
-        WHERE is_delete = 0
-        ORDER BY id DESC
-        LIMIT 1
-    </select>
-
-    <select id="getMinId" resultType="java.lang.Long">
-        SELECT id
-        FROM ${tableName}
-        WHERE is_delete = 0
-        ORDER BY id
-        LIMIT 1
-    </select>
-
-    <select id="getMaxGroupId" resultType="java.lang.Long">
-        SELECT group_id
-        FROM ${tableName}
-        WHERE is_delete = 0
-        ORDER BY group_id DESC
-        LIMIT 1
-    </select>
-
-    <select id="getMinGroupId" resultType="java.lang.Long">
-        SELECT group_id
-        FROM ${tableName}
-        WHERE is_delete = 0
-        ORDER BY group_id
-        LIMIT 1
-    </select>
-
-    <select id="getInfoById" resultType="com.example.randomGallery.entity.VO.PicVO">
-        SELECT pic_url,
-               pic_name,
-               group_id
-        FROM ${tableName}
-        WHERE id = #{id}
-    </select>
-    <select id="list" resultType="com.example.randomGallery.entity.VO.PicVO">
+    <select id="selectPicPage" resultType="com.example.randomGallery.entity.VO.PicVO">
         SELECT
         id,
         pic_url,
         pic_name,
         group_id
-        FROM ${tableName}
+        FROM pic_info
         WHERE is_delete = 0
         <if test="qry.groupId != null">
             and group_id = #{qry.groupId}
@@ -62,15 +23,15 @@
             t.total_count AS groupCount
         FROM (
                  SELECT id
-                 FROM ${tableName}
+                 FROM pic_info
                  WHERE is_delete = 0 AND group_id = #{groupId}
                  ORDER BY RAND()
                  LIMIT 1
              ) AS rand_id
-                 LEFT JOIN ${tableName} p ON rand_id.id = p.id
+                 LEFT JOIN pic_info p ON rand_id.id = p.id
                  CROSS JOIN (
             SELECT COUNT(1) AS total_count
-            FROM ${tableName}
+            FROM pic_info
             WHERE is_delete = 0 AND group_id = #{groupId}
         ) AS t;
     </select>

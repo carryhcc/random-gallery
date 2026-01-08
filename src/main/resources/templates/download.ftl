@@ -10,8 +10,54 @@
     <link href="https://fonts.loli.net/css2?family=Inter:wght@400;500;600;700&family=Poppins:wght@600;700&display=swap"
           rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.bootcdn.net/ajax/libs/font-awesome/6.4.2/css/all.min.css">
+    <link rel="stylesheet" href="https://cdn.bootcdn.net/ajax/libs/choices.js/10.2.0/choices.min.css">
     <link rel="stylesheet" href="/css/style.css">
+    <script src="https://cdn.bootcdn.net/ajax/libs/choices.js/10.2.0/choices.min.js"></script>
     <script src="/js/theme.js"></script>
+    <style>
+        .choices {
+            margin-bottom: 0;
+            font-size: var(--font-size-base);
+            overflow: visible; /* Ensure dropdown is not clipped */
+            width: auto;      /* Adaptive width */
+            min-width: 250px; /* Minimum width for usability */
+            max-width: 100%;
+        }
+        .choices__inner {
+            background-color: var(--color-bg-primary);
+            border: 1px solid var(--color-border);
+            border-radius: var(--radius-md);
+            min-height: 44px;
+            color: var(--color-text-primary);
+            display: flex;
+            align-items: center;
+        }
+        .choices__list--dropdown {
+            background-color: var(--color-bg-card);
+            border: 1px solid var(--color-border);
+            color: var(--color-text-primary);
+            z-index: 100; /* Ensure dropdown is on top */
+        }
+        .choices__item--choice.is-highlighted {
+            background-color: var(--color-bg-hover);
+            color: var(--color-text-primary);
+        }
+        /* Fix input visibility in dark mode */
+        .choices__input {
+            background-color: transparent !important;
+            color: var(--color-text-primary) !important;
+        }
+        /* Custom style for the remove item button provided by Choices.js */
+        .choices__button {
+            border-left: 1px solid var(--color-border);
+            margin: 0 0 0 8px;
+            padding-left: 8px;
+            opacity: 0.6;
+        }
+        .choices__button:hover {
+            opacity: 1;
+        }
+    </style>
 </head>
 <body>
 
@@ -73,25 +119,19 @@
         <div class="filter-content">
             <!-- 作者筛选面板 -->
             <div class="filter-panel active" data-panel="author">
-                <div class="select-wrapper">
+                <div> <!-- Removed select-wrapper class to allow auto width -->
                     <select id="authorFilter" class="filter-select">
                         <option value="">请选择作者</option>
                     </select>
-                    <button id="btnClearAuthor" class="btn-clear" title="清空筛选">
-                        <i class="fas fa-times"></i>
-                    </button>
                 </div>
             </div>
             
             <!-- 标签筛选面板 -->
             <div class="filter-panel" data-panel="tag">
-                <div class="select-wrapper">
+                <div> <!-- Removed select-wrapper class to allow auto width -->
                     <select id="tagFilter" class="filter-select">
                         <option value="">请选择标签</option>
                     </select>
-                    <button id="btnClearTag" class="btn-clear" title="清空筛选">
-                        <i class="fas fa-times"></i>
-                    </button>
                 </div>
             </div>
         </div>
@@ -133,8 +173,7 @@
     const tabTag = document.getElementById('tabTag');
     const authorFilter = document.getElementById('authorFilter');
     const tagFilter = document.getElementById('tagFilter');
-    const btnClearAuthor = document.getElementById('btnClearAuthor');
-    const btnClearTag = document.getElementById('btnClearTag');
+    // Removed old clear buttons references
     const loadingEl = document.getElementById('loading');
     const endEl = document.getElementById('end');
 
@@ -157,37 +196,85 @@
 
     // 加载作者和标签筛选列表
     async function loadFilters() {
+        console.log('开始加载筛选列表...');
         try {
+            // 初始化 Choices 实例配置
+            const commonConfig = {
+                searchEnabled: true,
+                itemSelectText: '',
+                noResultsText: '无匹配结果',
+                noChoicesText: '无可用选项',
+                placeholder: true,
+                searchPlaceholderValue: '搜索...',
+                shouldSort: false,
+                loadingText: '加载中...',
+                removeItemButton: true, // Enable built-in clear button
+            };
+
+            // 初始化作者下拉框
+            const authorSelect = document.getElementById('authorFilter');
+            window.authorChoices = new Choices(authorSelect, {
+                ...commonConfig,
+            });
+
+            // 初始化标签下拉框
+            const tagSelect = document.getElementById('tagFilter');
+            window.tagChoices = new Choices(tagSelect, {
+                ...commonConfig,
+            });
+
             // 加载作者列表
+            console.log('正在请求作者列表...');
             const authorsRes = await fetch('/api/xhsWork/authors');
             const authorsData = await authorsRes.json();
+            console.log('作者列表响应:', authorsData);
+
             if (authorsData.code === 200 && authorsData.data) {
-                const authorSelect = document.getElementById('authorFilter');
-                authorsData.data.forEach(author => {
-                    const option = document.createElement('option');
-                    option.value = author.authorId;
-                    const displayName = author.authorNickname || author.authorId;
-                    const count = author.workCount || 0;
-                    option.textContent = displayName + ' (' + count + ')';
-                    authorSelect.appendChild(option);
+                const choicesData = authorsData.data.map(author => ({
+                    value: String(author.authorId),
+                    label: (author.authorNickname || author.authorId) + ' (' + (author.workCount || 0) + ')',
+                    selected: false,
+                    disabled: false,
+                }));
+                // 添加默认空选项 (placeholder) - Choices need this to know what is 'empty'
+                choicesData.unshift({ 
+                    value: '', 
+                    label: '请选择作者', 
+                    selected: true, 
+                    disabled: false, // Must be false to allow re-selection if needed, but placeholder: true handles it
+                    placeholder: true 
                 });
+                
+                window.authorChoices.setChoices(choicesData, 'value', 'label', true);
             }
 
             // 加载标签列表
+            console.log('正在请求标签列表...');
             const tagsRes = await fetch('/api/xhsWork/tags');
             const tagsData = await tagsRes.json();
+            console.log('标签列表响应:', tagsData);
+
             if (tagsData.code === 200 && tagsData.data) {
-                const tagSelect = document.getElementById('tagFilter');
-                tagsData.data.forEach(tag => {
-                    const option = document.createElement('option');
-                    option.value = tag.id;
-                    const count = tag.workCount || 0;
-                    option.textContent = tag.tagName + ' (' + count + ')';
-                    tagSelect.appendChild(option);
+                const choicesData = tagsData.data.map(tag => ({
+                    value: String(tag.id), 
+                    label: tag.tagName + ' (' + (tag.workCount || 0) + ')',
+                    selected: false,
+                    disabled: false,
+                }));
+                // 添加默认空选项 (placeholder)
+                choicesData.unshift({ 
+                    value: '', 
+                    label: '请选择标签', 
+                    selected: true, 
+                    disabled: false,
+                    placeholder: true 
                 });
+                
+                window.tagChoices.setChoices(choicesData, 'value', 'label', true);
             }
         } catch (error) {
             console.error('加载筛选条件失败:', error);
+            showToast('加载筛选条件失败: ' + error.message, 'error');
         }
     }
 
@@ -329,18 +416,7 @@
         loadPage(true);
     });
 
-    // 辅助函数：更新清除按钮可见性
-    function updateClearButtonVisibility(selectId, btnId) {
-        const select = document.getElementById(selectId);
-        const btn = document.getElementById(btnId);
-        if (select && btn) {
-            if (select.value) {
-                btn.classList.add('show');
-            } else {
-                btn.classList.remove('show');
-            }
-        }
-    }
+    // Removed updateClearButtonVisibility function
 
     // Tab切换
     function switchTab(tabName) {
@@ -360,17 +436,23 @@
         
         // 切换Tab时，清空另一个Tab的选择状态
         if (tabName === 'author') {
-            if (tagFilter) {
-                tagFilter.value = '';
-                updateClearButtonVisibility('tagFilter', 'btnClearTag');
-                currentTagId = null;
+            if (window.tagChoices) {
+                window.tagChoices.removeActiveItems(); // Use API method specifically for clearing selection
+                window.tagChoices.setChoiceByValue(''); // Ensure logic value is also cleared
             }
+            // 同时也清空原生值以防万一
+            if (tagFilter) tagFilter.value = '';
+            
+            currentTagId = null;
+            
         } else if (tabName === 'tag') {
-            if (authorFilter) {
-                authorFilter.value = '';
-                updateClearButtonVisibility('authorFilter', 'btnClearAuthor');
-                currentAuthorId = null;
+            if (window.authorChoices) {
+                window.authorChoices.removeActiveItems();
+                window.authorChoices.setChoiceByValue('');
             }
+            if (authorFilter) authorFilter.value = '';
+            
+            currentAuthorId = null;
         }
     }
 
@@ -385,9 +467,11 @@
 
     // 作者筛选自动查询
     authorFilter.addEventListener('change', function() {
-        updateClearButtonVisibility('authorFilter', 'btnClearAuthor');
-        if (this.value) {
-            currentAuthorId = this.value;
+        // Choices.js 会触发原 select 的 change 事件
+        const value = this.value;
+        // Removed visibility update
+        if (value) {
+            currentAuthorId = value;
             currentTagId = null;
             loadPage(true);
         } else {
@@ -398,9 +482,10 @@
 
     // 标签筛选自动查询
     tagFilter.addEventListener('change', function() {
-        updateClearButtonVisibility('tagFilter', 'btnClearTag');
-        if (this.value) {
-            currentTagId = this.value;
+        const value = this.value;
+        // Removed visibility update
+        if (value) {
+            currentTagId = value;
             currentAuthorId = null;
             loadPage(true);
         } else {
@@ -411,27 +496,12 @@
     
     function showEmptyState() {
         worksGrid.innerHTML = '';
-        loadMoreBtn.classList.add('hidden');
+        loadingEl.classList.add('hidden'); 
         emptyState.classList.remove('hidden');
         endEl.classList.add('hidden');
     }
 
-    // 清除按钮点击事件
-    btnClearAuthor.addEventListener('click', function(e) {
-        e.stopPropagation();
-        authorFilter.value = '';
-        updateClearButtonVisibility('authorFilter', 'btnClearAuthor');
-        currentAuthorId = null;
-        showEmptyState();
-    });
-
-    btnClearTag.addEventListener('click', function(e) {
-        e.stopPropagation();
-        tagFilter.value = '';
-        updateClearButtonVisibility('tagFilter', 'btnClearTag');
-        currentTagId = null;
-        showEmptyState();
-    });
+    // Removed btnClearAuthor/Tag listeners
 
     // 无限滚动
     document.addEventListener('DOMContentLoaded', async () => {
@@ -447,38 +517,38 @@
         if (authorIdParam) {
             // 通过作者ID筛选
             switchTab('author');
-            authorFilter.value = authorIdParam;
-            updateClearButtonVisibility('authorFilter', 'btnClearAuthor');
-            currentAuthorId = authorIdParam;
-            loadPage(true);
+            if (window.authorChoices) {
+                window.authorChoices.setChoiceByValue(authorIdParam);
+                // 手动触发 change 事件，因为 setChoiceByValue 可能不会触发原生 change
+                authorFilter.dispatchEvent(new Event('change'));
+            }
         } else if (tagIdParam) {
             // 通过标签ID筛选
             switchTab('tag');
-            tagFilter.value = tagIdParam;
-            updateClearButtonVisibility('tagFilter', 'btnClearTag');
-            currentTagId = tagIdParam;
-            loadPage(true);
+            if (window.tagChoices) {
+                window.tagChoices.setChoiceByValue(tagIdParam);
+                tagFilter.dispatchEvent(new Event('change'));
+            }
         } else if (tagNameParam) {
             // 通过标签名称筛选（详情页跳转时使用）
             switchTab('tag');
-            // 数据已经加载完成，直接查找
-            const options = tagFilter.options;
-            let found = false;
-            console.log('查找标签:', tagNameParam, '总选项数:', options.length);
             
-            for (let i = 0; i < options.length; i++) {
+            // 使用 Choices API 查找匹配的选项
+            let found = false;
+            // 获取所有 choices (需要 access internal API or recreate logic if strict mapping needed)
+            // 简单做法：遍历原始数据或 choices 实例状态看起来比较困难，
+            // 但我们在 loadFilters 把数据存进去了。
+            // 更稳妥的方式：因为我们已经setChoices了，所以可以直接遍历原生options（Choices会保留它们但隐藏）
+             const options = tagFilter.options;
+             for (let i = 0; i < options.length; i++) {
                 const optionText = options[i].textContent.trim();
-                // 提取标签名称（去掉数量部分）
                 const tagName = optionText.split(' (')[0];
-                
-                console.log('比对选项:', optionText, '提取标签名:', tagName);
-                
                 if (tagName === tagNameParam) {
-                    tagFilter.value = options[i].value;
-                    updateClearButtonVisibility('tagFilter', 'btnClearTag');
-                    currentTagId = options[i].value;
-                    console.log('找到匹配标签, tagId:', currentTagId);
-                    loadPage(true);
+                    const matchedTagId = options[i].value;
+                    if (window.tagChoices) {
+                        window.tagChoices.setChoiceByValue(matchedTagId);
+                        tagFilter.dispatchEvent(new Event('change'));
+                    }
                     found = true;
                     break;
                 }

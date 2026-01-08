@@ -1,5 +1,8 @@
 package com.example.randomGallery.service.mapper;
 
+import com.baomidou.mybatisplus.core.mapper.BaseMapper;
+import com.baomidou.mybatisplus.core.metadata.IPage;
+import com.example.randomGallery.entity.DO.GroupDO;
 import com.example.randomGallery.entity.QO.GroupQry;
 import com.example.randomGallery.entity.VO.GroupVO;
 import org.apache.ibatis.annotations.Mapper;
@@ -8,31 +11,15 @@ import org.apache.ibatis.annotations.Param;
 import java.util.List;
 
 @Mapper
-public interface GroupServiceMapper {
+public interface GroupServiceMapper extends BaseMapper<GroupDO> {
 
     /**
-     * 根据分组ID查询分组信息
-     * @param groupId
-     * @param tableName
-     * @return
+     * 条件查询分组列表 (Unpaged)
      */
-    GroupVO queryGroupById(@Param("groupId") Long groupId, @Param("tableName") String tableName);
+    List<GroupVO> selectGroupList(@Param("qry") GroupQry qry);
 
     /**
-     * 查询所有分组ID列表
-     * @param tableName
-     * @return
+     * 条件查询分组列表 (Paged)
      */
-    List<Long> selectGroupIdList(@Param("tableName") String tableName);
-
-    /**
-     * 条件查询分组列表
-      * @param qry
-     * @param tableName
-     * @return
-     */
-    List<GroupVO> queryGroupList(@Param("qry") GroupQry qry, @Param("tableName") String tableName);
-
-
-    void updateById(@Param("vo") GroupVO vo, @Param("tableName") String tableName);
+    IPage<GroupVO> selectGroupPage(IPage<GroupVO> page, @Param("qry") GroupQry qry);
 }

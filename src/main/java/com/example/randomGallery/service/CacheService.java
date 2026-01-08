@@ -1,5 +1,9 @@
 package com.example.randomGallery.service;
 
+import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
+import com.example.randomGallery.config.EnvContext;
+import com.example.randomGallery.entity.DO.GroupDO;
+import com.example.randomGallery.entity.DO.PicDO;
 import com.example.randomGallery.entity.VO.PicCount;
 import com.example.randomGallery.service.mapper.GroupServiceMapper;
 import com.example.randomGallery.service.mapper.PicServiceMapper;
@@ -9,7 +13,6 @@ import jakarta.annotation.PostConstruct;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
 import java.sql.SQLException;
@@ -17,6 +20,7 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.ThreadLocalRandom;
+import java.util.stream.Collectors;
 
 /**
  * 缓存服务类
@@ -28,6 +32,7 @@ public class CacheService {
 
     private final GroupServiceMapper groupServiceMapper;
     private final PicServiceMapper picServiceMapper;
+    private final EnvContext envContext;
 
     @Getter
     private Long maxId;
@@ -49,9 +54,6 @@ public class CacheService {
     @Getter
     private String groupSqlName = "cc_pic_group_dev";
 
-    @Value("${config.env}")
-    private String defaultEnv;
-
     /**
      * 支持的环境列表
      */
@@ -59,7 +61,7 @@ public class CacheService {
             "cc_pic_all_dev", "cc_pic_all_test", "cc_pic_all_prod");
 
     public String getDefaultEnv() {
-        return StrUtils.isEmpty(defaultEnv) ? "dev" : defaultEnv;
+        return envContext.getCurrentEnv();
     }
 
     /**
@@ -99,13 +101,25 @@ public class CacheService {
         log.info("开始缓存图片ID和分组ID...");
 
         // 缓存图片ID
-        maxId = picServiceMapper.getMaxId(picSqlName);
-        minId = picServiceMapper.getMinId(picSqlName);
+        PicDO maxPic = picServiceMapper
+                .selectOne(new QueryWrapper<PicDO>().select("id").orderByDesc("id").last("LIMIT 1"));
+        maxId = maxPic != null ? Long.valueOf(maxPic.getId()) : 0L;
+
+        PicDO minPic = picServiceMapper
+                .selectOne(new QueryWrapper<PicDO>().select("id").orderByAsc("id").last("LIMIT 1"));
+        minId = minPic != null ? Long.valueOf(minPic.getId()) : 0L;
+
         log.info("图片ID缓存完成 - 最小值: {}, 最大值: {}", minId, maxId);
 
-        // 缓存分组ID
-        maxGroupId = picServiceMapper.getMaxGroupId(groupSqlName);
-        minGroupId = picServiceMapper.getMinGroupId(groupSqlName);
+        // 缓存分组ID (from pic_info)
+        PicDO maxGroupPic = picServiceMapper
+                .selectOne(new QueryWrapper<PicDO>().select("group_id").orderByDesc("group_id").last("LIMIT 1"));
+        maxGroupId = maxGroupPic != null ? maxGroupPic.getGroupId() : 0L;
+
+        PicDO minGroupPic = picServiceMapper
+                .selectOne(new QueryWrapper<PicDO>().select("group_id").orderByAsc("group_id").last("LIMIT 1"));
+        minGroupId = minGroupPic != null ? minGroupPic.getGroupId() : 0L;
+
         log.info("分组ID缓存完成 - 最小值: {}, 最大值: {}", minGroupId, maxGroupId);
     }
 
@@ -156,7 +170,7 @@ public class CacheService {
 
         picSqlName = newPicSqlName;
         groupSqlName = newGroupSqlName;
-        defaultEnv = env;
+        envContext.setCurrentEnv(env); // update context
 
         // 刷新缓存
         cachePicId();
@@ -193,7 +207,12 @@ public class CacheService {
      */
     public void buildGroupIDList() {
         // 从数据库中查询所有实际存在的group_id
-        List<Long> groupIdList = groupServiceMapper.selectGroupIdList(getGroupSqlName());
+        List<Object> groupIds = groupServiceMapper.selectObjs(new QueryWrapper<GroupDO>().select("group_id"));
+
+        List<Long> groupIdList = groupIds.stream()
+                .map(obj -> Long.valueOf(obj.toString()))
+                .collect(Collectors.toList());
+
         totalGroupCount = (long) groupIdList.size();
         // 打乱顺序
         Collections.shuffle(groupIdList);

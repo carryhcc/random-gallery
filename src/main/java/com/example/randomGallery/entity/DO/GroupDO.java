@@ -1,5 +1,8 @@
 package com.example.randomGallery.entity.DO;
 
+import com.baomidou.mybatisplus.annotation.TableId;
+import com.baomidou.mybatisplus.annotation.TableLogic;
+import com.baomidou.mybatisplus.annotation.TableName;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -13,6 +16,7 @@ import java.io.Serializable;
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
+@TableName("group_info")
 public class GroupDO implements Serializable {
 
     @Serial
@@ -21,6 +25,7 @@ public class GroupDO implements Serializable {
     /**
      * 分组ID
      */
+    @TableId
     private Long groupId;
 
     /**
@@ -33,7 +38,6 @@ public class GroupDO implements Serializable {
      */
     private String groupName;
 
-
     /**
      * 分组总数
      */
@@ -42,5 +46,6 @@ public class GroupDO implements Serializable {
     /**
      * 是否删除 0-未删除 1-已删除
      */
+    @TableLogic
     private Integer isDelete;
 }
