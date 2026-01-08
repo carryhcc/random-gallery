@@ -85,9 +85,9 @@ public class GroupServiceApiImpl implements GroupServiceApi {
     private static final int PAGE_SIZE = 9;
 
     @Override
-    public GroupPageVO loadMore(int page) {
-        // 默认进入时候刷新顺序
-        if (page == 0)
+    public GroupPageVO loadMore(int page, boolean refresh) {
+        // 显式刷新时重置随机序列
+        if (refresh)
             cacheService.buildGroupIDList();
         Integer totalImageCount = cacheService.getTotalGroupCount();
         // 无图片数据时直接返回

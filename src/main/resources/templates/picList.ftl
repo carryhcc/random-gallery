@@ -10,8 +10,8 @@
           rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.bootcdn.net/ajax/libs/font-awesome/6.4.2/css/all.min.css">
     <link rel="stylesheet" href="/css/style.css">
-    <script src="https://cdn.bootcdn.net/ajax/libs/masonry/4.2.2/masonry.pkgd.min.js"></script>
-    <script src="https://cdn.bootcdn.net/ajax/libs/jquery.imagesloaded/5.0.0/imagesloaded.pkgd.min.js"></script>
+    <script src="https://unpkg.com/masonry-layout@4/dist/masonry.pkgd.min.js"></script>
+    <script src="https://unpkg.com/imagesloaded@5/imagesloaded.pkgd.min.js"></script>
     <script src="/js/theme.js"></script>
 </head>
 <body>
@@ -80,8 +80,6 @@
     const scrollThreshold = 400;
     let msnry; // Masonry instance
 
-    // logic moved to DOMContentLoaded
-
     function updatePageTitle() {
         const pageTitle = document.getElementById('pageTitle');
         if (pageTitle && currentGroupName) {
@@ -142,7 +140,6 @@
             .finally(() => {
                 isLoading = false;
                 document.getElementById('loading').classList.add('hidden');
-                checkScrollForMore();
             });
     }
 
@@ -197,6 +194,8 @@
         if (typeof imagesLoaded === 'function') {
             imagesLoaded(newWrappers).on('progress', function() {
                 msnry.layout();
+            }).on('always', function() {
+                checkScrollForMore();
             });
         }
 

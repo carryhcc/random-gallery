@@ -135,7 +135,7 @@
                 hasMore = true;
             }
 
-            const url = '/api/group/loadMore?page=' + page;
+            const url = '/api/group/loadMore?page=' + page + (reset ? '&refresh=true' : '');
             const res = await fetch(url);
             const result = await res.json();
 
@@ -152,8 +152,14 @@
                         picUrl: sanitizeUrl(item.groupUrl) || ''
                     }));
 
-                    appendList(processedList);
-                    page++;
+                    try {
+                        appendList(processedList);
+                        page++;
+                    } catch (err) {
+                        console.error('渲染图片失败', err);
+                        // 即使渲染失败也自增页码，防止死循环请求同一页
+                        page++; 
+                    }
 
                     if (!hasMore) {
                         endEl.classList.remove('hidden');

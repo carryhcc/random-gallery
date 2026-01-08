@@ -1,6 +1,5 @@
 package com.example.randomGallery.service;
 
-
 import com.example.randomGallery.entity.QO.GroupQry;
 import com.example.randomGallery.entity.VO.GroupPageVO;
 import com.example.randomGallery.entity.VO.GroupVO;
@@ -9,7 +8,6 @@ import org.springframework.stereotype.Service;
 
 @Service
 public interface GroupServiceApi {
-
 
     /**
      * 查询分组详情
@@ -38,5 +36,5 @@ public interface GroupServiceApi {
      * @param page 当前页码（默认0）
      * @return 统一响应结果
      */
-    GroupPageVO loadMore(int page);
+    GroupPageVO loadMore(int page, boolean refresh);
 }

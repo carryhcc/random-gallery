@@ -34,7 +34,6 @@ public class GroupApiController {
         return Result.success("获取随机分组信息成功", groupInfo);
     }
 
-
     /**
      * 查询分组列表
      */
@@ -52,8 +51,9 @@ public class GroupApiController {
      * @return 统一响应结果
      */
     @GetMapping("/loadMore")
-    public Result<GroupPageVO> loadMore(@RequestParam(defaultValue = "0") int page) {
-        GroupPageVO data = groupServiceApi.loadMore(page);
+    public Result<GroupPageVO> loadMore(@RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "false") boolean refresh) {
+        GroupPageVO data = groupServiceApi.loadMore(page, refresh);
         return Result.success(data);
     }
 }
