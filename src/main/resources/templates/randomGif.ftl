@@ -423,9 +423,48 @@
     const bottomInfo = document.getElementById('bottomInfo');
     const infoTitle = document.getElementById('infoTitle');
     const infoAuthor = document.getElementById('infoAuthor');
+    
+    // 假随机状态管理
+    let allGifIds = [];           // 所有GIF的ID列表
+    let shuffledGifIds = [];      // 打乱后的ID列表
+    let currentIndex = -1;        // 当前索引位置
+    let isInitialized = false;    // 是否已初始化
 
-    // 显示滑动指示器
-    function showSwipeIndicator(direction) {
+    // Fisher-Yates洗牌算法
+    function shuffleArray(array) {
+        const arr = [...array];
+        for (let i = arr.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [arr[i], arr[j]] = [arr[j], arr[i]];
+        }
+        return arr;
+    }
+
+    // 初始化GIF列表
+    async function initGifList() {
+        try {
+            const response = await fetch('/api/xhsWork/allGifIds');
+            const result = await response.json();
+            
+            if (result.code === 200 && result.data && result.data.length > 0) {
+                allGifIds = result.data;
+                shuffledGifIds = shuffleArray(allGifIds);
+                isInitialized = true;
+                currentIndex = 0;
+                await loadGifByIndex(0);
+            } else {
+                showError('暂无可用的动图');
+                isInitialized = false;
+            }
+        } catch (err) {
+            console.error('初始化失败:', err);
+            showError('网络请求失败');
+            isInitialized = false;
+        }
+    }
+
+    // 根据索引加载GIF
+    async function loadGifByIndex(index) {
         swipeIndicator.className = 'swipe-indicator ' + direction;
         
         // 根据方向显示不同图标
@@ -444,10 +483,14 @@
         }, 600);
     }
 
-    // 加载随机GIF（带动画）
-    async function loadRandomGif() {
-        if (isLoading) return;
+    // 根据索引加载GIF
+    async function loadGifByIndex(index) {
+        if (isLoading || !isInitialized || index < 0 || index >= shuffledGifIds.length) {
+            return;
+        }
+        
         isLoading = true;
+        currentIndex = index;
         
         // 显示进度条
         progressBar.className = 'progress-bar loading';
@@ -456,10 +499,11 @@
         video.classList.add('fade-out');
         
         loading.classList.remove('hidden');
-        error.classList.add('hidden');
+        error.style.display = 'none';
 
         try {
-            const response = await fetch('/api/xhsWork/randomGif');
+            const gifId = shuffledGifIds[index];
+            const response = await fetch('/api/xhsWork/gifById/' + gifId);
             const result = await response.json();
 
             if (result.code === 200 && result.data) {
@@ -604,17 +648,9 @@
         
         if (isFillMode) {
             video.classList.add('fill-mode');
-            zoomIndicator.textContent = '填充模式：已启用';
         } else {
             video.classList.remove('fill-mode');
-            zoomIndicator.textContent = '填充模式：已关闭';
         }
-        
-        // 显示提示
-        zoomIndicator.classList.add('show');
-        setTimeout(() => {
-            zoomIndicator.classList.remove('show');
-        }, 1500);
     }
 
     // 视频点击事件（区分单击和双击）
@@ -686,15 +722,43 @@
         } else {
             // 垂直滑动
             if (Math.abs(deltaY) > threshold) {
-                if (deltaY > 0) {
-                    showSwipeIndicator('down');
-                } else {
+                if (deltaY < 0) {
+                    // 上滑：下一张
                     showSwipeIndicator('up');
+                    handleNextGif();
+                } else {
+                    // 下滑：上一张
+                    showSwipeIndicator('down');
+                    handlePrevGif();
                 }
-                // 加载下一张
-                setTimeout(() => loadRandomGif(), 100);
             }
         }
+    }
+
+    // 处理下一张
+    function handleNextGif() {
+        if (!isInitialized) return;
+        
+        if (currentIndex < shuffledGifIds.length - 1) {
+            // 还有下一张
+            loadGifByIndex(currentIndex + 1);
+        } else {
+            // 已经是最后一张，重新打乱
+            shuffledGifIds = shuffleArray(allGifIds);
+            currentIndex = -1;
+            loadGifByIndex(0);
+        }
+    }
+
+    // 处理上一张
+    function handlePrevGif() {
+        if (!isInitialized) return;
+        
+        if (currentIndex > 0) {
+            // 还有上一张
+            loadGifByIndex(currentIndex - 1);
+        }
+        // 否则忽略（已经是第一张）
     }
 
     // 键盘支持（桌面端）
@@ -702,11 +766,11 @@
         switch(e.key) {
             case 'ArrowUp':
                 showSwipeIndicator('up');
-                loadRandomGif();
+                handleNextGif();
                 break;
             case 'ArrowDown':
                 showSwipeIndicator('down');
-                loadRandomGif();
+                handlePrevGif();
                 break;
             case 'ArrowLeft':
             case 'Escape':
@@ -721,9 +785,9 @@
         }
     });
 
-    // 页面加载时获取第一张GIF
+    // 页面加载时初始化
     document.addEventListener('DOMContentLoaded', () => {
-        loadRandomGif();
+        initGifList();
     });
 </script>
 </body>

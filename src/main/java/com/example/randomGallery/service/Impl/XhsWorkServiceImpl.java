@@ -22,8 +22,10 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
+import java.util.stream.Collectors;
 import java.util.Map;
 import java.util.stream.Collectors;
 
@@ -229,6 +231,62 @@ public class XhsWorkServiceImpl implements XhsWorkService {
                 // 查询作品基础信息
                 if (randomGif.getWorkBaseId() != null) {
                         XhsWorkBaseDO baseDO = workBaseMapper.selectById(randomGif.getWorkBaseId());
+                        if (baseDO != null) {
+                                vo.setWorkTitle(baseDO.getWorkTitle());
+                                vo.setAuthorNickname(baseDO.getAuthorNickname());
+                                vo.setAuthorId(baseDO.getAuthorId());
+                        }
+                }
+
+                return vo;
+        }
+
+        @Override
+        public List<Long> getAllGifIds() {
+                // 查询所有GIF类型且未删除的媒体ID
+                LambdaQueryWrapper<XhsWorkMediaDO> wrapper = Wrappers.lambdaQuery();
+                wrapper.select(XhsWorkMediaDO::getId)
+                                .eq(XhsWorkMediaDO::getMediaType, MediaTypeEnum.GIF)
+                                .and(w -> w.eq(XhsWorkMediaDO::getIsDelete, false).or()
+                                                .isNull(XhsWorkMediaDO::getIsDelete));
+
+                List<XhsWorkMediaDO> mediaList = workMediaMapper.selectList(wrapper);
+
+                if (CollUtil.isEmpty(mediaList)) {
+                        log.warn("数据库中没有可用的GIF");
+                        return Collections.emptyList();
+                }
+
+                return mediaList.stream()
+                                .map(XhsWorkMediaDO::getId)
+                                .collect(Collectors.toList());
+        }
+
+        @Override
+        public RandomGifVO getGifById(Long id) {
+                if (id == null) {
+                        log.warn("GIF ID为空");
+                        return null;
+                }
+
+                // 查询媒体信息
+                XhsWorkMediaDO mediaDO = workMediaMapper.selectById(id);
+
+                if (mediaDO == null) {
+                        log.warn("未找到ID为{}的GIF", id);
+                        return null;
+                }
+
+                // 转换为VO
+                RandomGifVO vo = new RandomGifVO();
+                vo.setId(mediaDO.getId());
+                vo.setMediaUrl(mediaDO.getMediaUrl());
+                vo.setWorkId(mediaDO.getWorkId());
+                vo.setWorkBaseId(mediaDO.getWorkBaseId());
+
+                // 查询作品基础信息
+                if (mediaDO.getWorkBaseId() != null) {
+                        XhsWorkBaseDO baseDO = workBaseMapper.selectById(mediaDO.getWorkBaseId());
                         if (baseDO != null) {
                                 vo.setWorkTitle(baseDO.getWorkTitle());
                                 vo.setAuthorNickname(baseDO.getAuthorNickname());

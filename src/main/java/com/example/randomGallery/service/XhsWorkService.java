@@ -59,4 +59,19 @@ public interface XhsWorkService {
      * @return 随机GIF数据，如果没有GIF则返回null
      */
     RandomGifVO getRandomGif();
+
+    /**
+     * 获取所有GIF的ID列表
+     * 
+     * @return 所有可用GIF的ID列表
+     */
+    java.util.List<Long> getAllGifIds();
+
+    /**
+     * 根据ID获取GIF详情
+     * 
+     * @param id GIF媒体ID
+     * @return GIF详情数据，如果未找到则返回null
+     */
+    RandomGifVO getGifById(Long id);
 }

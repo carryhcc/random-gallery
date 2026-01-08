@@ -125,4 +125,27 @@ public class XhsWorkApiController {
         }
         return Result.success(randomGif);
     }
+
+    /**
+     * 获取所有GIF的ID列表
+     */
+    @GetMapping("/allGifIds")
+    public Result<List<Long>> getAllGifIds() {
+        log.info("获取所有GIF ID列表");
+        List<Long> gifIds = xhsWorkService.getAllGifIds();
+        return Result.success(gifIds);
+    }
+
+    /**
+     * 根据ID获取GIF详情
+     */
+    @GetMapping("/gifById/{id}")
+    public Result<RandomGifVO> getGifById(@PathVariable Long id) {
+        log.info("根据ID获取GIF详情: {}", id);
+        RandomGifVO gif = xhsWorkService.getGifById(id);
+        if (gif == null) {
+            return Result.error("未找到对应的GIF");
+        }
+        return Result.success(gif);
+    }
 }
