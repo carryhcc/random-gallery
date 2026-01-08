@@ -1,5 +1,6 @@
 package com.example.randomGallery.service;
 
+import cn.hutool.core.convert.Convert;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.example.randomGallery.config.EnvContext;
 import com.example.randomGallery.entity.DO.GroupDO;
@@ -8,7 +9,6 @@ import com.example.randomGallery.entity.VO.PicCount;
 import com.example.randomGallery.service.mapper.GroupServiceMapper;
 import com.example.randomGallery.service.mapper.PicServiceMapper;
 import com.example.randomGallery.utils.ResettableTimer;
-import com.example.randomGallery.utils.StrUtils;
 import jakarta.annotation.PostConstruct;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
@@ -197,10 +197,10 @@ public class CacheService {
     private List<Long> shuffledSeq;
     // 总图片数
     @Getter
-    public Long totalImageCount;
+    public Integer totalImageCount;
     // 总分组数
     @Getter
-    public Long totalGroupCount;
+    public Integer totalGroupCount;
 
     /**
      * 初始化随机序列和总图片数（懒加载：首次调用时初始化）
@@ -209,11 +209,9 @@ public class CacheService {
         // 从数据库中查询所有实际存在的group_id
         List<Object> groupIds = groupServiceMapper.selectObjs(new QueryWrapper<GroupDO>().select("group_id"));
 
-        List<Long> groupIdList = groupIds.stream()
-                .map(obj -> Long.valueOf(obj.toString()))
-                .collect(Collectors.toList());
+        List<Long> groupIdList = groupIds.stream().map(obj -> Convert.toLong(obj.toString())).collect(Collectors.toList());
 
-        totalGroupCount = (long) groupIdList.size();
+        totalGroupCount = groupIdList.size();
         // 打乱顺序
         Collections.shuffle(groupIdList);
         shuffledSeq = groupIdList;

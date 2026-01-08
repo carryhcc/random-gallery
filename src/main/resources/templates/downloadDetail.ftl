@@ -227,35 +227,76 @@
     function initializeLivePhotos() {
         const livePhotos = document.querySelectorAll('.live-photo');
         
+        // 判断是否为移动端 (宽度小于768px 或 支持触摸)
+        const isMobile = () => window.innerWidth < 768 || 'ontouchstart' in window;
+
+        // 观察器选项
+        const observerOptions = {
+            root: null, // Viewport
+            rootMargin: '0px',
+            threshold: 0.5 // 50% 可见时触发
+        };
+
+        // 创建 IntersectionObserver (主要用于移动端滚动自动播放)
+        const observer = new IntersectionObserver((entries) => {
+            // 如果是桌面端，不执行滚动自动播放逻辑
+            if (!isMobile()) return;
+
+            entries.forEach(entry => {
+                const livePhoto = entry.target;
+                const videoId = livePhoto.getAttribute('data-video-id');
+                const video = document.getElementById(videoId);
+                
+                if (!video) return;
+
+                if (entry.isIntersecting) {
+                    // 进入视口：自动播放
+                    video.play().catch(err => console.log('自动播放失败:', err));
+                    livePhoto.classList.add('playing');
+                } else {
+                    // 离开视口：暂停并重置
+                    video.pause();
+                    video.currentTime = 0;
+                    livePhoto.classList.remove('playing');
+                }
+            });
+        }, observerOptions);
+
         livePhotos.forEach(function(livePhoto) {
             const videoId = livePhoto.getAttribute('data-video-id');
             const video = document.getElementById(videoId);
             
             if (!video) return;
+
+            // 1. 加入观察列表 (始终观察，但在 callback 中判断是否执行)
+            observer.observe(livePhoto);
             
-            // 鼠标进入时播放
+            // 2. 鼠标交互 (仅桌面端有效)
             livePhoto.addEventListener('mouseenter', function() {
-                video.currentTime = 0; // 从头开始
-                video.play().catch(function(err) {
-                    console.log('播放失败:', err);
-                });
-                livePhoto.classList.add('playing');
+                if (isMobile()) return; // 移动端忽略 hover
+
+                if (video.paused) {
+                    video.currentTime = 0;
+                    video.play().catch(err => console.log('播放失败:', err));
+                    livePhoto.classList.add('playing');
+                }
             });
             
-            // 鼠标离开时暂停并重置
             livePhoto.addEventListener('mouseleave', function() {
+                if (isMobile()) return; // 移动端忽略 hover leave
+
                 video.pause();
-                video.currentTime = 0; // 重置到第一帧
+                video.currentTime = 0;
                 livePhoto.classList.remove('playing');
             });
             
-            // 触摸设备支持
+            // 3. 触摸/点击支持 (通用手动控制)
+            // 允许用户手动点击播放/暂停，作为自动逻辑的补充
             livePhoto.addEventListener('touchstart', function(e) {
+                // 触摸事件略作防抖或直接处理
                 if (video.paused) {
                     video.currentTime = 0;
-                    video.play().catch(function(err) {
-                        console.log('播放失败:', err);
-                    });
+                    video.play().catch(err => console.log('播放失败:', err));
                     livePhoto.classList.add('playing');
                 } else {
                     video.pause();
@@ -458,7 +499,7 @@
                         
                         const badge = document.createElement('span');
                         badge.className = 'live-photo-badge';
-                        badge.innerHTML = '<i class="fas fa-circle"></i> LIVE';
+                        badge.innerHTML = '<span class="icon-live-photo"></span>';
                         
                         const hint = document.createElement('span');
                         hint.className = 'live-photo-overlay-hint';
@@ -470,6 +511,17 @@
                         video.loop = true;
                         video.muted = true;
                         video.preload = 'metadata';
+                        
+                        // 监听元数据加载完成事件，触发重新布局
+                        video.addEventListener('loadedmetadata', function() {
+                            const grid = document.querySelector('#gifsSection .masonry-grid');
+                            if (grid) {
+                                const msnry = Masonry.data(grid);
+                                if (msnry) {
+                                    msnry.layout();
+                                }
+                            }
+                        });
                         
                         // 绑定点击事件到 mediaItem
                         mediaItem.addEventListener('click', function(e) {

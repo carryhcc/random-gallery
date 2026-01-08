@@ -32,12 +32,12 @@ public class PageResult<T> implements Serializable {
     /**
      * 当前页码
      */
-    private int pageNum;
+    private long pageNum;
     
     /**
      * 每页大小
      */
-    private int pageSize;
+    private long pageSize;
     
     /**
      * 总页数
@@ -54,7 +54,7 @@ public class PageResult<T> implements Serializable {
      */
     private boolean hasPreviousPage;
     
-    public PageResult(List<T> list, long total, int pageNum, int pageSize) {
+    public PageResult(List<T> list, long total, long pageNum, long pageSize) {
         this.list = list;
         this.total = total;
         this.pageNum = pageNum;

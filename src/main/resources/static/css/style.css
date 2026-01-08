@@ -2370,3 +2370,175 @@ body {
     color: white;
     transform: translateY(-2px);
 }
+/* ========================================
+   14. Live Photo 组件
+   ======================================== */
+.live-photo {
+    position: relative;
+    border-radius: var(--radius-lg);
+    overflow: hidden;
+    background: var(--color-bg-tertiary);
+    border: 1px solid var(--color-border);
+    transition: all var(--transition-base);
+}
+
+.live-photo:hover {
+    transform: translateY(-4px);
+    box-shadow: var(--shadow-xl);
+    border-color: var(--color-primary);
+}
+
+.live-photo video {
+    width: 100%;
+    height: auto;
+    display: block;
+    object-fit: cover;
+}
+
+.live-photo-badge {
+    position: absolute;
+    top: var(--spacing-sm);
+    left: var(--spacing-sm);
+    background: rgba(0, 0, 0, 0.6);
+    color: white;
+    padding: 4px 8px;
+    border-radius: var(--radius-sm);
+    font-size: var(--font-size-xs);
+    font-weight: 600;
+    z-index: 10;
+    pointer-events: none;
+    backdrop-filter: blur(4px);
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.live-photo-badge i {
+    font-size: 8px;
+    color: #ef4444; /* Recording red dot color */
+}
+
+.live-photo-overlay-hint {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background: rgba(0, 0, 0, 0.6);
+    backdrop-filter: blur(4px);
+    color: white;
+    padding: var(--spacing-sm) var(--spacing-md);
+    border-radius: var(--radius-md);
+    font-size: var(--font-size-sm);
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity var(--transition-base);
+    z-index: 5;
+}
+
+/* 只有当没有播放时悬停才显示提示 */
+.live-photo:hover:not(.playing) .live-photo-overlay-hint {
+    opacity: 1;
+}
+
+.live-photo.playing .live-photo-badge {
+    opacity: 0.5; /* Optional: dim badge when playing */
+    transition: opacity 0.3s;
+}
+
+/* ========================================
+   15. 交互动效优化 (Zoom Effects)
+   ======================================== */
+.media-item {
+    position: relative;
+    border-radius: var(--radius-lg);
+    overflow: hidden;
+    background: var(--color-bg-tertiary);
+    border: 1px solid var(--color-border);
+    transition: all var(--transition-base);
+    cursor: pointer;
+}
+
+.media-item:hover {
+    transform: translateY(-4px);
+    box-shadow: var(--shadow-xl);
+    border-color: var(--color-primary);
+}
+
+/* 图片和视频的基础过渡效果 */
+.media-item img,
+.media-item video {
+    display: block;
+    width: 100%;
+    height: auto;
+    object-fit: cover;
+    transition: transform 0.4s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+/* 鼠标悬停时的放大效果 */
+.media-item:hover img,
+.media-item:hover video {
+    transform: scale(1.05); /* 稍微放大 */
+}
+
+/* 播放状态下的放大效果 (自动播放或悬停播放) */
+.live-photo.playing video {
+    transform: scale(1.08); /* 播放时比悬停稍微大一点，突出当前播放 */
+}
+
+/* 播放状态下的边框高亮 */
+.live-photo.playing {
+    border-color: var(--color-primary);
+    box-shadow: var(--shadow-glow);
+}
+
+/* ========================================
+   16. Live Photo 图标 (Custom Icon)
+   ======================================== */
+.icon-live-photo {
+    position: relative;
+    width: 14px;
+    height: 14px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+
+/* 中心圆点 */
+.icon-live-photo::before {
+    content: '';
+    position: absolute;
+    width: 6px;
+    height: 6px;
+    background-color: currentColor;
+    border-radius: 50%;
+    z-index: 2;
+}
+
+/* 外圈虚线/实线圆环 */
+.icon-live-photo::after {
+    content: '';
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    border: 1.5px dotted currentColor; /* 使用点状边框模拟 */
+    border-radius: 50%;
+    box-sizing: border-box;
+}
+
+/* 播放状态下的动画 */
+.live-photo.playing .icon-live-photo::after {
+    border-style: solid; /* 播放时变为实线或旋转 */
+    animation: live-pulse 1.5s infinite ease-in-out;
+}
+
+@keyframes live-pulse {
+    0% { transform: scale(1); opacity: 0.8; }
+    50% { transform: scale(1.1); opacity: 1; }
+    100% { transform: scale(1); opacity: 0.8; }
+}
+
+/* 调整 Badge 样式以适配新图标 */
+.live-photo-badge {
+    gap: 6px; /* 增加一点间距 */
+    padding: 4px 8px; /* 稍微调整内边距 */
+}

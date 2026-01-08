@@ -1,7 +1,9 @@
 package com.example.randomGallery.service.Impl;
 
 import cn.hutool.core.bean.BeanUtil;
+import cn.hutool.core.util.ObjectUtil;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
+import com.example.randomGallery.entity.DO.GroupDO;
 import com.example.randomGallery.entity.DO.PicDO;
 import com.example.randomGallery.entity.QO.PicQry;
 import com.example.randomGallery.entity.VO.PicVO;
@@ -28,9 +30,7 @@ public class PicServiceApiImpl implements PicServiceApi {
     @Override
     public PicVO getInfoById(Long id) {
         PicDO picDO = picServiceMapper.selectById(id);
-        if (picDO == null) {
-            return null;
-        }
+        ObjectUtil.defaultIfNull(picDO, new PicDO());
         return BeanUtil.copyProperties(picDO, PicVO.class);
     }
 

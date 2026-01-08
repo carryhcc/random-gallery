@@ -1,6 +1,7 @@
 package com.example.randomGallery.service.Impl;
 
 import cn.hutool.core.bean.BeanUtil;
+import cn.hutool.core.util.ObjectUtil;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.example.randomGallery.entity.DO.GroupDO;
 import com.example.randomGallery.entity.QO.GroupQry;
@@ -17,6 +18,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -36,9 +38,7 @@ public class GroupServiceApiImpl implements GroupServiceApi {
     @Override
     public GroupVO queryGroupById(Long groupId) {
         GroupDO groupDO = groupServiceMapper.selectById(groupId);
-        if (groupDO == null) {
-            return null;
-        }
+        ObjectUtil.defaultIfNull(groupDO, new GroupDO());
         return BeanUtil.copyProperties(groupDO, GroupVO.class);
     }
 
@@ -54,20 +54,16 @@ public class GroupServiceApiImpl implements GroupServiceApi {
         return new PageResult<>(
                 page.getRecords(),
                 page.getTotal(),
-                (int) page.getCurrent(),
-                (int) page.getSize());
+                page.getCurrent(),
+                page.getSize());
     }
 
     @Override
     public void updateGroupInfo() {
         // 定时任务更新分组图片/总数信息
         List<Object> objs = groupServiceMapper.selectObjs(new QueryWrapper<GroupDO>().select("group_id"));
-        if (objs == null)
-            return;
-
-        List<Long> groupIdList = objs.stream()
-                .map(obj -> Long.valueOf(obj.toString()))
-                .toList();
+        ObjectUtil.defaultIfNull(objs, new ArrayList<>());
+        List<Long> groupIdList = objs.stream().map(obj -> Long.valueOf(obj.toString())).toList();
 
         for (Long groupId : groupIdList) {
             GroupVO groupVO = picServiceMapper.queryPicCountInfo(groupId);
@@ -93,7 +89,7 @@ public class GroupServiceApiImpl implements GroupServiceApi {
         // 默认进入时候刷新顺序
         if (page == 0)
             cacheService.buildGroupIDList();
-        Long totalImageCount = cacheService.getTotalGroupCount();
+        Integer totalImageCount = cacheService.getTotalGroupCount();
         // 无图片数据时直接返回
         if (totalImageCount == 0) {
             return new GroupPageVO(Collections.emptyList(), false);

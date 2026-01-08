@@ -1,5 +1,6 @@
 package com.example.randomGallery.controller;
 
+import cn.hutool.core.util.ObjectUtil;
 import com.example.randomGallery.common.Result;
 import com.example.randomGallery.entity.VO.AuthorVO;
 import com.example.randomGallery.entity.VO.TagVO;
@@ -14,6 +15,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Objects;
 
 /**
  * 作品查询控制器
@@ -86,7 +88,7 @@ public class XhsWorkApiController {
     public Result<XhsWorkDetailVO> getWorkDetail(@PathVariable String workId) {
         log.info("查询作品详情，workId={}", workId);
         XhsWorkDetailVO detail = xhsWorkService.getXhsWorkDetail(workId);
-        if (detail == null) {
+        if (ObjectUtil.isNull(detail)) {
             return Result.error("作品不存在");
         }
         return Result.success(detail);

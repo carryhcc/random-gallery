@@ -1,6 +1,6 @@
 package com.example.randomGallery.config;
 
-import com.example.randomGallery.utils.StrUtils;
+import cn.hutool.core.util.StrUtil;
 import jakarta.annotation.PostConstruct;
 import lombok.Getter;
 import lombok.Setter;
@@ -23,6 +23,6 @@ public class EnvContext {
 
     @PostConstruct
     public void init() {
-        this.currentEnv = StrUtils.isEmpty(defaultEnv) ? "dev" : defaultEnv;
+        this.currentEnv = StrUtil.isEmpty(defaultEnv) ? "dev" : defaultEnv;
     }
 }

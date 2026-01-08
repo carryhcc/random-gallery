@@ -1,6 +1,7 @@
 package com.example.randomGallery.service.Impl;
 
 import cn.hutool.core.collection.CollUtil;
+import cn.hutool.core.util.ObjectUtil;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
@@ -147,7 +148,7 @@ public class XhsWorkServiceImpl implements XhsWorkService {
                 baseWrapper.eq(XhsWorkBaseDO::getWorkId, workId);
                 XhsWorkBaseDO baseDO = workBaseMapper.selectOne(baseWrapper);
 
-                if (baseDO == null) {
+                if (ObjectUtil.isNull(baseDO)) {
                         log.warn("作品不存在：{}", workId);
                         return null;
                 }

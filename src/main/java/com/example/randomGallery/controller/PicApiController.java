@@ -1,5 +1,6 @@
 package com.example.randomGallery.controller;
 
+import cn.hutool.core.collection.CollUtil;
 import com.example.randomGallery.common.Result;
 import com.example.randomGallery.entity.QO.PicQry;
 import com.example.randomGallery.entity.VO.ImageData;
@@ -62,7 +63,7 @@ public class PicApiController {
     @GetMapping("/download")
     public void downLoadGroup(@RequestParam Long groupId, HttpServletResponse response) {
         List<String> picUrlList = picServiceApi.downLoadGroup(groupId);
-        if (picUrlList == null || picUrlList.isEmpty()) {
+        if (CollUtil.isEmpty(picUrlList)) {
             writeText(response, "分组下没有图片");
             return;
         }
