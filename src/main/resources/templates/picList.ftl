@@ -12,6 +12,8 @@
     <link rel="stylesheet" href="/css/style.css">
     <script src="https://unpkg.com/masonry-layout@4/dist/masonry.pkgd.min.js"></script>
     <script src="https://unpkg.com/imagesloaded@5/imagesloaded.pkgd.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/heic2any@0.0.4/dist/heic2any.min.js"></script>
+    <script src="/js/heic-converter.js"></script>
     <script src="/js/theme.js"></script>
 </head>
 <body>
@@ -167,9 +169,10 @@
             card.style.animationDelay = (index * 0.05) + 's';
             
             const imgElement = document.createElement('img');
-            imgElement.src = img.url;
             imgElement.alt = img.picName || img.name || '图片';
             imgElement.loading = 'lazy';
+            // 使用 HEIC 转换工具设置图片源
+            setImageSrc(imgElement, img.url);
             
             // 绑定点击事件
             card.addEventListener('click', () => openViewer(globalIndex));
@@ -281,10 +284,10 @@
 
         // 添加淡入效果
         viewerImg.style.opacity = '0.5';
-        viewerImg.src = img.url;
-        setTimeout(() => {
+        // 使用 HEIC 转换工具设置图片源
+        setImageSrc(viewerImg, img.url).then(() => {
             viewerImg.style.opacity = '1';
-        }, 50);
+        });
 
         // 更新按钮状态
         document.querySelector('.viewer-prev').style.opacity = currentImageIndex === 0 ? '0.3' : '1';

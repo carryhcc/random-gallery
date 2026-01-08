@@ -10,6 +10,8 @@
           rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.bootcdn.net/ajax/libs/font-awesome/6.4.2/css/all.min.css">
     <link rel="stylesheet" href="/css/style.css">
+    <script src="https://cdn.jsdelivr.net/npm/heic2any@0.0.4/dist/heic2any.min.js"></script>
+    <script src="/js/heic-converter.js"></script>
     <script src="/js/theme.js"></script>
 </head>
 <body>
@@ -189,8 +191,19 @@
                         groupName +
                         '</td>' +
                         '<td style="text-align: center;"><span class="count-cell">' + groupCount + '</span></td>' +
-                        '<td class="image-cell">' + imageHtml + '</td>';
+                        '<td class="image-cell" id="image-cell-' + groupId + '">' + imageHtml + '</td>';
                     resultsBody.appendChild(newRow);
+                    
+                    // 如果有图片URL，使用 HEIC 转换工具异步设置图片源
+                    if (groupUrl) {
+                        const imgCell = document.getElementById('image-cell-' + groupId);
+                        const imgElement = imgCell.querySelector('.group-image');
+                        if (imgElement) {
+                            setImageSrc(imgElement, groupUrl).catch(err => {
+                                console.warn('图片加载失败:', groupUrl, err);
+                            });
+                        }
+                    }
                 });
             } else {
                 showEmptyState();
@@ -344,9 +357,10 @@
         };
 
         const img = document.createElement('img');
-        img.src = imageUrl;
         img.className = 'full-size-image';
         img.alt = '预览图片';
+        // 使用 HEIC 转换工具设置图片源
+        setImageSrc(img, imageUrl);
 
         previewContent.appendChild(closeButton);
         previewContent.appendChild(img);

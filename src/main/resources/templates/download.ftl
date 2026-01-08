@@ -13,6 +13,8 @@
     <link rel="stylesheet" href="https://cdn.bootcdn.net/ajax/libs/choices.js/10.2.0/choices.min.css">
     <link rel="stylesheet" href="/css/style.css">
     <script src="https://cdn.bootcdn.net/ajax/libs/choices.js/10.2.0/choices.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/heic2any@0.0.4/dist/heic2any.min.js"></script>
+    <script src="/js/heic-converter.js"></script>
     <script src="/js/theme.js"></script>
     <style>
         .choices {
@@ -335,21 +337,39 @@
         const imageCount = work.imageCount || 0;
         const gifCount = work.gifCount || 0;
 
-        card.innerHTML = 
-            (coverUrl ? '<img src="' + coverUrl + '" alt="' + title + '" class="work-cover" loading="lazy">' : '<div class="work-cover"></div>') +
-            '<div class="work-info">' +
-                '<div class="work-title">' + title + '</div>' +
-                '<div class="work-meta">' +
-                    '<div class="work-author">' +
-                        '<i class="fas fa-user"></i>' +
-                        '<span>' + author + '</span>' +
-                    '</div>' +
-                    '<div class="work-badges">' +
-                        (imageCount > 0 ? '<span class="badge"><i class="fas fa-image"></i> ' + imageCount + '</span>' : '') +
-                        (gifCount > 0 ? '<span class="badge gif"><i class="fas fa-film"></i> ' + gifCount + '</span>' : '') +
-                    '</div>' +
+        // 创建封面图片元素
+        if (coverUrl) {
+            const coverImg = document.createElement('img');
+            coverImg.alt = title;
+            coverImg.className = 'work-cover';
+            coverImg.loading = 'lazy';
+            card.appendChild(coverImg);
+            // 使用 HEIC 转换工具异步设置图片源
+            setImageSrc(coverImg, coverUrl).catch(err => {
+                console.warn('封面图片加载失败:', coverUrl, err);
+            });
+        } else {
+            const placeholder = document.createElement('div');
+            placeholder.className = 'work-cover';
+            card.appendChild(placeholder);
+        }
+        
+        // 创建作品信息区
+        const workInfo = document.createElement('div');
+        workInfo.className = 'work-info';
+        workInfo.innerHTML = 
+            '<div class="work-title">' + title + '</div>' +
+            '<div class="work-meta">' +
+                '<div class="work-author">' +
+                    '<i class="fas fa-user"></i>' +
+                    '<span>' + author + '</span>' +
+                '</div>' +
+                '<div class="work-badges">' +
+                    (imageCount > 0 ? '<span class="badge"><i class="fas fa-image"></i> ' + imageCount + '</span>' : '') +
+                    (gifCount > 0 ? '<span class="badge gif"><i class="fas fa-film"></i> ' + gifCount + '</span>' : '') +
                 '</div>' +
             '</div>';
+        card.appendChild(workInfo);
 
         return card;
     }

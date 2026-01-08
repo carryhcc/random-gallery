@@ -13,6 +13,8 @@
     <link rel="stylesheet" href="/css/style.css">
     <script src="https://cdn.bootcdn.net/ajax/libs/masonry/4.2.2/masonry.pkgd.min.js"></script>
     <script src="https://cdn.bootcdn.net/ajax/libs/jquery.imagesloaded/5.0.0/imagesloaded.pkgd.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/heic2any@0.0.4/dist/heic2any.min.js"></script>
+    <script src="/js/heic-converter.js"></script>
     <script src="/js/theme.js"></script>
 </head>
 <body>
@@ -152,10 +154,10 @@
         
         // 淡入效果
         viewerImg.style.opacity = '0.5';
-        viewerImg.src = imgUrl;
-        setTimeout(() => {
+        // 使用 HEIC 转换工具设置图片源
+        setImageSrc(viewerImg, imgUrl).then(() => {
             viewerImg.style.opacity = '1';
-        }, 50);
+        });
     }
 
     // 键盘导航
@@ -418,9 +420,10 @@
                         mediaItem.className = 'media-item';
                         
                         const imgElement = document.createElement('img');
-                        imgElement.src = img.mediaUrl;
                         imgElement.alt = '图片 ' + (index + 1);
                         imgElement.loading = 'lazy';
+                        // 使用 HEIC 转换工具设置图片源
+                        setImageSrc(imgElement, img.mediaUrl);
                         
                         // 使用事件监听器打开新的查看器 (监听整个 item)
                         const openViewerHandler = function() {
