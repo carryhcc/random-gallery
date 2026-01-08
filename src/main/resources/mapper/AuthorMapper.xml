@@ -3,12 +3,14 @@
 <mapper namespace="com.example.randomGallery.service.mapper.AuthorMapper">
 
     <select id="selectAuthorsWithWorkCount" resultType="com.example.randomGallery.entity.VO.AuthorVO">
-        SELECT a.author_id as authorId, 
-               a.author_nickname as authorNickname, 
-               a.author_url as authorUrl, 
+        SELECT a.author_id       as authorId,
+               a.author_nickname as authorNickname,
+               a.author_url      as authorUrl,
                COUNT(aw.work_id) as workCount
         FROM author a
-        LEFT JOIN author_work aw ON a.author_id = aw.author_id
+                 INNER JOIN author_work aw ON a.author_id = aw.author_id
+                 INNER JOIN xhs_work_base xwb ON aw.work_id = xwb.work_id
+        WHERE xwb.is_delete = 0
         GROUP BY a.author_id, a.author_nickname, a.author_url
     </select>
 
