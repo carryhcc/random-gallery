@@ -97,7 +97,7 @@ public class XhsWorkApiController {
     /**
      * 删除作品
      */
-    @PostMapping("/delete/{workId}")
+    @DeleteMapping("/{workId}")
     public Result<String> deleteWork(@PathVariable String workId) {
         xhsWorkService.deleteWork(workId);
         return Result.success("删除成功");
@@ -106,7 +106,7 @@ public class XhsWorkApiController {
     /**
      * 删除媒体
      */
-    @PostMapping("/media/delete/{id}")
+    @DeleteMapping("/media/{id}")
     public Result<String> deleteMedia(@PathVariable Long id) {
         xhsWorkService.deleteMedia(id);
         return Result.success("删除成功");

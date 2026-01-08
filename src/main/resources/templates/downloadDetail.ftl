@@ -660,8 +660,8 @@
     window.confirmDeleteWork = function() {
         showConfirm('确定要删除这个作品吗？删除后将无法查看。', function() {
             showToast('正在删除...', 'info');
-            fetch('/api/xhsWork/delete/' + workId, {
-                method: 'POST'
+            fetch('/api/xhsWork/' + workId, {
+                method: 'DELETE'
             })
             .then(response => response.json())
             .then(data => {
@@ -690,8 +690,8 @@
         
         showConfirm('确定要删除这张' + (type==='gif'?'实况照片':'图片') + '吗？', function() {
             // showToast('正在删除...', 'info');
-            fetch('/api/xhsWork/media/delete/' + mediaId, {
-                method: 'POST'
+            fetch('/api/xhsWork/media/' + mediaId, {
+                method: 'DELETE'
             })
             .then(response => response.json())
             .then(data => {

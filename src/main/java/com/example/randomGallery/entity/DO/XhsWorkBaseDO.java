@@ -134,10 +134,10 @@ public class XhsWorkBaseDO {
     private String lastUpdateTime;
 
     /**
-     * 时间戳（如：1766499771.0）
+     * 时间戳 - 对应数据库DECIMAL(20,1)，避免浮点精度丢失
      */
     @TableField(value = "timestamp")
-    private BigDecimal timestamp; // 对应数据库DECIMAL(20,1)，避免浮点精度丢失
+    private BigDecimal timestamp;
 
     /**
      * 作者昵称
@@ -166,6 +166,6 @@ public class XhsWorkBaseDO {
     /**
      * 是否删除
      */
-     @TableField(value = "is_delete")
+    @TableField(value = "is_delete")
     private Boolean isDelete;
 }

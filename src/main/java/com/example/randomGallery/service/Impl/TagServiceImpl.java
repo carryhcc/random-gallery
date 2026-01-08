@@ -8,6 +8,7 @@ import com.example.randomGallery.service.TagService;
 import com.example.randomGallery.service.mapper.TagMapper;
 import com.example.randomGallery.service.mapper.TagWorkMapper;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -27,6 +28,7 @@ public class TagServiceImpl implements TagService {
     private TagWorkMapper tagWorkMapper;
 
     @Override
+    @Cacheable(value = "tags", unless = "#result == null || #result.isEmpty()")
     public List<TagVO> getAllTags() {
         // 使用自定义SQL一次性查询标签及其作品数量，避免N+1问题
         return tagMapper.selectTagsWithWorkCount();

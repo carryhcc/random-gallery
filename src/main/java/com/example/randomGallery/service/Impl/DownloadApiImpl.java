@@ -23,6 +23,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -70,6 +71,7 @@ public class DownloadApiImpl implements DownloadApi {
      * 核心入库逻辑：支持事务回滚
      */
     @Transactional(rollbackFor = Exception.class)
+    @CacheEvict(value = { "authors", "tags" }, allEntries = true)
     public void saveXhsData(String jsonStr) {
         try {
             DownLoadInfo downLoadInfo = objectMapper.readValue(jsonStr, DownLoadInfo.class);
@@ -113,6 +115,9 @@ public class DownloadApiImpl implements DownloadApi {
                 // 批量入库前过滤已存在的 URL (进一步防止重复)
                 filterAndBatchInsertMedia(workId, mediaList);
             }
+
+            // 注意：@CacheEvict注解会在方法成功执行完后自动清理缓存
+            log.info("数据保存成功，已清理作者和标签缓存");
 
         } catch (Exception e) {
             log.error("数据入库异常", e);

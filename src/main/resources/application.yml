@@ -26,7 +26,7 @@ config:
 logging:
   level:
     root: INFO
-    com.example.service: DEBUG
+    com.example.randomGallery.service: DEBUG
     # Mapper 包 SQL 日志
     com.example.randomGallery.server.mapper: DEBUG
     org.mybatis: INFO

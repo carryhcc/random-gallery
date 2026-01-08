@@ -14,7 +14,7 @@ import org.springframework.web.bind.annotation.*;
 @RestController
 @RequestMapping("/api/download")
 @RequiredArgsConstructor
-public class downloadController {
+public class DownloadController {
 
     private final DownloadApi downloadApi;
 

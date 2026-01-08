@@ -8,6 +8,7 @@ import com.example.randomGallery.service.AuthorService;
 import com.example.randomGallery.service.mapper.AuthorMapper;
 import com.example.randomGallery.service.mapper.AuthorWorkMapper;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -27,6 +28,7 @@ public class AuthorServiceImpl implements AuthorService {
     private AuthorWorkMapper authorWorkMapper;
 
     @Override
+    @Cacheable(value = "authors", unless = "#result == null || #result.isEmpty()")
     public List<AuthorVO> getAllAuthors() {
         // 使用自定义SQL一次性查询作者及其作品数量，避免N+1问题
         return authorMapper.selectAuthorsWithWorkCount();

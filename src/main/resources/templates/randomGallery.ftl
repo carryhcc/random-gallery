@@ -10,6 +10,8 @@
           rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.bootcdn.net/ajax/libs/font-awesome/6.4.2/css/all.min.css">
     <link rel="stylesheet" href="/css/style.css">
+    <script src="https://cdn.jsdelivr.net/npm/heic2any@0.0.4/dist/heic2any.min.js"></script>
+    <script src="/js/heic-converter.js"></script>
     <script src="/js/theme.js"></script>
 </head>
 <body>
@@ -80,9 +82,10 @@
         imgContainer.className = 'gallery-image-container';
 
         const img = document.createElement('img');
-        img.src = item.picUrl || '';
         img.alt = item.groupName || '';
         img.loading = 'lazy';
+        // 使用 HEIC 转换工具设置图片源
+        setImageSrc(img, item.picUrl || '');
 
         const overlay = document.createElement('div');
         overlay.className = 'gallery-overlay';
@@ -157,8 +160,8 @@
                         page++;
                     } catch (err) {
                         console.error('渲染图片失败', err);
-                        // 即使渲染失败也自增页码，防止死循环请求同一页
-                        page++; 
+                        showTip('部分图片渲染失败，请刷新重试', true);
+                        // 不递增page，允许重试
                     }
 
                     if (!hasMore) {
@@ -228,19 +231,16 @@
             io.observe(sentinel);
         }
 
-        window.addEventListener('scroll', () => {
+        // 合并scroll和touchmove事件处理，消除代码重复
+        function handleScrollOrTouch() {
             if (isLoading || !hasMore) return;
             if (nearBottomThreshold(300)) {
                 loadPage(false);
             }
-        }, {passive: true});
+        }
 
-        window.addEventListener('touchmove', () => {
-            if (isLoading || !hasMore) return;
-            if (nearBottomThreshold(300)) {
-                loadPage(false);
-            }
-        }, {passive: true});
+        window.addEventListener('scroll', handleScrollOrTouch, {passive: true});
+        window.addEventListener('touchmove', handleScrollOrTouch, {passive: true});
     });
 </script>
 </body>
