@@ -196,6 +196,8 @@
             -webkit-box-orient: vertical;
             overflow: hidden;
             text-overflow: ellipsis;
+            -webkit-tap-highlight-color: transparent;
+            user-select: none;
         }
 
         .info-title:hover {
@@ -210,6 +212,8 @@
             display: flex;
             align-items: center;
             gap: 6px;
+            -webkit-tap-highlight-color: transparent;
+            user-select: none;
         }
 
         .info-author:hover {
