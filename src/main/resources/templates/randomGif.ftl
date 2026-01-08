@@ -162,34 +162,50 @@
             50% { opacity: 0.5; }
         }
 
-        .back-btn {
-            position: absolute;
-            top: 20px;
-            left: 20px;
+        /* 顶部导航栏 */
+        .top-nav {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 60px;
             background: rgba(0, 0, 0, 0.6);
-            color: #fff;
-            border: none;
-            width: 44px;
-            height: 44px;
-            border-radius: 50%;
+            backdrop-filter: blur(10px);
             display: flex;
             align-items: center;
-            justify-content: center;
+            justify-content: space-between;
+            padding: 0 20px;
+            z-index: 100;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
+        }
+
+        .nav-btn {
+            background: rgba(255, 255, 255, 0.15);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            color: #fff;
+            padding: 10px 20px;
+            border-radius: 8px;
+            font-size: 14px;
             cursor: pointer;
-            font-size: 20px;
-            z-index: 10;
-            backdrop-filter: blur(10px);
+            display: flex;
+            align-items: center;
+            gap: 8px;
             transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+            backdrop-filter: blur(5px);
         }
 
-        .back-btn:hover {
-            background: rgba(0, 0, 0, 0.8);
-            transform: scale(1.1);
+        .nav-btn:hover {
+            background: rgba(255, 255, 255, 0.25);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
         }
 
-        .back-btn:active {
-            transform: scale(0.95);
+        .nav-btn:active {
+            transform: translateY(0);
+        }
+
+        .nav-btn i {
+            font-size: 16px;
         }
 
         /* 滑动指示器 */
@@ -282,11 +298,19 @@
 
 <div class="progress-bar" id="progressBar"></div>
 
-<div class="gif-viewer">
-    <button class="back-btn" onclick="goBack()">
-        <i class="fas fa-arrow-left"></i>
+<!-- 顶部导航栏 -->
+<div class="top-nav">
+    <button class="nav-btn" onclick="goBack()">
+        <i class="fas fa-home"></i>
+        <span>返回首页</span>
     </button>
+    <button class="nav-btn" onclick="goToDetail()">
+        <i class="fas fa-info-circle"></i>
+        <span>查看详情</span>
+    </button>
+</div>
 
+<div class="gif-viewer">
     <video id="currentGif" autoplay loop muted playsinline></video>
     
     <div id="loading" class="loading">
@@ -294,7 +318,7 @@
         <span>加载中...</span>
     </div>
 
-    <div id="error" class="error hidden">
+    <div id="error" class="error" style="display: none;">
         <i class="fas fa-exclamation-circle"></i>
         <p>暂无可用的动图</p>
     </div>
@@ -303,9 +327,9 @@
     <div id="swipeIndicator" class="swipe-indicator"></div>
 </div>
 
-<div id="hint" class="hint hidden">
+<div id="hint" class="hint" style="display: none;">
     <i class="fas fa-hand-point-up"></i>
-    <span>上下滑动切换 | 左滑返回 | 右滑详情</span>
+    <span>上下滑动切换动图</span>
 </div>
 
 <script>
@@ -390,11 +414,11 @@
                     
                     // 显示提示（仅首次）
                     if (!sessionStorage.getItem('gifHintShown')) {
-                        hint.classList.remove('hidden');
+                        hint.style.display = 'flex';
                         setTimeout(() => {
                             hint.classList.add('fade-out');
                             setTimeout(() => {
-                                hint.classList.add('hidden');
+                                hint.style.display = 'none';
                                 hint.classList.remove('fade-out');
                             }, 400);
                         }, 3000);
@@ -430,8 +454,9 @@
 
     function showError(message) {
         loading.classList.add('hidden');
-        error.classList.remove('hidden');
+        error.style.display = 'block';
         error.querySelector('p').textContent = message;
+        video.style.display = 'none';
     }
 
     function goBack() {
@@ -483,31 +508,15 @@
         const deltaY = touchEndY - touchStartY;
         const threshold = 50;
 
-        // 判断主要滑动方向
-        if (Math.abs(deltaX) > Math.abs(deltaY)) {
-            // 水平滑动
-            if (Math.abs(deltaX) > threshold) {
-                if (deltaX > 0) {
-                    // 右滑：跳转详情
-                    showSwipeIndicator('right');
-                    setTimeout(() => goToDetail(), 300);
-                } else {
-                    // 左滑：返回主页
-                    showSwipeIndicator('left');
-                    setTimeout(() => goBack(), 300);
-                }
+        // 只处理垂直滑动
+        if (Math.abs(deltaY) > threshold) {
+            if (deltaY > 0) {
+                showSwipeIndicator('down');
+            } else {
+                showSwipeIndicator('up');
             }
-        } else {
-            // 垂直滑动
-            if (Math.abs(deltaY) > threshold) {
-                if (deltaY > 0) {
-                    showSwipeIndicator('down');
-                } else {
-                    showSwipeIndicator('up');
-                }
-                // 加载下一张
-                setTimeout(() => loadRandomGif(), 100);
-            }
+            // 加载下一张
+            setTimeout(() => loadRandomGif(), 100);
         }
     }
 
@@ -522,15 +531,11 @@
                 showSwipeIndicator('down');
                 loadRandomGif();
                 break;
-            case 'ArrowLeft':
             case 'Escape':
-                showSwipeIndicator('left');
-                setTimeout(() => goBack(), 300);
+                goBack();
                 break;
-            case 'ArrowRight':
             case 'Enter':
-                showSwipeIndicator('right');
-                setTimeout(() => goToDetail(), 300);
+                goToDetail();
                 break;
         }
     });
