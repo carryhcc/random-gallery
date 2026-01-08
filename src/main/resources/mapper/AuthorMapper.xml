@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.example.randomGallery.service.mapper.AuthorMapper">
+
+    <select id="selectAuthorsWithWorkCount" resultType="com.example.randomGallery.entity.VO.AuthorVO">
+        SELECT a.author_id as authorId, 
+               a.author_nickname as authorNickname, 
+               a.author_url as authorUrl, 
+               COUNT(aw.work_id) as workCount
+        FROM author a
+        LEFT JOIN author_work aw ON a.author_id = aw.author_id
+        GROUP BY a.author_id, a.author_nickname, a.author_url
+    </select>
+
+</mapper>

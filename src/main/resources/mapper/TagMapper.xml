@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.example.randomGallery.service.mapper.TagMapper">
+
+    <select id="selectTagsWithWorkCount" resultType="com.example.randomGallery.entity.VO.TagVO">
+        SELECT t.id, 
+               t.tag_name as tagName, 
+               COUNT(tw.work_id) as workCount
+        FROM tags t
+        LEFT JOIN tag_work tw ON t.id = tw.tag_id
+        GROUP BY t.id, t.tag_name
+    </select>
+
+</mapper>
