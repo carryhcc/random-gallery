@@ -226,6 +226,16 @@ public class XhsWorkServiceImpl implements XhsWorkService {
                 vo.setWorkId(randomGif.getWorkId());
                 vo.setWorkBaseId(randomGif.getWorkBaseId());
 
+                // 查询作品基础信息
+                if (randomGif.getWorkBaseId() != null) {
+                        XhsWorkBaseDO baseDO = workBaseMapper.selectById(randomGif.getWorkBaseId());
+                        if (baseDO != null) {
+                                vo.setWorkTitle(baseDO.getWorkTitle());
+                                vo.setAuthorNickname(baseDO.getAuthorNickname());
+                                vo.setAuthorId(baseDO.getAuthorId());
+                        }
+                }
+
                 return vo;
         }
 }

@@ -27,4 +27,19 @@ public class RandomGifVO {
      * 关联基础表的主键ID
      */
     private Long workBaseId;
+
+    /**
+     * 作品标题
+     */
+    private String workTitle;
+
+    /**
+     * 作者昵称
+     */
+    private String authorNickname;
+
+    /**
+     * 作者ID
+     */
+    private String authorId;
 }

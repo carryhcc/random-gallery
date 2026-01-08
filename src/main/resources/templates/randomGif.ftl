@@ -39,7 +39,15 @@
             object-fit: contain;
             display: block;
             transition: opacity 0.3s cubic-bezier(0.4, 0, 0.2, 1), 
-                        transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+                        transform 0.3s cubic-bezier(0.4, 0, 0.2, 1),
+                        object-fit 0.3s ease;
+            cursor: pointer;
+        }
+
+        #currentGif.fill-mode {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
         }
 
         #currentGif.fade-out {
@@ -162,50 +170,54 @@
             50% { opacity: 0.5; }
         }
 
-        /* 顶部导航栏 */
-        .top-nav {
+        /* 底部信息栏 */
+        .bottom-info {
             position: fixed;
-            top: 0;
+            bottom: 0;
             left: 0;
             right: 0;
-            height: 60px;
-            background: rgba(0, 0, 0, 0.6);
+            background: rgba(0, 0, 0, 0.3);
             backdrop-filter: blur(10px);
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            padding: 0 20px;
+            padding: 15px 20px;
             z-index: 100;
-            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
         }
 
-        .nav-btn {
-            background: rgba(255, 255, 255, 0.15);
-            border: 1px solid rgba(255, 255, 255, 0.3);
+        .info-title {
             color: #fff;
-            padding: 10px 20px;
-            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: color 0.3s ease;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .info-title:hover {
+            color: #667eea;
+        }
+
+        .info-author {
+            color: rgba(255, 255, 255, 0.8);
             font-size: 14px;
             cursor: pointer;
+            transition: color 0.3s ease;
             display: flex;
             align-items: center;
-            gap: 8px;
-            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-            backdrop-filter: blur(5px);
+            gap: 6px;
         }
 
-        .nav-btn:hover {
-            background: rgba(255, 255, 255, 0.25);
-            transform: translateY(-2px);
-            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+        .info-author:hover {
+            color: #667eea;
         }
 
-        .nav-btn:active {
-            transform: translateY(0);
-        }
-
-        .nav-btn i {
-            font-size: 16px;
+        .info-author i {
+            font-size: 12px;
         }
 
         /* 滑动指示器 */
@@ -271,6 +283,52 @@
             100% { opacity: 0; transform: translate(40px, -50%); }
         }
 
+        /* 播放/暂停指示器 */
+        .play-pause-indicator {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 80px;
+            color: rgba(255, 255, 255, 0.9);
+            pointer-events: none;
+            opacity: 0;
+            transition: opacity 0.2s ease;
+            z-index: 15;
+        }
+
+        .play-pause-indicator.show {
+            animation: playPauseFlash 0.6s ease-out;
+        }
+
+        @keyframes playPauseFlash {
+            0% { opacity: 0; transform: translate(-50%, -50%) scale(0.8); }
+            50% { opacity: 1; transform: translate(-50%, -50%) scale(1.2); }
+            100% { opacity: 0; transform: translate(-50%, -50%) scale(1); }
+        }
+
+        /* 缩放指示器 */
+        .zoom-indicator {
+            position: absolute;
+            bottom: 110px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(0, 0, 0, 0.8);
+            color: #fff;
+            padding: 10px 20px;
+            border-radius: 20px;
+            font-size: 14px;
+            backdrop-filter: blur(10px);
+            opacity: 0;
+            transition: opacity 0.3s ease;
+            pointer-events: none;
+            z-index: 15;
+        }
+
+        .zoom-indicator.show {
+            opacity: 1;
+        }
+
         /* 进度条动画 */
         .progress-bar {
             position: absolute;
@@ -298,18 +356,6 @@
 
 <div class="progress-bar" id="progressBar"></div>
 
-<!-- 顶部导航栏 -->
-<div class="top-nav">
-    <button class="nav-btn" onclick="goBack()">
-        <i class="fas fa-home"></i>
-        <span>返回首页</span>
-    </button>
-    <button class="nav-btn" onclick="goToDetail()">
-        <i class="fas fa-info-circle"></i>
-        <span>查看详情</span>
-    </button>
-</div>
-
 <div class="gif-viewer">
     <video id="currentGif" autoplay loop muted playsinline></video>
     
@@ -325,11 +371,30 @@
 
     <!-- 滑动方向指示器 -->
     <div id="swipeIndicator" class="swipe-indicator"></div>
+    
+    <!-- 播放/暂停指示器 -->
+    <div id="playPauseIndicator" class="play-pause-indicator">
+        <i class="fas fa-play"></i>
+    </div>
+    
+    <!-- 缩放指示器 -->
+    <div id="zoomIndicator" class="zoom-indicator">
+        双击切换填充模式
+    </div>
 </div>
 
 <div id="hint" class="hint" style="display: none;">
     <i class="fas fa-hand-point-up"></i>
-    <span>上下滑动切换动图</span>
+    <span>上下滑动切换 | 左滑详情 | 右滑返回</span>
+</div>
+
+<!-- 底部信息栏 -->
+<div class="bottom-info" id="bottomInfo" style="display: none;">
+    <div class="info-title" id="infoTitle" onclick="goToDetail()">加载中...</div>
+    <div class="info-author" id="infoAuthor" onclick="goToAuthor()">
+        <i class="fas fa-user"></i>
+        <span>加载中...</span>
+    </div>
 </div>
 
 <script>
@@ -339,6 +404,8 @@
     const hint = document.getElementById('hint');
     const progressBar = document.getElementById('progressBar');
     const swipeIndicator = document.getElementById('swipeIndicator');
+    const playPauseIndicator = document.getElementById('playPauseIndicator');
+    const zoomIndicator = document.getElementById('zoomIndicator');
 
     let currentGifData = null;
     let touchStartX = 0;
@@ -347,6 +414,11 @@
     let touchEndY = 0;
     let isLoading = false;
     let isSwiping = false;
+    let isFillMode = false; // 是否为填充模式
+    let lastTapTime = 0; // 用于检测双击
+    const bottomInfo = document.getElementById('bottomInfo');
+    const infoTitle = document.getElementById('infoTitle');
+    const infoAuthor = document.getElementById('infoAuthor');
 
     // 显示滑动指示器
     function showSwipeIndicator(direction) {
@@ -389,6 +461,15 @@
             if (result.code === 200 && result.data) {
                 currentGifData = result.data;
                 
+                // 更新底部信息栏
+                if (result.data.workTitle && result.data.authorNickname) {
+                    infoTitle.textContent = result.data.workTitle || '未知作品';
+                    infoAuthor.querySelector('span').textContent = result.data.authorNickname || '未知作者';
+                    bottomInfo.style.display = 'flex';
+                } else {
+                    bottomInfo.style.display = 'none';
+                }
+                
                 // 等待淡出动画完成
                 await new Promise(resolve => setTimeout(resolve, 300));
                 
@@ -402,6 +483,13 @@
                     setTimeout(() => {
                         progressBar.style.width = '0';
                     }, 300);
+                    
+                    // 添加或移除填充模式类
+                    if (isFillMode) {
+                        video.classList.add('fill-mode');
+                    } else {
+                        video.classList.remove('fill-mode');
+                    }
                     
                     // 淡入新视频
                     video.classList.remove('fade-out');
@@ -476,6 +564,75 @@
         }
     }
 
+    function goToAuthor() {
+        if (currentGifData && currentGifData.authorId) {
+            video.classList.add('fade-out');
+            setTimeout(() => {
+                window.location.href = '/download?authorId=' + encodeURIComponent(currentGifData.authorId);
+            }, 200);
+        }
+    }
+
+    // 显示播放/暂停指示器
+    function showPlayPauseIndicator(isPlaying) {
+        const icon = playPauseIndicator.querySelector('i');
+        icon.className = isPlaying ? 'fas fa-play' : 'fas fa-pause';
+        playPauseIndicator.classList.remove('show');
+        // 强制重绘
+        void playPauseIndicator.offsetWidth;
+        playPauseIndicator.classList.add('show');
+    }
+
+    // 切换播放/暂停
+    function togglePlayPause() {
+        if (video.paused) {
+            video.play();
+            showPlayPauseIndicator(false); // 显示播放图标
+        } else {
+            video.pause();
+            showPlayPauseIndicator(true); // 显示暂停图标
+        }
+    }
+
+    // 切换填充模式
+    function toggleFillMode() {
+        isFillMode = !isFillMode;
+        
+        if (isFillMode) {
+            video.classList.add('fill-mode');
+            zoomIndicator.textContent = '填充模式：已启用';
+        } else {
+            video.classList.remove('fill-mode');
+            zoomIndicator.textContent = '填充模式：已关闭';
+        }
+        
+        // 显示提示
+        zoomIndicator.classList.add('show');
+        setTimeout(() => {
+            zoomIndicator.classList.remove('show');
+        }, 1500);
+    }
+
+    // 视频点击事件（区分单击和双击）
+    video.addEventListener('click', (e) => {
+        const currentTime = new Date().getTime();
+        const tapGap = currentTime - lastTapTime;
+        
+        if (tapGap < 300 && tapGap > 0) {
+            // 双击
+            toggleFillMode();
+            lastTapTime = 0; // 重置，防止三击被识别为双击
+        } else {
+            // 单击，延迟执行以区分双击
+            lastTapTime = currentTime;
+            setTimeout(() => {
+                if (new Date().getTime() - lastTapTime >= 300) {
+                    togglePlayPause();
+                }
+            }, 300);
+        }
+    });
+
     // 触摸事件处理（增强版）
     document.addEventListener('touchstart', (e) => {
         touchStartX = e.changedTouches[0].screenX;
@@ -508,15 +665,31 @@
         const deltaY = touchEndY - touchStartY;
         const threshold = 50;
 
-        // 只处理垂直滑动
-        if (Math.abs(deltaY) > threshold) {
-            if (deltaY > 0) {
-                showSwipeIndicator('down');
-            } else {
-                showSwipeIndicator('up');
+        // 判断主要滑动方向
+        if (Math.abs(deltaX) > Math.abs(deltaY)) {
+            // 水平滑动
+            if (Math.abs(deltaX) > threshold) {
+                if (deltaX > 0) {
+                    // 从左往右滑：返回
+                    showSwipeIndicator('left');
+                    setTimeout(() => goBack(), 300);
+                } else {
+                    // 从右往左滑：详情
+                    showSwipeIndicator('right');
+                    setTimeout(() => goToDetail(), 300);
+                }
             }
-            // 加载下一张
-            setTimeout(() => loadRandomGif(), 100);
+        } else {
+            // 垂直滑动
+            if (Math.abs(deltaY) > threshold) {
+                if (deltaY > 0) {
+                    showSwipeIndicator('down');
+                } else {
+                    showSwipeIndicator('up');
+                }
+                // 加载下一张
+                setTimeout(() => loadRandomGif(), 100);
+            }
         }
     }
 
@@ -531,11 +704,15 @@
                 showSwipeIndicator('down');
                 loadRandomGif();
                 break;
+            case 'ArrowLeft':
             case 'Escape':
-                goBack();
+                showSwipeIndicator('left');
+                setTimeout(() => goBack(), 300);
                 break;
+            case 'ArrowRight':
             case 'Enter':
-                goToDetail();
+                showSwipeIndicator('right');
+                setTimeout(() => goToDetail(), 300);
                 break;
         }
     });
