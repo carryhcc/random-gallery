@@ -49,11 +49,11 @@ public class XhsWorkServiceImpl implements XhsWorkService {
         @Override
         public XhsWorkPageVO pageXhsWorksWithFilter(int page, int pageSize, String authorId, Long tagId) {
                 // 分页查询基础表
-                Page<XhsWorkBaseDO> pageParam = new Page<>(page + 1, pageSize); // MyBatis-Plus 页码从1开始
+                Page<XhsWorkBaseDO> pageParam = new Page<>(page, pageSize); // MyBatis-Plus 页码从1开始
                 LambdaQueryWrapper<XhsWorkBaseDO> wrapper = Wrappers.lambdaQuery();
                 wrapper.orderByDesc(XhsWorkBaseDO::getId); // 按 ID 倒序，后添加的排前面
                 // 过滤已删除的数据 (兼容旧数据 null 情况)
-                wrapper.and(w -> w.eq(XhsWorkBaseDO::getIsDelete, false).or().isNull(XhsWorkBaseDO::getIsDelete));
+                wrapper.and(w -> w.eq(XhsWorkBaseDO::getIsDelete, false));
 
                 // 如果指定了作者ID，添加筛选条件
                 if (authorId != null && !authorId.trim().isEmpty()) {

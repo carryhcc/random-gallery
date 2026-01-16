@@ -1,41 +1,166 @@
 # 随机图库 (Random Gallery)
 
-一个基于 Spring Boot 的随机图片展示应用，支持多环境切换、分组管理和图片浏览功能。
+一个基于 **Spring Boot + Next.js** 的现代化前后端分离图片展示应用，支持多环境切换、分组管理和图片浏览功能。
 
 ## 🌟 功能特性
 
 ### 核心功能
 - **随机图片展示** - 获取随机单张图片
+- **随机画廊** - 瀑布流无限滚动
 - **随机套图浏览** - 获取随机套图集合
 - **分组管理** - 支持图片分组查询和管理
-- **分页浏览** - 支持分页加载，提升用户体验
-- **多环境支持** - 支持开发、测试、生产环境切换
+- **随机动图** - 全屏沉浸式体验
+- **图片下载** - 小红书作品下载管理
 
 ### 技术特性
-- **现代化UI** - 响应式设计，支持桌面端和移动端
+- **现代化UI** - React 19 + Tailwind CSS，响应式设计
+- **深色模式** - 完整的深色主题支持
 - **环境切换** - 运行时动态切换数据库环境
-- **缓存优化** - 内置缓存机制，提升访问性能
-- **Docker支持** - 完整的容器化部署方案
-- **RESTful API** - 标准化的API接口设计
+- **PWA支持** - 可安装到主屏幕，离线访问
+- **前后端分离** - Next.js静态导出，单包部署
+
+---
 
 ## 🚀 快速开始
 
 ### 环境要求
-- Java 17+
-- Maven 3.6+
-- MySQL 5.7+
+- **Java** 21+
+- **Maven** 3.6+
+- **MySQL** 5.7+
+- **Node.js** 20+ (仅开发环境需要)
 - Docker (可选)
 
-### 本地开发
+### 开发环境
 
-1. **克隆项目**
+#### 方式一：一键启动（推荐）⭐
+
 ```bash
-git clone <repository-url>
-cd random-gallery
+# 同时启动前后端服务
+./dev-start.sh
+
+# 访问地址：
+# - 前端: http://localhost:3000
+# - 后端: http://localhost:8086
+
+# 按 Ctrl+C 停止所有服务
+# 或者使用停止脚本
+./dev-stop.sh
 ```
 
-2. **配置数据库**
-编辑 `src/main/resources/db.yaml` 文件：
+#### 方式二：分别启动
+
+#### 1. 启动后端
+```bash
+# 配置数据库 (src/main/resources/db.yaml)
+mvn spring-boot:run
+# 访问 http://localhost:8086
+```
+
+#### 2. 启动前端
+```bash
+cd frontend
+npm install
+npm run dev
+# 访问 http://localhost:3000
+```
+
+### 生产部署
+
+#### 方式一：统一构建（推荐）
+
+```bash
+# 一键构建前后端
+./build-all.sh
+
+# 运行 JAR 包
+java -jar target/random-gallery-0.0.1-SNAPSHOT.jar
+
+# 或使用 Docker
+docker load < random-gallery-*.tar.gz
+docker run -p 8086:8086 random-gallery:latest
+```
+
+#### 方式二：手动构建
+
+```bash
+# 1. 构建前端
+cd frontend
+npm run build:prod
+cd ..
+
+# 2. 构建后端（已包含前端）
+mvn clean package -DskipTests
+
+# 3. 运行
+java -jar target/random-gallery-*.jar
+```
+
+---
+
+## 📖 API 文档
+
+### 图片相关接口
+
+| 接口 | 方法 | 描述 |
+|------|------|------|
+| `/api/pic/random/one` | GET | 获取随机单张图片 |
+| `/api/pic/list` | POST | 根据分组查询图片列表 |
+
+### 分组管理接口
+
+| 接口 | 方法 | 描述 |
+|------|------|------|
+| `/api/group/randomGroupInfo` | GET | 获取随机分组信息 |
+| `/api/group/list/paged` | POST | 分页查询分组列表 |
+
+### 系统管理接口
+
+| 接口 | 方法 | 描述 |
+|------|------|------|
+| `/api/system/env/currentInfo` | GET | 获取当前环境信息 |
+| `/api/system/env/{env}` | GET | 切换环境（dev/test/prod） |
+
+### 下载管理接口
+
+| 接口 | 方法 | 描述 |
+|------|------|------|
+| `/api/xhs/work/list` | POST | 获取作品列表 |
+| `/api/xhs/work/{workId}` | GET | 获取作品详情 |
+| `/api/xhs/work/addDownloadTask` | POST | 添加下载任务 |
+
+---
+
+## 🏗️ 项目结构
+
+```
+random-gallery/
+├── frontend/                      # Next.js 前端项目
+│   ├── src/
+│   │   ├── app/                  # 页面和路由
+│   │   ├── components/           # React 组件
+│   │   └── lib/                  # 工具库和API
+│   ├── public/                   # 静态资源
+│   ├── next.config.ts            # Next.js 配置
+│   └── package.json
+│
+├── src/main/                     # Spring Boot 后端
+│   ├── java/                     # Java源码
+│   └── resources/
+│       ├── static/               # 前端构建产物（自动生成）
+│       ├── mapper/               # MyBatis 映射
+│       └── application.yml       # 应用配置
+│
+├── pom.xml                       # Maven 配置
+├── Dockerfile                    # Docker 镜像构建
+└── build-all.sh                  # 统一构建脚本
+```
+
+---
+
+## ⚙️ 配置说明
+
+### 数据库配置 (`src/main/resources/db.yaml`)
+
 ```yaml
 db:
   host: localhost
@@ -45,153 +170,116 @@ db:
   password: your_password
 ```
 
-3. **运行应用**
-```bash
-mvn spring-boot:run
+### 前端环境变量
+
+**开发环境** (frontend/.env.local):
+```env
+NEXT_PUBLIC_API_URL=http://localhost:8086/api
 ```
 
-应用将在 `http://localhost:8086` 启动
-
-### Docker 部署
-
-#### 方式一：使用构建脚本（推荐）
-```bash
-# 一键构建和导出
-./build-and-export.sh
+**生产环境** (frontend/.env.production):
+```env
+NEXT_PUBLIC_API_URL=/api
 ```
 
-#### 方式二：手动构建
-```bash
-# 1. Maven打包
-mvn clean package -DskipTests
+---
 
-# 2. 构建Docker镜像
-docker build -t helloworld:latest .
+## 🎨 技术栈
 
-# 3. 运行容器
-docker run -p 8086:8086 helloworld:latest
-```
+### 前端
+- **框架**: Next.js 16.1.2 (App Router)
+- **UI库**: React 19.2.3
+- **语言**: TypeScript 5
+- **样式**: Tailwind CSS 4
+- **状态管理**: Zustand + TanStack Query
+- **HTTP**: Axios
+- **图标**: Lucide React
+- **主题**: next-themes
+- **PWA**: @ducanh2912/next-pwa
 
-#### 自定义数据库配置
-```bash
-docker run -p 8086:8086 \
-  -e DB_HOST=your_host \
-  -e DB_USERNAME=your_user \
-  -e DB_PASSWORD=your_pass \
-  helloworld:latest
-```
+### 后端
+- **框架**: Spring Boot 3.4.0
+- **数据库**: MySQL 8.0
+- **ORM**: MyBatis-Plus 3.5.15
+- **语言**: Java 21
+- **工具**: Lombok, Hutool
 
-## 📖 API 文档
-
-### 图片相关接口
-
-| 接口 | 方法 | 描述 |
-|------|------|------|
-| `/api/pic/random` | GET | 获取随机单张图片 |
-| `/api/pic/group` | GET | 获取随机套图 |
-| `/api/pic/group/paged` | GET | 分页获取套图 |
-
-### 分组管理接口
-
-| 接口 | 方法 | 描述 |
-|------|------|------|
-| `/api/group/list` | POST | 查询分组列表 |
-| `/api/group/count` | POST | 查询分组总数 |
-| `/api/group/list/paged` | POST | 分页查询分组列表 |
-
-### 系统管理接口
-
-| 接口 | 方法 | 描述 |
-|------|------|------|
-| `/api/system/env/current` | GET | 获取当前环境 |
-| `/api/system/env/dev` | GET | 切换到开发环境 |
-| `/api/system/env/test` | GET | 切换到测试环境 |
-| `/api/system/env/prod` | GET | 切换到生产环境 |
-
-### 页面路由
-
-| 路由 | 描述 |
-|------|------|
-| `/` | 首页 |
-| `/showPic` | 随机图片页面 |
-| `/showPicList` | 图片列表页面 |
-| `/groupList` | 分组列表页面 |
-
-## 🏗️ 项目结构
-
-```
-src/
-├── main/
-│   ├── java/com/example/randomGallery/
-│   │   ├── controller/          # 控制器层
-│   │   ├── entity/             # 实体类
-│   │   ├── server/             # 服务层
-│   │   ├── utils/              # 工具类
-│   │   └── config/             # 配置类
-│   └── resources/
-│       ├── static/             # 静态资源
-│       ├── templates/          # 模板文件
-│       └── mapper/             # MyBatis映射文件
-└── test/                       # 测试代码
-```
-
-## ⚙️ 配置说明
-
-### 应用配置 (`application.yml`)
-```yaml
-server:
-  port: 8086
-
-spring:
-  application:
-    name: random-gallery
-  datasource:
-    url: jdbc:mysql://${db.host}:${db.port}/${db.name}?useUnicode=true&characterEncoding=utf8&serverTimezone=UTC&allowPublicKeyRetrieval=true&useSSL=false
-    username: ${db.username}
-    password: ${db.password}
-    driver-class-name: com.mysql.cj.jdbc.Driver
-```
-
-### 数据库配置 (`db.yaml`)
-```yaml
-db:
-  host: 111.111.111.111
-  port: 3306
-  name: test
-  username: root
-  password: root
-```
+---
 
 ## 🔧 开发指南
 
-### 环境切换功能
-应用支持运行时动态切换数据库环境：
-- 通过Web界面右上角的环境切换器
-- 通过API接口 `/api/system/env/{env}`
+### 添加新页面
 
-### 缓存机制
-- 内置 `CacheService` 提供缓存功能
-- 支持随机ID和分组ID的缓存
-- 定时器机制自动刷新缓存
+1. 在 `frontend/src/app/` 下创建路由目录
+2. 创建 `page.tsx` 和 `layout.tsx`
+3. 在 `lib/api.ts` 中添加API接口
+4. 使用 TanStack Query 进行数据获取
 
-### 数据库设计
-应用使用MySQL数据库，主要表结构：
-- 图片信息表：存储图片URL和基本信息
-- 分组表：存储图片分组信息
-- 支持多环境数据库配置
+### 环境切换
+
+- 左上角下拉菜单可切换开发/测试/生产环境
+- 切换后自动刷新统计信息
+- 支持运行时动态切换数据源
+
+### 主题切换
+
+- 右上角按钮切换深色/浅色模式
+- 支持系统偏好自动切换
+- 所有组件完整适配深色模式
+
+---
 
 ## 📦 部署说明
 
-### 生产环境部署
-1. 确保数据库连接配置正确
-2. 使用构建脚本生成Docker镜像
-3. 配置环境变量进行数据库连接
-4. 使用反向代理（如Nginx）进行负载均衡
+### Docker 部署（推荐）
 
-### 监控和日志
-- 应用日志输出到 `logs/app.log`
-- 支持不同级别的日志配置
-- 建议配置日志轮转和监控告警
+```bash
+# 1. 构建
+./build-all.sh
+
+# 2. 加载镜像
+docker load < random-gallery-*.tar.gz
+
+# 3. 运行
+docker run -d \
+  --name random-gallery \
+  --restart unless-stopped \
+  -p 8086:8086 \
+  -e DB_HOST=your-db-host \
+  -e DB_USERNAME=root \
+  -e DB_PASSWORD=your-pass \
+  random-gallery:latest
+```
+
+### 传统部署
+
+```bash
+# 1. 构建
+./build-all.sh
+
+# 2. 运行
+java -jar target/random-gallery-*.jar \
+  --spring.datasource.url=jdbc:mysql://host:3306/db
+```
+
+---
+
+## 📝 更新日志
+
+### v2.0.0 (2026-01-15)
+- ✅ 前后端完全分离
+- ✅ 使用 Next.js 15 + React 19 重构前端
+- ✅ 移除 Freemarker 模板引擎
+- ✅ 新增深色模式支持
+- ✅ 新增 PWA 支持
+- ✅ 全面移动端优化
+- ✅ 瀑布流布局优化
+- ✅ 统一构建脚本
+
+### v1.0.0
+- 基于 Spring Boot + Freemarker 的传统架构
+
+---
 
 ## 🤝 贡献指南
 
@@ -201,9 +289,19 @@ db:
 4. 推送到分支 (`git push origin feature/AmazingFeature`)
 5. 打开 Pull Request
 
+---
+
 ## 📄 许可证
 
-本项目采用 MIT 许可证 - 查看 [LICENSE](LICENSE) 文件了解详情
+本项目采用 MIT 许可证
+
+---
+
+## ⭐ Star History
+
+如果这个项目对您有帮助，请给它一个星标！
+
+---
 
 ## 📞 联系方式
 
@@ -211,7 +309,3 @@ db:
 - 提交 Issue
 - 发送邮件
 - 项目讨论区
-
----
-
-⭐ 如果这个项目对您有帮助，请给它一个星标！
