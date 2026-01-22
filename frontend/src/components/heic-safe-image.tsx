@@ -2,7 +2,10 @@
 
 import Image, { ImageProps } from 'next/image';
 import { useHeicConverter } from '@/hooks/use-heic-converter';
+import { useSafeMode } from '@/contexts/safe-mode-context';
 import { Loader2 } from 'lucide-react';
+
+const SAFE_IMAGE_URL = 'http://yanxuan.nosdn.127.net/1541445967645114dd75f6b0edc4762d.png';
 
 interface HeicSafeImageProps extends Omit<ImageProps, 'src'> {
     src: string;
@@ -10,10 +13,14 @@ interface HeicSafeImageProps extends Omit<ImageProps, 'src'> {
 }
 
 /**
- * Image component that automatically handles HEIC format conversion
+ * Image component that automatically handles HEIC format conversion and safe mode
  */
 export function HeicSafeImage({ src, showLoader = true, alt, ...props }: HeicSafeImageProps) {
-    const { convertedUrl, isConverting } = useHeicConverter(src);
+    const { isSafeMode } = useSafeMode();
+
+    // 如果是安全模式，直接使用安全图片，跳过 HEIC 转换
+    const effectiveSrc = isSafeMode ? SAFE_IMAGE_URL : src;
+    const { convertedUrl, isConverting } = useHeicConverter(effectiveSrc);
 
     if (isConverting && showLoader) {
         return (

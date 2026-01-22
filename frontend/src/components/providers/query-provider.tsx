@@ -1,6 +1,7 @@
 'use client';
 
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { SafeModeProvider } from '@/contexts/safe-mode-context';
 import { useState, type ReactNode } from 'react';
 
 export function QueryProvider({ children }: { children: ReactNode }) {
@@ -18,7 +19,9 @@ export function QueryProvider({ children }: { children: ReactNode }) {
 
     return (
         <QueryClientProvider client={queryClient}>
-            {children}
+            <SafeModeProvider>
+                {children}
+            </SafeModeProvider>
         </QueryClientProvider>
     );
 }

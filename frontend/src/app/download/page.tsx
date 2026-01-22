@@ -8,6 +8,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import type { XhsAuthor, XhsTag } from '@/lib/types';
 import _ from 'lodash';
+import { SafeImage } from '@/components/safe-image';
 
 // Marquee Component
 const MarqueeRow = ({
@@ -243,7 +244,7 @@ export default function DownloadPage() {
                             >
                                 <div className="relative aspect-[3/4] rounded-lg overflow-hidden bg-zinc-200 dark:bg-zinc-800 mb-2">
                                     <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
-                                    <img
+                                    <SafeImage
                                         src={work.coverImageUrl}
                                         alt={work.workTitle}
                                         className="absolute inset-0 w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
