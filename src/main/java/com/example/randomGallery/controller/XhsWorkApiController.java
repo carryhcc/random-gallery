@@ -56,9 +56,10 @@ public class XhsWorkApiController {
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "5") int size, // Default to 5 as requested
             @RequestParam(required = false) String authorId,
-            @RequestParam(required = false) Long tagId) {
-        log.info("查询作品列表，page={}, size={}, authorId={}, tagId={}", page, size, authorId, tagId);
-        XhsWorkPageVO result = xhsWorkService.pageXhsWorksWithFilter(page, size, authorId, tagId);
+            @RequestParam(required = false) Long tagId,
+            @RequestParam(required = false) String str) {
+        log.info("查询作品列表，page={}, size={}, authorId={}, tagId={}, str={}", page, size, authorId, tagId, str);
+        XhsWorkPageVO result = xhsWorkService.pageXhsWorksWithFilter(page, size, authorId, tagId, str);
         return Result.success(result);
     }
 
