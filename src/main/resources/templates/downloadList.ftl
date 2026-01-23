@@ -7,76 +7,47 @@
     <title>下载浏览 - 随机图库</title>
     <link rel="preconnect" href="https://fonts.loli.net">
     <link rel="preconnect" href="https://gstatic.loli.net" crossorigin>
-    <link href="https://fonts.loli.net/css2?family=Inter:wght@400;500;600;700&family=Poppins:wght@600;700&display=swap"
-          rel="stylesheet">
+    <link href="https://fonts.loli.net/css2?family=Inter:wght@400;500;600;700&family=Poppins:wght@600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.bootcdn.net/ajax/libs/font-awesome/6.4.2/css/all.min.css">
-    <link rel="stylesheet" href="https://cdn.bootcdn.net/ajax/libs/choices.js/10.2.0/choices.min.css">
     <link rel="stylesheet" href="/css/style.css">
-    <script src="https://cdn.bootcdn.net/ajax/libs/choices.js/10.2.0/choices.min.js"></script>
-    <script src="https://cdn.bootcdn.net/ajax/libs/masonry/4.2.2/masonry.pkgd.min.js"></script>
-    <script src="https://cdn.bootcdn.net/ajax/libs/jquery.imagesloaded/5.0.0/imagesloaded.pkgd.min.js"></script>
+    <script src="/js/theme.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/heic2any@0.0.4/dist/heic2any.min.js"></script>
     <script src="/js/heic-converter.js"></script>
-    <script src="/js/theme.js"></script>
+    <script src="https://cdn.bootcdn.net/ajax/libs/jquery.imagesloaded/5.0.0/imagesloaded.pkgd.min.js"></script>
+    <script src="https://cdn.bootcdn.net/ajax/libs/masonry/4.2.2/masonry.pkgd.min.js"></script>
     <style>
-        .choices {
-            margin-bottom: 0;
-            font-size: var(--font-size-base);
-            overflow: visible;
-            width: auto;
-            min-width: 250px;
-            max-width: 100%;
-        }
-        .choices__inner {
-            background-color: var(--color-bg-primary);
-            border: 1px solid var(--color-border);
-            border-radius: var(--radius-md);
-            min-height: 44px;
-            color: var(--color-text-primary);
-            display: flex;
-            align-items: center;
-        }
-        .choices__list--dropdown {
-            background-color: var(--color-bg-card);
-            border: 1px solid var(--color-border);
-            color: var(--color-text-primary);
-            z-index: 100;
-        }
-        .choices__item--choice.is-highlighted {
-            background-color: var(--color-bg-hover);
-            color: var(--color-text-primary);
-        }
-        .choices__input {
-            background-color: transparent !important;
-            color: var(--color-text-primary) !important;
-        }
-        .choices__button {
-            border-left: 1px solid var(--color-border);
-            margin: 0 0 0 8px;
-            padding-left: 8px;
-            opacity: 0.6;
-        }
-        .choices__button:hover {
-            opacity: 1;
-        }
-
-        /* 小红书风格的瀑布流布局 */
+        /* --- [1. 基础布局及 Masonry 桌面端适配] --- */
         .masonry-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-            gap: 16px;
+            display: block; /* 必须为 block，Masonry 才能计算绝对定位 */
+            position: relative;
             width: 100%;
+            margin: 0 auto;
         }
 
+        /* --- [2. 核心修复：移动端样式隔离] --- */
         @media (max-width: 768px) {
             .masonry-grid {
-                grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+                display: grid !important;
+                grid-template-columns: repeat(2, 1fr);
                 gap: 12px;
+                height: auto !important; /* 覆盖 Masonry 计算的高度 */
+            }
+            .masonry-item {
+                position: relative !important;
+                top: 0 !important;
+                left: 0 !important;
+                width: 100% !important;
+                margin-bottom: 0 !important;
+            }
+            .masonry-grid.single-column {
+                grid-template-columns: 1fr;
             }
         }
 
+        /* --- [3. 还原您的全部小红书样式细节] --- */
         .masonry-item {
-            break-inside: avoid;
+            /* 桌面端默认宽度，Masonry 初始化后会根据 gutter 自动调整 */
+            width: calc(33.333% - 16px);
             margin-bottom: 16px;
             background: var(--color-bg-card);
             border-radius: var(--radius-lg);
@@ -84,6 +55,8 @@
             cursor: pointer;
             transition: all var(--transition-fast);
             box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+            display: inline-block;
+            vertical-align: top;
         }
 
         .masonry-item:hover {
@@ -92,367 +65,183 @@
         }
 
         .masonry-item img {
-            width: 100%;
-            height: auto;
-            display: block;
-            object-fit: cover;
+            width: 100%; height: auto; display: block; object-fit: cover;
         }
 
-        .masonry-item-info {
-            padding: 12px;
-        }
+        .masonry-item-info { padding: 12px; }
 
         .masonry-item-title {
-            font-size: var(--font-size-base);
-            font-weight: 600;
-            color: var(--color-text-primary);
-            margin-bottom: 8px;
-            overflow: hidden;
-            text-overflow: ellipsis;
-            display: -webkit-box;
-            -webkit-line-clamp: 2;
-            -webkit-box-orient: vertical;
+            font-size: var(--font-size-base); font-weight: 600;
+            color: var(--color-text-primary); margin-bottom: 8px;
+            overflow: hidden; text-overflow: ellipsis;
+            display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical;
         }
 
         .masonry-item-meta {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            font-size: var(--font-size-sm);
-            color: var(--color-text-secondary);
+            display: flex; align-items: center; justify-content: space-between;
+            font-size: var(--font-size-sm); color: var(--color-text-secondary);
         }
 
-        .masonry-item-author {
-            display: flex;
-            align-items: center;
-            gap: 4px;
-        }
+        .masonry-item-author { display: flex; align-items: center; gap: 4px; }
 
-        .masonry-item-counts {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
+        .count-badge { display: flex; align-items: center; gap: 4px; }
 
-        .count-badge {
-            display: flex;
-            align-items: center;
-            gap: 4px;
-        }
-
-        /* 搜索框样式 */
-        .search-section {
-            margin-bottom: 1.5rem;
-        }
-
-        .search-wrapper {
-            position: relative;
-            max-width: 600px;
-            margin: 0 auto;
-        }
-
+        /* --- [4. 还原搜索及推荐区域样式] --- */
+        .search-section { margin-bottom: 1.5rem; }
+        .search-wrapper { position: relative; max-width: 100%; }
         .search-input {
-            width: 100%;
-            padding: 12px 48px 12px 16px;
-            border: 1px solid var(--color-border);
-            border-radius: var(--radius-lg);
-            background: var(--color-bg-primary);
-            color: var(--color-text-primary);
-            font-size: var(--font-size-base);
-            transition: all var(--transition-fast);
+            width: 100%; padding: 14px 100px 14px 16px;
+            border: 2px solid var(--color-border); border-radius: var(--radius-lg);
+            background: var(--color-bg-primary); color: var(--color-text-primary);
+            font-size: var(--font-size-base); transition: all var(--transition-fast);
         }
-
-        .search-input:focus {
-            outline: none;
-            border-color: var(--color-primary);
-            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
-        }
-
+        .search-input:focus { outline: none; border-color: var(--color-primary); box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1); }
         .search-btn {
-            position: absolute;
-            right: 8px;
-            top: 50%;
-            transform: translateY(-50%);
-            background: var(--color-primary);
-            border: none;
-            color: white;
-            width: 36px;
-            height: 36px;
-            border-radius: var(--radius-md);
-            cursor: pointer;
-            transition: all var(--transition-fast);
+            position: absolute; right: 8px; top: 50%; transform: translateY(-50%);
+            background: var(--color-primary); border: none; color: white;
+            width: 40px; height: 40px; border-radius: var(--radius-md); cursor: pointer;
+            display: flex; align-items: center; justify-content: center;
+        }
+        .more-btn {
+            position: absolute; right: 56px; top: 50%; transform: translateY(-50%);
+            background: var(--color-bg-secondary); border: 1px solid var(--color-border);
+            color: var(--color-text-secondary); padding: 0 16px; height: 40px;
+            border-radius: var(--radius-md); cursor: pointer; display: flex; align-items: center; gap: 6px; font-size: var(--font-size-sm);
+        }
+        .more-btn.active i { transform: rotate(180deg); }
+
+        /* --- [5. 还原推荐列表样式] --- */
+        .recommendation-section {
+            margin-bottom: 1rem; background: var(--color-bg-card);
+            border-radius: var(--radius-lg); padding: 1rem; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+        }
+        .recommendation-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.75rem; }
+        .recommendation-header h3 { font-size: var(--font-size-base); font-weight: 600; color: var(--color-text-primary); margin: 0; display: flex; align-items: center; gap: 0.5rem; }
+        .refresh-btn {
+            display: flex; align-items: center; gap: 0.5rem; padding: 6px 12px;
+            background: var(--color-bg-secondary); border: 1px solid var(--color-border);
+            border-radius: var(--radius-md); color: var(--color-text-secondary); cursor: pointer; font-size: var(--font-size-xs);
+        }
+        .recommendation-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(100px, 1fr)); gap: 8px; }
+
+        @media (max-width: 768px) {
+            .recommendation-grid { grid-template-columns: repeat(auto-fill, minmax(80px, 1fr)); gap: 6px; }
         }
 
-        .search-btn:hover {
-            background: var(--color-primary-dark);
+        .recommendation-item {
+            background: var(--color-bg-secondary); border: 2px solid var(--color-border);
+            border-radius: var(--radius-md); padding: 8px 6px; text-align: center;
+            cursor: pointer; transition: all var(--transition-fast); overflow: hidden;
+            min-height: 60px; display: flex; flex-direction: column; justify-content: center;
         }
+        .recommendation-item:hover { border-color: var(--color-primary); background: var(--color-bg-hover); transform: translateY(-2px); }
+        .recommendation-item.active { border-color: var(--color-primary); background: linear-gradient(135deg, rgba(102, 126, 234, 0.1) 0%, rgba(118, 75, 162, 0.1) 100%); }
+        .recommendation-name { font-weight: 600; font-size: var(--font-size-sm); color: var(--color-text-primary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .recommendation-count { font-size: 11px; color: var(--color-text-secondary); }
+
+        .clear-filter-btn {
+            margin-top: 0.75rem; display: none; align-items: center; justify-content: center;
+            gap: 0.5rem; padding: 8px 16px; background: var(--color-bg-secondary);
+            border: 1px solid var(--color-border); border-radius: var(--radius-md);
+            color: var(--color-text-secondary); cursor: pointer; width: 100%; font-size: var(--font-size-sm);
+        }
+        .clear-filter-btn.show { display: flex; }
+
+        .recommendations-container { max-height: 0; overflow: hidden; transition: max-height 0.3s ease-out; }
+        .recommendations-container.show { max-height: 1500px; transition: max-height 0.5s ease-in; }
     </style>
 </head>
 <body>
 
-<!-- 导航栏 -->
 <header class="navbar">
     <div class="navbar-content">
-        <div class="navbar-brand">
-            <i class="fas fa-list"></i>
-            <span>下载浏览</span>
-        </div>
+        <div class="navbar-brand"><i class="fas fa-list"></i> <span>下载浏览</span></div>
         <div class="navbar-actions">
-            <button class="btn btn-secondary btn-sm" onclick="window.location.href='/download'">
-                <i class="fas fa-download"></i>
-                <span class="hidden-mobile">图片下载</span>
-            </button>
-            <button class="btn btn-secondary btn-sm" onclick="window.location.href='/'">
-                <i class="fas fa-home"></i>
-                <span class="hidden-mobile">首页</span>
-            </button>
+            <button class="btn btn-secondary btn-sm" onclick="window.location.href='/download'"><i class="fas fa-download"></i> <span class="hidden-mobile">图片下载</span></button>
+            <button class="btn btn-secondary btn-sm" onclick="window.location.href='/'"><i class="fas fa-home"></i> <span class="hidden-mobile">首页</span></button>
         </div>
     </div>
 </header>
 
-<!-- 主内容 -->
 <main class="container gallery-container">
     <div id="toast" class="toast"></div>
 
-    <!-- 搜索区 -->
     <div class="search-section animate-fade-in">
         <div class="search-wrapper">
-            <input 
-                type="text" 
-                id="searchInput" 
-                class="search-input" 
-                placeholder="搜索作品标题、描述..."
-                autocomplete="off">
-            <button id="searchBtn" class="search-btn">
-                <i class="fas fa-search"></i>
-            </button>
+            <input type="text" id="searchInput" class="search-input" placeholder="搜索作品标题、描述..." autocomplete="off">
+            <button id="moreBtn" class="more-btn"><i class="fas fa-chevron-down"></i> <span>更多</span></button>
+            <button id="searchBtn" class="search-btn"><i class="fas fa-search"></i></button>
         </div>
     </div>
 
-    <!-- 筛选区域 -->
-    <div class="filter-section animate-fade-in">
-        <!-- Tab切换头部 -->
-        <div class="filter-tabs">
-            <button class="filter-tab active" data-tab="author" id="tabAuthor">
-                <i class="fas fa-user"></i>
-                <span>按作者筛选</span>
-            </button>
-            <button class="filter-tab" data-tab="tag" id="tabTag">
-                <i class="fas fa-tag"></i>
-                <span>按标签筛选</span>
-            </button>
+    <div id="recommendationsContainer" class="recommendations-container">
+        <div class="recommendation-section animate-fade-in">
+            <div class="recommendation-header">
+                <h3><i class="fas fa-user"></i> 作者推荐</h3>
+                <button class="refresh-btn" onclick="refreshAuthors()"><i class="fas fa-sync-alt"></i> <span>下一批</span></button>
+            </div>
+            <div id="authorRecommendations" class="recommendation-grid"></div>
         </div>
-        
-        <!-- Tab内容区 -->
-        <div class="filter-content">
-            <!-- 作者筛选面板 -->
-            <div class="filter-panel active" data-panel="author">
-                <div>
-                    <select id="authorFilter" class="filter-select">
-                        <option value="">请选择作者</option>
-                    </select>
-                </div>
+
+        <div class="recommendation-section animate-fade-in">
+            <div class="recommendation-header">
+                <h3><i class="fas fa-tag"></i> 标签推荐</h3>
+                <button class="refresh-btn" onclick="refreshTags()"><i class="fas fa-sync-alt"></i> <span>下一批</span></button>
             </div>
-            
-            <!-- 标签筛选面板 -->
-            <div class="filter-panel" data-panel="tag">
-                <div>
-                    <select id="tagFilter" class="filter-select">
-                        <option value="">请选择标签</option>
-                    </select>
-                </div>
-            </div>
+            <div id="tagRecommendations" class="recommendation-grid"></div>
+            <button id="clearFilterBtn" class="clear-filter-btn"><i class="fas fa-times-circle"></i> <span>清除筛选</span></button>
         </div>
     </div>
 
-    <!-- 作品列表 -->
     <div id="worksGrid" class="masonry-grid animate-fade-in"></div>
 
-    <!-- 空状态 -->
     <div id="emptyState" class="empty-state hidden">
         <i class="fas fa-inbox"></i>
         <p>暂无作品数据</p>
-        <p style="font-size: var(--font-size-sm); margin-top: 0.5rem;">请选择筛选条件或输入搜索关键词</p>
     </div>
 
-    <!-- 加载中 -->
-    <div id="loading" class="loading hidden">
-        <div class="spinner"></div>
-        <span>加载更多作品...</span>
-    </div>
-
-    <!-- 加载完成 -->
-    <div id="end" class="text-center hidden end-message">
-        <i class="fas fa-check-circle end-icon"></i>
-        <p>已加载全部作品</p>
-    </div>
-
+    <div id="loading" class="loading hidden"><div class="spinner"></div> <span>加载更多作品...</span></div>
+    <div id="end" class="text-center hidden end-message"><i class="fas fa-check-circle"></i> <p>已加载全部作品</p></div>
     <div id="sentinel" class="sentinel"></div>
 </main>
 
 <script>
-    const searchInput = document.getElementById('searchInput');
-    const searchBtn = document.getElementById('searchBtn');
-    const worksGrid = document.getElementById('worksGrid');
-    const emptyState = document.getElementById('emptyState');
-    const toast = document.getElementById('toast');
-    const tabAuthor = document.getElementById('tabAuthor');
-    const tabTag = document.getElementById('tabTag');
-    const authorFilter = document.getElementById('authorFilter');
-    const tagFilter = document.getElementById('tagFilter');
-    const loadingEl = document.getElementById('loading');
-    const endEl = document.getElementById('end');
+    // 变量初始化
+    var searchInput = document.getElementById('searchInput');
+    var searchBtn = document.getElementById('searchBtn');
+    var moreBtn = document.getElementById('moreBtn');
+    var recommendationsContainer = document.getElementById('recommendationsContainer');
+    var worksGrid = document.getElementById('worksGrid');
+    var emptyState = document.getElementById('emptyState');
+    var loadingEl = document.getElementById('loading');
+    var endEl = document.getElementById('end');
+    var clearFilterBtn = document.getElementById('clearFilterBtn');
 
-    let page = 0;
-    let isLoading = false;
-    let hasMore = true;
-    let toastTimer;
-    let currentAuthorId = null;
-    let currentTagId = null;
-    let currentSearchStr = null;
-    let currentTab = 'author';
-    let masonryInstance = null;
+    var page = 1, isLoading = false, hasMore = true;
+    var currentAuthorId = null, currentTagId = null, currentSearchStr = null;
+    var masonryInstance = null;
+    var allAuthors = [], allTags = [];
+    var RECOMMENDATION_SIZE = 8;
 
-    function showToast(message, type = 'success') {
-        clearTimeout(toastTimer);
-        toast.textContent = message;
-        toast.className = 'toast show ' + type;
-        toastTimer = setTimeout(() => {
-            toast.className = 'toast';
-        }, 3000);
-    }
+    // --- 核心布局管理 ---
+    function isMobile() { return window.innerWidth <= 768; }
 
-    // 加载作者和标签筛选列表
-    async function loadFilters() {
-        try {
-            const commonConfig = {
-                searchEnabled: true,
-                itemSelectText: '',
-                noResultsText: '无匹配结果',
-                noChoicesText: '无可用选项',
-                placeholder: true,
-                searchPlaceholderValue: '搜索...',
-                shouldSort: false,
-                loadingText: '加载中...',
-                removeItemButton: true,
-            };
-
-            // 初始化作者下拉框
-            window.authorChoices = new Choices(authorFilter, {
-                ...commonConfig,
-            });
-
-            // 初始化标签下拉框
-            window.tagChoices = new Choices(tagFilter, {
-                ...commonConfig,
-            });
-
-            // 加载作者列表
-            const authorsRes = await fetch('/api/xhsWork/authors');
-            const authorsData = await authorsRes.json();
-
-            if (authorsData.code === 200 && authorsData.data) {
-                const choicesData = authorsData.data.map(author => ({
-                    value: String(author.authorId),
-                    label: (author.authorNickname || author.authorId) + ' (' + (author.workCount || 0) + ')',
-                    selected: false,
-                    disabled: false,
-                }));
-                choicesData.unshift({ 
-                    value: '', 
-                    label: '请选择作者', 
-                    selected: true, 
-                    disabled: false,
-                    placeholder: true 
-                });
-                
-                window.authorChoices.setChoices(choicesData, 'value', 'label', true);
+    function manageLayout() {
+        if (isMobile()) {
+            if (masonryInstance) {
+                masonryInstance.destroy();
+                masonryInstance = null;
             }
-
-            // 加载标签列表
-            const tagsRes = await fetch('/api/xhsWork/tags');
-            const tagsData = await tagsRes.json();
-
-            if (tagsData.code === 200 && tagsData.data) {
-                const choicesData = tagsData.data.map(tag => ({
-                    value: String(tag.id), 
-                    label: tag.tagName + ' (' + (tag.workCount || 0) + ')',
-                    selected: false,
-                    disabled: false,
-                }));
-                choicesData.unshift({ 
-                    value: '', 
-                    label: '请选择标签', 
-                    selected: true, 
-                    disabled: false,
-                    placeholder: true 
+            updateGridMode();
+        } else {
+            if (!masonryInstance && worksGrid.children.length > 0) {
+                masonryInstance = new Masonry(worksGrid, {
+                    itemSelector: '.masonry-item',
+                    percentPosition: true,
+                    gutter: 16
                 });
-                
-                window.tagChoices.setChoices(choicesData, 'value', 'label', true);
             }
-        } catch (error) {
-            console.error('加载筛选条件失败:', error);
-            showToast('加载筛选条件失败: ' + error.message, 'error');
-        }
-    }
-
-    // 创建作品卡片（小红书风格）
-    function createWorkCard(work) {
-        const card = document.createElement('div');
-        card.className = 'masonry-item';
-        card.onclick = () => {
-            window.location.href = '/downloadDetail?workId=' + encodeURIComponent(work.workId);
-        };
-
-        const coverUrl = work.coverImageUrl || '';
-        const title = work.workTitle || '无标题';
-        const author = work.authorNickname || '未知作者';
-        const imageCount = work.imageCount || 0;
-        const gifCount = work.gifCount || 0;
-
-        // 创建封面图片元素
-        if (coverUrl) {
-            const coverImg = document.createElement('img');
-            coverImg.alt = title;
-            coverImg.loading = 'lazy';
-            card.appendChild(coverImg);
-            // 使用 HEIC 转换工具异步设置图片源
-            setImageSrc(coverImg, coverUrl).catch(err => {
-                console.warn('封面图片加载失败:', coverUrl, err);
-            });
-        }
-        
-        // 创建作品信息区
-        const workInfo = document.createElement('div');
-        workInfo.className = 'masonry-item-info';
-        workInfo.innerHTML = 
-            '<div class="masonry-item-title">' + title + '</div>' +
-            '<div class="masonry-item-meta">' +
-                '<div class="masonry-item-author">' +
-                    '<i class="fas fa-user"></i>' +
-                    '<span>' + author + '</span>' +
-                '</div>' +
-                '<div class="masonry-item-counts">' +
-                    (imageCount > 0 ? '<span class="count-badge"><i class="fas fa-image"></i> ' + imageCount + '</span>' : '') +
-                    (gifCount > 0 ? '<span class="count-badge"><i class="fas fa-film"></i> ' + gifCount + '</span>' : '') +
-                '</div>' +
-            '</div>';
-        card.appendChild(workInfo);
-
-        return card;
-    }
-
-    // 初始化 Masonry
-    function initMasonry() {
-        if (!masonryInstance && worksGrid.children.length > 0) {
-            masonryInstance = new Masonry(worksGrid, {
-                itemSelector: '.masonry-item',
-                percentPosition: true,
-                gutter: 16
-            });
-            
-            // 使用 imagesLoaded 确保图片加载后重新布局
-            if (typeof imagesLoaded === 'function') {
+            if (masonryInstance) {
                 imagesLoaded(worksGrid).on('progress', function() {
                     masonryInstance.layout();
                 });
@@ -460,230 +249,184 @@
         }
     }
 
-    // 更新 Masonry 布局
-    function updateMasonry() {
-        if (masonryInstance) {
-            imagesLoaded(worksGrid).on('progress', function() {
-                masonryInstance.reloadItems();
-                masonryInstance.layout();
-            });
+    function updateGridMode() {
+        if (worksGrid.querySelectorAll('.masonry-item').length <= 1) {
+            worksGrid.classList.add('single-column');
+        } else {
+            worksGrid.classList.remove('single-column');
         }
     }
 
-    // 加载作品列表
-    async function loadPage(reset = false) {
+    // --- 数据加载核心 (修复 FTL 冲突) ---
+    async function loadPage(reset) {
         if (isLoading) return;
         isLoading = true;
         loadingEl.classList.remove('hidden');
+
         if (reset) {
-            endEl.classList.add('hidden');
-            emptyState.classList.add('hidden');
+            page = 1; worksGrid.innerHTML = ''; hasMore = true;
+            endEl.classList.add('hidden'); emptyState.classList.add('hidden');
+            if (masonryInstance) { masonryInstance.destroy(); masonryInstance = null; }
         }
 
         try {
-            if (reset) {
-                page = 0;
-                worksGrid.innerHTML = '';
-                hasMore = true;
-                masonryInstance = null;
-            }
+            var url = '/api/xhsWork/list?page=' + page + '&size=10';
+            if (currentAuthorId) url += '&authorId=' + encodeURIComponent(currentAuthorId);
+            if (currentTagId) url += '&tagId=' + encodeURIComponent(currentTagId);
+            if (currentSearchStr) url += '&str=' + encodeURIComponent(currentSearchStr);
 
-            // 构建URL，添加筛选参数
-            let url = '/api/xhsWork/list?page=' + page + '&size=5';
-            if (currentAuthorId) {
-                url += '&authorId=' + encodeURIComponent(currentAuthorId);
-            }
-            if (currentTagId) {
-                url += '&tagId=' + encodeURIComponent(currentTagId);
-            }
-            if (currentSearchStr) {
-                url += '&str=' + encodeURIComponent(currentSearchStr);
-            }
             const response = await fetch(url);
             const result = await response.json();
 
             if (result.code === 200 && result.data) {
-                const works = result.data.works || [];
+                var works = result.data.works || [];
                 hasMore = result.data.hasMore || false;
 
-                if (works.length === 0 && page === 0) {
+                if (works.length === 0 && page === 1) {
                     emptyState.classList.remove('hidden');
                 } else {
-                    emptyState.classList.add('hidden');
-                    works.forEach(work => {
+                    works.forEach(function(work) {
                         worksGrid.appendChild(createWorkCard(work));
                     });
-                    
-                    // 初始化或更新 Masonry
-                    if (!masonryInstance) {
-                        setTimeout(() => initMasonry(), 100);
-                    } else {
-                        setTimeout(() => updateMasonry(), 100);
-                    }
-                    
-                    page++;
 
-                    if (!hasMore) {
-                        endEl.classList.remove('hidden');
-                    }
+                    imagesLoaded(worksGrid, function() {
+                        manageLayout();
+                    });
+
+                    page++;
+                    if (!hasMore) endEl.classList.remove('hidden');
                 }
-            } else {
-                showToast(result.message || '加载失败', 'error');
             }
-        } catch (error) {
-            console.error('加载失败:', error);
-            showToast('网络请求失败', 'error');
-        } finally {
+        } catch (e) { console.error(e); } finally {
             isLoading = false;
             loadingEl.classList.add('hidden');
         }
     }
 
-    // 搜索功能
-    searchBtn.addEventListener('click', () => {
-        const str = searchInput.value.trim();
-        currentSearchStr = str || null;
+    function createWorkCard(work) {
+        var card = document.createElement('div');
+        card.className = 'masonry-item';
+        card.onclick = function() { window.location.href = '/downloadDetail?workId=' + encodeURIComponent(work.workId); };
+
+        var title = work.workTitle || '无标题';
+        var author = work.authorNickname || '未知作者';
+        var imgCount = work.imageCount || 0;
+        var coverUrl = work.coverImageUrl || '';
+
+        var html = '';
+        if (coverUrl) {
+            html += '<img src="" data-src="' + coverUrl + '" alt="' + title + '">';
+        }
+        html += '<div class="masonry-item-info">';
+        html += '  <div class="masonry-item-title">' + title + '</div>';
+        html += '  <div class="masonry-item-meta">';
+        html += '    <div class="masonry-item-author"><i class="fas fa-user"></i> <span>' + author + '</span></div>';
+        html += '    <div class="masonry-item-counts">';
+        if (imgCount > 0) html += '<span class="count-badge"><i class="fas fa-image"></i> ' + imgCount + '</span>';
+        html += '    </div></div></div>';
+
+        card.innerHTML = html;
+        var img = card.querySelector('img');
+        if (img && typeof setImageSrc === 'function') {
+            setImageSrc(img, coverUrl).catch(function(e){});
+        }
+        return card;
+    }
+
+    // --- 推荐及列表刷新逻辑 ---
+    window.refreshAuthors = function() { displayAuthorRecommendations(); };
+    window.refreshTags = function() { displayTagRecommendations(); };
+
+    function displayAuthorRecommendations() {
+        var container = document.getElementById('authorRecommendations');
+        var list = allAuthors.slice().sort(function() { return 0.5 - Math.random(); }).slice(0, RECOMMENDATION_SIZE);
+        container.innerHTML = list.map(function(a) {
+            var active = currentAuthorId === a.authorId ? 'active' : '';
+            return '<div class="recommendation-item ' + active + '" onclick="selectAuthor(\'' + a.authorId + '\')">' +
+                '<div class="recommendation-name">' + (a.authorNickname || a.authorId) + '</div>' +
+                '<div class="recommendation-count">' + (a.workCount || 0) + ' 作品</div>' +
+                '</div>';
+        }).join('');
+    }
+
+    function displayTagRecommendations() {
+        var container = document.getElementById('tagRecommendations');
+        var list = allTags.slice().sort(function() { return 0.5 - Math.random(); }).slice(0, RECOMMENDATION_SIZE);
+        container.innerHTML = list.map(function(t) {
+            var active = currentTagId === t.id ? 'active' : '';
+            return '<div class="recommendation-item ' + active + '" onclick="selectTag(' + t.id + ')">' +
+                '<div class="recommendation-name">' + t.tagName + '</div>' +
+                '<div class="recommendation-count">' + (t.workCount || 0) + ' 作品</div>' +
+                '</div>';
+        }).join('');
+    }
+
+    window.selectAuthor = function(id) {
+        currentAuthorId = id; currentTagId = null; currentSearchStr = null;
+        searchInput.value = ''; updateUIStates(); loadPage(true); hideRecs();
+    };
+
+    window.selectTag = function(id) {
+        currentTagId = id; currentAuthorId = null; currentSearchStr = null;
+        searchInput.value = ''; updateUIStates(); loadPage(true); hideRecs();
+    };
+
+    function updateUIStates() {
+        if (currentAuthorId || currentTagId || currentSearchStr) {
+            clearFilterBtn.classList.add('show');
+        } else {
+            clearFilterBtn.classList.remove('show');
+        }
+        displayAuthorRecommendations(); displayTagRecommendations();
+    }
+
+    function hideRecs() {
+        recommendationsContainer.classList.remove('show');
+        moreBtn.classList.remove('active');
+    }
+
+    // --- 初始化及事件绑定 ---
+    document.addEventListener('DOMContentLoaded', async function() {
+        // 加载初始数据
+        try {
+            const [aRes, tRes] = await Promise.all([
+                fetch('/api/xhsWork/authors').then(r => r.json()),
+                fetch('/api/xhsWork/tags').then(r => r.json())
+            ]);
+            if(aRes.code === 200) allAuthors = aRes.data;
+            if(tRes.code === 200) allTags = tRes.data;
+            displayAuthorRecommendations(); displayTagRecommendations();
+        } catch(e) {}
+
+        // 搜索按钮
+        searchBtn.onclick = function() {
+            var v = searchInput.value.trim();
+            if(v) { currentSearchStr = v; currentAuthorId = null; currentTagId = null; updateUIStates(); loadPage(true); }
+        };
+
+        // 更多按钮
+        moreBtn.onclick = function() {
+            recommendationsContainer.classList.toggle('show');
+            moreBtn.classList.toggle('active');
+        };
+
+        // 清除筛选
+        clearFilterBtn.onclick = function() {
+            currentAuthorId = null; currentTagId = null; currentSearchStr = null;
+            searchInput.value = ''; updateUIStates(); loadPage(true);
+        };
+
+        // 滚动监听
+        var observer = new IntersectionObserver(function(entries) {
+            if (entries[0].isIntersecting && !isLoading && hasMore) { loadPage(false); }
+        }, { rootMargin: '400px' });
+        observer.observe(document.getElementById('sentinel'));
+
+        // 窗口缩放处理
+        var rt;
+        window.onresize = function() { clearTimeout(rt); rt = setTimeout(manageLayout, 200); };
+
         loadPage(true);
-    });
-
-    // 回车键搜索
-    searchInput.addEventListener('keypress', (e) => {
-        if (e.key === 'Enter') {
-            searchBtn.click();
-        }
-    });
-
-    // Tab切换
-    function switchTab(tabName) {
-        currentTab = tabName;
-        
-        // 更新Tab按钮状态
-        document.querySelectorAll('.filter-tab').forEach(tab => {
-            tab.classList.remove('active');
-        });
-        document.querySelector('[data-tab="' + tabName + '"]').classList.add('active');
-        
-        // 更新面板显示
-        document.querySelectorAll('.filter-panel').forEach(panel => {
-            panel.classList.remove('active');
-        });
-        document.querySelector('[data-panel="' + tabName + '"]').classList.add('active');
-        
-        // 切换Tab时，清空另一个Tab的选择状态
-        if (tabName === 'author') {
-            if (window.tagChoices) {
-                window.tagChoices.removeActiveItems();
-                window.tagChoices.setChoiceByValue('');
-            }
-            if (tagFilter) tagFilter.value = '';
-            currentTagId = null;
-        } else if (tabName === 'tag') {
-            if (window.authorChoices) {
-                window.authorChoices.removeActiveItems();
-                window.authorChoices.setChoiceByValue('');
-            }
-            if (authorFilter) authorFilter.value = '';
-            currentAuthorId = null;
-        }
-    }
-
-    // Tab点击事件
-    tabAuthor.addEventListener('click', () => {
-        switchTab('author');
-    });
-
-    tabTag.addEventListener('click', () => {
-        switchTab('tag');
-    });
-
-    // 作者筛选自动查询
-    authorFilter.addEventListener('change', function() {
-        const value = this.value;
-        if (value) {
-            currentAuthorId = value;
-            currentTagId = null;
-            loadPage(true);
-        } else {
-            currentAuthorId = null;
-            showEmptyState();
-        }
-    });
-
-    // 标签筛选自动查询
-    tagFilter.addEventListener('change', function() {
-        const value = this.value;
-        if (value) {
-            currentTagId = value;
-            currentAuthorId = null;
-            loadPage(true);
-        } else {
-            currentTagId = null;
-            showEmptyState();
-        }
-    });
-    
-    function showEmptyState() {
-        worksGrid.innerHTML = '';
-        loadingEl.classList.add('hidden'); 
-        emptyState.classList.remove('hidden');
-        endEl.classList.add('hidden');
-        masonryInstance = null;
-    }
-
-    // 无限滚动
-    document.addEventListener('DOMContentLoaded', async () => {
-        // 加载筛选选项
-        await loadFilters();
-        
-        // 读取URL参数
-        const urlParams = new URLSearchParams(window.location.search);
-        const authorIdParam = urlParams.get('authorId');
-        const tagIdParam = urlParams.get('tagId');
-        const tagNameParam = urlParams.get('tag');
-        
-        if (authorIdParam) {
-            switchTab('author');
-            if (window.authorChoices) {
-                window.authorChoices.setChoiceByValue(authorIdParam);
-                authorFilter.dispatchEvent(new Event('change'));
-            }
-        } else if (tagIdParam) {
-            switchTab('tag');
-            if (window.tagChoices) {
-                window.tagChoices.setChoiceByValue(tagIdParam);
-                tagFilter.dispatchEvent(new Event('change'));
-            }
-        } else if (tagNameParam) {
-            switchTab('tag');
-            const options = tagFilter.options;
-            for (let i = 0; i < options.length; i++) {
-                const optionText = options[i].textContent.trim();
-                const tagName = optionText.split(' (')[0];
-                if (tagName === tagNameParam) {
-                    const matchedTagId = options[i].value;
-                    if (window.tagChoices) {
-                        window.tagChoices.setChoiceByValue(matchedTagId);
-                        tagFilter.dispatchEvent(new Event('change'));
-                    }
-                    break;
-                }
-            }
-        } else {
-            // 默认显示空状态，不自动查询
-            emptyState.classList.remove('hidden');
-        }
-
-        const sentinel = document.getElementById('sentinel');
-        if ('IntersectionObserver' in window && sentinel) {
-            const io = new IntersectionObserver((entries) => {
-                entries.forEach(entry => {
-                    if (entry.isIntersecting && !isLoading && hasMore) {
-                        loadPage(false);
-                    }
-                });
-            }, { root: null, rootMargin: '400px', threshold: 0 });
-            io.observe(sentinel);
-        }
     });
 </script>
 </body>
