@@ -52,17 +52,16 @@ public class XhsWorkServiceImpl implements XhsWorkService {
         wrapper.orderByDesc(XhsWorkBaseDO::getId);
         wrapper.eq(XhsWorkBaseDO::getIsDelete, false);
         // 如果指定了作者ID，添加筛选条件
-        if (authorId != null && !authorId.trim().isEmpty()) {
-            wrapper.eq(XhsWorkBaseDO::getAuthorId, authorId);
+        if (ObjectUtil.isNotEmpty(authorId)) {
+            wrapper.eq(ObjectUtil.isNotNull(authorId), XhsWorkBaseDO::getAuthorId, authorId);
         }
         // 如果指定了标签ID，需要通过tag_work关联表查询work_id列表
-        if (tagId != null) {
+        if (ObjectUtil.isNotEmpty(tagId)) {
             // 查询tag_work表获取该标签关联的所有work_id
             LambdaQueryWrapper<TagWorkDO> tagWorkWrapper = Wrappers.lambdaQuery();
             tagWorkWrapper.eq(TagWorkDO::getTagId, tagId);
             List<TagWorkDO> tagWorkList = tagWorkMapper.selectList(tagWorkWrapper);
             if (CollUtil.isEmpty(tagWorkList)) {
-                // 如果该标签没有关联任何作品，返回空结果
                 XhsWorkPageVO emptyResult = new XhsWorkPageVO();
                 emptyResult.setWorks(new ArrayList<>());
                 emptyResult.setHasMore(false);
@@ -70,7 +69,6 @@ public class XhsWorkServiceImpl implements XhsWorkService {
             }
             // 提取work_id列表
             List<String> workIds = tagWorkList.stream().map(TagWorkDO::getWorkId).collect(Collectors.toList());
-
             // 添加work_id的in条件
             wrapper.in(XhsWorkBaseDO::getWorkId, workIds);
         }
