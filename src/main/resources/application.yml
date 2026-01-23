@@ -34,3 +34,9 @@ logging:
     name: logs/app.log
   pattern:
     console: "%d{yyyy-MM-dd} [%thread] %-5level %logger{36} - %msg%n"
+
+# 图片隐私保护配置
+image:
+  safe-mode:
+    enabled: true
+    placeholder-url: "http://yanxuan.nosdn.127.net/1541445967645114dd75f6b0edc4762d.png"
