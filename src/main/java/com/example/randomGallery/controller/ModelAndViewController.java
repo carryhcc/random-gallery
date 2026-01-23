@@ -87,6 +87,15 @@ public class ModelAndViewController {
     }
 
     /**
+     * 跳转到下载列表浏览页面
+     */
+    @GetMapping("/downloadList")
+    public ModelAndView showDownloadListPage() {
+        log.debug("跳转到下载列表浏览页面");
+        return new ModelAndView("downloadList");
+    }
+
+    /**
      * 跳转到随机动图页面
      */
     @GetMapping("/randomGif")

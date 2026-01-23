@@ -10,54 +10,170 @@
     <link href="https://fonts.loli.net/css2?family=Inter:wght@400;500;600;700&family=Poppins:wght@600;700&display=swap"
           rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.bootcdn.net/ajax/libs/font-awesome/6.4.2/css/all.min.css">
-    <link rel="stylesheet" href="https://cdn.bootcdn.net/ajax/libs/choices.js/10.2.0/choices.min.css">
     <link rel="stylesheet" href="/css/style.css">
-    <script src="https://cdn.bootcdn.net/ajax/libs/choices.js/10.2.0/choices.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/heic2any@0.0.4/dist/heic2any.min.js"></script>
-    <script src="/js/heic-converter.js"></script>
     <script src="/js/theme.js"></script>
     <style>
-        .choices {
-            margin-bottom: 0;
-            font-size: var(--font-size-base);
-            overflow: visible; /* Ensure dropdown is not clipped */
-            width: auto;      /* Adaptive width */
-            min-width: 250px; /* Minimum width for usability */
-            max-width: 100%;
+        .download-container {
+            max-width: 800px;
+            margin: 2rem auto;
+            padding: 2rem;
         }
-        .choices__inner {
-            background-color: var(--color-bg-primary);
-            border: 1px solid var(--color-border);
-            border-radius: var(--radius-md);
-            min-height: 44px;
+
+        .download-card {
+            background: var(--color-bg-card);
+            border-radius: var(--radius-xl);
+            padding: 2rem;
+            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
+        }
+
+        .download-header {
+            text-align: center;
+            margin-bottom: 2rem;
+        }
+
+        .download-title {
+            font-size: 2rem;
+            font-weight: 700;
             color: var(--color-text-primary);
+            margin-bottom: 0.5rem;
+        }
+
+        .download-subtitle {
+            font-size: var(--font-size-base);
+            color: var(--color-text-secondary);
+        }
+
+        .url-input-group {
+            display: flex;
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .url-input {
+            flex: 1;
+            padding: 14px 18px;
+            border: 2px solid var(--color-border);
+            border-radius: var(--radius-lg);
+            background: var(--color-bg-primary);
+            color: var(--color-text-primary);
+            font-size: var(--font-size-base);
+            transition: all var(--transition-fast);
+        }
+
+        .url-input:focus {
+            outline: none;
+            border-color: var(--color-primary);
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        .parse-button {
+            padding: 14px 32px;
+            background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-primary-dark) 100%);
+            color: white;
+            border: none;
+            border-radius: var(--radius-lg);
+            font-size: var(--font-size-base);
+            font-weight: 600;
+            cursor: pointer;
+            transition: all var(--transition-fast);
+            white-space: nowrap;
+        }
+
+        .parse-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(102, 126, 234, 0.3);
+        }
+
+        .parse-button:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .info-section {
+            background: var(--color-bg-secondary);
+            border-radius: var(--radius-lg);
+            padding: 1.5rem;
+            margin-top: 2rem;
+        }
+
+        .info-title {
+            font-size: var(--font-size-lg);
+            font-weight: 600;
+            color: var(--color-text-primary);
+            margin-bottom: 1rem;
             display: flex;
             align-items: center;
+            gap: 0.5rem;
         }
-        .choices__list--dropdown {
-            background-color: var(--color-bg-card);
+
+        .info-list {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+
+        .info-list li {
+            color: var(--color-text-secondary);
+            padding: 0.5rem 0;
+            display: flex;
+            align-items: flex-start;
+            gap: 0.5rem;
+        }
+
+        .info-list li i {
+            color: var(--color-primary);
+            margin-top: 0.25rem;
+        }
+
+        .quick-links {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+            margin-top: 2rem;
+        }
+
+        .quick-link-btn {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+            padding: 1rem;
+            background: var(--color-bg-secondary);
             border: 1px solid var(--color-border);
+            border-radius: var(--radius-lg);
             color: var(--color-text-primary);
-            z-index: 100; /* Ensure dropdown is on top */
+            text-decoration: none;
+            transition: all var(--transition-fast);
+            font-weight: 500;
         }
-        .choices__item--choice.is-highlighted {
-            background-color: var(--color-bg-hover);
-            color: var(--color-text-primary);
+
+        .quick-link-btn:hover {
+            background: var(--color-bg-hover);
+            border-color: var(--color-primary);
+            transform: translateY(-2px);
         }
-        /* Fix input visibility in dark mode */
-        .choices__input {
-            background-color: transparent !important;
-            color: var(--color-text-primary) !important;
-        }
-        /* Custom style for the remove item button provided by Choices.js */
-        .choices__button {
-            border-left: 1px solid var(--color-border);
-            margin: 0 0 0 8px;
-            padding-left: 8px;
-            opacity: 0.6;
-        }
-        .choices__button:hover {
-            opacity: 1;
+
+        @media (max-width: 768px) {
+            .download-container {
+                padding: 1rem;
+            }
+
+            .download-card {
+                padding: 1.5rem;
+            }
+
+            .download-title {
+                font-size: 1.5rem;
+            }
+
+            .url-input-group {
+                flex-direction: column;
+            }
+
+            .parse-button {
+                width: 100%;
+            }
         }
     </style>
 </head>
@@ -71,121 +187,90 @@
             <span>图片下载</span>
         </div>
         <div class="navbar-actions">
+            <button class="btn btn-secondary btn-sm" onclick="window.location.href='/downloadList'">
+                <i class="fas fa-list"></i>
+                <span class="hidden-mobile">下载浏览</span>
+            </button>
             <button class="btn btn-secondary btn-sm" onclick="window.location.href='/'">
                 <i class="fas fa-home"></i>
                 <span class="hidden-mobile">首页</span>
-            </button>
-            <button id="btnRefresh" class="btn btn-primary btn-sm">
-                <i class="fas fa-sync-alt"></i>
-                <span class="hidden-mobile">刷新</span>
             </button>
         </div>
     </div>
 </header>
 
 <!-- 主内容 -->
-<main class="container gallery-container">
+<main class="download-container">
     <div id="toast" class="toast"></div>
 
-    <!-- URL 输入区 -->
-    <div class="url-input-section animate-fade-in">
-        <div class="url-input-wrapper">
+    <div class="download-card animate-fade-in">
+        <div class="download-header">
+            <h1 class="download-title">
+                <i class="fas fa-cloud-download-alt"></i>
+                小红书作品下载
+            </h1>
+            <p class="download-subtitle">输入小红书作品链接，一键解析并保存</p>
+        </div>
+
+        <!-- URL 输入区 -->
+        <div class="url-input-group">
             <input 
                 type="text" 
                 id="urlInput" 
                 class="url-input" 
-                placeholder="请输入作品链接..."
+                placeholder="请粘贴小红书作品链接..."
                 autocomplete="off">
-            <button id="parseBtn" class="btn btn-primary parse-btn">
+            <button id="parseBtn" class="parse-button">
                 <i class="fas fa-search"></i>
                 <span>解析</span>
             </button>
         </div>
-    </div>
 
-    <!-- 筛选区域 -->
-    <div class="filter-section animate-fade-in">
-        <!-- Tab切换头部 -->
-        <div class="filter-tabs">
-            <button class="filter-tab active" data-tab="author" id="tabAuthor">
-                <i class="fas fa-user"></i>
-                <span>按作者筛选</span>
-            </button>
-            <button class="filter-tab" data-tab="tag" id="tabTag">
-                <i class="fas fa-tag"></i>
-                <span>按标签筛选</span>
-            </button>
-        </div>
-        
-        <!-- Tab内容区 -->
-        <div class="filter-content">
-            <!-- 作者筛选面板 -->
-            <div class="filter-panel active" data-panel="author">
-                <div> <!-- Removed select-wrapper class to allow auto width -->
-                    <select id="authorFilter" class="filter-select">
-                        <option value="">请选择作者</option>
-                    </select>
-                </div>
+        <!-- 使用说明 -->
+        <div class="info-section">
+            <div class="info-title">
+                <i class="fas fa-info-circle"></i>
+                使用说明
             </div>
-            
-            <!-- 标签筛选面板 -->
-            <div class="filter-panel" data-panel="tag">
-                <div> <!-- Removed select-wrapper class to allow auto width -->
-                    <select id="tagFilter" class="filter-select">
-                        <option value="">请选择标签</option>
-                    </select>
-                </div>
-            </div>
+            <ul class="info-list">
+                <li>
+                    <i class="fas fa-check"></i>
+                    <span>复制小红书作品链接（支持分享链接和网页链接）</span>
+                </li>
+                <li>
+                    <i class="fas fa-check"></i>
+                    <span>粘贴到上方输入框，点击"解析"按钮</span>
+                </li>
+                <li>
+                    <i class="fas fa-check"></i>
+                    <span>系统将自动解析并保存作品的图片和视频</span>
+                </li>
+                <li>
+                    <i class="fas fa-check"></i>
+                    <span>解析完成后，前往"下载浏览"页面查看已下载的作品</span>
+                </li>
+            </ul>
+        </div>
+
+        <!-- 快捷链接 -->
+        <div class="quick-links">
+            <a href="/downloadList" class="quick-link-btn">
+                <i class="fas fa-list"></i>
+                <span>查看已下载作品</span>
+            </a>
+            <a href="/" class="quick-link-btn">
+                <i class="fas fa-home"></i>
+                <span>返回首页</span>
+            </a>
         </div>
     </div>
-
-    <!-- 作品列表 -->
-    <div id="worksGrid" class="works-grid animate-fade-in"></div>
-
-    <!-- 空状态 -->
-    <div id="emptyState" class="empty-state hidden">
-        <i class="fas fa-inbox"></i>
-        <p>暂无解析数据</p>
-        <p style="font-size: var(--font-size-sm); margin-top: 0.5rem;">请输入链接并点击解析</p>
-    </div>
-
-    <!-- 加载中 -->
-    <div id="loading" class="loading hidden">
-        <div class="spinner"></div>
-        <span>加载更多作品...</span>
-    </div>
-
-    <!-- 加载完成 -->
-    <div id="end" class="text-center hidden end-message">
-        <i class="fas fa-check-circle end-icon"></i>
-        <p>已加载全部作品</p>
-    </div>
-
-    <div id="sentinel" class="sentinel"></div>
 </main>
 
 <script>
     const urlInput = document.getElementById('urlInput');
     const parseBtn = document.getElementById('parseBtn');
-    const worksGrid = document.getElementById('worksGrid');
-    const emptyState = document.getElementById('emptyState');
     const toast = document.getElementById('toast');
-    const btnRefresh = document.getElementById('btnRefresh');
-    const tabAuthor = document.getElementById('tabAuthor');
-    const tabTag = document.getElementById('tabTag');
-    const authorFilter = document.getElementById('authorFilter');
-    const tagFilter = document.getElementById('tagFilter');
-    // Removed old clear buttons references
-    const loadingEl = document.getElementById('loading');
-    const endEl = document.getElementById('end');
-
-    let page = 0;
-    let isLoading = false;
-    let hasMore = true;
     let toastTimer;
-    let currentAuthorId = null;
-    let currentTagId = null;
-    let currentTab = 'author';
 
     function showToast(message, type = 'success') {
         clearTimeout(toastTimer);
@@ -194,90 +279,6 @@
         toastTimer = setTimeout(() => {
             toast.className = 'toast';
         }, 3000);
-    }
-
-    // 加载作者和标签筛选列表
-    async function loadFilters() {
-        console.log('开始加载筛选列表...');
-        try {
-            // 初始化 Choices 实例配置
-            const commonConfig = {
-                searchEnabled: true,
-                itemSelectText: '',
-                noResultsText: '无匹配结果',
-                noChoicesText: '无可用选项',
-                placeholder: true,
-                searchPlaceholderValue: '搜索...',
-                shouldSort: false,
-                loadingText: '加载中...',
-                removeItemButton: true, // Enable built-in clear button
-            };
-
-            // 初始化作者下拉框
-            const authorSelect = document.getElementById('authorFilter');
-            window.authorChoices = new Choices(authorSelect, {
-                ...commonConfig,
-            });
-
-            // 初始化标签下拉框
-            const tagSelect = document.getElementById('tagFilter');
-            window.tagChoices = new Choices(tagSelect, {
-                ...commonConfig,
-            });
-
-            // 加载作者列表
-            console.log('正在请求作者列表...');
-            const authorsRes = await fetch('/api/xhsWork/authors');
-            const authorsData = await authorsRes.json();
-            console.log('作者列表响应:', authorsData);
-
-            if (authorsData.code === 200 && authorsData.data) {
-                const choicesData = authorsData.data.map(author => ({
-                    value: String(author.authorId),
-                    label: (author.authorNickname || author.authorId) + ' (' + (author.workCount || 0) + ')',
-                    selected: false,
-                    disabled: false,
-                }));
-                // 添加默认空选项 (placeholder) - Choices need this to know what is 'empty'
-                choicesData.unshift({ 
-                    value: '', 
-                    label: '请选择作者', 
-                    selected: true, 
-                    disabled: false, // Must be false to allow re-selection if needed, but placeholder: true handles it
-                    placeholder: true 
-                });
-                
-                window.authorChoices.setChoices(choicesData, 'value', 'label', true);
-            }
-
-            // 加载标签列表
-            console.log('正在请求标签列表...');
-            const tagsRes = await fetch('/api/xhsWork/tags');
-            const tagsData = await tagsRes.json();
-            console.log('标签列表响应:', tagsData);
-
-            if (tagsData.code === 200 && tagsData.data) {
-                const choicesData = tagsData.data.map(tag => ({
-                    value: String(tag.id), 
-                    label: tag.tagName + ' (' + (tag.workCount || 0) + ')',
-                    selected: false,
-                    disabled: false,
-                }));
-                // 添加默认空选项 (placeholder)
-                choicesData.unshift({ 
-                    value: '', 
-                    label: '请选择标签', 
-                    selected: true, 
-                    disabled: false,
-                    placeholder: true 
-                });
-                
-                window.tagChoices.setChoices(choicesData, 'value', 'label', true);
-            }
-        } catch (error) {
-            console.error('加载筛选条件失败:', error);
-            showToast('加载筛选条件失败: ' + error.message, 'error');
-        }
     }
 
     // 解析 URL
@@ -302,8 +303,12 @@
 
             const result = await response.json();
             if (result.code === 200) {
-                showToast('解析任务已添加，请稍后手动刷新查看', 'success');
+                showToast('解析任务已添加，请稍后前往"下载浏览"页面查看', 'success');
                 urlInput.value = '';
+                // 3秒后自动跳转到下载浏览页面
+                setTimeout(() => {
+                    window.location.href = '/downloadList';
+                }, 2000);
             } else {
                 showToast(result.message || '解析失败', 'error');
             }
@@ -320,279 +325,6 @@
     urlInput.addEventListener('keypress', (e) => {
         if (e.key === 'Enter') {
             parseBtn.click();
-        }
-    });
-
-    // 创建作品卡片
-    function createWorkCard(work) {
-        const card = document.createElement('div');
-        card.className = 'work-card';
-        card.onclick = () => {
-            window.location.href = '/downloadDetail?workId=' + encodeURIComponent(work.workId);
-        };
-
-        const coverUrl = work.coverImageUrl || '';
-        const title = work.workTitle || '无标题';
-        const author = work.authorNickname || '未知作者';
-        const imageCount = work.imageCount || 0;
-        const gifCount = work.gifCount || 0;
-
-        // 创建封面图片元素
-        if (coverUrl) {
-            const coverImg = document.createElement('img');
-            coverImg.alt = title;
-            coverImg.className = 'work-cover';
-            coverImg.loading = 'lazy';
-            card.appendChild(coverImg);
-            // 使用 HEIC 转换工具异步设置图片源
-            setImageSrc(coverImg, coverUrl).catch(err => {
-                console.warn('封面图片加载失败:', coverUrl, err);
-            });
-        } else {
-            const placeholder = document.createElement('div');
-            placeholder.className = 'work-cover';
-            card.appendChild(placeholder);
-        }
-        
-        // 创建作品信息区
-        const workInfo = document.createElement('div');
-        workInfo.className = 'work-info';
-        workInfo.innerHTML = 
-            '<div class="work-title">' + title + '</div>' +
-            '<div class="work-meta">' +
-                '<div class="work-author">' +
-                    '<i class="fas fa-user"></i>' +
-                    '<span>' + author + '</span>' +
-                '</div>' +
-                '<div class="work-badges">' +
-                    (imageCount > 0 ? '<span class="badge"><i class="fas fa-image"></i> ' + imageCount + '</span>' : '') +
-                    (gifCount > 0 ? '<span class="badge gif"><i class="fas fa-film"></i> ' + gifCount + '</span>' : '') +
-                '</div>' +
-            '</div>';
-        card.appendChild(workInfo);
-
-        return card;
-    }
-
-    // 加载作品列表
-    async function loadPage(reset = false) {
-        if (isLoading) return;
-        isLoading = true;
-        loadingEl.classList.remove('hidden');
-        if (reset) {
-            endEl.classList.add('hidden');
-            emptyState.classList.add('hidden');
-        }
-
-        try {
-            if (reset) {
-                page = 0;
-                worksGrid.innerHTML = '';
-                hasMore = true;
-            }
-
-            // 构建URL，添加筛选参数
-            let url = '/api/xhsWork/list?page=' + page;
-            if (currentAuthorId) {
-                url += '&authorId=' + encodeURIComponent(currentAuthorId);
-            }
-            if (currentTagId) {
-                url += '&tagId=' + encodeURIComponent(currentTagId);
-            }
-            const response = await fetch(url);
-            const result = await response.json();
-
-            if (result.code === 200 && result.data) {
-                const works = result.data.works || [];
-                hasMore = result.data.hasMore || false;
-
-                if (works.length === 0 && page === 0) {
-                    emptyState.classList.remove('hidden');
-                } else {
-                    emptyState.classList.add('hidden');
-                    works.forEach(work => {
-                        worksGrid.appendChild(createWorkCard(work));
-                    });
-                    page++;
-
-                    if (!hasMore) {
-                        endEl.classList.remove('hidden');
-                    }
-                }
-            } else {
-                showToast(result.message || '加载失败', 'error');
-            }
-        } catch (error) {
-            console.error('加载失败:', error);
-            showToast('网络请求失败', 'error');
-        } finally {
-            isLoading = false;
-            loadingEl.classList.add('hidden');
-        }
-    }
-
-    // 刷新
-    btnRefresh.addEventListener('click', () => {
-        loadPage(true);
-    });
-
-    // Removed updateClearButtonVisibility function
-
-    // Tab切换
-    function switchTab(tabName) {
-        currentTab = tabName;
-        
-        // 更新Tab按钮状态
-        document.querySelectorAll('.filter-tab').forEach(tab => {
-            tab.classList.remove('active');
-        });
-        document.querySelector('[data-tab="' + tabName + '"]').classList.add('active');
-        
-        // 更新面板显示
-        document.querySelectorAll('.filter-panel').forEach(panel => {
-            panel.classList.remove('active');
-        });
-        document.querySelector('[data-panel="' + tabName + '"]').classList.add('active');
-        
-        // 切换Tab时，清空另一个Tab的选择状态
-        if (tabName === 'author') {
-            if (window.tagChoices) {
-                window.tagChoices.removeActiveItems(); // Use API method specifically for clearing selection
-                window.tagChoices.setChoiceByValue(''); // Ensure logic value is also cleared
-            }
-            // 同时也清空原生值以防万一
-            if (tagFilter) tagFilter.value = '';
-            
-            currentTagId = null;
-            
-        } else if (tabName === 'tag') {
-            if (window.authorChoices) {
-                window.authorChoices.removeActiveItems();
-                window.authorChoices.setChoiceByValue('');
-            }
-            if (authorFilter) authorFilter.value = '';
-            
-            currentAuthorId = null;
-        }
-    }
-
-    // Tab点击事件
-    tabAuthor.addEventListener('click', () => {
-        switchTab('author');
-    });
-
-    tabTag.addEventListener('click', () => {
-        switchTab('tag');
-    });
-
-    // 作者筛选自动查询
-    authorFilter.addEventListener('change', function() {
-        // Choices.js 会触发原 select 的 change 事件
-        const value = this.value;
-        // Removed visibility update
-        if (value) {
-            currentAuthorId = value;
-            currentTagId = null;
-            loadPage(true);
-        } else {
-             currentAuthorId = null;
-             showEmptyState();
-        }
-    });
-
-    // 标签筛选自动查询
-    tagFilter.addEventListener('change', function() {
-        const value = this.value;
-        // Removed visibility update
-        if (value) {
-            currentTagId = value;
-            currentAuthorId = null;
-            loadPage(true);
-        } else {
-            currentTagId = null;
-            showEmptyState();
-        }
-    });
-    
-    function showEmptyState() {
-        worksGrid.innerHTML = '';
-        loadingEl.classList.add('hidden'); 
-        emptyState.classList.remove('hidden');
-        endEl.classList.add('hidden');
-    }
-
-    // Removed btnClearAuthor/Tag listeners
-
-    // 无限滚动
-    document.addEventListener('DOMContentLoaded', async () => {
-        // 加载筛选选项（等待加载完成）
-        await loadFilters();
-        
-        // 读取URL参数
-        const urlParams = new URLSearchParams(window.location.search);
-        const authorIdParam = urlParams.get('authorId');
-        const tagIdParam = urlParams.get('tagId');
-        const tagNameParam = urlParams.get('tag'); // 支持通过tag名称筛选
-        
-        if (authorIdParam) {
-            // 通过作者ID筛选
-            switchTab('author');
-            if (window.authorChoices) {
-                window.authorChoices.setChoiceByValue(authorIdParam);
-                // 手动触发 change 事件，因为 setChoiceByValue 可能不会触发原生 change
-                authorFilter.dispatchEvent(new Event('change'));
-            }
-        } else if (tagIdParam) {
-            // 通过标签ID筛选
-            switchTab('tag');
-            if (window.tagChoices) {
-                window.tagChoices.setChoiceByValue(tagIdParam);
-                tagFilter.dispatchEvent(new Event('change'));
-            }
-        } else if (tagNameParam) {
-            // 通过标签名称筛选（详情页跳转时使用）
-            switchTab('tag');
-            
-            // 使用 Choices API 查找匹配的选项
-            let found = false;
-            // 获取所有 choices (需要 access internal API or recreate logic if strict mapping needed)
-            // 简单做法：遍历原始数据或 choices 实例状态看起来比较困难，
-            // 但我们在 loadFilters 把数据存进去了。
-            // 更稳妥的方式：因为我们已经setChoices了，所以可以直接遍历原生options（Choices会保留它们但隐藏）
-             const options = tagFilter.options;
-             for (let i = 0; i < options.length; i++) {
-                const optionText = options[i].textContent.trim();
-                const tagName = optionText.split(' (')[0];
-                if (tagName === tagNameParam) {
-                    const matchedTagId = options[i].value;
-                    if (window.tagChoices) {
-                        window.tagChoices.setChoiceByValue(matchedTagId);
-                        tagFilter.dispatchEvent(new Event('change'));
-                    }
-                    found = true;
-                    break;
-                }
-            }
-            
-            if (!found) {
-                console.warn('未找到匹配的标签:', tagNameParam);
-                showToast('未找到标签: ' + tagNameParam, 'error');
-            }
-        } else {
-            // 默认显示空状态，不自动查询
-            emptyState.classList.remove('hidden');
-        }
-
-        const sentinel = document.getElementById('sentinel');
-        if ('IntersectionObserver' in window && sentinel) {
-            const io = new IntersectionObserver((entries) => {
-                entries.forEach(entry => {
-                    if (entry.isIntersecting && !isLoading && hasMore) {
-                        loadPage(false);
-                    }
-                });
-            }, { root: null, rootMargin: '400px', threshold: 0 });
-            io.observe(sentinel);
         }
     });
 </script>

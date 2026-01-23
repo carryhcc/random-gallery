@@ -27,7 +27,7 @@
             <span>作品详情</span>
         </div>
         <div class="navbar-actions">
-            <button class="btn btn-secondary btn-sm" onclick="window.location.href='/download'">
+            <button class="btn btn-secondary btn-sm" onclick="window.location.href='/downloadList'">
                 <i class="fas fa-arrow-left"></i>
                 <span class="hidden-mobile">返回列表</span>
             </button>
@@ -381,7 +381,7 @@
                         e.preventDefault();
                         const authorId = this.dataset.authorId;
                         if (authorId) {
-                            window.location.href = '/download?authorId=' + encodeURIComponent(authorId);
+                            window.location.href = '/downloadList?authorId=' + encodeURIComponent(authorId);
                         }
                     });
                 }
@@ -392,7 +392,7 @@
                     tagEl.addEventListener('click', function() {
                         const tagName = this.dataset.tagName;
                         if (tagName) {
-                            window.location.href = '/download?tag=' + encodeURIComponent(tagName);
+                            window.location.href = '/downloadList?tag=' + encodeURIComponent(tagName);
                         }
                     });
                 });
@@ -668,7 +668,7 @@
                 if (data.code === 200) {
                     showToast('作品已删除');
                     setTimeout(() => {
-                        window.location.href = '/download';
+                        window.location.href = '/downloadList';
                     }, 1000);
                 } else {
                     showToast(data.message || '删除失败', 'error');
