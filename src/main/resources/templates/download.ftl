@@ -305,10 +305,7 @@
             if (result.code === 200) {
                 showToast('解析任务已添加，请稍后前往"下载浏览"页面查看', 'success');
                 urlInput.value = '';
-                // 3秒后自动跳转到下载浏览页面
-                setTimeout(() => {
-                    window.location.href = '/downloadList';
-                }, 2000);
+
             } else {
                 showToast(result.message || '解析失败', 'error');
             }

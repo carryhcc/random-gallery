@@ -395,6 +395,25 @@
             ]);
             if(aRes.code === 200) allAuthors = aRes.data;
             if(tRes.code === 200) allTags = tRes.data;
+            
+            // 解析 URL 参数
+            const params = new URLSearchParams(window.location.search);
+            const authId = params.get('authorId');
+            const tagName = params.get('tag');
+
+            if (authId) {
+                currentAuthorId = authId;
+            } else if (tagName) {
+                // 根据 tagName 查找 tagId
+                const tagObj = allTags.find(t => t.tagName === tagName);
+                if (tagObj) {
+                    currentTagId = tagObj.id;
+                }
+            }
+            
+            // 更新UI状态
+            updateUIStates(); 
+
             displayAuthorRecommendations(); displayTagRecommendations();
         } catch(e) {}
 
