@@ -20,7 +20,7 @@ public interface XhsWorkService {
      * @param tagId    标签ID（可选）
      * @return 作品分页数据
      */
-    XhsWorkPageVO pageXhsWorksWithFilter(int page, int pageSize, String authorId, Long tagId, String str);
+    XhsWorkPageVO pageXhsWorksWithFilter(int page, int pageSize, String authorId, Long tagId, String str, Integer seed);
 
     /**
      * 获取作品详情

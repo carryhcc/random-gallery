@@ -219,6 +219,7 @@
 
     var page = 1, isLoading = false, hasMore = true;
     var currentAuthorId = null, currentTagId = null, currentSearchStr = null;
+    var currentSeed = Math.floor(Math.random() * 1000000); // 初始化随机种子
     var masonryInstance = null;
     var allAuthors = [], allTags = [];
     var RECOMMENDATION_SIZE = 8;
@@ -267,13 +268,22 @@
             page = 1; worksGrid.innerHTML = ''; hasMore = true;
             endEl.classList.add('hidden'); emptyState.classList.add('hidden');
             if (masonryInstance) { masonryInstance.destroy(); masonryInstance = null; }
+            // 每次重置列表（刷新/筛选）时，生成新的随机种子
+            currentSeed = Math.floor(Math.random() * 1000000);
         }
 
         try {
             var url = '/api/xhsWork/list?page=' + page + '&size=10';
             if (currentAuthorId) url += '&authorId=' + encodeURIComponent(currentAuthorId);
             if (currentTagId) url += '&tagId=' + encodeURIComponent(currentTagId);
+            if (currentTagId) url += '&tagId=' + encodeURIComponent(currentTagId);
             if (currentSearchStr) url += '&str=' + encodeURIComponent(currentSearchStr);
+            // 只有在没有特定筛选条件（不是作者也不是标签筛选）且不是搜索时，才使用随机排序
+            // 如果用户进行了筛选，通常期望按时间倒序查看相关内容，或者也可以随机，这里先对全列表应用随机
+            // 需求是：每次重新点进去 下载浏览 打乱顺序
+            if (!currentAuthorId && !currentTagId && !currentSearchStr) {
+                 url += '&seed=' + currentSeed;
+            }
 
             const response = await fetch(url);
             const result = await response.json();

@@ -159,6 +159,9 @@ async function setImageSrc(imgElement, imageUrl) {
         // 添加加载失败事件监听
         imgElement.onerror = function (error) {
             console.warn('图片加载失败:', convertedUrl, error);
+             // 加载失败显示默认图
+            this.onerror = null;
+            this.src = '/icons/404.svg';
             // 即使失败也触发布局更新，避免布局一直错乱
             triggerMasonryLayout();
             resolve(); // 不 reject，避免中断流程

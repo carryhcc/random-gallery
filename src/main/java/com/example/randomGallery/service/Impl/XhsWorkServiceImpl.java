@@ -46,11 +46,18 @@ public class XhsWorkServiceImpl implements XhsWorkService {
     private final com.example.randomGallery.config.PrivacyConfig privacyConfig;
 
     @Override
-    public XhsWorkPageVO pageXhsWorksWithFilter(int page, int pageSize, String authorId, Long tagId, String str) {
+    public XhsWorkPageVO pageXhsWorksWithFilter(int page, int pageSize, String authorId, Long tagId, String str,
+            Integer seed) {
         // 分页查询基础表
         Page<XhsWorkBaseDO> pageParam = new Page<>(page, pageSize); // MyBatis-Plus 页码从1开始
         LambdaQueryWrapper<XhsWorkBaseDO> wrapper = Wrappers.lambdaQuery();
-        wrapper.orderByDesc(XhsWorkBaseDO::getId);
+
+        // 处理排序
+        if (seed != null) {
+            wrapper.last("ORDER BY RAND(" + seed + ")");
+        } else {
+            wrapper.orderByDesc(XhsWorkBaseDO::getId);
+        }
         wrapper.eq(XhsWorkBaseDO::getIsDelete, false);
         // 如果指定了作者ID，添加筛选条件
         if (ObjectUtil.isNotEmpty(authorId)) {
