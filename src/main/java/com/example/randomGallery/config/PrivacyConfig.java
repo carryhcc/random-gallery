@@ -5,19 +5,19 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.stereotype.Component;
 
 /**
- * 图片安全模式配置属性
+ * 隐私模式配置，支持运行时动态修改
  */
 @Data
 @Component
 @ConfigurationProperties(prefix = "image.safe-mode")
-public class SafeImageProperties {
+public class PrivacyConfig {
     /**
      * 是否启用安全图片模式
      */
     private Boolean enabled = false;
 
     /**
-     * 占位图URL（用于替换真实图片URL）
+     * 占位图URL
      */
     private String placeholderUrl;
 }

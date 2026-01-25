@@ -22,6 +22,21 @@ public class SystemController {
 
     private final CacheService cacheService;
     private final GroupServiceApi groupServiceApi;
+    private final com.example.randomGallery.config.PrivacyConfig privacyConfig;
+
+    /**
+     * 获取或者切换隐私模式状态
+     * 如果传入 enabled 参数则设置状态，否则仅查询状态
+     */
+    @GetMapping("/privacy-mode")
+    public Result<Boolean> handlePrivacyMode(@RequestParam(required = false) Boolean enabled) {
+        if (enabled != null) {
+            log.info("切换隐私模式: {}", enabled);
+            privacyConfig.setEnabled(enabled);
+            return Result.success("隐私模式已" + (enabled ? "开启" : "关闭"), enabled);
+        }
+        return Result.success(privacyConfig.getEnabled());
+    }
 
     /**
      * 获取当前环境
@@ -79,6 +94,7 @@ public class SystemController {
         log.info("切换到生产环境");
         return switchEnv("prod");
     }
+
     /**
      * 更新分组数据
      */
@@ -86,7 +102,6 @@ public class SystemController {
     public void upGroup() {
         groupServiceApi.updateGroupInfo();
     }
-
 
     /**
      * 测试防重复提交功能

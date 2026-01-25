@@ -39,4 +39,4 @@ logging:
 image:
   safe-mode:
     enabled: true
-    placeholder-url: "http://yanxuan.nosdn.127.net/1541445967645114dd75f6b0edc4762d.png"
+    placeholder-url: "/icons/404.svg"

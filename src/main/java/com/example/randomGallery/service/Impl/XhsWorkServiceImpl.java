@@ -27,6 +27,7 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 import java.util.concurrent.ThreadLocalRandom;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -42,7 +43,7 @@ public class XhsWorkServiceImpl implements XhsWorkService {
     private final XhsWorkBaseMapper workBaseMapper;
     private final XhsWorkMediaMapper workMediaMapper;
     private final TagWorkMapper tagWorkMapper;
-
+    private final com.example.randomGallery.config.PrivacyConfig privacyConfig;
 
     @Override
     public XhsWorkPageVO pageXhsWorksWithFilter(int page, int pageSize, String authorId, Long tagId, String str) {
@@ -100,7 +101,8 @@ public class XhsWorkServiceImpl implements XhsWorkService {
             List<XhsWorkMediaDO> allMedia = workMediaMapper.selectList(mediaWrapper);
 
             // 按 workId 分组
-            Map<String, List<XhsWorkMediaDO>> mediaMap = allMedia.stream().collect(Collectors.groupingBy(XhsWorkMediaDO::getWorkId));
+            Map<String, List<XhsWorkMediaDO>> mediaMap = allMedia.stream()
+                    .collect(Collectors.groupingBy(XhsWorkMediaDO::getWorkId));
 
             // 组装 VO
             for (XhsWorkBaseDO baseDO : pageResult.getRecords()) {
@@ -115,7 +117,8 @@ public class XhsWorkServiceImpl implements XhsWorkService {
                 List<XhsWorkMediaDO> mediaList = mediaMap.getOrDefault(baseDO.getWorkId(), new ArrayList<>());
 
                 // 先收集图片列表
-                List<XhsWorkMediaDO> imageMediaList = mediaList.stream().filter(m -> MediaTypeEnum.IMAGE.equals(m.getMediaType())).toList();
+                List<XhsWorkMediaDO> imageMediaList = mediaList.stream()
+                        .filter(m -> MediaTypeEnum.IMAGE.equals(m.getMediaType())).toList();
                 // 统计动图数量
                 long gifCount = mediaList.stream().filter(m -> MediaTypeEnum.GIF.equals(m.getMediaType())).count();
 
@@ -125,7 +128,9 @@ public class XhsWorkServiceImpl implements XhsWorkService {
                 // 随机获取封面（利用列表非空判断）
                 if (!imageMediaList.isEmpty()) {
                     int randomIndex = ThreadLocalRandom.current().nextInt(imageMediaList.size());
-                    vo.setCoverImageUrl(imageMediaList.get(randomIndex).getMediaUrl());
+                    String mediaUrl = imageMediaList.get(randomIndex).getMediaUrl();
+                    mediaUrl = getSafetyUrl(mediaUrl);
+                    vo.setCoverImageUrl(mediaUrl);
                 }
                 voList.add(vo);
             }
@@ -154,18 +159,24 @@ public class XhsWorkServiceImpl implements XhsWorkService {
         // 查询所有媒体
         LambdaQueryWrapper<XhsWorkMediaDO> mediaWrapper = Wrappers.lambdaQuery();
         mediaWrapper.eq(XhsWorkMediaDO::getWorkId, workId)
-                .and(w -> w.eq(XhsWorkMediaDO::getIsDelete, false).or()
-                        .isNull(XhsWorkMediaDO::getIsDelete)) // 过滤已删除
-                .orderByAsc(XhsWorkMediaDO::getSortIndex); // 按索引排序
+                .eq(XhsWorkMediaDO::getIsDelete, false)
+                .orderByAsc(XhsWorkMediaDO::getSortIndex);
         List<XhsWorkMediaDO> allMedia = workMediaMapper.selectList(mediaWrapper);
 
-        // 分类：图片和动图
+        // 定义一个临时的lambda变量（方法内），避免重复代码
+        Function<XhsWorkMediaDO, XhsWorkMediaDO> urlProcessor = m -> {
+            m.setMediaUrl(getSafetyUrl(m.getMediaUrl()));
+            return m;
+        };
+
         List<XhsWorkMediaDO> images = allMedia.stream()
                 .filter(m -> MediaTypeEnum.IMAGE.equals(m.getMediaType()))
+                .map(urlProcessor)
                 .collect(Collectors.toList());
 
         List<XhsWorkMediaDO> gifs = allMedia.stream()
                 .filter(m -> MediaTypeEnum.GIF.equals(m.getMediaType()))
+                .map(urlProcessor)
                 .collect(Collectors.toList());
 
         // 组装 VO
@@ -290,5 +301,9 @@ public class XhsWorkServiceImpl implements XhsWorkService {
         }
 
         return vo;
+    }
+
+    private String getSafetyUrl(String url) {
+        return Boolean.TRUE.equals(privacyConfig.getEnabled()) ? privacyConfig.getPlaceholderUrl() : url;
     }
 }

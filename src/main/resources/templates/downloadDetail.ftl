@@ -90,7 +90,7 @@
         <i class="fas fa-chevron-right"></i>
     </button>
     <div class="viewer-content">
-        <img id="viewer-img" src="" alt="大图预览">
+        <img id="viewer-img" src="" alt="大图预览" onerror="this.onerror=null;this.src='/icons/404.svg';">
     </div>
 </div>
 
@@ -422,6 +422,10 @@
                         const imgElement = document.createElement('img');
                         imgElement.alt = '图片 ' + (index + 1);
                         imgElement.loading = 'lazy';
+                        imgElement.onerror = function() {
+                            this.onerror = null;
+                            this.src = '/icons/404.svg';
+                        };
                         // 使用 HEIC 转换工具设置图片源
                         setImageSrc(imgElement, img.mediaUrl);
                         

@@ -315,7 +315,7 @@
 
         var html = '';
         if (coverUrl) {
-            html += '<img src="" data-src="' + coverUrl + '" alt="' + title + '">';
+            html += '<img src="" data-src="' + coverUrl + '" alt="' + title + '" onerror="this.onerror=null;this.src=\'/icons/404.svg\';">';
         }
         html += '<div class="masonry-item-info">';
         html += '  <div class="masonry-item-title">' + title + '</div>';

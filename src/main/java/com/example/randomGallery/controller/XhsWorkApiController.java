@@ -1,7 +1,6 @@
 package com.example.randomGallery.controller;
 
 import cn.hutool.core.util.ObjectUtil;
-import com.example.randomGallery.annotation.SafeImage;
 import com.example.randomGallery.common.Result;
 import com.example.randomGallery.entity.VO.AuthorVO;
 import com.example.randomGallery.entity.VO.RandomGifVO;
@@ -17,7 +16,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
-import java.util.Objects;
 
 /**
  * 作品查询控制器
@@ -52,7 +50,6 @@ public class XhsWorkApiController {
     /**
      * 分页查询作品列表（支持筛选）
      */
-    @SafeImage
     @GetMapping("/list")
     public Result<XhsWorkPageVO> listWorks(
             @RequestParam(defaultValue = "0") int page,
@@ -88,7 +85,6 @@ public class XhsWorkApiController {
     /**
      * 查询作品详情
      */
-    @SafeImage
     @GetMapping("/detail/{workId}")
     public Result<XhsWorkDetailVO> getWorkDetail(@PathVariable String workId) {
         log.info("查询作品详情，workId={}", workId);
@@ -120,7 +116,6 @@ public class XhsWorkApiController {
     /**
      * 获取随机GIF
      */
-    @SafeImage
     @GetMapping("/randomGif")
     public Result<RandomGifVO> getRandomGif() {
         log.info("获取随机GIF");
@@ -144,7 +139,6 @@ public class XhsWorkApiController {
     /**
      * 根据ID获取GIF详情
      */
-    @SafeImage
     @GetMapping("/gifById/{id}")
     public Result<RandomGifVO> getGifById(@PathVariable Long id) {
         log.info("根据ID获取GIF详情: {}", id);
