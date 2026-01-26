@@ -2,15 +2,13 @@ package com.example.randomGallery.controller;
 
 import cn.hutool.core.util.ObjectUtil;
 import com.example.randomGallery.common.Result;
+import com.example.randomGallery.entity.QO.DownLoadQry;
 import com.example.randomGallery.entity.VO.AuthorVO;
 import com.example.randomGallery.entity.VO.RandomGifVO;
 import com.example.randomGallery.entity.VO.TagVO;
 import com.example.randomGallery.entity.VO.XhsWorkDetailVO;
 import com.example.randomGallery.entity.VO.XhsWorkPageVO;
-import com.example.randomGallery.service.AuthorService;
-import com.example.randomGallery.service.DataMigrationService;
-import com.example.randomGallery.service.TagService;
-import com.example.randomGallery.service.XhsWorkService;
+import com.example.randomGallery.service.*;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.bind.annotation.*;
@@ -30,21 +28,15 @@ public class XhsWorkApiController {
     private final AuthorService authorService;
     private final TagService tagService;
     private final DataMigrationService dataMigrationService;
+    private final DownloadApi downloadApi;
 
     /**
-     * 执行历史数据迁移
+     * 下载图片
      */
-    @PostMapping("/migrate")
-    public Result<String> migrateData() {
-        log.info("开始执行历史数据迁移");
-        try {
-            dataMigrationService.migrateData();
-            String info = dataMigrationService.getMigrationInfo();
-            return Result.success(info);
-        } catch (Exception e) {
-            log.error("数据迁移失败", e);
-            return Result.error("迁移失败: " + e.getMessage());
-        }
+    @PostMapping("/download")
+    public Result<String> download(@RequestBody DownLoadQry qry) {
+        downloadApi.addDownloadTask(qry);
+        return Result.success("下载任务添加成功");
     }
 
     /**
@@ -149,5 +141,21 @@ public class XhsWorkApiController {
             return Result.error("未找到对应的GIF");
         }
         return Result.success(gif);
+    }
+
+    /**
+     * 执行历史数据迁移
+     */
+    @PostMapping("/migrate")
+    public Result<String> migrateData() {
+        log.info("开始执行历史数据迁移");
+        try {
+            dataMigrationService.migrateData();
+            String info = dataMigrationService.getMigrationInfo();
+            return Result.success(info);
+        } catch (Exception e) {
+            log.error("数据迁移失败", e);
+            return Result.error("迁移失败: " + e.getMessage());
+        }
     }
 }

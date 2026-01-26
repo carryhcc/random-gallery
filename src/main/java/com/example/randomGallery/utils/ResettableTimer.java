@@ -44,7 +44,7 @@ public class ResettableTimer implements AutoCloseable {
     private void scheduleNewTask() {
         // 先确保之前的任务（如果存在）被取消
         if (this.scheduledTaskFuture != null && !this.scheduledTaskFuture.isDone()) {
-            this.scheduledTaskFuture.cancel(false); // false表示不中断正在执行的任务
+            this.scheduledTaskFuture.cancel(false);
         }
 
         // 如果是默认环境，则不调度实际的切换任务

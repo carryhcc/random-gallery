@@ -293,7 +293,7 @@
         parseBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> <span>解析中...</span>';
 
         try {
-            const response = await fetch('/api/download/xhs', {
+            const response = await fetch('/api/xhsWork/download', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json'
