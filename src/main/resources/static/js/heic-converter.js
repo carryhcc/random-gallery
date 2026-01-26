@@ -1,154 +1,19 @@
 /**
- * 媒体格式转换和处理工具
- * - 支持 HEIC/HEIF 图片格式转换（使用 heic2any 库转换为 JPEG）
+ * 媒体格式处理工具（简化版）
+ * - 后端已处理所有 HEIC 转换，前端直接使用 URL
  * - 支持 MOV/MP4/WebM/LIVP 等视频格式检测和处理
  * - 提供统一的媒体设置接口
  */
 
 /**
- * 检测 URL 是否为 HEIC 格式图片（基于URL后缀）
- * @param {string} url - 图片 URL
- * @returns {boolean} 是否为 HEIC 格式
- */
-function isHeicImage(url) {
-    if (!url || typeof url !== 'string') return false;
-    const lowerUrl = url.toLowerCase();
-    return lowerUrl.endsWith('.heic') || lowerUrl.endsWith('.heif');
-}
-
-/**
- * 通过下载文件头部检测实际的MIME类型
- * @param {string} url - 图片 URL
- * @returns {Promise<string>} MIME类型，例如 'image/heic' 或 'image/jpeg'
- */
-async function detectMimeType(url) {
-    try {
-        // 只下载前1KB来检测MIME类型，节省带宽
-        const response = await fetch(url, {
-            method: 'HEAD' // 先尝试HEAD请求
-        });
-
-        const contentType = response.headers.get('Content-Type');
-        if (contentType) {
-            return contentType.split(';')[0].trim().toLowerCase();
-        }
-
-        // 如果HEAD请求没有返回Content-Type，尝试Range请求获取文件头
-        const rangeResponse = await fetch(url, {
-            headers: {
-                'Range': 'bytes=0-1023' // 只下载前1KB
-            }
-        });
-
-        const rangeContentType = rangeResponse.headers.get('Content-Type');
-        if (rangeContentType) {
-            return rangeContentType.split(';')[0].trim().toLowerCase();
-        }
-
-        return 'unknown';
-    } catch (error) {
-        console.warn('检测MIME类型失败:', url, error);
-        return 'unknown';
-    }
-}
-
-/**
- * 检查MIME类型是否为HEIC/HEIF
- * @param {string} mimeType - MIME类型
- * @returns {boolean} 是否为HEIC/HEIF格式
- */
-function isHeicMimeType(mimeType) {
-    const heicMimeTypes = [
-        'image/heic',
-        'image/heif',
-        'image/heic-sequence',
-        'image/heif-sequence'
-    ];
-    return heicMimeTypes.includes(mimeType.toLowerCase());
-}
-
-/**
- * 将 HEIC 图片 URL 转换为可显示的 JPEG 格式
- * @param {string} imageUrl - 原始图片 URL
- * @returns {Promise<string>} 转换后的图片 URL (Blob URL) 或原始 URL
- */
-async function convertImageSrc(imageUrl) {
-    // 检查 heic2any 库是否已加载
-    if (typeof heic2any === 'undefined') {
-        console.warn('heic2any 库未加载，无法转换 HEIC 图片，将使用原始 URL');
-        return imageUrl;
-    }
-
-    try {
-        // 方式1: 先检查URL后缀（快速判断）
-        const hasHeicExtension = isHeicImage(imageUrl);
-
-        // 方式2: 检测实际的MIME类型（针对无后缀名的URL）
-        let needsConversion = hasHeicExtension;
-
-        if (!hasHeicExtension) {
-            // URL没有HEIC后缀，需要检查实际MIME类型
-            const mimeType = await detectMimeType(imageUrl);
-            needsConversion = isHeicMimeType(mimeType);
-
-            if (needsConversion) {
-                console.log('检测到无后缀名的HEIC图片 (MIME:', mimeType + '):', imageUrl);
-            }
-        }
-
-        // 如果不是 HEIC 格式，直接返回原始 URL
-        if (!needsConversion) {
-            return imageUrl;
-        }
-
-        console.log('开始转换HEIC图片:', imageUrl);
-
-        // 下载 HEIC 图片
-        const response = await fetch(imageUrl);
-        if (!response.ok) {
-            throw new Error('图片下载失败: ' + response.status);
-        }
-
-        const blob = await response.blob();
-
-        // 使用 heic2any 转换为 JPEG
-        const convertedBlob = await heic2any({
-            blob: blob,
-            toType: 'image/jpeg',
-            quality: 0.9
-        });
-
-        // 创建 Blob URL
-        const blobUrl = URL.createObjectURL(convertedBlob);
-        console.log('HEIC 图片转换成功:', imageUrl, '->', blobUrl);
-
-        return blobUrl;
-    } catch (error) {
-        console.error('HEIC 图片转换失败:', imageUrl, error);
-        console.warn('将使用原始 URL 作为回退方案');
-        return imageUrl;
-    }
-}
-
-/**
- * 为 img 元素设置源，自动处理 HEIC 转换
+ * 为 img 元素设置源
  * @param {HTMLImageElement} imgElement - img 元素
  * @param {string} imageUrl - 图片 URL
  * @returns {Promise<void>}
  */
 async function setImageSrc(imgElement, imageUrl) {
-    // 显示加载占位符
-    imgElement.src = getLoadingPlaceholder();
-    imgElement.classList.add('heic-loading');
-
-    // 执行转换（内部会自动检测是否为HEIC）
-    const convertedUrl = await convertImageSrc(imageUrl);
-
-    // 移除加载状态
-    imgElement.classList.remove('heic-loading');
-
     // 创建一个 Promise 来等待图片加载完成
-    return new Promise((resolve, reject) => {
+    return new Promise((resolve) => {
         // 添加加载成功事件监听
         imgElement.onload = function () {
             // 图片加载完成后，触发 Masonry 布局更新
@@ -158,8 +23,8 @@ async function setImageSrc(imgElement, imageUrl) {
 
         // 添加加载失败事件监听
         imgElement.onerror = function (error) {
-            console.warn('图片加载失败:', convertedUrl, error);
-             // 加载失败显示默认图
+            console.warn('图片加载失败:', imageUrl, error);
+            // 加载失败显示默认图
             this.onerror = null;
             this.src = '/icons/404.svg';
             // 即使失败也触发布局更新，避免布局一直错乱
@@ -168,7 +33,7 @@ async function setImageSrc(imgElement, imageUrl) {
         };
 
         // 设置图片源
-        imgElement.src = convertedUrl;
+        imgElement.src = imageUrl;
 
         // 如果图片已经缓存，onload 可能不会触发，需要检查
         if (imgElement.complete) {
@@ -178,36 +43,6 @@ async function setImageSrc(imgElement, imageUrl) {
         }
     });
 }
-
-/**
- * 获取加载中的占位符图片（SVG data URI）
- * @returns {string} 加载中占位符的 data URI
- */
-function getLoadingPlaceholder() {
-    // 创建一个简单的 SVG 加载动画
-    const svg = `
-        <svg width="200" height="200" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200">
-            <rect width="200" height="200" fill="#f0f0f0"/>
-            <circle cx="100" cy="100" r="20" fill="none" stroke="#999" stroke-width="3" stroke-dasharray="31.4 31.4">
-                <animateTransform 
-                    attributeName="transform" 
-                    type="rotate" 
-                    from="0 100 100" 
-                    to="360 100 100" 
-                    dur="1s" 
-                    repeatCount="indefinite"/>
-            </circle>
-            <text x="100" y="140" text-anchor="middle" font-family="Arial, sans-serif" font-size="12" fill="#666">
-                转换中...
-            </text>
-        </svg>
-    `.trim();
-
-    // 将 SVG 转换为 data URI
-    const encoded = encodeURIComponent(svg);
-    return `data:image/svg+xml,${encoded}`;
-}
-
 
 /**
  * 触发 Masonry 布局更新
@@ -281,9 +116,9 @@ function getMediaType(url) {
         return 'video';
     }
 
-    // 检测图片格式（包括 HEIC）
+    // 检测图片格式
     const lowerUrl = url.toLowerCase();
-    const imageExtensions = ['.jpg', '.jpeg', '.png', '.gif', '.bmp', '.webp', '.svg', '.heic', '.heif'];
+    const imageExtensions = ['.jpg', '.jpeg', '.png', '.gif', '.bmp', '.webp', '.svg'];
     const isImage = imageExtensions.some(ext => lowerUrl.endsWith(ext));
 
     if (isImage) {

@@ -10,7 +10,6 @@
           rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.loli.net/ajax/libs/font-awesome/6.4.2/css/all.min.css">
     <link rel="stylesheet" href="/css/style.css">
-    <script src="https://cdn.jsdelivr.net/npm/heic2any@0.0.4/dist/heic2any.min.js"></script>
     <script src="/js/heic-converter.js"></script>
     <script src="/js/theme.js"></script>
 </head>

@@ -13,7 +13,6 @@
     <link rel="stylesheet" href="/css/style.css">
     <script src="https://cdnjs.loli.net/ajax/libs/masonry/4.2.2/masonry.pkgd.min.js"></script>
     <script src="https://cdnjs.loli.net/ajax/libs/jquery.imagesloaded/5.0.0/imagesloaded.pkgd.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/heic2any@0.0.4/dist/heic2any.min.js"></script>
     <script src="/js/heic-converter.js"></script>
     <script src="/js/theme.js"></script>
 </head>

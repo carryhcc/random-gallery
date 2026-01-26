@@ -14,6 +14,7 @@ import com.example.randomGallery.entity.VO.XhsWorkDetailVO;
 import com.example.randomGallery.entity.VO.XhsWorkListVO;
 import com.example.randomGallery.entity.VO.XhsWorkPageVO;
 import com.example.randomGallery.entity.common.MediaTypeEnum;
+import com.example.randomGallery.service.ImageService;
 import com.example.randomGallery.service.XhsWorkService;
 import com.example.randomGallery.service.mapper.TagWorkMapper;
 import com.example.randomGallery.service.mapper.XhsWorkBaseMapper;
@@ -21,15 +22,14 @@ import com.example.randomGallery.service.mapper.XhsWorkMediaMapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+import org.springframework.web.util.UriComponentsBuilder;
 
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.Comparator;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.function.Function;
-import java.util.stream.Collectors;
-import java.util.Map;
 import java.util.stream.Collectors;
 
 /**
@@ -44,12 +44,13 @@ public class XhsWorkServiceImpl implements XhsWorkService {
     private final XhsWorkMediaMapper workMediaMapper;
     private final TagWorkMapper tagWorkMapper;
     private final com.example.randomGallery.config.PrivacyConfig privacyConfig;
+    private final ImageService imageService;
 
     @Override
     public XhsWorkPageVO pageXhsWorksWithFilter(int page, int pageSize, String authorId, Long tagId, String str,
             Integer seed) {
         // 分页查询基础表
-        Page<XhsWorkBaseDO> pageParam = new Page<>(page, pageSize); // MyBatis-Plus 页码从1开始
+        Page<XhsWorkBaseDO> pageParam = new Page<>(page, pageSize);
         LambdaQueryWrapper<XhsWorkBaseDO> wrapper = Wrappers.lambdaQuery();
 
         // 处理排序
@@ -107,6 +108,16 @@ public class XhsWorkServiceImpl implements XhsWorkService {
             mediaWrapper.eq(XhsWorkMediaDO::getIsDelete, false);
             List<XhsWorkMediaDO> allMedia = workMediaMapper.selectList(mediaWrapper);
 
+            // 【优化】提取所有将会显示的图片 URL 进行批量检测预热
+            // 这样后续在 getSafetyUrl 中调用 imageService.isHeicImage 时就能直接命中缓存
+            if (!Boolean.TRUE.equals(privacyConfig.getEnabled())) {
+                List<String> allImageUrls = allMedia.stream()
+                        .filter(m -> MediaTypeEnum.IMAGE.equals(m.getMediaType()))
+                        .map(XhsWorkMediaDO::getMediaUrl)
+                        .collect(Collectors.toList());
+                imageService.batchDetectHeic(allImageUrls);
+            }
+
             // 按 workId 分组
             Map<String, List<XhsWorkMediaDO>> mediaMap = allMedia.stream()
                     .collect(Collectors.groupingBy(XhsWorkMediaDO::getWorkId));
@@ -129,7 +140,7 @@ public class XhsWorkServiceImpl implements XhsWorkService {
                 // 统计动图数量
                 long gifCount = mediaList.stream().filter(m -> MediaTypeEnum.GIF.equals(m.getMediaType())).count();
 
-                vo.setImageCount(imageMediaList.size()); // 直接用列表长度，无需count()
+                vo.setImageCount(imageMediaList.size());
                 vo.setGifCount((int) gifCount);
 
                 // 随机获取封面（利用列表非空判断）
@@ -169,6 +180,15 @@ public class XhsWorkServiceImpl implements XhsWorkService {
                 .eq(XhsWorkMediaDO::getIsDelete, false)
                 .orderByAsc(XhsWorkMediaDO::getSortIndex);
         List<XhsWorkMediaDO> allMedia = workMediaMapper.selectList(mediaWrapper);
+
+        // 【优化】批量检测预热
+        if (!Boolean.TRUE.equals(privacyConfig.getEnabled())) {
+            List<String> imageUrls = allMedia.stream()
+                    .filter(m -> MediaTypeEnum.IMAGE.equals(m.getMediaType()))
+                    .map(XhsWorkMediaDO::getMediaUrl)
+                    .collect(Collectors.toList());
+            imageService.batchDetectHeic(imageUrls);
+        }
 
         // 定义一个临时的lambda变量（方法内），避免重复代码
         Function<XhsWorkMediaDO, XhsWorkMediaDO> urlProcessor = m -> {
@@ -310,7 +330,40 @@ public class XhsWorkServiceImpl implements XhsWorkService {
         return vo;
     }
 
+    /**
+     * 获取安全的图片 URL
+     * 如果是隐私模式，返回占位符；否则检测 HEIC 并返回转换后的 URL
+     *
+     * @param url 原始 URL
+     * @return 处理后的 URL
+     */
     private String getSafetyUrl(String url) {
-        return Boolean.TRUE.equals(privacyConfig.getEnabled()) ? privacyConfig.getPlaceholderUrl() : url;
+        // 隐私模式下返回占位符
+        if (Boolean.TRUE.equals(privacyConfig.getEnabled())) {
+            return privacyConfig.getPlaceholderUrl();
+        }
+
+        // 非隐私模式下，检测是否为 HEIC 格式
+        // 注意：这里调用 imageService 会命中缓存（因为 batchDetectHeic 已经预热过了）
+        if (imageService.isHeicImage(url)) {
+            log.debug("检测到 HEIC 图片: {}", url);
+            return buildConvertUrl(url);
+        }
+
+        return url;
+    }
+
+    /**
+     * 构建转换代理 URL
+     *
+     * @param originalUrl 原始图片 URL
+     * @return 转换代理 URL
+     */
+    private String buildConvertUrl(String originalUrl) {
+        return UriComponentsBuilder
+                .fromPath("/api/image/convert-heic")
+                .queryParam("url", originalUrl)
+                .build()
+                .toUriString();
     }
 }
