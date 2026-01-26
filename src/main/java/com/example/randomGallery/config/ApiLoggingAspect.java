@@ -33,7 +33,8 @@ public class ApiLoggingAspect {
     private final ObjectMapper objectMapper = new ObjectMapper();
 
     @Pointcut("execution(* com.example.randomGallery.controller..*(..))")
-    public void apiControllerMethods() {}
+    public void apiControllerMethods() {
+    }
 
     @Around("apiControllerMethods()")
     public Object logApiCall(ProceedingJoinPoint joinPoint) throws Throwable {
@@ -42,6 +43,14 @@ public class ApiLoggingAspect {
         String signature = joinPoint.getSignature().toShortString();
         String uri = getRequestUri();
         String httpMethod = getRequestMethod();
+
+        // 跳过直接操作 HttpServletResponse 的方法（如图片转换接口）
+        // 这些方法会直接写入二进制流，不能与日志框架的 JSON 序列化共存
+        if (isBinaryResponseMethod(joinPoint)) {
+            log.debug("[API-SKIP] {} {} -> {} (binary response, skip logging)", httpMethod, uri, signature);
+            return joinPoint.proceed();
+        }
+
         String argsJson = toSafeJson(joinPoint.getArgs());
 
         log.info("[API-REQ] {} {} -> {} | args={}", httpMethod, uri, signature, argsJson);
@@ -57,11 +66,38 @@ public class ApiLoggingAspect {
         } finally {
             long cost = System.currentTimeMillis() - start;
             if (error == null) {
-                log.info("[API-RESP] {} {} <- {} | cost={}ms | result={}", httpMethod, uri, signature, cost, toSafeJson(result));
+                log.info("[API-RESP] {} {} <- {} | cost={}ms | result={}", httpMethod, uri, signature, cost,
+                        toSafeJson(result));
             } else {
-                log.error("[API-RESP] {} {} <- {} | cost={}ms | error={}", httpMethod, uri, signature, cost, error.toString());
+                log.error("[API-RESP] {} {} <- {} | cost={}ms | error={}", httpMethod, uri, signature, cost,
+                        error.toString());
             }
         }
+    }
+
+    /**
+     * 检查是否为二进制响应方法（返回 void 且有 HttpServletResponse 参数）
+     */
+    private boolean isBinaryResponseMethod(ProceedingJoinPoint joinPoint) {
+        // 检查方法签名
+        String signature = joinPoint.getSignature().toString();
+
+        // 检查是否为 void 返回类型
+        if (!signature.startsWith("void ")) {
+            return false;
+        }
+
+        // 检查参数中是否包含 HttpServletResponse
+        Object[] args = joinPoint.getArgs();
+        if (args != null) {
+            for (Object arg : args) {
+                if (arg instanceof jakarta.servlet.http.HttpServletResponse) {
+                    return true;
+                }
+            }
+        }
+
+        return false;
     }
 
     private String getRequestUri() {
@@ -84,7 +120,8 @@ public class ApiLoggingAspect {
 
     private String toSafeJson(Object obj) {
         try {
-            if (obj == null) return "null";
+            if (obj == null)
+                return "null";
             if (obj instanceof Object[] args) {
                 Object[] filtered = Arrays.stream(args)
                         .map(this::maskIfSensitive)
@@ -98,7 +135,8 @@ public class ApiLoggingAspect {
     }
 
     private Object maskIfSensitive(Object value) {
-        if (value == null) return null;
+        if (value == null)
+            return null;
         // 简单脱敏与体积控制
         if (value instanceof CharSequence str) {
             String s = str.toString();
@@ -142,8 +180,7 @@ public class ApiLoggingAspect {
 
     private boolean isSensitiveKey(String key) {
         String lower = key.toLowerCase();
-        return lower.contains("password") || lower.contains("passwd") || lower.contains("secret") || lower.contains("token");
+        return lower.contains("password") || lower.contains("passwd") || lower.contains("secret")
+                || lower.contains("token");
     }
 }
-
-
