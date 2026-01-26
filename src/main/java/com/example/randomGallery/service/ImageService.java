@@ -100,14 +100,19 @@ public class ImageService {
      * @return 图片字节数组
      */
     public byte[] downloadImage(String url) {
-        try {
-            org.springframework.http.HttpHeaders headers = new org.springframework.http.HttpHeaders();
-            headers.set("User-Agent",
-                    "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36");
-            headers.set("Referer", "https://www.xiaohongshu.com/");
-            headers.set("Accept", "image/avif,image/webp,image/apng,image/svg+xml,image/*,*/*;q=0.8");
+        int maxRetries = 3;
+        int retryDelayMs = 500;
+        Exception lastException = null;
 
-            org.springframework.http.HttpEntity<?> requestEntity = new org.springframework.http.HttpEntity<>(headers);
+        for (int i = 0; i < maxRetries; i++) {
+            try {
+                org.springframework.http.HttpHeaders headers = new org.springframework.http.HttpHeaders();
+                headers.set("User-Agent",
+                        "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36");
+                headers.set("Referer", "https://www.xiaohongshu.com/");
+                headers.set("Accept", "image/avif,image/webp,image/apng,image/svg+xml,image/*,*/*;q=0.8");
+
+                org.springframework.http.HttpEntity<?> requestEntity = new org.springframework.http.HttpEntity<>(headers);
 
                 ResponseEntity<byte[]> response = restTemplate.exchange(
                         url,
@@ -115,16 +120,29 @@ public class ImageService {
                         requestEntity,
                         byte[].class);
 
-            if (response.getStatusCode().is2xxSuccessful() && response.getBody() != null) {
-                return response.getBody();
-            } else {
-                log.warn("Download failed: {}, status: {}", url, response.getStatusCode());
-                return null;
+                if (response.getStatusCode().is2xxSuccessful() && response.getBody() != null) {
+                    return response.getBody();
+                } else {
+                    log.warn("Download attempt {}/{} failed for {}: status {}", i + 1, maxRetries, url,
+                            response.getStatusCode());
+                }
+            } catch (Exception e) {
+                lastException = e;
+                log.warn("Download attempt {}/{} error for {}: {}", i + 1, maxRetries, url, e.getMessage());
+
+                if (i < maxRetries - 1) {
+                    try {
+                        Thread.sleep(retryDelayMs);
+                    } catch (InterruptedException ie) {
+                        Thread.currentThread().interrupt();
+                        break;
+                    }
+                }
             }
-        } catch (Exception e) {
-            log.error("Download error: {}", url, e);
-            return null;
         }
+
+        log.error("Download failed after {} retries: {}", maxRetries, url, lastException);
+        return null;
     }
 
     /**
