@@ -19,7 +19,7 @@
         <java.version>21</java.version>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 
-        <mybatis-plus.version>3.5.15</mybatis-plus.version>
+        <mybatis-plus.version>3.5.16</mybatis-plus.version>
         <lombok.version>1.18.36</lombok.version>
         <hutool.version>5.8.43</hutool.version>
         <aspectj.version>1.9.22.1</aspectj.version>
