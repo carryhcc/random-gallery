@@ -387,7 +387,7 @@
 
     // 设置视口高度（解决移动端地址栏问题）
     function setAppHeight() {
-        document.documentElement.style.setProperty('--app-height', `${window.innerHeight}px`);
+        document.documentElement.style.setProperty('--app-height', window.innerHeight + 'px');
     }
 
     // 事件绑定
@@ -483,7 +483,7 @@
         dom.loader.style.display = 'block';
         
         // 设置信息
-        dom.authorName.textContent = '@' + (data.authorNickname || '未知作者');
+        dom.authorName.textContent = (data.authorNickname || '未知作者');
         dom.workTitle.textContent = data.workTitle || '无标题';
         dom.infoPanel.style.display = 'flex';
 
@@ -570,14 +570,14 @@
 
     function goToAuthor() {
         if (state.currentData && state.currentData.authorId) {
-            window.location.href = `/download?authorId=${state.currentData.authorId}`;
+            window.location.href = '/downloadList?authorId=' + state.currentData.authorId;
         }
         event.stopPropagation();
     }
 
     function goToDetail() {
         if (state.currentData && state.currentData.workId) {
-            window.location.href = `/downloadDetail?workId=${state.currentData.workId}`;
+            window.location.href = '/downloadDetail?workId=' + state.currentData.workId;
         }
         event.stopPropagation();
     }
@@ -586,7 +586,7 @@
         if (state.currentData && state.currentData.mediaUrl) {
             const a = document.createElement('a');
             a.href = state.currentData.mediaUrl;
-            a.download = `gif_${state.currentData.id}.gif`;
+            a.download = 'gif_' + state.currentData.id + '.gif';
             a.target = '_blank';
             a.click();
         }

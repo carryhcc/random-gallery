@@ -30,7 +30,7 @@
     <style>
         .theme-toggle {
             position: fixed;
-            top: 1.5rem;
+            bottom: 1.5rem;
             right: 1.5rem;
             z-index: 1030;
             width: 44px;
@@ -61,29 +61,286 @@
             transform: rotate(180deg);
         }
 
-        .env-stats {
+        /* Disabled state for action cards */
+        .action-card.disabled {
+            opacity: 0.5;
+            pointer-events: none;
+            filter: grayscale(100%);
+        }
+
+        /* --- 新版布局样式 --- */
+        .main-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(340px, 1fr));
+            gap: 1.5rem;
+            width: 100%;
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 1rem;
+        }
+
+        .module-card {
+            display: flex;
+            flex-direction: column;
+            gap: 1.5rem;
+            padding: 1.5rem;
+            min-height: 100%;
+        }
+
+        .header-main {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 0.5rem;
+        }
+
+        .card-title {
+            font-size: 1.25rem;
+            font-weight: 700;
+            margin: 0;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .card-subtitle {
+            text-align: left;
+            margin: 0;
+            font-size: 0.85rem;
             color: var(--color-text-secondary);
-            font-size: var(--font-size-sm);
-            margin-top: 0.5rem;
+            padding-left: 2rem;
+            /* Align with title text */
+        }
+
+        /* 环境统计 */
+        .env-stats {
+            padding-left: 2rem;
+            text-align: left;
+            margin: 0;
+            font-size: 0.85rem;
+            color: var(--color-text-secondary);
+        }
+
+        /* 按钮网格 */
+        .button-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1rem;
+        }
+
+        /* 动作卡片按钮 */
+        .action-card {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 0.75rem;
+            padding: 1.5rem 1rem;
+            background: var(--color-bg-secondary);
+            border: 1px solid var(--color-border);
+            border-radius: var(--radius-lg);
+            text-decoration: none;
+            color: var(--color-text-primary);
+            transition: all var(--transition-fast);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .action-card:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+            border-color: var(--color-primary);
+        }
+
+        .icon-box {
+            width: 48px;
+            height: 48px;
+            border-radius: 12px;
             display: flex;
             align-items: center;
             justify-content: center;
-            /* 新增：水平居中 */
-            gap: 1.5rem;
-            /* 调整间距更美观 */
-            text-align: center;
-            /* 确保文本居中 */
+            font-size: 1.5rem;
+            background: rgba(102, 126, 234, 0.1);
+            color: var(--color-primary);
+            transition: all var(--transition-fast);
         }
 
-        .env-stats i {
-            margin-right: 0.3rem;
+        .action-card:hover .icon-box {
+            transform: scale(1.1);
+        }
+
+        /* 颜色变体 */
+        .action-card.warm .icon-box {
+            background: rgba(255, 159, 67, 0.1);
+            color: #ff9f43;
+        }
+
+        .action-card.accent .icon-box {
+            background: rgba(238, 82, 83, 0.1);
+            color: #ee5253;
+        }
+
+        .action-card.neutral .icon-box {
+            background: rgba(84, 160, 255, 0.1);
+            color: #54a0ff;
+        }
+
+        .action-card.success .icon-box {
+            background: rgba(16, 172, 132, 0.1);
+            color: #10ac84;
+        }
+
+        .action-card.info .icon-box {
+            background: rgba(46, 134, 222, 0.1);
+            color: #2e86de;
+        }
+
+        .action-card.warning .icon-box {
+            background: rgba(255, 177, 66, 0.1);
+            color: #ffb142;
+        }
+
+        .label {
+            font-weight: 600;
+            font-size: 0.95rem;
+        }
+
+        /* 环境切换器 (Compact) */
+        .env-selector {
+            position: relative;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.4rem 0.8rem;
+            background: var(--color-bg-tertiary);
+            border-radius: 20px;
+            cursor: pointer;
+            font-size: 0.85rem;
+            border: 1px solid var(--color-border);
+            transition: all 0.2s ease;
+        }
+
+        .env-selector:hover {
+            background: var(--color-bg-hover);
+            border-color: var(--color-border-hover);
+        }
+
+        .env-badge {
+            font-weight: 600;
             color: var(--color-primary);
         }
 
-        /* 确保副标题本身也是居中的（如果样式表中没有设置） */
-        .card-subtitle {
-            text-align: center;
-            margin-bottom: 0.25rem;
+        .env-selector .fa-chevron-down {
+            transition: transform 0.2s ease;
+            font-size: 0.8em;
+            color: var(--color-text-tertiary);
+        }
+
+        .env-selector.active .fa-chevron-down {
+            transform: rotate(180deg);
+        }
+
+        .env-dropdown-list {
+            display: flex;
+            flex-direction: column;
+            position: absolute;
+            top: calc(100% + 8px);
+            right: 0;
+            left: auto !important;
+            /* Force override style.css left: 0 */
+            width: 140px;
+            background: var(--color-bg-overlay);
+            /* Semi-transparent for blur */
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid var(--color-border);
+            border-radius: var(--radius-lg);
+            box-shadow: var(--shadow-xl);
+            z-index: 2000;
+            padding: 6px;
+
+            /* Initial State */
+            opacity: 0;
+            visibility: hidden;
+            transform: translateY(-8px);
+            transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        .env-selector.active .env-dropdown-list {
+            opacity: 1;
+            visibility: visible;
+            transform: translateY(0);
+        }
+
+        .env-dropdown-option {
+            padding: 8px 12px;
+            text-decoration: none;
+            color: var(--color-text-secondary);
+            font-size: 0.85rem;
+            transition: all 0.2s;
+            text-align: left;
+            border-radius: var(--radius-md);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .env-dropdown-option:hover {
+            background: var(--color-bg-hover);
+            color: var(--color-text-primary);
+        }
+
+        .env-dropdown-option.active {
+            background: var(--color-primary-bg);
+            color: var(--color-primary);
+            font-weight: 500;
+        }
+
+        /* 隐私模式按钮 */
+        .privacy-btn {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.4rem 0.8rem;
+            border: 1px solid var(--color-border);
+            border-radius: 20px;
+            background: var(--color-bg-tertiary);
+            color: var(--color-text-secondary);
+            cursor: pointer;
+            font-size: 0.85rem;
+            transition: all 0.2s;
+        }
+
+        .privacy-btn:hover {
+            background: var(--color-bg-hover);
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(-5px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        /* 移动端适配 */
+        @media (max-width: 768px) {
+            .main-container {
+                grid-template-columns: 1fr;
+                padding: 0.5rem;
+            }
+
+            .button-grid {
+                gap: 0.75rem;
+            }
+
+            .action-card {
+                padding: 1.25rem 0.75rem;
+            }
         }
     </style>
 </head>
@@ -95,69 +352,79 @@
         <i class="fas fa-moon" id="themeIcon"></i>
     </button>
 
-    <!-- 隐私模式切换按钮 -->
-    <button class="theme-toggle" id="privacyToggle" onclick="togglePrivacy()" title="切换隐私模式" style="top: 5rem;">
-        <i class="fas fa-eye" id="privacyIcon"></i>
-    </button>
-
-    <!-- 环境切换器 -->
-    <div class="dropdown" id="env-dropdown" style="position: fixed; top: 1.5rem; left: 1.5rem; z-index: 1030;">
-        <div class="dropdown-toggle" onclick="toggleDropdown()">
-            <span id="selected-env-text">加载中...</span>
-            <svg class="dropdown-arrow" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <path d="M7 10L12 15L17 10" stroke="currentColor" stroke-width="2" stroke-linecap="round"
-                    stroke-linejoin="round" />
-            </svg>
-        </div>
-        <div class="dropdown-menu">
-            <a href="#" data-env="dev" onclick="selectEnvironment('dev')" class="dropdown-item">开发环境</a>
-            <a href="#" data-env="test" onclick="selectEnvironment('test')" class="dropdown-item">测试环境</a>
-            <a href="#" data-env="prod" onclick="selectEnvironment('prod')" class="dropdown-item">生产环境</a>
-        </div>
-    </div>
-
     <!-- 主容器 -->
-    <div class="home-container">
-        <div class="card home-card animate-fade-in">
+    <div class="main-container">
+
+        <!-- 模块一：本地图库 -->
+        <div class="card module-card animate-fade-in">
             <div class="card-header">
-                <h1 class="card-title">
-                    <i class="fas fa-images" style="margin-right: 0.5rem;"></i>
-                    随机图库
-                </h1>
-                <!-- 环境统计信息显示（已居中） -->
+                <div class="header-main">
+                    <h2 class="card-title"><i class="fas fa-server"></i> 本地图库</h2>
+                    <!-- 环境切换器 -->
+                    <div class="env-selector" id="env-component" onclick="toggleDropdown()">
+                        <span id="selected-env-text" class="env-badge">加载中...</span>
+                        <i class="fas fa-chevron-down"></i>
+                        <div class="env-dropdown-list" id="env-dropdown-menu">
+                            <a href="#" data-env="dev" class="env-dropdown-option"
+                                onclick="selectEnvironment('dev'); event.stopPropagation();">开发环境</a>
+                            <a href="#" data-env="test" class="env-dropdown-option"
+                                onclick="selectEnvironment('test'); event.stopPropagation();">测试环境</a>
+                            <a href="#" data-env="prod" class="env-dropdown-option"
+                                onclick="selectEnvironment('prod'); event.stopPropagation();">生产环境</a>
+                        </div>
+                    </div>
+                </div>
                 <p class="env-stats" id="envStats">
-                    <i class="fas fa-spinner fa-spin"></i> 加载统计信息中...
+                    <span class="loading-text"><i class="fas fa-spinner fa-spin"></i> 数据同步中...</span>
                 </p>
             </div>
 
-            <div class="button-group">
-                <a href="/showPic" class="btn btn-primary btn-full">
-                    <i class="fas fa-image"></i>
-                    <span>随机图片</span>
+            <div class="button-grid">
+                <a href="/showPic" class="action-card primary">
+                    <div class="icon-box"><i class="fas fa-random"></i></div>
+                    <span class="label">随机图片</span>
                 </a>
-                <a href="/randomGallery" class="btn btn-primary btn-full">
-                    <i class="fas fa-th"></i>
-                    <span>随机画廊</span>
+                <a href="/randomGallery" class="action-card warm">
+                    <div class="icon-box"><i class="fas fa-th-large"></i></div>
+                    <span class="label">随机画廊</span>
                 </a>
-                <a href="/randomGif" class="btn btn-primary btn-full">
-                    <i class="fas fa-film"></i>
-                    <span>随机动图</span>
+                <a href="#" id="randomGroupBtn" class="action-card accent">
+                    <div class="icon-box"><i class="fas fa-layer-group"></i></div>
+                    <span class="label">随机套图</span>
                 </a>
-                <a href="#" id="randomGroupBtn" class="btn btn-primary btn-full">
-                    <i class="fas fa-images"></i>
-                    <span>随机套图</span>
+                <a href="/groupList" class="action-card neutral">
+                    <div class="icon-box"><i class="fas fa-list-ul"></i></div>
+                    <span class="label">分组列表</span>
                 </a>
-                <a href="/groupList" class="btn btn-primary btn-full">
-                    <i class="fas fa-list"></i>
-                    <span>分组列表</span>
+            </div>
+        </div>
+
+        <!-- 模块二：精选收藏 -->
+        <div class="card module-card animate-fade-in delay-100">
+            <div class="card-header">
+                <div class="header-main">
+                    <h2 class="card-title"><i class="fas fa-cloud-download-alt"></i> 精选收藏</h2>
+                    <!-- 隐私模式切换 (Inline) -->
+                    <button class="privacy-btn" id="privacyToggle" onclick="togglePrivacy()" title="切换隐私模式">
+                        <i class="fas fa-eye" id="privacyIcon"></i>
+                        <span id="privacyText">隐私模式</span>
+                    </button>
+                </div>
+                <p class="card-subtitle">XHS 解析与精选动图资源</p>
+            </div>
+
+            <div class="button-grid">
+                <a href="/randomGif" class="action-card success" id="randomGifBtn">
+                    <div class="icon-box"><i class="fas fa-film"></i></div>
+                    <span class="label">随机动图</span>
                 </a>
-                <a href="/download" class="btn btn-primary btn-full">
-                    <i class="fas fa-download"></i>
-                    <span>图片下载</span>
+                <a href="/downloadList" class="action-card info">
+                    <div class="icon-box"><i class="fas fa-images"></i></div>
+                    <span class="label">下载浏览</span>
                 </a>
-                <a href="/downloadList" class="btn btn-primary btn-full">
-                    <i class="fas fa-list"></i>
-                    <span>下载浏览</span>
+                <a href="/download" class="action-card warning" style="grid-column: span 2;">
+                    <div class="icon-box"><i class="fas fa-file-download"></i></div>
+                    <span class="label">图片下载管理</span>
                 </a>
             </div>
         </div>
@@ -178,60 +445,61 @@
             }, 3000);
         }
 
+        // Dropdown Logic - Restored to robust ID-based approach
         function toggleDropdown() {
-            document.getElementById('env-dropdown').classList.toggle('open');
+            // Stop propagation if event is passed (defensive), but mainly rely on ID toggle
+            const selector = document.getElementById('env-component');
+            selector.classList.toggle('active');
         }
 
         function selectEnvironment(targetEnv) {
-            toggleDropdown();
+            // Dropdown closing is handled by parent click or outside click
+            const selector = document.getElementById('env-component');
+            selector.classList.remove('active');
             switchEnvironment(targetEnv);
+        }
+
+        // Close dropdown when clicking outside
+        window.onclick = function (event) {
+            const selector = document.getElementById('env-component');
+            if (selector && !selector.contains(event.target)) {
+                selector.classList.remove('active');
+            }
         }
 
         async function updateEnvStatus() {
             try {
-                // 调用新接口获取环境详情
+                // Get environment details
                 const response = await fetch('/api/system/env/currentInfo');
-                if (!response.ok) {
-                    throw new Error(`HTTP error! status: ${response.status}`);
-                }
+                if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+
                 const result = await response.json();
-                const picCount = result.data; // PicCount对象
-                const currentEnv = picCount.env;
+                const data = result.data;
+                const currentEnv = data.env;
 
-                // 更新环境选择器显示
+                // Update Selector Text
                 const selectedEnvText = document.getElementById('selected-env-text');
-                const envOptions = document.querySelectorAll('.dropdown-menu a');
-                const envStats = document.getElementById('envStats');
+                const envMap = { dev: '开发环境', test: '测试环境', prod: '生产环境' };
+                selectedEnvText.textContent = envMap[currentEnv] || "未知环境";
 
-                let found = false;
-                envOptions.forEach(option => {
-                    const optionEnv = option.dataset.env;
-                    if (optionEnv === currentEnv) {
-                        option.classList.add('active');
-                        selectedEnvText.textContent = option.textContent;
-                        found = true;
-                    } else {
-                        option.classList.remove('active');
-                    }
+                // Update Active State in Menu
+                document.querySelectorAll('.env-dropdown-option').forEach(item => {
+                    if (item.dataset.env === currentEnv) item.classList.add('active');
+                    else item.classList.remove('active');
                 });
 
-                if (!found) {
-                    selectedEnvText.textContent = "未知环境";
-                }
-
-                // 更新环境统计信息显示
+                // Update Stats
+                const envStats = document.getElementById('envStats');
                 envStats.innerHTML = `
-                <i class="fas fa-folder"></i> 分组总数: ${picCount.groupCount || 0}
-                <i class="fas fa-image"></i> 图片总数: ${picCount.picCount || 0}
-            `;
+                    <i class="fas fa-database"></i> 分组: ${data.groupCount || 0}
+                    <span style="margin: 0 8px; color: var(--color-border);">|</span>
+                    <i class="fas fa-image"></i> 图片: ${data.picCount || 0}
+                `;
 
             } catch (error) {
-                console.error("获取环境状态失败:", error);
-                showToast("获取环境状态失败", "error");
+                console.error("Failed to get env status:", error);
                 document.getElementById('selected-env-text').textContent = "获取失败";
-                // 显示错误状态的统计信息（保持居中）
-                document.getElementById('envStats').innerHTML =
-                    '<i class="fas fa-exclamation-circle"></i> 统计信息加载失败';
+                document.getElementById('envStats').innerHTML = '<span class="error-text">无法连接服务器</span>';
             }
         }
 
@@ -240,23 +508,18 @@
             showToast(`正在切换到 ${envMap[targetEnv] || targetEnv}...`, 'info');
             try {
                 const response = await fetch('/api/system/env/' + targetEnv);
-                if (!response.ok) {
-                    throw new Error(`HTTP error! status: ${response.status}`);
-                }
+                if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+
                 const result = await response.json();
-
                 if (result.code === 200) {
-                    await updateEnvStatus(); // 切换后重新获取环境详情
-                    const currentActiveButtonText = document.getElementById('selected-env-text').textContent;
-                    showToast(`成功切换到 ${currentActiveButtonText}！`, 'success');
+                    await updateEnvStatus();
+                    showToast(`环境已切换`, 'success');
                 } else {
-                    throw new Error(result.message || '切换环境失败');
+                    throw new Error(result.message || '切换失败');
                 }
-
             } catch (error) {
-                console.error("切换环境失败:", error);
-                showToast("切换环境失败: " + error.message, "error");
-                await updateEnvStatus();
+                console.error("Switch env failed:", error);
+                showToast("切换失败: " + error.message, "error");
             }
         }
 
@@ -268,27 +531,15 @@
                 .then(response => response.json())
                 .then(result => {
                     if (result.code === 200 && result.data && result.data.groupId) {
-                        const groupId = result.data.groupId;
-                        const groupName = result.data.groupName || '随机套图';
-                        window.location.href = '/showPicList?groupId=' + groupId + '&groupName=' + encodeURIComponent(groupName);
+                        window.location.href = '/showPicList?groupId=' + result.data.groupId + '&groupName=' + encodeURIComponent(result.data.groupName || '随机套图');
                     } else {
                         window.location.href = '/showPicList';
                     }
                 })
-                .catch(error => {
-                    console.error('获取随机分组信息失败:', error);
-                    window.location.href = '/showPicList';
-                });
+                .catch(() => window.location.href = '/showPicList');
         });
 
-        window.onclick = function (event) {
-            const dropdown = document.getElementById('env-dropdown');
-            if (dropdown && !dropdown.contains(event.target)) {
-                dropdown.classList.remove('open');
-            }
-        }
-
-        // 主题切换功能
+        // Theme Toggle
         function toggleTheme() {
             const newTheme = window.themeManager.toggle();
             updateThemeIcon(newTheme);
@@ -297,22 +548,17 @@
         function updateThemeIcon(theme) {
             const themeIcon = document.getElementById('themeIcon');
             if (themeIcon) {
-                if (theme === 'light') {
-                    themeIcon.className = 'fas fa-sun';
-                    themeIcon.parentElement.title = '切换到深色模式';
-                } else {
-                    themeIcon.className = 'fas fa-moon';
-                    themeIcon.parentElement.title = '切换到浅色模式';
-                }
+                themeIcon.className = theme === 'light' ? 'fas fa-sun' : 'fas fa-moon';
+                themeIcon.parentElement.title = theme === 'light' ? '切换到深色模式' : '切换到浅色模式';
             }
         }
 
-        // 隐私模式切换功能
+        // Privacy Mode Toggle
         async function togglePrivacy() {
             try {
+                const btn = document.getElementById('privacyToggle');
                 const icon = document.getElementById('privacyIcon');
-                // 当前如果是关闭状态(eye)，则点击后开启(eye-slash)
-                const isEnabled = icon.classList.contains('fa-eye');
+                const isEnabled = icon.classList.contains('fa-eye'); // Currently visible -> requesting hidden (privacy enabled)
 
                 const response = await fetch('/api/system/privacy-mode?enabled=' + isEnabled);
                 if (response.ok) {
@@ -325,24 +571,39 @@
                     }
                 }
             } catch (error) {
-                console.error("切换隐私模式失败:", error);
-                showToast("切换失败", 'error');
+                console.error("Toggle privacy failed:", error);
+                showToast("操作失败", 'error');
             }
         }
 
-        function updatePrivacyIcon(enabled) {
-            const icon = document.getElementById('privacyIcon');
+        function updatePrivacyIcon(privacyEnabled) {
             const btn = document.getElementById('privacyToggle');
-            if (icon && btn) {
-                if (enabled) {
-                    icon.className = 'fas fa-eye-slash';
-                    btn.title = '关闭隐私模式';
-                    icon.style.color = '#ff6b6b'; // 开启时显示红色警告色
-                } else {
-                    icon.className = 'fas fa-eye';
-                    btn.title = '开启隐私模式';
-                    icon.style.color = ''; // 恢复默认颜色
-                }
+            const icon = document.getElementById('privacyIcon');
+            const text = document.getElementById('privacyText');
+            const gifBtn = document.getElementById('randomGifBtn');
+
+            if (privacyEnabled) {
+                // Privacy ON
+                icon.className = 'fas fa-eye-slash';
+                btn.classList.add('active');
+                icon.style.color = '#ff6b6b';
+                text.textContent = "隐私开启";
+                btn.title = "关闭隐私模式";
+
+                // Disable GIF Button
+                gifBtn.classList.add('disabled');
+                gifBtn.removeAttribute('href'); // Remove link to ensure no navigation
+            } else {
+                // Privacy OFF
+                icon.className = 'fas fa-eye';
+                btn.classList.remove('active');
+                icon.style.color = '';
+                text.textContent = "隐私模式";
+                btn.title = "开启隐私模式";
+
+                // Enable GIF Button
+                gifBtn.classList.remove('disabled');
+                gifBtn.setAttribute('href', '/randomGif');
             }
         }
 
@@ -355,15 +616,11 @@
                         updatePrivacyIcon(result.data);
                     }
                 }
-            } catch (error) {
-                console.error("获取隐私模式状态失败:", error);
-            }
+            } catch (e) { }
         }
 
-        // 页面加载时更新图标
         document.addEventListener('DOMContentLoaded', function () {
-            const currentTheme = window.themeManager.get();
-            updateThemeIcon(currentTheme);
+            updateThemeIcon(window.themeManager.get());
             initPrivacyStatus();
         });
     </script>
