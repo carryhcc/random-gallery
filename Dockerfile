@@ -1,6 +1,9 @@
 # 强制指定为 AMD64 架构的运行环境
 FROM --platform=linux/amd64 eclipse-temurin:21-jre-alpine
 
+# 设置时区
+ENV TZ=Asia/Shanghai
+
 # 设置工作目录
 WORKDIR /app
 
