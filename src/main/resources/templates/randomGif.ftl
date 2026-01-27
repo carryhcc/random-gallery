@@ -7,892 +7,626 @@
     <title>随机动图 - 随机图库</title>
     <link rel="stylesheet" href="https://cdnjs.loli.net/ajax/libs/font-awesome/6.4.2/css/all.min.css">
     <style>
+        :root {
+            --app-height: 100vh;
+        }
+
         * {
             margin: 0;
             padding: 0;
             box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
         }
 
         body {
             width: 100vw;
-            height: 100vh;
+            height: var(--app-height);
             overflow: hidden;
             background: #000;
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-            touch-action: pan-y;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            color: #fff;
+            touch-action: none; /* 禁止浏览器默认触摸行为 */
         }
 
-        .gif-viewer {
+        .app-container {
             width: 100%;
             height: 100%;
             position: relative;
+            background: #000;
+        }
+
+        /* 视频容器 */
+        .video-wrapper {
+            width: 100%;
+            height: 100%;
             display: flex;
             align-items: center;
             justify-content: center;
+            opacity: 0;
+            transition: opacity 0.3s ease;
         }
 
-        #currentGif {
-            max-width: 100%;
-            max-height: 100%;
-            width: auto;
-            height: auto;
-            object-fit: contain;
-            display: block;
-            transition: opacity 0.3s cubic-bezier(0.4, 0, 0.2, 1), 
-                        transform 0.3s cubic-bezier(0.4, 0, 0.2, 1),
-                        object-fit 0.3s ease;
-            cursor: pointer;
+        .video-wrapper.show {
+            opacity: 1;
         }
 
-        #currentGif.fill-mode {
+        video {
             width: 100%;
             height: 100%;
+            object-fit: contain;
+            transition: object-fit 0.3s ease;
+        }
+
+        video.cover {
             object-fit: cover;
         }
 
-        #currentGif.fade-out {
-            opacity: 0;
-            transform: scale(0.95);
+        /* 顶部遮罩（渐变阴影） */
+        .overlay-top {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 15%;
+            background: linear-gradient(to bottom, rgba(0,0,0,0.6), transparent);
+            pointer-events: none;
+            z-index: 10;
         }
 
-        #currentGif.fade-in {
-            animation: fadeInScale 0.4s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+        /* 底部遮罩（渐变阴影） */
+        .overlay-bottom {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            height: 30%;
+            background: linear-gradient(to top, rgba(0,0,0,0.8), transparent);
+            pointer-events: none;
+            z-index: 10;
         }
 
-        @keyframes fadeInScale {
-            from {
-                opacity: 0;
-                transform: scale(0.95);
-            }
-            to {
-                opacity: 1;
-                transform: scale(1);
-            }
+        /* 返回按钮 */
+        .back-btn {
+            position: absolute;
+            top: max(20px, env(safe-area-inset-top));
+            left: 20px;
+            z-index: 20;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.2);
+            backdrop-filter: blur(10px);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.2s ease;
         }
 
-        .loading {
+        .back-btn:active {
+            transform: scale(0.9);
+            background: rgba(255, 255, 255, 0.3);
+        }
+
+        .back-btn i {
+            font-size: 20px;
+            color: #fff;
+        }
+
+        /* 底部信息区 */
+        .info-panel {
+            position: absolute;
+            bottom: max(20px, env(safe-area-inset-bottom));
+            left: 15px;
+            right: 80px; /* 右侧留空给功能按钮 */
+            z-index: 20;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            text-shadow: 0 1px 2px rgba(0,0,0,0.5);
+            pointer-events: auto; /* 允许点击 */
+        }
+
+        .author-info {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+        }
+
+        .author-info i {
+            font-size: 14px;
+        }
+
+        .work-title {
+            font-size: 14px;
+            line-height: 1.4;
+            color: rgba(255, 255, 255, 0.9);
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+            cursor: pointer;
+        }
+
+        /* 加载动画 */
+        .loader {
             position: absolute;
             top: 50%;
             left: 50%;
             transform: translate(-50%, -50%);
-            color: #fff;
-            font-size: 18px;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            gap: 15px;
-            animation: fadeIn 0.3s ease-in;
-        }
-
-        .loading.hidden {
-            display: none;
-        }
-
-        @keyframes fadeIn {
-            from { opacity: 0; }
-            to { opacity: 1; }
+            z-index: 5;
+            pointer-events: none;
         }
 
         .spinner {
-            width: 50px;
-            height: 50px;
-            border: 4px solid rgba(255, 255, 255, 0.2);
-            border-top-color: #fff;
+            width: 40px;
+            height: 40px;
+            border: 3px solid rgba(255, 255, 255, 0.3);
             border-radius: 50%;
-            animation: spin 0.8s linear infinite;
+            border-top-color: #fff;
+            animation: spin 0.8s ease-in-out infinite;
         }
 
         @keyframes spin {
             to { transform: rotate(360deg); }
         }
 
-        .hint {
+        /* 右侧操作栏 */
+        .action-bar {
             position: absolute;
-            bottom: 30px;
-            left: 50%;
-            transform: translateX(-50%);
-            background: rgba(0, 0, 0, 0.8);
-            color: #fff;
-            padding: 14px 28px;
-            border-radius: 30px;
-            font-size: 14px;
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            backdrop-filter: blur(10px);
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
-            animation: hintSlideUp 0.5s cubic-bezier(0.4, 0, 0.2, 1);
-        }
-
-        @keyframes hintSlideUp {
-            from {
-                opacity: 0;
-                transform: translate(-50%, 20px);
-            }
-            to {
-                opacity: 1;
-                transform: translate(-50%, 0);
-            }
-        }
-
-        .hint.fade-out {
-            animation: hintFadeOut 0.4s ease-out forwards;
-        }
-
-        @keyframes hintFadeOut {
-            to {
-                opacity: 0;
-                transform: translate(-50%, 10px);
-            }
-        }
-
-        .error {
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            color: #fff;
-            font-size: 16px;
-            text-align: center;
-            padding: 30px;
-            animation: fadeIn 0.3s ease-in;
-            max-width: 80%;
-            cursor: pointer;
-            user-select: none;
-            transition: transform 0.2s ease;
-        }
-        
-        .error:hover {
-            transform: translate(-50%, -50%) scale(1.05);
-        }
-
-        .error i {
-            font-size: 64px;
-            margin-bottom: 20px;
-            display: block;
-            animation: pulse 2s ease-in-out infinite;
-            color: #FF6B6B;
-        }
-        
-        .error p {
-            font-size: 18px;
-            font-weight: 500;
-            margin-bottom: 10px;
-        }
-        
-        .error .error-hint {
-            font-size: 14px;
-            color: rgba(255, 255, 255, 0.7);
-            margin-top: 10px;
-        }
-
-        @keyframes pulse {
-            0%, 100% { opacity: 1; transform: scale(1); }
-            50% { opacity: 0.6; transform: scale(1.1); }
-        }
-
-        /* 底部信息栏 */
-        .bottom-info {
-            position: fixed;
-            bottom: 0;
-            left: 0;
-            right: 0;
-            background: rgba(0, 0, 0, 0.3);
-            backdrop-filter: blur(10px);
-            padding: 15px 20px;
-            /* iOS 安全区域适配 */
-            padding-bottom: calc(15px + env(safe-area-inset-bottom));
-            z-index: 100;
+            right: 10px;
+            bottom: max(40px, env(safe-area-inset-bottom));
+            z-index: 20;
             display: flex;
             flex-direction: column;
-            gap: 8px;
+            gap: 20px;
+            align-items: center;
         }
 
-        .info-title {
-            color: #fff;
-            font-size: 16px;
-            font-weight: 600;
+        .action-btn {
+            width: 45px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 4px;
             cursor: pointer;
-            transition: color 0.3s ease;
-            display: -webkit-box;
-            -webkit-line-clamp: 2;
-            -webkit-box-orient: vertical;
-            overflow: hidden;
-            text-overflow: ellipsis;
-            -webkit-tap-highlight-color: transparent;
-            user-select: none;
         }
 
-        .info-title:hover {
-            color: #667eea;
-        }
-
-        .info-author {
-            color: rgba(255, 255, 255, 0.8);
-            font-size: 14px;
-            cursor: pointer;
-            transition: color 0.3s ease;
+        .action-icon-bg {
+            width: 45px;
+            height: 45px;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(5px);
             display: flex;
             align-items: center;
-            gap: 6px;
-            -webkit-tap-highlight-color: transparent;
-            user-select: none;
+            justify-content: center;
+            transition: all 0.2s ease;
         }
 
-        .info-author:hover {
-            color: #667eea;
+        .action-btn:active .action-icon-bg {
+            transform: scale(0.9);
+            background: rgba(255, 255, 255, 0.2);
         }
 
-        .info-author i {
+        .action-btn i {
+            font-size: 22px;
+            color: #fff;
+            text-shadow: 0 1px 2px rgba(0,0,0,0.3);
+        }
+
+        .action-label {
             font-size: 12px;
+            font-weight: 500;
+            text-shadow: 0 1px 2px rgba(0,0,0,0.5);
         }
 
-        /* 滑动指示器 */
-        .swipe-indicator {
-            position: absolute;
-            color: rgba(255, 255, 255, 0.8);
-            font-size: 40px;
-            pointer-events: none;
-            z-index: 5;
-            opacity: 0;
-            transition: opacity 0.2s ease;
-        }
-
-        .swipe-indicator.up {
-            top: 20%;
-            left: 50%;
-            transform: translateX(-50%);
-            animation: swipeUp 0.6s ease-out;
-        }
-
-        .swipe-indicator.down {
-            bottom: 20%;
-            left: 50%;
-            transform: translateX(-50%);
-            animation: swipeDown 0.6s ease-out;
-        }
-
-        .swipe-indicator.left {
-            top: 50%;
-            left: 20%;
-            transform: translateY(-50%);
-            animation: swipeLeft 0.6s ease-out;
-        }
-
-        .swipe-indicator.right {
-            top: 50%;
-            right: 20%;
-            transform: translateY(-50%);
-            animation: swipeRight 0.6s ease-out;
-        }
-
-        @keyframes swipeUp {
-            0% { opacity: 0; transform: translate(-50%, 20px); }
-            50% { opacity: 1; }
-            100% { opacity: 0; transform: translate(-50%, -40px); }
-        }
-
-        @keyframes swipeDown {
-            0% { opacity: 0; transform: translate(-50%, -20px); }
-            50% { opacity: 1; }
-            100% { opacity: 0; transform: translate(-50%, 40px); }
-        }
-
-        @keyframes swipeLeft {
-            0% { opacity: 0; transform: translate(20px, -50%); }
-            50% { opacity: 1; }
-            100% { opacity: 0; transform: translate(-40px, -50%); }
-        }
-
-        @keyframes swipeRight {
-            0% { opacity: 0; transform: translate(-20px, -50%); }
-            50% { opacity: 1; }
-            100% { opacity: 0; transform: translate(40px, -50%); }
-        }
-
-        /* 播放/暂停指示器 */
-        .play-pause-indicator {
+        /* 错误提示 */
+        .error-toast {
             position: absolute;
             top: 50%;
             left: 50%;
             transform: translate(-50%, -50%);
-            font-size: 80px;
-            color: rgba(255, 255, 255, 0.9);
-            pointer-events: none;
-            opacity: 0;
-            transition: opacity 0.2s ease;
-            z-index: 15;
-        }
-
-        .play-pause-indicator.show {
-            animation: playPauseFlash 0.6s ease-out;
-        }
-
-        @keyframes playPauseFlash {
-            0% { opacity: 0; transform: translate(-50%, -50%) scale(0.8); }
-            50% { opacity: 1; transform: translate(-50%, -50%) scale(1.2); }
-            100% { opacity: 0; transform: translate(-50%, -50%) scale(1); }
-        }
-
-        /* 缩放指示器 */
-        .zoom-indicator {
-            position: absolute;
-            bottom: 110px;
-            left: 50%;
-            transform: translateX(-50%);
             background: rgba(0, 0, 0, 0.8);
-            color: #fff;
-            padding: 10px 20px;
-            border-radius: 20px;
-            font-size: 14px;
-            backdrop-filter: blur(10px);
-            opacity: 0;
-            transition: opacity 0.3s ease;
-            pointer-events: none;
-            z-index: 15;
+            padding: 15px 25px;
+            border-radius: 8px;
+            text-align: center;
+            z-index: 30;
+            display: none;
         }
 
-        .zoom-indicator.show {
+        .error-toast i {
+            font-size: 32px;
+            color: #ff6b6b;
+            margin-bottom: 10px;
+            display: block;
+        }
+
+        /* 手势提示 */
+        .gesture-hint {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(0, 0, 0, 0.7);
+            padding: 20px;
+            border-radius: 12px;
+            backdrop-filter: blur(5px);
+            z-index: 25;
+            text-align: center;
+            pointer-events: none;
+            opacity: 0;
+            transition: opacity 0.5s ease;
+        }
+
+        .gesture-hint.show {
             opacity: 1;
         }
 
-        /* 进度条动画 */
-        .progress-bar {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 0;
-            height: 3px;
-            background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
-            transition: width 0.3s ease;
-            z-index: 20;
-        }
-
-        .progress-bar.loading {
-            animation: progressLoading 1.5s ease-in-out infinite;
-        }
-
-        @keyframes progressLoading {
-            0% { width: 0%; }
-            50% { width: 70%; }
-            100% { width: 100%; }
+        .gesture-icon {
+            font-size: 40px;
+            margin-bottom: 10px;
+            display: block;
         }
     </style>
 </head>
 <body>
 
-<div class="progress-bar" id="progressBar"></div>
+<div class="app-container" id="app">
+    <!-- 视频层 -->
+    <div class="video-wrapper" id="videoWrapper">
+        <video id="player" playsinline loop poster="/icons/loading.svg"></video>
+    </div>
 
-<div class="gif-viewer">
-    <video id="currentGif" autoplay loop muted playsinline></video>
-    
-    <div id="loading" class="loading">
+    <!-- 遮罩层 -->
+    <div class="overlay-top"></div>
+    <div class="overlay-bottom"></div>
+
+    <!-- 顶部返回 -->
+    <div class="back-btn" onclick="goHome()">
+        <i class="fas fa-arrow-left"></i>
+    </div>
+
+    <!-- 加载中 -->
+    <div class="loader" id="loader">
         <div class="spinner"></div>
-        <span>加载中...</span>
     </div>
 
-    <div id="error" class="error" style="display: none;">
+    <!-- 错误提示 -->
+    <div class="error-toast" id="errorToast">
         <i class="fas fa-exclamation-circle"></i>
-        <p>暂无可用的动图</p>
-        <div class="error-hint">点击重试或左滑返回</div>
+        <span>加载失败，点击重试</span>
     </div>
-    
-    <!-- 预加载视频元素（隐藏） -->
-    <video id="preloadGif" style="display: none;" muted playsinline></video>
 
-    <!-- 滑动方向指示器 -->
-    <div id="swipeIndicator" class="swipe-indicator"></div>
-    
-    <!-- 播放/暂停指示器 -->
-    <div id="playPauseIndicator" class="play-pause-indicator">
-        <i class="fas fa-play"></i>
+    <!-- 底部信息 -->
+    <div class="info-panel" id="infoPanel" style="display: none;">
+        <div class="author-info" onclick="goToAuthor()">
+            <i class="fas fa-at"></i>
+            <span id="authorName">@Author</span>
+        </div>
+        <div class="work-title" id="workTitle" onclick="goToDetail()">
+            Video Description...
+        </div>
     </div>
-    
-    <!-- 缩放指示器 -->
-    <div id="zoomIndicator" class="zoom-indicator">
-        双击切换填充模式
+
+    <!-- 右侧操作栏 -->
+    <div class="action-bar">
+        <div class="action-btn" onclick="toggleFill()">
+            <div class="action-icon-bg">
+                <i class="fas fa-expand" id="fillIcon"></i>
+            </div>
+            <span class="action-label">填充</span>
+        </div>
+        <div class="action-btn" onclick="goToDetail()">
+            <div class="action-icon-bg">
+                <i class="fas fa-info"></i>
+            </div>
+            <span class="action-label">详情</span>
+        </div>
+        <div class="action-btn" onclick="downloadFile()">
+            <div class="action-icon-bg">
+                <i class="fas fa-download"></i>
+            </div>
+            <span class="action-label">下载</span>
+        </div>
     </div>
-</div>
 
-<div id="hint" class="hint" style="display: none;">
-    <i class="fas fa-hand-point-up"></i>
-    <span>上下滑动切换 | 左滑详情 | 右滑返回</span>
-</div>
-
-<!-- 底部信息栏 -->
-<div class="bottom-info" id="bottomInfo" style="display: none;">
-    <div class="info-title" id="infoTitle" onclick="goToDetail()">加载中...</div>
-    <div class="info-author" id="infoAuthor" onclick="goToAuthor()">
-        <i class="fas fa-user"></i>
-        <span>加载中...</span>
+    <!-- 操作提示 -->
+    <div class="gesture-hint" id="gestureHint">
+        <i class="fas fa-hand-pointer gesture-icon"></i>
+        <div>上滑查看更多</div>
     </div>
 </div>
 
 <script>
-    const video = document.getElementById('currentGif');
-    const loading = document.getElementById('loading');
-    const error = document.getElementById('error');
-    const hint = document.getElementById('hint');
-    const progressBar = document.getElementById('progressBar');
-    const swipeIndicator = document.getElementById('swipeIndicator');
-    const playPauseIndicator = document.getElementById('playPauseIndicator');
-    const zoomIndicator = document.getElementById('zoomIndicator');
+    // 状态管理
+    const state = {
+        history: [],          // 历史记录栈
+        currentIndex: -1,     // 当前历史指针
+        isLoading: false,
+        isFillMode: false,
+        touchStart: { x: 0, y: 0, time: 0 },
+        currentData: null,
+        preloadVideo: new Audio() // 用于预加载资源（Audio也可以加载视频资源缓存）
+    };
 
-    let currentGifData = null;
-    let touchStartX = 0;
-    let touchStartY = 0;
-    let touchEndX = 0;
-    let touchEndY = 0;
-    let isLoading = false;
-    let isSwiping = false;
-    let isFillMode = false; // 是否为填充模式
-    let lastTapTime = 0; // 用于检测双击
-    let tapTimeout = null; // 单击延迟定时器
-    let swipeDebounceTimer = null; // 滑动防抖定时器
-    let lastSwipeTime = 0; // 上次滑动时间
-    const bottomInfo = document.getElementById('bottomInfo');
-    const infoTitle = document.getElementById('infoTitle');
-    const infoAuthor = document.getElementById('infoAuthor');
-    
-    // 假随机状态管理
-    let allGifIds = [];           // 所有GIF的ID列表
-    let shuffledGifIds = [];      // 打乱后的ID列表
-    let currentIndex = -1;        // 当前索引位置
-    let isInitialized = false;    // 是否已初始化
-    let currentLoadAttempt = 0;   // 当前加载尝试次数
-    const MAX_RETRY_ATTEMPTS = 3; // 最大重试次数
-    
-    // 预加载相关
-    const preloadVideo = document.getElementById('preloadGif');
-    let preloadedIndex = -1;      // 已预加载的索引
-    let isPreloading = false;     // 是否正在预加载
+    // DOM 元素
+    const dom = {
+        player: document.getElementById('player'),
+        videoWrapper: document.getElementById('videoWrapper'),
+        loader: document.getElementById('loader'),
+        infoPanel: document.getElementById('infoPanel'),
+        authorName: document.getElementById('authorName'),
+        workTitle: document.getElementById('workTitle'),
+        errorToast: document.getElementById('errorToast'),
+        fillIcon: document.getElementById('fillIcon'),
+        gestureHint: document.getElementById('gestureHint')
+    };
 
-    // Fisher-Yates洗牌算法
-    function shuffleArray(array) {
-        const arr = [...array];
-        for (let i = arr.length - 1; i > 0; i--) {
-            const j = Math.floor(Math.random() * (i + 1));
-            [arr[i], arr[j]] = [arr[j], arr[i]];
-        }
-        return arr;
-    }
+    // 初始化
+    function init() {
+        setAppHeight();
+        window.addEventListener('resize', setAppHeight);
+        bindEvents();
+        
+        // 首次加载检查是否有历史（例如刷新页面），如果没有则加载新数据
+        loadNextGif();
 
-    // 初始化GIF列表
-    async function initGifList() {
-        try {
-            const response = await fetch('/api/xhsWork/allGifIds');
-            const result = await response.json();
-            
-            if (result.code === 200 && result.data && result.data.length > 0) {
-                allGifIds = result.data;
-                shuffledGifIds = shuffleArray(allGifIds);
-                isInitialized = true;
-                currentIndex = 0;
-                await loadGifByIndex(0);
-            } else {
-                showError('暂无可用的动图');
-                isInitialized = false;
-            }
-        } catch (err) {
-            console.error('初始化失败:', err);
-            showError('网络请求失败');
-            isInitialized = false;
+        // 首次提示
+        if (!localStorage.getItem('gif_tutorial_shown')) {
+            setTimeout(() => {
+                dom.gestureHint.classList.add('show');
+                setTimeout(() => dom.gestureHint.classList.remove('show'), 2000);
+                localStorage.setItem('gif_tutorial_shown', 'true');
+            }, 1000);
         }
     }
 
-    // 显示滑动指示器
-    function showSwipeIndicator(direction) {
-        swipeIndicator.className = 'swipe-indicator ' + direction;
-        
-        // 根据方向显示不同图标
-        const icons = {
-            'up': 'fa-arrow-up',
-            'down': 'fa-arrow-down',
-            'left': 'fa-arrow-left',
-            'right': 'fa-arrow-right'
-        };
-        
-        swipeIndicator.innerHTML = '<i class="fas ' + icons[direction] + '"></i>';
-        
-        // 动画结束后移除
-        setTimeout(() => {
-            swipeIndicator.className = 'swipe-indicator';
-        }, 600);
+    // 设置视口高度（解决移动端地址栏问题）
+    function setAppHeight() {
+        document.documentElement.style.setProperty('--app-height', `${window.innerHeight}px`);
     }
 
-    // 预加载下一个视频
-    function preloadNextVideo() {
-        if (!isInitialized || isPreloading) return;
+    // 事件绑定
+    function bindEvents() {
+        // 播放器事件
+        dom.player.addEventListener('waiting', () => dom.loader.style.display = 'block');
+        dom.player.addEventListener('playing', () => dom.loader.style.display = 'none');
+        dom.player.addEventListener('click', togglePlay);
+        dom.player.addEventListener('error', handleError);
+
+        // 触摸手势
+        const app = document.getElementById('app');
+        app.addEventListener('touchstart', handleTouchStart, { passive: false });
+        app.addEventListener('touchend', handleTouchEnd, { passive: false });
         
-        const nextIndex = currentIndex < shuffledGifIds.length - 1 ? currentIndex + 1 : 0;
-        
-        // 如果已经预加载了这个索引，跳过
-        if (preloadedIndex === nextIndex) return;
-        
-        isPreloading = true;
-        
-        fetch('/api/xhsWork/gifById/' + shuffledGifIds[nextIndex])
-            .then(response => response.json())
-            .then(result => {
-                if (result.code === 200 && result.data) {
-                    preloadVideo.src = result.data.mediaUrl;
-                    preloadedIndex = nextIndex;
-                    console.log('预加载下一个视频完成:', nextIndex);
-                }
-                isPreloading = false;
-            })
-            .catch(err => {
-                console.error('预加载失败:', err);
-                isPreloading = false;
-            });
+        // 错误重试
+        dom.errorToast.addEventListener('click', () => {
+             if (state.currentData) {
+                 renderGif(state.currentData);
+             } else {
+                 loadNextGif();
+             }
+        });
+
+        // 键盘支持
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'ArrowUp') loadNextGif();
+            if (e.key === 'ArrowDown') loadPreviousGif();
+            if (e.key === ' ') togglePlay();
+        });
     }
 
-    // 根据索引加载GIF
-    async function loadGifByIndex(index) {
-        if (isLoading || !isInitialized || index < 0 || index >= shuffledGifIds.length) {
+    // 加载下一个GIF（真正随机逻辑）
+    async function loadNextGif() {
+        if (state.isLoading) return;
+
+        // 如果当前指针不是在最后，说明在查看历史，直接前进一步
+        if (state.currentIndex < state.history.length - 1) {
+            state.currentIndex++;
+            renderGif(state.history[state.currentIndex]);
             return;
         }
-        
-        isLoading = true;
-        currentIndex = index;
-        
-        // 显示进度条
-        progressBar.className = 'progress-bar loading';
-        
-        // 淡出当前视频
-        video.classList.add('fade-out');
-        
-        loading.classList.remove('hidden');
-        error.style.display = 'none';
 
+        // 否则请求新数据
+        state.isLoading = true;
+        dom.loader.style.display = 'block';
+        
         try {
-            const gifId = shuffledGifIds[index];
-            const response = await fetch('/api/xhsWork/gifById/' + gifId);
-            const result = await response.json();
-
-            if (result.code === 200 && result.data) {
-                currentGifData = result.data;
+            const res = await fetch('/api/xhsWork/randomGif');
+            const json = await res.json();
+            
+            if (json.code === 200 && json.data) {
+                // 加入历史
+                state.history.push(json.data);
+                state.currentIndex = state.history.length - 1;
                 
-                // 更新底部信息栏
-                if (result.data.workTitle && result.data.authorNickname) {
-                    infoTitle.textContent = result.data.workTitle || '未知作品';
-                    infoAuthor.querySelector('span').textContent = result.data.authorNickname || '未知作者';
-                    bottomInfo.style.display = 'flex';
-                } else {
-                    bottomInfo.style.display = 'none';
+                // 限制历史长度
+                if (state.history.length > 50) {
+                    state.history.shift();
+                    state.currentIndex--;
                 }
-                
-                // 等待淡出动画完成
-                await new Promise(resolve => setTimeout(resolve, 300));
-                
-                video.src = result.data.mediaUrl;
-                
-                // 等待视频加载
-                video.onloadeddata = () => {
-                    currentLoadAttempt = 0; // 加载成功，重置重试计数
-                    loading.classList.add('hidden');
-                    progressBar.style.width = '100%';
-                    progressBar.className = 'progress-bar';
-                    setTimeout(() => {
-                        progressBar.style.width = '0';
-                    }, 300);
-                    
-                    // 添加或移除填充模式类
-                    if (isFillMode) {
-                        video.classList.add('fill-mode');
-                    } else {
-                        video.classList.remove('fill-mode');
-                    }
-                    
-                    // 淡入新视频
-                    video.classList.remove('fade-out');
-                    video.classList.add('fade-in');
-                    setTimeout(() => {
-                        video.classList.remove('fade-in');
-                    }, 400);
-                    
-                    isLoading = false;
-                    
-                    // 预加载下一个视频
-                    setTimeout(() => preloadNextVideo(), 500);
-                    
-                    // 显示提示（仅首次）
-                    if (!sessionStorage.getItem('gifHintShown')) {
-                        hint.style.display = 'flex';
-                        setTimeout(() => {
-                            hint.classList.add('fade-out');
-                            setTimeout(() => {
-                                hint.style.display = 'none';
-                                hint.classList.remove('fade-out');
-                            }, 400);
-                        }, 3000);
-                        sessionStorage.setItem('gifHintShown', 'true');
-                    }
-                };
 
-                video.onerror = () => {
-                    console.error('视频加载失败，尝试次数:', currentLoadAttempt + 1);
-                    
-                    if (currentLoadAttempt < MAX_RETRY_ATTEMPTS) {
-                        // 自动重试
-                        currentLoadAttempt++;
-                        console.log('自动重试加载...');
-                        setTimeout(() => {
-                            video.src = result.data.mediaUrl + '?retry=' + currentLoadAttempt;
-                        }, 1000);
-                    } else {
-                        // 达到最大重试次数，显示错误
-                        loading.classList.add('hidden');
-                        progressBar.className = 'progress-bar';
-                        progressBar.style.width = '0';
-                        showError('动图加载失败，点击任意处重试');
-                        video.classList.remove('fade-out');
-                        isLoading = false;
-                        currentLoadAttempt = 0;
-                        
-                        // 允许用户点击重试
-                        error.onclick = () => {
-                            error.onclick = null;
-                            loadGifByIndex(currentIndex);
-                        };
-                    }
-                };
+                renderGif(json.data);
             } else {
-                showError(result.message || '暂无可用的动图');
-                progressBar.className = 'progress-bar';
-                progressBar.style.width = '0';
-                video.classList.remove('fade-out');
-                isLoading = false;
+                throw new Error(json.msg || '无法获取数据');
             }
         } catch (err) {
-            console.error('请求失败:', err);
-            showError('网络请求失败');
-            progressBar.className = 'progress-bar';
-            progressBar.style.width = '0';
-            video.classList.remove('fade-out');
-            isLoading = false;
+            console.error(err);
+            showError();
+        } finally {
+            state.isLoading = false;
         }
     }
 
-    function showError(message) {
-        loading.classList.add('hidden');
-        error.style.display = 'block';
-        error.querySelector('p').textContent = message;
-        video.style.display = 'none';
-    }
-
-    function goBack() {
-        // 添加退出动画
-        video.classList.add('fade-out');
-        setTimeout(() => {
-            window.location.href = '/';
-        }, 200);
-    }
-
-    function goToDetail() {
-        if (currentGifData && currentGifData.workId) {
-            video.classList.add('fade-out');
-            setTimeout(() => {
-                window.location.href = '/downloadDetail?workId=' + encodeURIComponent(currentGifData.workId);
-            }, 200);
-        }
-    }
-
-    function goToAuthor() {
-        if (currentGifData && currentGifData.authorId) {
-            video.classList.add('fade-out');
-            setTimeout(() => {
-                window.location.href = '/download?authorId=' + encodeURIComponent(currentGifData.authorId);
-            }, 200);
-        }
-    }
-
-    // 显示播放/暂停指示器
-    function showPlayPauseIndicator(isPlaying) {
-        const icon = playPauseIndicator.querySelector('i');
-        // 修复逻辑：正在播放时显示暂停图标，暂停时显示播放图标
-        icon.className = isPlaying ? 'fas fa-pause' : 'fas fa-play';
-        playPauseIndicator.classList.remove('show');
-        // 强制重绘
-        void playPauseIndicator.offsetWidth;
-        playPauseIndicator.classList.add('show');
-    }
-
-    // 切换播放/暂停
-    function togglePlayPause() {
-        if (video.paused) {
-            video.play();
-            showPlayPauseIndicator(true); // 现在正在播放，显示暂停图标
+    // 加载上一个GIF
+    function loadPreviousGif() {
+        if (state.currentIndex > 0) {
+            state.currentIndex--;
+            renderGif(state.history[state.currentIndex]);
         } else {
-            video.pause();
-            showPlayPauseIndicator(false); // 现在暂停了，显示播放图标
+             // 已经在第一个了，提示用户
+             showToast('已经是第一个了');
+        }
+    }
+
+    // 渲染GIF
+    function renderGif(data) {
+        state.currentData = data;
+        
+        // 重置UI
+        dom.videoWrapper.classList.remove('show');
+        dom.errorToast.style.display = 'none';
+        dom.loader.style.display = 'block';
+        
+        // 设置信息
+        dom.authorName.textContent = '@' + (data.authorNickname || '未知作者');
+        dom.workTitle.textContent = data.workTitle || '无标题';
+        dom.infoPanel.style.display = 'flex';
+
+        // 设置视频
+        dom.player.src = data.mediaUrl;
+        dom.player.load();
+        
+        const playPromise = dom.player.play();
+        if (playPromise !== undefined) {
+            playPromise.then(() => {
+                dom.videoWrapper.classList.add('show');
+            }).catch(err => {
+                console.log("Autoplay prevented:", err);
+                // 显示播放按钮或提示用户点击
+            });
+        }
+    }
+
+    // 触摸开始
+    function handleTouchStart(e) {
+        state.touchStart.x = e.touches[0].clientX;
+        state.touchStart.y = e.touches[0].clientY;
+        state.touchStart.time = Date.now();
+    }
+
+    // 触摸结束
+    function handleTouchEnd(e) {
+        const touchEnd = {
+            x: e.changedTouches[0].clientX,
+            y: e.changedTouches[0].clientY
+        };
+        
+        const diffX = touchEnd.x - state.touchStart.x;
+        const diffY = touchEnd.y - state.touchStart.y;
+        const timeDiff = Date.now() - state.touchStart.time;
+
+        // 忽略误触
+        if (timeDiff > 500) return;
+
+        // 垂直滑动判断
+        if (Math.abs(diffY) > Math.abs(diffX) && Math.abs(diffY) > 50) {
+            if (diffY < 0) {
+                // 上滑 -> 下一个
+                loadNextGif();
+            } else {
+                // 下滑 -> 上一个
+                loadPreviousGif();
+            }
+        } 
+        // 水平滑动判断 (右滑返回)
+        else if (Math.abs(diffX) > Math.abs(diffY) && Math.abs(diffX) > 80) {
+             if (diffX > 0) {
+                 goHome();
+             }
+        }
+    }
+
+    // 切换播放
+    function togglePlay() {
+        if (dom.player.paused) {
+            dom.player.play();
+        } else {
+            dom.player.pause();
         }
     }
 
     // 切换填充模式
-    function toggleFillMode() {
-        isFillMode = !isFillMode;
-        
-        if (isFillMode) {
-            video.classList.add('fill-mode');
+    function toggleFill() {
+        state.isFillMode = !state.isFillMode;
+        if (state.isFillMode) {
+            dom.player.classList.add('cover');
+            dom.fillIcon.className = 'fas fa-compress';
         } else {
-            video.classList.remove('fill-mode');
+            dom.player.classList.remove('cover');
+            dom.fillIcon.className = 'fas fa-expand';
         }
-        
-        // 显示缩放指示器
-        zoomIndicator.classList.add('show');
-        setTimeout(() => {
-            zoomIndicator.classList.remove('show');
-        }, 1500);
+        event.stopPropagation();
     }
 
-    // 视频点击事件（改进的单击和双击检测）
-    video.addEventListener('click', (e) => {
-        const currentTime = new Date().getTime();
-        const tapGap = currentTime - lastTapTime;
-        
-        if (tapGap < 250 && tapGap > 0) {
-            // 双击检测
-            if (tapTimeout) {
-                clearTimeout(tapTimeout);
-                tapTimeout = null;
-            }
-            toggleFillMode();
-            lastTapTime = 0; // 重置，防止三击被识别为双击
-        } else {
-            // 单击，使用更短的延迟（200ms）以提升响应速度
-            lastTapTime = currentTime;
-            if (tapTimeout) clearTimeout(tapTimeout);
-            tapTimeout = setTimeout(() => {
-                togglePlayPause();
-                tapTimeout = null;
-            }, 200);
-        }
-    });
-
-    // 触摸事件处理（增强版）
-    document.addEventListener('touchstart', (e) => {
-        touchStartX = e.changedTouches[0].screenX;
-        touchStartY = e.changedTouches[0].screenY;
-        isSwiping = false;
-    }, { passive: true });
-
-    document.addEventListener('touchmove', (e) => {
-        if (!isSwiping) {
-            const currentX = e.changedTouches[0].screenX;
-            const currentY = e.changedTouches[0].screenY;
-            const deltaX = currentX - touchStartX;
-            const deltaY = currentY - touchStartY;
-            
-            // 实时视觉反馈
-            if (Math.abs(deltaX) > 30 || Math.abs(deltaY) > 30) {
-                isSwiping = true;
-            }
-        }
-    }, { passive: true });
-
-    document.addEventListener('touchend', (e) => {
-        touchEndX = e.changedTouches[0].screenX;
-        touchEndY = e.changedTouches[0].screenY;
-        handleSwipe();
-    }, { passive: true });
-
-    function handleSwipe() {
-        // 滑动防抖：防止快速连续滑动
-        const now = Date.now();
-        if (now - lastSwipeTime < 300) {
-            return; // 忽略过快的滑动
-        }
-        lastSwipeTime = now;
-        
-        const deltaX = touchEndX - touchStartX;
-        const deltaY = touchEndY - touchStartY;
-        const threshold = 50;
-
-        // 判断主要滑动方向
-        if (Math.abs(deltaX) > Math.abs(deltaY)) {
-            // 水平滑动
-            if (Math.abs(deltaX) > threshold) {
-                if (deltaX > 0) {
-                    // 从左往右滑：返回（显示向右箭头）
-                    showSwipeIndicator('right');
-                    setTimeout(() => goBack(), 300);
-                } else {
-                    // 从右往左滑：详情（显示向左箭头）
-                    showSwipeIndicator('left');
-                    setTimeout(() => goToDetail(), 300);
-                }
-            }
-        } else {
-            // 垂直滑动
-            if (Math.abs(deltaY) > threshold) {
-                if (deltaY < 0) {
-                    // 上滑：下一张（显示向上箭头）
-                    showSwipeIndicator('up');
-                    handleNextGif();
-                } else {
-                    // 下滑：上一张（显示向下箭头）
-                    showSwipeIndicator('down');
-                    handlePrevGif();
-                }
-            }
-        }
+    // 操作函数
+    function goHome() {
+        window.location.href = '/';
     }
 
-    // 处理下一张
-    function handleNextGif() {
-        if (!isInitialized) return;
-        
-        if (currentIndex < shuffledGifIds.length - 1) {
-            // 还有下一张
-            loadGifByIndex(currentIndex + 1);
-        } else {
-            // 已经是最后一张，重新打乱
-            shuffledGifIds = shuffleArray(allGifIds);
-            currentIndex = -1;
-            loadGifByIndex(0);
+    function goToAuthor() {
+        if (state.currentData && state.currentData.authorId) {
+            window.location.href = `/download?authorId=${state.currentData.authorId}`;
         }
+        event.stopPropagation();
     }
 
-    // 处理上一张
-    function handlePrevGif() {
-        if (!isInitialized) return;
-        
-        if (currentIndex > 0) {
-            // 还有上一张
-            loadGifByIndex(currentIndex - 1);
+    function goToDetail() {
+        if (state.currentData && state.currentData.workId) {
+            window.location.href = `/downloadDetail?workId=${state.currentData.workId}`;
         }
-        // 否则忽略（已经是第一张）
+        event.stopPropagation();
     }
 
-    // 键盘支持（桌面端）
-    document.addEventListener('keydown', (e) => {
-        switch(e.key) {
-            case 'ArrowUp':
-                showSwipeIndicator('up');
-                handleNextGif();
-                break;
-            case 'ArrowDown':
-                showSwipeIndicator('down');
-                handlePrevGif();
-                break;
-            case 'ArrowLeft':
-            case 'Escape':
-                showSwipeIndicator('right'); // 修复：返回显示向右箭头
-                setTimeout(() => goBack(), 300);
-                break;
-            case 'ArrowRight':
-            case 'Enter':
-                showSwipeIndicator('left'); // 修复：前进显示向左箭头
-                setTimeout(() => goToDetail(), 300);
-                break;
+    function downloadFile() {
+        if (state.currentData && state.currentData.mediaUrl) {
+            const a = document.createElement('a');
+            a.href = state.currentData.mediaUrl;
+            a.download = `gif_${state.currentData.id}.gif`;
+            a.target = '_blank';
+            a.click();
         }
-    });
+        event.stopPropagation();
+    }
 
-    // 页面加载时初始化
-    document.addEventListener('DOMContentLoaded', () => {
-        initGifList();
-    });
+    function handleError() {
+        dom.loader.style.display = 'none';
+        dom.errorToast.style.display = 'block';
+    }
+
+    function showError() {
+        dom.loader.style.display = 'none';
+        dom.errorToast.style.display = 'block';
+    }
+    
+    function showToast(msg) {
+        // 简单Toast实现
+        const toast = document.createElement('div');
+        toast.style.cssText = `
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(0,0,0,0.7);
+            color: #fff;
+            padding: 10px 20px;
+            border-radius: 20px;
+            z-index: 100;
+            pointer-events: none;
+            backdrop-filter: blur(5px);
+        `;
+        toast.textContent = msg;
+        document.body.appendChild(toast);
+        setTimeout(() => toast.remove(), 1500);
+    }
+
+    // 启动
+    init();
+
 </script>
 </body>
 </html>
