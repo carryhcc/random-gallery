@@ -6,6 +6,7 @@ import cn.hutool.core.util.StrUtil;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
+import com.example.randomGallery.config.PrivacyConfig;
 import com.example.randomGallery.entity.DO.TagWorkDO;
 import com.example.randomGallery.entity.DO.XhsWorkBaseDO;
 import com.example.randomGallery.entity.DO.XhsWorkMediaDO;
@@ -43,12 +44,12 @@ public class XhsWorkServiceImpl implements XhsWorkService {
     private final XhsWorkBaseMapper workBaseMapper;
     private final XhsWorkMediaMapper workMediaMapper;
     private final TagWorkMapper tagWorkMapper;
-    private final com.example.randomGallery.config.PrivacyConfig privacyConfig;
+    private final PrivacyConfig privacyConfig;
     private final ImageService imageService;
 
     @Override
     public XhsWorkPageVO pageXhsWorksWithFilter(int page, int pageSize, String authorId, Long tagId, String str,
-            Integer seed) {
+                                                Integer seed) {
         // 分页查询基础表
         Page<XhsWorkBaseDO> pageParam = new Page<>(page, pageSize);
         LambdaQueryWrapper<XhsWorkBaseDO> wrapper = Wrappers.lambdaQuery();
@@ -115,7 +116,7 @@ public class XhsWorkServiceImpl implements XhsWorkService {
                         .filter(m -> MediaTypeEnum.IMAGE.equals(m.getMediaType()))
                         .map(XhsWorkMediaDO::getMediaUrl)
                         .collect(Collectors.toList());
-                imageService.batchDetectHeic(allImageUrls);
+                imageService.batchDetectHEIC(allImageUrls);
             }
 
             // 按 workId 分组
@@ -187,7 +188,7 @@ public class XhsWorkServiceImpl implements XhsWorkService {
                     .filter(m -> MediaTypeEnum.IMAGE.equals(m.getMediaType()))
                     .map(XhsWorkMediaDO::getMediaUrl)
                     .collect(Collectors.toList());
-            imageService.batchDetectHeic(imageUrls);
+            imageService.batchDetectHEIC(imageUrls);
         }
 
         // 定义一个临时的lambda变量（方法内），避免重复代码
@@ -345,7 +346,7 @@ public class XhsWorkServiceImpl implements XhsWorkService {
 
         // 非隐私模式下，检测是否为 HEIC 格式
         // 注意：这里调用 imageService 会命中缓存（因为 batchDetectHeic 已经预热过了）
-        if (imageService.isHeicImage(url)) {
+        if (imageService.isHEICImage(url)) {
             log.debug("检测到 HEIC 图片: {}", url);
             return buildConvertUrl(url);
         }

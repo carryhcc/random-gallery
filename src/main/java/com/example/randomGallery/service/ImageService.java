@@ -4,7 +4,9 @@ import cn.hutool.core.collection.CollUtil;
 import cn.hutool.core.util.StrUtil;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.checkerframework.checker.nullness.qual.NonNull;
 import org.springframework.cache.annotation.Cacheable;
+import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
@@ -34,7 +36,7 @@ public class ImageService {
      * 
      * @param urls 图片 URL 列表
      */
-    public void batchDetectHeic(List<String> urls) {
+    public void batchDetectHEIC(List<String> urls) {
         if (CollUtil.isEmpty(urls)) {
             return;
         }
@@ -49,7 +51,7 @@ public class ImageService {
         List<CompletableFuture<Void>> futures = uniqueUrls.stream()
                 .map(url -> CompletableFuture.runAsync(() -> {
                     try {
-                        isHeicImage(url);
+                        isHEICImage(url);
                     } catch (Exception e) {
                         // 忽略异常，不阻塞
                     }
@@ -65,8 +67,8 @@ public class ImageService {
      * 检测 URL 是否为 HEIC 格式图片
      * 通过 HEAD 请求获取 Content-Type 来判断
      */
-    @Cacheable(value = "heicDetectCache", key = "#url", unless = "#result == null")
-    public boolean isHeicImage(String url) {
+    @Cacheable(value = "heiCDetectCache", key = "#url", unless = "#result == null")
+    public boolean isHEICImage(String url) {
         if (StrUtil.isEmpty(url)) {
             return false;
         }
@@ -106,13 +108,7 @@ public class ImageService {
 
         for (int i = 0; i < maxRetries; i++) {
             try {
-                org.springframework.http.HttpHeaders headers = new org.springframework.http.HttpHeaders();
-                headers.set("User-Agent",
-                        "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36");
-                headers.set("Referer", "https://www.xiaohongshu.com/");
-                headers.set("Accept", "image/avif,image/webp,image/apng,image/svg+xml,image/*,*/*;q=0.8");
-
-                org.springframework.http.HttpEntity<?> requestEntity = new org.springframework.http.HttpEntity<>(headers);
+                HttpEntity<?> requestEntity = getHttpEntity();
 
                 ResponseEntity<byte[]> response = restTemplate.exchange(
                         url,
@@ -145,15 +141,25 @@ public class ImageService {
         return null;
     }
 
+    private static @NonNull HttpEntity<?> getHttpEntity() {
+        org.springframework.http.HttpHeaders headers = new org.springframework.http.HttpHeaders();
+        headers.set("User-Agent",
+                "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36");
+        headers.set("Referer", "https://www.xiaohongshu.com/");
+        headers.set("Accept", "image/avif,image/webp,image/apng,image/svg+xml,image/*,*/*;q=0.8");
+
+        return new HttpEntity<>(headers);
+    }
+
     /**
      * 检查字节数组是否为 HEIC 格式 (Magic Bytes)
      */
-    public boolean isHeicBytes(byte[] data) {
+    public boolean isHEICBytes(byte[] data) {
         if (data == null || data.length < 12) {
             return false;
         }
 
-        // ftyp box checking
+        //  box checking
         if (data[4] != 0x66 || data[5] != 0x74 || data[6] != 0x79 || data[7] != 0x70) {
             return false;
         }

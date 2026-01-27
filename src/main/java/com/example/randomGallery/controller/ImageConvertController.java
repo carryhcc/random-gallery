@@ -43,14 +43,14 @@ public class ImageConvertController {
      * HEIC 图片转换为 JPEG
      */
     @GetMapping("/convert-heic")
-    public void convertHeicToJpeg(@RequestParam String url, HttpServletResponse response) {
+    public void convertHEICToJpeg(@RequestParam String url, HttpServletResponse response) {
         try {
             log.warn("[STEP 1] 开始转换图片: {}", url);
             log.warn("[STEP 2] URL 参数接收成功");
 
             // 先尝试从缓存获取
             log.warn("[STEP 3] 尝试从缓存获取图片");
-            byte[] cachedImage = convertHeicToJpegCached(url);
+            byte[] cachedImage = convertHEICToJpegCached(url);
 
             if (cachedImage == null) {
                 log.warn("[STEP 4] ❌ 缓存获取失败，cachedImage is null");
@@ -87,8 +87,8 @@ public class ImageConvertController {
     /**
      * 带缓存的 HEIC 转 JPEG 方法
      */
-    @Cacheable(value = "heicConvertCache", key = "#url", unless = "#result == null")
-    public byte[] convertHeicToJpegCached(String url) {
+    @Cacheable(value = "heiCConvertCache", key = "#url", unless = "#result == null")
+    public byte[] convertHEICToJpegCached(String url) {
 
         try {
             // 步骤 1: 下载原始图片 (复用 ImageService)
@@ -105,10 +105,10 @@ public class ImageConvertController {
             // 步骤 1.5: 检查图片格式
             // 如果已经是 JPEG/PNG/WebP 等浏览器可直接显示的格式，则无需转换，直接返回
             log.warn("[CACHE-STEP 2] 检查图片格式是否为 HEIC");
-            boolean isHeic = imageService.isHeicBytes(originalImage);
-            log.warn("[CACHE-STEP 2.1] 格式检查结果: isHeic = {}", isHeic);
+            boolean isHEIC = imageService.isHEICBytes(originalImage);
+            log.warn("[CACHE-STEP 2.1] 格式检查结果: isHEIC = {}", isHEIC);
 
-            if (!isHeic) {
+            if (!isHEIC) {
                 log.warn("[CACHE-STEP 2.2] ✅ 非 HEIC 格式，无需转换，直接返回");
                 return originalImage;
             }

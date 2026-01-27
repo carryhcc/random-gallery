@@ -23,8 +23,8 @@ public class CacheConfig {
      * 缓存策略：
      * - authors: 作者列表缓存
      * - tags: 标签列表缓存
-     * - heicDetectCache: HEIC 检测结果缓存（URL -> Boolean）
-     * - heicConvertCache: HEIC 转换结果缓存（URL -> byte[]）
+     * - heiCDetectCache: HEIC 检测结果缓存（URL -> Boolean）
+     * - heiCConvertCache: HEIC 转换结果缓存（URL -> byte[]）
      * 
      * @return CacheManager 实例
      */
@@ -33,8 +33,8 @@ public class CacheConfig {
         CaffeineCacheManager cacheManager = new CaffeineCacheManager(
                 "authors",
                 "tags",
-                "heicDetectCache",
-                "heicConvertCache");
+                "heiCDetectCache",
+                "heiDConvertCache");
 
         cacheManager.setCaffeine(Caffeine.newBuilder()
                 // 写入后 24 小时过期
