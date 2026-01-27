@@ -5,7 +5,6 @@ import cn.hutool.core.collection.CollUtil;
 import cn.hutool.core.util.StrUtil;
 import cn.hutool.http.HttpUtil;
 import cn.hutool.json.JSONUtil;
-import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import com.example.randomGallery.entity.DO.XhsWorkBaseDO;
 import com.example.randomGallery.entity.DO.XhsWorkMediaDO;
@@ -47,7 +46,7 @@ public class DownloadApiImpl implements DownloadApi {
     // 注入自身以解决内部调用事务失效问题（或者将 saveXhsData 移至另一个 Service）
     private final ObjectProvider<DownloadApiImpl> selfProvider;
 
-    @Value("${downloader.xhs.detail-url:http://${db.host}:5556/xhs/detail}")
+    @Value("${other.downloader.url}")
     private String xhsDetailUrl;
 
     @Override

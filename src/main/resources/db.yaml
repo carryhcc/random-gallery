@@ -1,6 +1,6 @@
 db:
-  host: ${DB_HOST}
-  port: ${DB_PORT}
-  name: ${DB_NAME}
-  username: ${DB_USERNAME}
-  password: ${DB_PASSWORD}
+  host: ${DB_HOST:192.168.10.144}
+  port: ${DB_PORT:3306}
+  name: ${DB_NAME:testPic}
+  username: ${DB_USERNAME:pic}
+  password: ${DB_PASSWORD:pic}

@@ -1,5 +1,6 @@
 package com.example.randomGallery.service.image;
 
+import cn.hutool.core.util.StrUtil;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
@@ -16,18 +17,18 @@ import org.springframework.web.client.RestTemplate;
 
 /**
  * HEIC图片转换服务
- * 
+ *
  * <p>
  * 负责将HEIC/HEIF格式的图片转换为JPEG格式。
  * 使用 h2non/imaginary 服务进行实际的格式转换。
- * 
+ *
  * <p>
  * 转换配置：
  * <ul>
  * <li>目标格式: JPEG</li>
  * <li>图片质量: 90</li>
  * </ul>
- * 
+ *
  * @author random-gallery
  * @see <a href="https://github.com/h2non/imaginary">h2non/imaginary</a>
  */
@@ -38,26 +39,16 @@ public class HeicConversionService {
 
     private final RestTemplate restTemplate;
 
-    @Value("${db.host}")
-    private String dbHost;
-
-    /**
-     * imaginary服务端口
-     */
-    private static final int IMAGINARY_PORT = 6363;
-
-    /**
-     * JPEG质量配置（1-100）
-     */
-    private static final int JPEG_QUALITY = 90;
+    @Value("${other.imaginary.url}")
+    private String url;
 
     /**
      * 将HEIC图片转换为JPEG格式
-     * 
+     *
      * <p>
      * 通过POST请求将HEIC图片数据发送给imaginary服务，
      * 服务会返回转换后的JPEG格式图片。
-     * 
+     *
      * @param heicData HEIC格式的图片字节数组
      * @return 转换后的JPEG图片字节数组，转换失败时返回null
      * @throws RuntimeException 转换过程中发生异常时抛出
@@ -69,9 +60,12 @@ public class HeicConversionService {
         }
 
         try {
-            String imaginaryUrl = buildImaginaryUrl();
-            log.debug("准备转换HEIC图片，大小: {} bytes, imaginary URL: {}",
-                    heicData.length, imaginaryUrl);
+            String imaginaryUrl = url;
+            if (StrUtil.isEmpty(imaginaryUrl)) {
+                log.error("imaginary 服务URL未配置");
+                return null;
+            }
+            log.debug("准备转换HEIC图片，大小: {} bytes, imaginary URL: {}", heicData.length, imaginaryUrl);
 
             // 构建multipart请求体
             MultiValueMap<String, Object> body = new LinkedMultiValueMap<>();
@@ -115,18 +109,5 @@ public class HeicConversionService {
             log.error("HEIC转换异常", e);
             throw new RuntimeException("HEIC转换失败: " + e.getMessage(), e);
         }
-    }
-
-    /**
-     * 构建imaginary服务的URL
-     * 
-     * <p>
-     * URL格式: http://{db.host}:6363/convert?type=jpeg&quality=90
-     * 
-     * @return imaginary服务的完整URL
-     */
-    private String buildImaginaryUrl() {
-        return String.format("http://%s:%d/convert?type=jpeg&quality=%d",
-                dbHost, IMAGINARY_PORT, JPEG_QUALITY);
     }
 }

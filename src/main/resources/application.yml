@@ -1,5 +1,10 @@
 server:
   port: 8086
+  servlet:
+    encoding:
+      charset: UTF-8
+      enabled: true
+      force: true
 
 spring:
   application:
@@ -14,28 +19,33 @@ spring:
   freemarker:
     template-loader-path: classpath:/templates/
     suffix: .ftl
-mybatis:
+    charset: UTF-8
+    content-type: text/html
+  jackson:
+    date-format: yyyy-MM-dd HH:mm:ss
+    time-zone: Asia/Shanghai
+
+# MyBatis Plus Configuration
+mybatis-plus:
   mapper-locations: classpath:mapper/*.xml
   configuration:
     map-underscore-to-camel-case: true
     # 使用 Slf4j 输出 SQL（含参数）
     log-impl: org.apache.ibatis.logging.slf4j.Slf4jImpl
+
 config:
   env: dev
 
-logging:
-  level:
-    root: INFO
-    com.example.randomGallery.service: DEBUG
-    # Mapper 包 SQL 日志
-    com.example.randomGallery.server.mapper: DEBUG
-    org.mybatis: INFO
-  file:
-    name: logs/app.log
-  pattern:
-    console: "%d{yyyy-MM-dd} [%thread] %-5level %logger{36} - %msg%n"
+other:
+  downloader:
+    port: 5556
+    url: http://${db.host}:${other.downloader.port}/xhs/detail
+  imaginary:
+    type: jpeg
+    quality: 90
+    port: 6363
+    url: http://${db.host}:${other.imaginary.port}/convert?type=${other.imaginary.type}&quality=${other.imaginary.quality}
 
-# 图片隐私保护配置
 image:
   safe-mode:
     enabled: true
