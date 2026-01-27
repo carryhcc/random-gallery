@@ -41,7 +41,7 @@ public class DataMigrationServiceImpl implements DataMigrationService {
 
         // 查询所有未删除的作品
         LambdaQueryWrapper<XhsWorkBaseDO> wrapper = Wrappers.lambdaQuery();
-        wrapper.and(w -> w.eq(XhsWorkBaseDO::getIsDelete, false).or().isNull(XhsWorkBaseDO::getIsDelete));
+        wrapper.eq(XhsWorkBaseDO::getIsDelete, false);
         List<XhsWorkBaseDO> workList = workBaseMapper.selectList(wrapper);
 
         int processedCount = 0;

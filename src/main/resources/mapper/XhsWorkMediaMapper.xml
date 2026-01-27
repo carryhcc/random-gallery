@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.example.randomGallery.service.mapper.XhsWorkMediaMapper">
+     <select id="randomGifInfo" resultType="com.example.randomGallery.entity.VO.RandomGifVO">
+         SELECT xwm.id,
+                xwm.media_url,
+                xwm.work_id,
+                xwm.work_base_id,
+                xwb.work_title,
+                xwb.author_nickname,
+                xwb.author_id
+         FROM xhs_work_media xwm
+                  INNER JOIN xhs_work_base xwb ON xwb.id = xwm.work_base_id
+         WHERE xwm.media_type = 'gif'
+           AND xwm.is_delete = 0
+         ORDER BY RAND()
+         LIMIT 1;
+     </select>
+     <select id="getGifById" resultType="com.example.randomGallery.entity.VO.RandomGifVO">
+         SELECT xwm.id,
+                xwm.media_url,
+                xwm.work_id,
+                xwm.work_base_id,
+                xwb.work_title,
+                xwb.author_nickname,
+                xwb.author_id
+         FROM xhs_work_media xwm
+                  INNER JOIN xhs_work_base xwb ON xwb.id = xwm.work_base_id
+         WHERE xwm.id = #{id}
+           AND xwm.media_type = 'gif'
+           AND xwm.is_delete = 0;
+     </select>
+</mapper>

@@ -238,41 +238,7 @@ public class XhsWorkServiceImpl implements XhsWorkService {
 
     @Override
     public RandomGifVO getRandomGif() {
-        // 查询所有GIF类型且未删除的媒体
-        LambdaQueryWrapper<XhsWorkMediaDO> wrapper = Wrappers.lambdaQuery();
-        wrapper.eq(XhsWorkMediaDO::getMediaType, MediaTypeEnum.GIF)
-                .and(w -> w.eq(XhsWorkMediaDO::getIsDelete, false).or()
-                        .isNull(XhsWorkMediaDO::getIsDelete)); // 过滤已删除，兼容null
-
-        List<XhsWorkMediaDO> gifList = workMediaMapper.selectList(wrapper);
-
-        if (CollUtil.isEmpty(gifList)) {
-            log.warn("数据库中没有可用的GIF");
-            return null;
-        }
-
-        // 随机选择一个GIF（使用Java随机，避免数据库兼容性问题）
-        int randomIndex = (int) (Math.random() * gifList.size());
-        XhsWorkMediaDO randomGif = gifList.get(randomIndex);
-
-        // 转换为VO
-        RandomGifVO vo = new RandomGifVO();
-        vo.setId(randomGif.getId());
-        vo.setMediaUrl(randomGif.getMediaUrl());
-        vo.setWorkId(randomGif.getWorkId());
-        vo.setWorkBaseId(randomGif.getWorkBaseId());
-
-        // 查询作品基础信息
-        if (randomGif.getWorkBaseId() != null) {
-            XhsWorkBaseDO baseDO = workBaseMapper.selectById(randomGif.getWorkBaseId());
-            if (baseDO != null) {
-                vo.setWorkTitle(baseDO.getWorkTitle());
-                vo.setAuthorNickname(baseDO.getAuthorNickname());
-                vo.setAuthorId(baseDO.getAuthorId());
-            }
-        }
-
-        return vo;
+        return workMediaMapper.randomGifInfo();
     }
 
     @Override
@@ -281,8 +247,7 @@ public class XhsWorkServiceImpl implements XhsWorkService {
         LambdaQueryWrapper<XhsWorkMediaDO> wrapper = Wrappers.lambdaQuery();
         wrapper.select(XhsWorkMediaDO::getId)
                 .eq(XhsWorkMediaDO::getMediaType, MediaTypeEnum.GIF)
-                .and(w -> w.eq(XhsWorkMediaDO::getIsDelete, false).or()
-                        .isNull(XhsWorkMediaDO::getIsDelete));
+                .eq(XhsWorkMediaDO::getIsDelete, false);
 
         List<XhsWorkMediaDO> mediaList = workMediaMapper.selectList(wrapper);
 
@@ -298,37 +263,7 @@ public class XhsWorkServiceImpl implements XhsWorkService {
 
     @Override
     public RandomGifVO getGifById(Long id) {
-        if (id == null) {
-            log.warn("GIF ID为空");
-            return null;
-        }
-
-        // 查询媒体信息
-        XhsWorkMediaDO mediaDO = workMediaMapper.selectById(id);
-
-        if (mediaDO == null) {
-            log.warn("未找到ID为{}的GIF", id);
-            return null;
-        }
-
-        // 转换为VO
-        RandomGifVO vo = new RandomGifVO();
-        vo.setId(mediaDO.getId());
-        vo.setMediaUrl(mediaDO.getMediaUrl());
-        vo.setWorkId(mediaDO.getWorkId());
-        vo.setWorkBaseId(mediaDO.getWorkBaseId());
-
-        // 查询作品基础信息
-        if (mediaDO.getWorkBaseId() != null) {
-            XhsWorkBaseDO baseDO = workBaseMapper.selectById(mediaDO.getWorkBaseId());
-            if (baseDO != null) {
-                vo.setWorkTitle(baseDO.getWorkTitle());
-                vo.setAuthorNickname(baseDO.getAuthorNickname());
-                vo.setAuthorId(baseDO.getAuthorId());
-            }
-        }
-
-        return vo;
+        return workMediaMapper.getGifById(id);
     }
 
     /**
