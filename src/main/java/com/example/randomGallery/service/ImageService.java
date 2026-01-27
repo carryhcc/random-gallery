@@ -1,174 +1,164 @@
 package com.example.randomGallery.service;
 
-import cn.hutool.core.collection.CollUtil;
 import cn.hutool.core.util.StrUtil;
+import com.example.randomGallery.service.image.HeicConversionService;
+import com.example.randomGallery.service.image.ImageDownloadService;
+import com.example.randomGallery.service.image.ImageFormatDetector;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.checkerframework.checker.nullness.qual.NonNull;
 import org.springframework.cache.annotation.Cacheable;
-import org.springframework.http.HttpEntity;
-import org.springframework.http.HttpMethod;
-import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
-import org.springframework.web.client.RestTemplate;
 
 import java.util.List;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 
 /**
- * 图片处理服务
- * 负责图片的格式检测、下载等通用逻辑
+ * 图片处理门面服务
+ * 
+ * <p>
+ * 作为门面（Facade）模式的实现，整合图片下载、格式检测、格式转换等功能，
+ * 为上层控制器提供统一的服务接口。
+ * 
+ * <p>
+ * 核心职責：
+ * <ul>
+ * <li>协调各个子服务完成完整的图片处理流程</li>
+ * <li>提供向后兼容的API接口</li>
+ * <li>统一的异常处理和日志记录</li>
+ * </ul>
+ * 
+ * <p>
+ * 依赖的子服务：
+ * <ul>
+ * <li>{@link ImageDownloadService} - 图片下载</li>
+ * <li>{@link ImageFormatDetector} - 格式检测</li>
+ * <li>{@link HeicConversionService} - HEIC转换</li>
+ * </ul>
+ * 
+ * @author random-gallery
  */
 @Slf4j
 @Service
 @RequiredArgsConstructor
 public class ImageService {
 
-    private final RestTemplate restTemplate;
-
-    // 使用 Java 21 虚拟线程池执行高并发 IO 任务
-    private final ExecutorService executor = Executors.newVirtualThreadPerTaskExecutor();
+    private final ImageDownloadService downloadService;
+    private final ImageFormatDetector formatDetector;
+    private final HeicConversionService conversionService;
 
     /**
-     * 批量检测 HEIC 图片（并发预热缓存）
+     * 转换图片为浏览器兼容格式（核心方法）
      * 
-     * @param urls 图片 URL 列表
+     * <p>
+     * 完整的处理流程：
+     * <ol>
+     * <li>检查缓存，如果命中直接返回</li>
+     * <li>下载原始图片</li>
+     * <li>检测是否为HEIC格式</li>
+     * <li>如果是HEIC则转换为JPEG，否则直接返回原图</li>
+     * <li>缓存转换结果</li>
+     * </ol>
+     * 
+     * @param url 图片URL
+     * @return 转换后的图片字节数组（HEIC会转为JPEG，其他格式原样返回），失败时返回null
      */
-    public void batchDetectHEIC(List<String> urls) {
-        if (CollUtil.isEmpty(urls)) {
-            return;
-        }
-
-        long start = System.currentTimeMillis();
-        List<String> uniqueUrls = urls.stream()
-                .filter(StrUtil::isNotEmpty)
-                .distinct()
-                .toList();
-
-        // 并发执行检测
-        List<CompletableFuture<Void>> futures = uniqueUrls.stream()
-                .map(url -> CompletableFuture.runAsync(() -> {
-                    try {
-                        isHEICImage(url);
-                    } catch (Exception e) {
-                        // 忽略异常，不阻塞
-                    }
-                }, executor))
-                .toList();
-
-        CompletableFuture.allOf(futures.toArray(new CompletableFuture[0])).join();
-
-        log.info("Batch HEIC detect: {} urls detected in {}ms", uniqueUrls.size(), System.currentTimeMillis() - start);
-    }
-
-    /**
-     * 检测 URL 是否为 HEIC 格式图片
-     * 通过 HEAD 请求获取 Content-Type 来判断
-     */
-    @Cacheable(value = "heiCDetectCache", key = "#url", unless = "#result == null")
-    public boolean isHEICImage(String url) {
+    @Cacheable(value = "heiCConvertCache", key = "#url", unless = "#result == null")
+    public byte[] convertImage(String url) {
         if (StrUtil.isEmpty(url)) {
-            return false;
-        }
-
-        if (url.contains("xhscdn.com")) {
-            return true;
+            log.warn("图片转换失败: URL为空");
+            return null;
         }
 
         try {
-            ResponseEntity<Void> response = restTemplate.exchange(
-                    url,
-                    HttpMethod.HEAD,
-                    null,
-                    Void.class);
+            log.info("开始处理图片: {}", url);
 
-            String contentType = response.getHeaders().getContentType() != null
-                    ? response.getHeaders().getContentType().toString().toLowerCase()
-                    : "";
+            // 步骤1: 下载原始图片
+            log.debug("下载原始图片");
+            byte[] originalImage = downloadService.download(url);
 
-            return contentType.contains("image/heic") || contentType.contains("image/heif");
+            if (originalImage == null || originalImage.length == 0) {
+                log.error("图片下载失败: {}", url);
+                return null;
+            }
+
+            log.debug("图片下载成功，大小: {} bytes", originalImage.length);
+
+            // 步骤2: 检测是否为HEIC格式
+            log.debug("检测图片格式");
+            boolean isHEIC = formatDetector.isHEICByBytes(originalImage);
+
+            if (!isHEIC) {
+                log.info("非HEIC格式，直接返回原图");
+                return originalImage;
+            }
+
+            // 步骤3: 转换HEIC为JPEG
+            log.debug("检测到HEIC格式，开始转换");
+            byte[] convertedImage = conversionService.convert(originalImage);
+
+            if (convertedImage == null || convertedImage.length == 0) {
+                log.error("HEIC转换失败: {}", url);
+                return null;
+            }
+
+            log.info("图片转换完成: {} -> JPEG", url);
+            return convertedImage;
+
         } catch (Exception e) {
-            return false;
+            log.error("图片处理异常: {}", url, e);
+            throw new RuntimeException("图片处理失败: " + e.getMessage(), e);
         }
+    }
+
+    // ==================== 向后兼容的方法 ====================
+
+    /**
+     * 批量检测HEIC图片（预热缓存）
+     * 
+     * <p>
+     * 委托给 {@link ImageFormatDetector#batchPreDetect(List)}
+     * 
+     * @param urls 图片URL列表
+     */
+    public void batchDetectHEIC(List<String> urls) {
+        formatDetector.batchPreDetect(urls);
+    }
+
+    /**
+     * 检测URL是否为HEIC格式图片（带缓存）
+     * 
+     * <p>
+     * 委托给 {@link ImageFormatDetector#isHEICByContentType(String)}
+     * 
+     * @param url 图片URL
+     * @return 是否为HEIC格式
+     */
+    public boolean isHEICImage(String url) {
+        return formatDetector.isHEICByContentType(url);
+    }
+
+    /**
+     * 检测字节数组是否为HEIC格式
+     * 
+     * <p>
+     * 委托给 {@link ImageFormatDetector#isHEICByBytes(byte[])}
+     * 
+     * @param data 图片字节数组
+     * @return 是否为HEIC格式
+     */
+    public boolean isHEICBytes(byte[] data) {
+        return formatDetector.isHEICByBytes(data);
     }
 
     /**
      * 下载图片到内存
-     * 设置合适的 HTTP 头以应对 CDN 限制
-     *
-     * @param url 图片 URL
+     * 
+     * <p>
+     * 委托给 {@link ImageDownloadService#download(String)}
+     * 
+     * @param url 图片URL
      * @return 图片字节数组
      */
     public byte[] downloadImage(String url) {
-        int maxRetries = 3;
-        int retryDelayMs = 500;
-        Exception lastException = null;
-
-        for (int i = 0; i < maxRetries; i++) {
-            try {
-                HttpEntity<?> requestEntity = getHttpEntity();
-
-                ResponseEntity<byte[]> response = restTemplate.exchange(
-                        url,
-                        HttpMethod.GET,
-                        requestEntity,
-                        byte[].class);
-
-                if (response.getStatusCode().is2xxSuccessful() && response.getBody() != null) {
-                    return response.getBody();
-                } else {
-                    log.warn("Download attempt {}/{} failed for {}: status {}", i + 1, maxRetries, url,
-                            response.getStatusCode());
-                }
-            } catch (Exception e) {
-                lastException = e;
-                log.warn("Download attempt {}/{} error for {}: {}", i + 1, maxRetries, url, e.getMessage());
-
-                if (i < maxRetries - 1) {
-                    try {
-                        Thread.sleep(retryDelayMs);
-                    } catch (InterruptedException ie) {
-                        Thread.currentThread().interrupt();
-                        break;
-                    }
-                }
-            }
-        }
-
-        log.error("Download failed after {} retries: {}", maxRetries, url, lastException);
-        return null;
-    }
-
-    private static @NonNull HttpEntity<?> getHttpEntity() {
-        org.springframework.http.HttpHeaders headers = new org.springframework.http.HttpHeaders();
-        headers.set("User-Agent",
-                "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36");
-        headers.set("Referer", "https://www.xiaohongshu.com/");
-        headers.set("Accept", "image/avif,image/webp,image/apng,image/svg+xml,image/*,*/*;q=0.8");
-
-        return new HttpEntity<>(headers);
-    }
-
-    /**
-     * 检查字节数组是否为 HEIC 格式 (Magic Bytes)
-     */
-    public boolean isHEICBytes(byte[] data) {
-        if (data == null || data.length < 12) {
-            return false;
-        }
-
-        //  box checking
-        if (data[4] != 0x66 || data[5] != 0x74 || data[6] != 0x79 || data[7] != 0x70) {
-            return false;
-        }
-
-        String majorBrand = new String(data, 8, 4);
-        return majorBrand.equalsIgnoreCase("heic") ||
-                majorBrand.equalsIgnoreCase("heix") ||
-                majorBrand.equalsIgnoreCase("heim") ||
-                majorBrand.equalsIgnoreCase("msf1") ||
-                majorBrand.equalsIgnoreCase("mif1");
+        return downloadService.download(url);
     }
 }

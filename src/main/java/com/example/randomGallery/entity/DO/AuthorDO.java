@@ -19,7 +19,7 @@ public class AuthorDO {
     private Long id;
 
     /**
-     * 作者ID（小红书平台ID）
+     * 作者ID（平台ID）
      */
     @TableField(value = "author_id")
     private String authorId;

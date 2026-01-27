@@ -34,7 +34,7 @@ public class CacheConfig {
                 "authors",
                 "tags",
                 "heiCDetectCache",
-                "heiDConvertCache");
+                "heiCConvertCache");
 
         cacheManager.setCaffeine(Caffeine.newBuilder()
                 // 写入后 24 小时过期

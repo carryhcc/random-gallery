@@ -207,9 +207,9 @@
         <div class="download-header">
             <h1 class="download-title">
                 <i class="fas fa-cloud-download-alt"></i>
-                小红书作品下载
+                作品下载
             </h1>
-            <p class="download-subtitle">输入小红书作品链接，一键解析并保存</p>
+            <p class="download-subtitle">输入作品链接，一键解析并保存</p>
         </div>
 
         <!-- URL 输入区 -->
@@ -218,7 +218,7 @@
                 type="text" 
                 id="urlInput" 
                 class="url-input" 
-                placeholder="请粘贴小红书作品链接..."
+                placeholder="请粘贴作品链接..."
                 autocomplete="off">
             <button id="parseBtn" class="parse-button">
                 <i class="fas fa-search"></i>
@@ -235,7 +235,7 @@
             <ul class="info-list">
                 <li>
                     <i class="fas fa-check"></i>
-                    <span>复制小红书作品链接（支持分享链接和网页链接）</span>
+                    <span>复制作品链接（支持分享链接和网页链接）</span>
                 </li>
                 <li>
                     <i class="fas fa-check"></i>
