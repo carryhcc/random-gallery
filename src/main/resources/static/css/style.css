@@ -1597,6 +1597,38 @@ body {
     box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
 }
 
+/* ========================================
+   20. 首页移动端适配 (Index Page Mobile Optimization)
+   ======================================== */
+body.index-page {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    touch-action: none; /* 禁止浏览器默认手势（滚动/缩放） */
+    -webkit-overflow-scrolling: auto;
+}
+
+body.index-page .home-container {
+    /* 容器本身不需要边距，由 Flex 居中 */
+    margin: 0;
+    /* 移除之前的 padding，避免计算尺寸时复杂化 */
+    padding: 20px; 
+    width: auto;
+    /* 允许宽度自适应内容，但在移动端受 max-width 限制 */
+    max-width: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    transition: transform 0.1s ease-out; /* 平滑缩放 */
+}
+
 .url-input::placeholder {
     color: var(--color-text-tertiary);
 }

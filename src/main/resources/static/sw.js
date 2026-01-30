@@ -9,7 +9,9 @@ const CORE_ASSETS = [
   '/js/theme.js',
   '/manifest.json',
   '/favicon.ico',
-  '/offline.html'
+  '/offline.html',
+  '/icons/icon-192x192.png',
+  '/icons/icon-512x512.png'
 ];
 
 // 安装事件：预缓存核心资源
@@ -18,11 +20,10 @@ self.addEventListener('install', (event) => {
   event.waitUntil(
     caches.open(CACHE_NAME)
       .then((cache) => {
-        console.log('[Service Worker] 预缓存核心资源');
-        return cache.addAll(CORE_ASSETS);
-      })
-      .catch((error) => {
-        console.error('[Service Worker] 预缓存失败:', error);
+        console.log('[Service Worker] 预缓存核心资源开始');
+        return cache.addAll(CORE_ASSETS)
+          .then(() => console.log('[Service Worker] 预缓存全部成功 ✅'))
+          .catch(err => console.error('[Service Worker] 预缓存失败 ❌', err));
       })
   );
   self.skipWaiting(); // 强制激活新SW
@@ -50,10 +51,10 @@ self.addEventListener('activate', (event) => {
 self.addEventListener('fetch', (event) => {
   // 只处理GET请求
   if (event.request.method !== 'GET') return;
-  
+
   // 跳过Chrome扩展请求
   if (event.request.url.startsWith('chrome-extension://')) return;
-  
+
   event.respondWith(
     fetch(event.request)
       .then((response) => {

@@ -10,6 +10,7 @@
     <link rel="manifest" href="/manifest.json">
     <meta name="theme-color" content="#667eea">
     <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="随机图库">
 
@@ -343,9 +344,117 @@
             }
         }
     </style>
+    <!-- PWA 配置 - 放在 Head 以确保尽早捕获事件 -->
+    <script>
+        // PWA 安装事件监听
+        let deferredPrompt;
+        window.addEventListener('beforeinstallprompt', (e) => {
+            // e.preventDefault(); // 允许浏览器显示原生安装提示
+            deferredPrompt = e;
+            console.log('💡 PWA 可以安装到主屏幕 (UI事件触发)');
+
+            // 确保DOM准备好后再显示按钮
+            if (document.body) {
+                showInstallButton();
+            } else {
+                document.addEventListener('DOMContentLoaded', showInstallButton);
+            }
+        });
+
+        // PWA 安装成功监听
+        window.addEventListener('appinstalled', () => {
+            console.log('✅ PWA 已成功安装到主屏幕');
+            // 如果 toast 函数未定义（DOM未就绪），则等待
+            if (window.showToast) {
+                showToast('应用已安装到主屏幕！', 'success');
+            }
+            const installHint = document.getElementById('pwa-install-hint');
+            if (installHint) installHint.remove();
+        });
+
+        function showInstallButton() {
+            // 避免重复添加
+            if (document.getElementById('pwa-install-hint')) return;
+
+            console.log('📱 显示自定义安装按钮');
+            const installHint = document.createElement('div');
+            installHint.id = 'pwa-install-hint';
+            installHint.innerHTML = `
+        <div style="position: fixed; bottom: 80px; left: 50%; transform: translateX(-50%); 
+                    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); 
+                    color: white; padding: 12px 24px; border-radius: 30px; 
+                    box-shadow: 0 4px 15px rgba(0,0,0,0.3); cursor: pointer; 
+                    z-index: 9999; animation: slideUp 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275); 
+                    font-size: 14px; display: flex; align-items: center; gap: 8px; border: 2px solid rgba(255,255,255,0.2);">
+            <i class="fas fa-download"></i>
+            <span style="font-weight: 600;">安装应用</span>
+        </div>
+    `;
+
+            const style = document.createElement('style');
+            style.textContent = '@keyframes slideUp { from { opacity: 0; transform: translate(-50%, 40px); } to { opacity: 1; transform: translate(-50%, 0); } }';
+            document.head.appendChild(style);
+
+            installHint.onclick = () => {
+                if (deferredPrompt) {
+                    deferredPrompt.prompt();
+                    deferredPrompt.userChoice.then((choiceResult) => {
+                        if (choiceResult.outcome === 'accepted') {
+                            console.log('✅ 用户接受了安装');
+                        } else {
+                            console.log('❌ 用户拒绝了安装');
+                        }
+                        deferredPrompt = null;
+                        installHint.remove();
+                    });
+                } else {
+                    console.warn('Deferred prompt is null');
+                }
+            };
+
+            document.body.appendChild(installHint);
+
+            // 15秒后自动消失
+            setTimeout(() => {
+                if (installHint.parentNode) {
+                    installHint.style.opacity = '0';
+                    installHint.style.transition = 'opacity 0.5s';
+                    setTimeout(() => installHint.remove(), 500);
+                }
+            }, 15000);
+        }
+
+        // Service Worker 注册
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('/sw.js')
+                    .then((registration) => {
+                        console.log('✅ Service Worker 注册成功:', registration.scope);
+
+                        // 强制更新检查
+                        registration.update();
+
+                        registration.addEventListener('updatefound', () => {
+                            const newWorker = registration.installing;
+                            newWorker.addEventListener('statechange', () => {
+                                if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
+                                    if (confirm('发现新版本，是否立即更新？')) {
+                                        newWorker.postMessage({ type: 'SKIP_WAITING' });
+                                        window.location.reload();
+                                    }
+                                }
+                            });
+                        });
+                    })
+                    .catch((error) => {
+                        console.error('❌ Service Worker 注册失败:', error);
+                    });
+            });
+        }
+    </script>
 </head>
 
-<body>
+<body class="index-page">
 
     <!-- 主题切换按钮 -->
     <button class="theme-toggle" id="themeToggle" onclick="toggleTheme()" title="切换主题">
@@ -626,97 +735,67 @@
     </script>
 
     <!-- PWA Service Worker 注册 -->
+
+
+
+    <!-- 移动端自动缩放适配脚本 -->
     <script>
-        // Service Worker 注册
-        if ('serviceWorker' in navigator) {
-            window.addEventListener('load', () => {
-                navigator.serviceWorker.register('/sw.js')
-                    .then((registration) => {
-                        console.log('✅ Service Worker 注册成功:', registration.scope);
+        (function () {
+            // 只有在首页且是移动端（或需要缩放的小屏幕）才执行
+            function fitContent() {
+                const container = document.querySelector('.home-container');
+                if (!container) return;
 
-                        // 检查更新
-                        registration.addEventListener('updatefound', () => {
-                            const newWorker = registration.installing;
-                            newWorker.addEventListener('statechange', () => {
-                                if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
-                                    console.log('🔄 新版本可用');
-                                    if (confirm('发现新版本，是否立即更新？')) {
-                                        newWorker.postMessage({ type: 'SKIP_WAITING' });
-                                        window.location.reload();
-                                    }
-                                }
-                            });
-                        });
-                    })
-                    .catch((error) => {
-                        console.error('❌ Service Worker 注册失败:', error);
-                    });
+                // 重置 transform 以便获取自然尺寸
+                container.style.transform = 'none';
+
+                const viewportW = window.innerWidth;
+                const viewportH = window.innerHeight;
+
+                // 获取容器的自然尺寸
+                // 注意：由于设置了 padding: 20px，offsetWidth 包含了 padding
+                const contentW = container.offsetWidth;
+                const contentH = container.offsetHeight;
+
+                // 计算需要的缩放比例
+                // 留出一点边距 (Safe area)
+                const safePadding = 10;
+                const availableW = viewportW - safePadding * 2;
+                const availableH = viewportH - safePadding * 2;
+
+                const scaleX = availableW / contentW;
+                const scaleY = availableH / contentH;
+
+                // 取最小值作为缩放比例，确保完整显示
+                // 只有当需要缩小时才缩小 (scale < 1)
+                // 或者用户希望始终填满屏幕？ "缩放 在一个页面显示所有" -> 意味着即使屏幕很大，也可以保持 1 或者适当放大？
+                // 通常只处理缩小的情况，防止在大屏幕上变得过大
+                // 但是在小屏幕手机上，必须缩小
+                let scale = Math.min(scaleX, scaleY);
+
+                // 稍微限制一下放大的最大倍数，防止模糊
+                if (scale > 1.2) scale = 1.2;
+
+                // 应用缩放
+                // container.style.transformOrigin = 'center center'; // 已由 flex 居中
+                container.style.transform = `scale(${scale})`;
+            }
+
+            // 初始化
+            window.addEventListener('load', fitContent);
+            window.addEventListener('resize', fitContent);
+
+            // 针对某些特定的移动端方向变化
+            window.addEventListener('orientationchange', function () {
+                setTimeout(fitContent, 100);
             });
-        }
 
-        // PWA 安装提示
-        let deferredPrompt;
-        window.addEventListener('beforeinstallprompt', (e) => {
-            e.preventDefault();
-            deferredPrompt = e;
-            console.log('💡 PWA 可以安装到主屏幕');
-            showInstallButton();
-        });
-
-        function showInstallButton() {
-            const installHint = document.createElement('div');
-            installHint.id = 'pwa-install-hint';
-            installHint.innerHTML = `
-        <div style="position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); 
-                    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); 
-                    color: white; padding: 12px 24px; border-radius: 30px; 
-                    box-shadow: 0 4px 12px rgba(0,0,0,0.15); cursor: pointer; 
-                    z-index: 1000; animation: slideUp 0.3s ease-out; 
-                    font-size: 14px; display: flex; align-items: center; gap: 8px;">
-            <i class="fas fa-download"></i>
-            <span>安装到主屏幕</span>
-        </div>
-    `;
-
-            const style = document.createElement('style');
-            style.textContent = '@keyframes slideUp { from { opacity: 0; transform: translate(-50%, 20px); } to { opacity: 1; transform: translate(-50%, 0); } }';
-            document.head.appendChild(style);
-
-            installHint.onclick = () => {
-                if (deferredPrompt) {
-                    deferredPrompt.prompt();
-                    deferredPrompt.userChoice.then((choiceResult) => {
-                        if (choiceResult.outcome === 'accepted') {
-                            console.log('✅ 用户接受了安装');
-                            showToast('正在安装...', 'success');
-                        } else {
-                            console.log('❌ 用户拒绝了安装');
-                        }
-                        deferredPrompt = null;
-                        installHint.remove();
-                    });
-                }
-            };
-
-            document.body.appendChild(installHint);
-
-            setTimeout(() => {
-                if (installHint.parentNode) {
-                    installHint.style.opacity = '0';
-                    installHint.style.transition = 'opacity 0.3s';
-                    setTimeout(() => installHint.remove(), 300);
-                }
-            }, 10000);
-        }
-
-        window.addEventListener('appinstalled', () => {
-            console.log('✅ PWA 已成功安装到主屏幕');
-            showToast('应用已安装到主屏幕！', 'success');
-            const installHint = document.getElementById('pwa-install-hint');
-            if (installHint) installHint.remove();
-        });
+            // 立即执行一次
+            if (document.readyState === 'complete') {
+                fitContent();
+            }
+        })();
     </script>
-
 </body>
 
 </html>
