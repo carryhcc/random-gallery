@@ -105,3 +105,5 @@ jdbc:mysql://${db.host}:${db.port}/${db.name}?useUnicode=true&characterEncoding=
 - 已配置 Qodana 进行静态分析 (`qodana.yaml`)
 - maven-compiler-plugin 中配置了 Lombok 注解处理器
 - MyBatis-Plus 通过 Slf4j 记录带参数的 SQL
+
+## 测试部署
