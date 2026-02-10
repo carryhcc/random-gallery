@@ -30,7 +30,9 @@ public class PicServiceApiImpl implements PicServiceApi {
     @Override
     public PicVO getInfoById(Long id) {
         PicDO picDO = picServiceMapper.selectById(id);
-        ObjectUtil.defaultIfNull(picDO, new PicDO());
+        if (picDO == null) {
+            return new PicVO();
+        }
         return BeanUtil.copyProperties(picDO, PicVO.class);
     }
 

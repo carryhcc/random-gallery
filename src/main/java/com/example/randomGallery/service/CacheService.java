@@ -193,8 +193,14 @@ public class CacheService {
     }
 
     // 内存存储随机序列
-    @Getter
     private List<Long> shuffledSeq;
+
+    /**
+     * 获取随机序列的不可变副本，防止外部修改
+     */
+    public List<Long> getShuffledSeq() {
+        return shuffledSeq != null ? Collections.unmodifiableList(shuffledSeq) : Collections.emptyList();
+    }
     // 总图片数
     @Getter
     public Integer totalImageCount;

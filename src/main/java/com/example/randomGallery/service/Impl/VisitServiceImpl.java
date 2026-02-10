@@ -28,10 +28,11 @@ import java.util.concurrent.CompletableFuture;
 @RequiredArgsConstructor
 public class VisitServiceImpl implements VisitService {
 
+    private static final String VISITOR_COOKIE_NAME = "VISITOR_ID";
+    private static final int MAX_QUERY_STRING_LENGTH = 65535;
+
     private final VisitUserMapper visitUserMapper;
     private final VisitLogMapper visitLogMapper;
-
-    private static final String VISITOR_COOKIE_NAME = "VISITOR_ID";
 
     // 不再使用 @Async 注解整个方法，改用内部异步处理，确保Request数据在主线程提取
     @Override
@@ -74,7 +75,7 @@ public class VisitServiceImpl implements VisitService {
             visitLog.setVisitUserId(visitUser.getId());
             visitLog.setUri(uri);
             visitLog.setMethod(method);
-            visitLog.setParams(limitString(queryString, 65535));
+            visitLog.setParams(limitString(queryString, MAX_QUERY_STRING_LENGTH));
             visitLog.setStatus(status);
             visitLog.setDuration(duration);
             visitLog.setIp(ip);
@@ -143,8 +144,6 @@ public class VisitServiceImpl implements VisitService {
             }
             if (changed || visitUser.getLastVisitTime().isBefore(now.minusSeconds(60))) {
                 // 只有信息变动或超过1分钟才更新DB，减少热点写
-                visitUserMapper.updateById(visitUser);
-            } else {
                 visitUserMapper.updateById(visitUser);
             }
         }

@@ -62,8 +62,9 @@ public class GroupServiceApiImpl implements GroupServiceApi {
     public void updateGroupInfo() {
         // 定时任务更新分组图片/总数信息
         List<Object> objs = groupServiceMapper.selectObjs(new QueryWrapper<GroupDO>().select("group_id"));
-        ObjectUtil.defaultIfNull(objs, new ArrayList<>());
-        List<Long> groupIdList = objs.stream().map(obj -> Long.valueOf(obj.toString())).toList();
+        List<Long> groupIdList = (objs != null)
+                ? objs.stream().map(obj -> Long.valueOf(obj.toString())).toList()
+                : Collections.emptyList();
 
         for (Long groupId : groupIdList) {
             GroupVO groupVO = picServiceMapper.queryPicCountInfo(groupId);

@@ -2,6 +2,7 @@ package com.example.randomGallery.service.Impl;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.toolkit.Wrappers;
+import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.example.randomGallery.entity.DO.XhsWorkBaseDO;
 import com.example.randomGallery.service.AuthorService;
 import com.example.randomGallery.service.DataMigrationService;
@@ -26,6 +27,8 @@ import java.util.List;
 @RequiredArgsConstructor
 public class DataMigrationServiceImpl implements DataMigrationService {
 
+    private static final int PAGE_SIZE = 1000;
+
     private final XhsWorkBaseMapper workBaseMapper;
     private final AuthorService authorService;
     private final TagService tagService;
@@ -35,25 +38,51 @@ public class DataMigrationServiceImpl implements DataMigrationService {
     private final TagWorkMapper tagWorkMapper;
 
     @Override
-    @Transactional
     public void migrateData() {
         log.info("开始执行数据迁移任务...");
 
-        // 查询所有未删除的作品
-        LambdaQueryWrapper<XhsWorkBaseDO> wrapper = Wrappers.lambdaQuery();
-        wrapper.eq(XhsWorkBaseDO::getIsDelete, false);
-        List<XhsWorkBaseDO> workList = workBaseMapper.selectList(wrapper);
+        int totalCount = 0;
+        int currentPage = 1;
+        boolean hasMore = true;
 
-        int processedCount = 0;
-        int tagCreatedCount = 0;
-        int relationCreatedCount = 0;
+        while (hasMore) {
+            // 分页查询作品，避免一次性加载过多数据
+            Page<XhsWorkBaseDO> page = workBaseMapper.selectPage(
+                    new Page<>(currentPage, PAGE_SIZE),
+                    Wrappers.<XhsWorkBaseDO>lambdaQuery().eq(XhsWorkBaseDO::getIsDelete, false)
+            );
 
+            List<XhsWorkBaseDO> workList = page.getRecords();
+            if (workList.isEmpty()) {
+                hasMore = false;
+                break;
+            }
+
+            // 分批处理，每批使用独立事务
+            processBatch(workList);
+
+            totalCount += workList.size();
+            log.info("已处理 {} 个作品 (第 {} 页)", totalCount, currentPage);
+
+            currentPage++;
+            hasMore = page.hasNext();
+        }
+
+        log.info("数据迁移任务完成！总共处理了 {} 个作品", totalCount);
+        log.info(getMigrationInfo());
+    }
+
+    /**
+     * 分批处理作品，每批使用独立事务
+     */
+    @Transactional(rollbackFor = Exception.class)
+    public void processBatch(List<XhsWorkBaseDO> workList) {
         for (XhsWorkBaseDO work : workList) {
             String workId = work.getWorkId();
             String authorId = work.getAuthorId();
             String workTags = work.getWorkTags();
 
-            // 处理作者信息（虽然SQL已经处理，但这里确保数据一致性）
+            // 处理作者信息
             if (authorId != null && !authorId.trim().isEmpty()) {
                 authorService.saveOrUpdateAuthor(authorId, work.getAuthorNickname(), work.getAuthorUrl());
                 authorService.createAuthorWorkRelation(authorId, workId);
@@ -63,16 +92,7 @@ public class DataMigrationServiceImpl implements DataMigrationService {
             if (workTags != null && !workTags.trim().isEmpty()) {
                 tagService.processWorkTags(workTags, workId);
             }
-
-            processedCount++;
-            if (processedCount % 100 == 0) {
-                log.info("已处理 {} 个作品", processedCount);
-            }
         }
-
-        log.info("数据迁移任务完成！");
-        log.info("总共处理了 {} 个作品", processedCount);
-        log.info(getMigrationInfo());
     }
 
     @Override

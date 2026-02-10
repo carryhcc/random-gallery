@@ -62,17 +62,22 @@ public class SystemController {
      * 切换环境
      */
     @GetMapping("/env/switch")
-    public Result<String> switchEnv(@RequestParam String env) throws SQLException {
+    public Result<String> switchEnv(@RequestParam String env) {
         log.info("切换环境到: {}", env);
-        cacheService.switchSqlName(env);
-        return Result.success("环境切换成功", "当前环境: " + env);
+        try {
+            cacheService.switchSqlName(env);
+            return Result.success("环境切换成功", "当前环境: " + env);
+        } catch (Exception e) {
+            log.error("环境切换失败", e);
+            return Result.error("环境切换失败: " + e.getMessage());
+        }
     }
 
     /**
      * 切换到开发环境
      */
     @GetMapping("/env/dev")
-    public Result<String> switchToDev() throws SQLException {
+    public Result<String> switchToDev() {
         log.info("切换到开发环境");
         return switchEnv("dev");
     }
@@ -81,7 +86,7 @@ public class SystemController {
      * 切换到测试环境
      */
     @GetMapping("/env/test")
-    public Result<String> switchToTest() throws SQLException {
+    public Result<String> switchToTest() {
         log.info("切换到测试环境");
         return switchEnv("test");
     }
@@ -90,7 +95,7 @@ public class SystemController {
      * 切换到生产环境
      */
     @GetMapping("/env/prod")
-    public Result<String> switchToProd() throws SQLException {
+    public Result<String> switchToProd() {
         log.info("切换到生产环境");
         return switchEnv("prod");
     }
@@ -99,8 +104,14 @@ public class SystemController {
      * 更新分组数据
      */
     @GetMapping("/up/group")
-    public void upGroup() {
-        groupServiceApi.updateGroupInfo();
+    public Result<String> upGroup() {
+        try {
+            groupServiceApi.updateGroupInfo();
+            return Result.success("更新成功");
+        } catch (Exception e) {
+            log.error("更新分组数据失败", e);
+            return Result.error("更新失败: " + e.getMessage());
+        }
     }
 
     /**

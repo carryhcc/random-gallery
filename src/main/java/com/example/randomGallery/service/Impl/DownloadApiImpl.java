@@ -16,11 +16,11 @@ import com.example.randomGallery.service.DownloadApi;
 import com.example.randomGallery.service.TagService;
 import com.example.randomGallery.service.mapper.XhsWorkBaseMapper;
 import com.example.randomGallery.service.mapper.XhsWorkMediaMapper;
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.ObjectProvider;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.stereotype.Service;
@@ -30,6 +30,7 @@ import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.Executor;
 import java.util.stream.Collectors;
 
 @Slf4j
@@ -42,28 +43,34 @@ public class DownloadApiImpl implements DownloadApi {
     private final AuthorService authorService;
     private final TagService tagService;
     private final ObjectMapper objectMapper;
-
-    // 注入自身以解决内部调用事务失效问题（或者将 saveXhsData 移至另一个 Service）
     private final ObjectProvider<DownloadApiImpl> selfProvider;
 
     @Value("${other.downloader.url}")
     private String xhsDetailUrl;
 
+    @Qualifier("taskExecutor")
+    private final Executor taskExecutor;
+
     @Override
     public void addDownloadTask(DownLoadQry qry) {
-        // 建议使用自定义线程池，避免使用默认的 ForkJoinPool.commonPool()
+        // 使用自定义线程池执行异步任务
         CompletableFuture.runAsync(() -> {
             try {
                 log.info("开始下载任务，参数: {}", qry);
                 String result = HttpUtil.post(xhsDetailUrl, JSONUtil.toJsonStr(qry));
 
                 // 通过代理对象调用，确保 @Transactional 生效
-                Objects.requireNonNull(selfProvider.getIfAvailable()).saveXhsData(result);
+                DownloadApiImpl proxy = selfProvider.getIfAvailable();
+                if (proxy == null) {
+                    log.error("无法获取代理对象，下载任务处理失败");
+                    return;
+                }
+                proxy.saveXhsData(result);
 
             } catch (Exception e) {
                 log.error("下载任务异步处理异常: {}", qry.getUrl(), e);
             }
-        });
+        }, taskExecutor);
     }
 
     /**

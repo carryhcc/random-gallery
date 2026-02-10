@@ -1,11 +1,16 @@
 package com.example.randomGallery.entity.VO;
 
-public class ImageData {
-    public int index;
-    public byte[] bytes;
+import lombok.AllArgsConstructor;
+import lombok.Data;
+import lombok.NoArgsConstructor;
 
-    public ImageData(int index, byte[] bytes) {
-        this.index = index;
-        this.bytes = bytes;
-    }
+/**
+ * 图片数据封装类（用于图片下载）
+ */
+@Data
+@NoArgsConstructor
+@AllArgsConstructor
+public class ImageData {
+    private int index;
+    private byte[] bytes;
 }
