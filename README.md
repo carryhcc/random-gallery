@@ -1,41 +1,39 @@
-# 随机图库 (Random Gallery)
+# random-gallery
 
-一个基于 Spring Boot 的随机图片展示应用，支持多环境切换、分组管理和图片浏览功能。
+基于 Spring Boot 3 + MyBatis-Plus + Freemarker 的随机图库项目，支持随机图片/分组浏览、小红书作品管理、HEIC 转换和多环境数据切换。
 
-## 🌟 功能特性
+## 1. 功能概览
 
-### 核心功能
-- **随机图片展示** - 获取随机单张图片
-- **随机套图浏览** - 获取随机套图集合
-- **分组管理** - 支持图片分组查询和管理
-- **分页浏览** - 支持分页加载，提升用户体验
-- **多环境支持** - 支持开发、测试、生产环境切换
+- 随机单图：随机返回一张图片信息。
+- 分组浏览：随机分组、分组分页加载、按分组查询图片。
+- 作品管理：支持小红书作品列表筛选、详情、删除、下载任务入库。
+- GIF 浏览：随机 GIF、按 ID 获取 GIF。
+- HEIC 处理：自动识别 HEIC/HEIF 并通过转换接口输出 JPEG。
+- 运行时能力：环境切换（dev/test/prod）、隐私模式开关、防重复提交、API 日志切面。
 
-### 技术特性
-- **现代化UI** - 响应式设计，支持桌面端和移动端
-- **环境切换** - 运行时动态切换数据库环境
-- **缓存优化** - 内置缓存机制，提升访问性能
-- **Docker支持** - 完整的容器化部署方案
-- **RESTful API** - 标准化的API接口设计
+## 2. 技术栈
 
-## 🚀 快速开始
+- Java 21
+- Spring Boot 3.4.2
+- MyBatis-Plus 3.5.16
+- MySQL（通过 `db.yaml` 配置）
+- Freemarker
+- Caffeine Cache
+- Maven
+- Docker
 
-### 环境要求
-- Java 17+
-- Maven 3.6+
-- MySQL 5.7+
-- Docker (可选)
+## 3. 本地运行
 
-### 本地开发
+### 3.1 环境要求
 
-1. **克隆项目**
-```bash
-git clone <repository-url>
-cd random-gallery
-```
+- JDK 21+
+- Maven 3.9+
+- 可访问的 MySQL
 
-2. **配置数据库**
-编辑 `src/main/resources/db.yaml` 文件：
+### 3.2 配置数据库
+
+项目通过 `src/main/resources/application.yml` 引入 `db.yaml`：
+
 ```yaml
 db:
   host: localhost
@@ -45,153 +43,171 @@ db:
   password: your_password
 ```
 
-3. **运行应用**
+推荐方式：直接通过环境变量覆盖默认值。
+
+### 3.3 启动项目
+
 ```bash
 mvn spring-boot:run
 ```
 
-应用将在 `http://localhost:8086` 启动
+默认端口：`8086`
 
-### Docker 部署
+启动后可访问：
 
-#### 方式一：使用构建脚本（推荐）
+- 首页：[http://127.0.0.1:8086](http://127.0.0.1:8086)
+
+## 4. Docker 部署
+
+### 4.1 本地构建并运行
+
 ```bash
-# 一键构建和导出
-./build-and-export.sh
-```
-
-#### 方式二：手动构建
-```bash
-# 1. Maven打包
 mvn clean package -DskipTests
-
-# 2. 构建Docker镜像
-docker build -t helloworld:latest .
-
-# 3. 运行容器
-docker run -p 8086:8086 helloworld:latest
+docker build -t random-gallery:main .
+docker run -p 8086:8086 random-gallery:main
 ```
 
-#### 自定义数据库配置
+### 4.2 传入数据库环境变量
+
 ```bash
 docker run -p 8086:8086 \
   -e DB_HOST=your_host \
+  -e DB_PORT=3306 \
+  -e DB_NAME=your_db \
   -e DB_USERNAME=your_user \
-  -e DB_PASSWORD=your_pass \
-  helloworld:latest
+  -e DB_PASSWORD=your_password \
+  random-gallery:main
 ```
 
-## 📖 API 文档
+### 4.3 从 GHCR 拉取并运行（固定标签）
 
-### 图片相关接口
-
-| 接口 | 方法 | 描述 |
-|------|------|------|
-| `/api/pic/random` | GET | 获取随机单张图片 |
-| `/api/pic/group` | GET | 获取随机套图 |
-| `/api/pic/group/paged` | GET | 分页获取套图 |
-
-### 分组管理接口
-
-| 接口 | 方法 | 描述 |
-|------|------|------|
-| `/api/group/list` | POST | 查询分组列表 |
-| `/api/group/count` | POST | 查询分组总数 |
-| `/api/group/list/paged` | POST | 分页查询分组列表 |
-
-### 系统管理接口
-
-| 接口 | 方法 | 描述 |
-|------|------|------|
-| `/api/system/env/current` | GET | 获取当前环境 |
-| `/api/system/env/dev` | GET | 切换到开发环境 |
-| `/api/system/env/test` | GET | 切换到测试环境 |
-| `/api/system/env/prod` | GET | 切换到生产环境 |
-
-### 页面路由
-
-| 路由 | 描述 |
-|------|------|
-| `/` | 首页 |
-| `/showPic` | 随机图片页面 |
-| `/showPicList` | 图片列表页面 |
-| `/groupList` | 分组列表页面 |
-
-## 🏗️ 项目结构
-
-```
-src/
-├── main/
-│   ├── java/com/example/randomGallery/
-│   │   ├── controller/          # 控制器层
-│   │   ├── entity/             # 实体类
-│   │   ├── server/             # 服务层
-│   │   ├── utils/              # 工具类
-│   │   └── config/             # 配置类
-│   └── resources/
-│       ├── static/             # 静态资源
-│       ├── templates/          # 模板文件
-│       └── mapper/             # MyBatis映射文件
-└── test/                       # 测试代码
+```bash
+docker pull ghcr.io/<your-github-owner>/random-gallery:main
+docker run -p 8086:8086 ghcr.io/<your-github-owner>/random-gallery:main
 ```
 
-## ⚙️ 配置说明
+### 4.4 一键构建并导出镜像包
 
-### 应用配置 (`application.yml`)
-```yaml
-server:
-  port: 8086
-
-spring:
-  application:
-    name: random-gallery
-  datasource:
-    url: jdbc:mysql://${db.host}:${db.port}/${db.name}?useUnicode=true&characterEncoding=utf8&serverTimezone=UTC&allowPublicKeyRetrieval=true&useSSL=false
-    username: ${db.username}
-    password: ${db.password}
-    driver-class-name: com.mysql.cj.jdbc.Driver
+```bash
+./build-and-export.sh
 ```
 
-### 数据库配置 (`db.yaml`)
-```yaml
-db:
-  host: 111.111.111.111
-  port: 3306
-  name: test
-  username: root
-  password: root
+脚本会生成：`random-gallery.tar`
+
+## 5. 配置说明
+
+### 5.1 关键应用配置
+
+- `server.port`：默认 `8086`
+- `config.env`：默认环境（`dev`）
+- `image.safe-mode.enabled`：隐私模式默认开启
+- `image.safe-mode.placeholder-url`：隐私模式占位图（默认 `/icons/404.svg`）
+
+### 5.2 外部服务配置
+
+以下能力依赖外部 HTTP 服务：
+
+- 下载解析服务：`other.downloader.url`（默认 `http://${db.host}:5556/xhs/detail`）
+- HEIC 转换服务：`other.imaginary.url`（默认 `http://${db.host}:6363/convert?...`）
+
+如果不部署这两个服务，对应下载/HEIC 转换功能会不可用。
+
+### 5.3 多环境数据切换
+
+运行中可通过接口切换环境：`dev` / `test` / `prod`。
+
+项目内部按下列表名规则读取数据：
+
+- 图片表：`cc_pic_all_{env}`
+- 分组表：`cc_pic_group_{env}`
+
+## 6. 主要页面路由
+
+- `/`：静态首页
+- `/showPic`：随机单图页面
+- `/showPicList`：随机套图页面
+- `/groupList`：分组列表页
+- `/randomGallery`：作品画廊页
+- `/download`：下载管理页
+- `/downloadDetail?workId=...`：作品详情页
+- `/downloadList`：下载列表页
+- `/randomGif`：随机 GIF 页面
+
+## 7. 主要 API
+
+统一返回结构：
+
+```json
+{
+  "code": 200,
+  "message": "操作成功",
+  "data": {},
+  "timestamp": 1730000000000
+}
 ```
 
-## 🔧 开发指南
+### 7.1 图片与分组
 
-### 环境切换功能
-应用支持运行时动态切换数据库环境：
-- 通过Web界面右上角的环境切换器
-- 通过API接口 `/api/system/env/{env}`
+- `GET /api/pic/random/one`：随机单图
+- `POST /api/pic/list`：按条件查询图片（`PicQry`）
+- `GET /api/pic/download?groupId=1`：下载分组图片 ZIP
+- `GET /api/group/randomGroupInfo`：随机分组信息（可传 `groupId`）
+- `POST /api/group/list`：分组分页查询（`GroupQry`）
+- `GET /api/group/loadMore?page=0&refresh=false`：前端加载更多分组
 
-### 缓存机制
-- 内置 `CacheService` 提供缓存功能
-- 支持随机ID和分组ID的缓存
-- 定时器机制自动刷新缓存
+### 7.2 XHS作品
 
-### 数据库设计
-应用使用MySQL数据库，主要表结构：
-- 图片信息表：存储图片URL和基本信息
-- 分组表：存储图片分组信息
-- 支持多环境数据库配置
+- `POST /api/xhsWork/download`：新增下载任务
+- `GET /api/xhsWork/list`：作品分页/筛选
+- `GET /api/xhsWork/detail/{workId}`：作品详情
+- `DELETE /api/xhsWork/{workId}`：删除作品（软删）
+- `DELETE /api/xhsWork/media/{id}`：删除媒体（软删）
+- `GET /api/xhsWork/authors`：作者列表
+- `GET /api/xhsWork/tags`：标签列表
+- `GET /api/xhsWork/randomGif`：随机 GIF
+- `GET /api/xhsWork/allGifIds`：全部 GIF ID
+- `GET /api/xhsWork/gifById/{id}`：按 ID 获取 GIF
+- `POST /api/xhsWork/migrate`：执行历史数据迁移
 
-## 📦 部署说明
+### 7.3 系统与图像转换
 
-### 生产环境部署
-1. 确保数据库连接配置正确
-2. 使用构建脚本生成Docker镜像
-3. 配置环境变量进行数据库连接
-4. 使用反向代理（如Nginx）进行负载均衡
+- `GET /api/system/privacy-mode`：查询/设置隐私模式（`enabled=true|false`）
+- `GET /api/system/env/current`：当前环境
+- `GET /api/system/env/currentInfo`：当前环境统计
+- `GET /api/system/env/switch?env=dev|test|prod`：切换环境
+- `GET /api/system/env/dev`：切到 dev
+- `GET /api/system/env/test`：切到 test
+- `GET /api/system/env/prod`：切到 prod
+- `GET /api/system/up/group`：刷新分组统计
+- `GET /api/image/convert-heic?url=...`：HEIC 转 JPEG
 
-### 监控和日志
-- 应用日志输出到 `logs/app.log`
-- 支持不同级别的日志配置
-- 建议配置日志轮转和监控告警
+## 8. 项目结构
+
+```text
+src
+├── main
+│   ├── java/com/example/randomGallery
+│   │   ├── controller      # Web/REST 入口
+│   │   ├── service         # 业务服务
+│   │   ├── service/mapper  # MyBatis Mapper 接口
+│   │   ├── entity          # DO/VO/QO/通用分页实体
+│   │   ├── config          # Spring、AOP、缓存等配置
+│   │   ├── runner          # 启动任务
+│   │   └── utils           # 工具类
+│   └── resources
+│       ├── mapper          # MyBatis XML
+│       ├── templates       # Freemarker 页面
+│       └── static          # 静态资源
+└── test
+```
+
+## 9. 常用命令
+
+```bash
+mvn test
+mvn clean package
+mvn clean package -DskipTests
+```
 
 ## 🤝 贡献指南
 
