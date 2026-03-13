@@ -10,6 +10,10 @@
           rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.loli.net/ajax/libs/font-awesome/6.4.2/css/all.min.css">
     <link rel="stylesheet" href="/css/style.css">
+    <link rel="stylesheet" href="/css/web.css" media="(min-width: 769px)">
+    <link rel="stylesheet" href="/css/mobile.css" media="(max-width: 768px)">
+    <link rel="stylesheet" href="/css/pages/random-gallery-web.css" media="(min-width: 769px)">
+    <link rel="stylesheet" href="/css/pages/random-gallery-mobile.css" media="(max-width: 768px)">
     <script src="/js/heic-converter.js"></script>
     <script src="/js/theme.js"></script>
 </head>

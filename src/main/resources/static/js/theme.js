@@ -14,10 +14,10 @@
      * @returns {string} 'dark' 或 'light'
      */
     function getSystemTheme() {
-        if (window.matchMedia && window.matchMedia('(prefers-color-scheme: light)').matches) {
-            return 'light';
+        if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
+            return 'dark';
         }
-        return 'dark'; // 默认深色模式
+        return 'light'; // 默认浅色模式
     }
 
     /**
@@ -87,4 +87,3 @@
         init: initTheme
     };
 })();
-

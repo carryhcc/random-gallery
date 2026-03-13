@@ -1,0 +1,280 @@
+        :root {
+            --app-height: 100vh;
+            --brand-primary: #a58f80;
+            --brand-secondary: #7f96ad;
+            --brand-accent: #cf8b72;
+            --text-main: #f5f1eb;
+            --text-sub: rgba(245, 241, 235, 0.86);
+            --glass-bg: rgba(255, 245, 235, 0.16);
+            --glass-bg-strong: rgba(255, 245, 235, 0.24);
+            --glass-border: rgba(255, 245, 235, 0.28);
+            --shadow-soft: 0 12px 34px rgba(0, 0, 0, 0.32);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        body {
+            width: 100vw;
+            height: var(--app-height);
+            overflow: hidden;
+            background: #000;
+            font-family: "Inter", "Noto Sans SC", "PingFang SC", sans-serif;
+            color: var(--text-main);
+            touch-action: none; /* 禁止浏览器默认触摸行为 */
+        }
+
+        .app-container {
+            width: 100%;
+            height: 100%;
+            position: relative;
+            background: #000;
+        }
+
+        /* 视频容器 */
+        .video-wrapper {
+            width: 100%;
+            height: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        .video-wrapper.show {
+            opacity: 1;
+        }
+
+        video {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+            transition: object-fit 0.3s ease;
+        }
+
+        video.cover {
+            object-fit: cover;
+        }
+
+        /* 顶部遮罩（渐变阴影） */
+        .overlay-top {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 15%;
+            background: linear-gradient(to bottom, rgba(0,0,0,0.72), transparent);
+            pointer-events: none;
+            z-index: 10;
+        }
+
+        /* 底部遮罩（渐变阴影） */
+        .overlay-bottom {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            height: 30%;
+            background: linear-gradient(to top, rgba(0,0,0,0.86), transparent);
+            pointer-events: none;
+            z-index: 10;
+        }
+
+        /* 返回按钮 */
+        .back-btn {
+            position: absolute;
+            top: max(20px, env(safe-area-inset-top));
+            left: 20px;
+            z-index: 20;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: var(--glass-bg);
+            backdrop-filter: blur(12px);
+            border: 1px solid var(--glass-border);
+            box-shadow: var(--shadow-soft);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .back-btn:active {
+            transform: scale(0.9);
+            background: var(--glass-bg-strong);
+        }
+
+        .back-btn i {
+            font-size: 20px;
+            color: var(--text-main);
+        }
+
+        /* 底部信息区 */
+        .info-panel {
+            position: absolute;
+            bottom: max(20px, env(safe-area-inset-bottom));
+            left: 15px;
+            right: 80px; /* 右侧留空给功能按钮 */
+            z-index: 20;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            text-shadow: 0 1px 2px rgba(0,0,0,0.5);
+            pointer-events: auto; /* 允许点击 */
+        }
+
+        .author-info {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+        }
+
+        .author-info i {
+            font-size: 14px;
+        }
+
+        .work-title {
+            font-size: 14px;
+            line-height: 1.4;
+            color: var(--text-sub);
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+            cursor: pointer;
+        }
+
+        /* 加载动画 */
+        .loader {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            z-index: 5;
+            pointer-events: none;
+        }
+
+        .spinner {
+            width: 40px;
+            height: 40px;
+            border: 3px solid rgba(255, 245, 235, 0.34);
+            border-radius: 50%;
+            border-top-color: var(--brand-primary);
+            animation: spin 0.8s ease-in-out infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        /* 右侧操作栏 */
+        .action-bar {
+            position: absolute;
+            right: 10px;
+            bottom: max(40px, env(safe-area-inset-bottom));
+            z-index: 20;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            align-items: center;
+        }
+
+        .action-btn {
+            width: 45px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 4px;
+            cursor: pointer;
+        }
+
+        .action-icon-bg {
+            width: 45px;
+            height: 45px;
+            border-radius: 50%;
+            background: var(--glass-bg);
+            border: 1px solid var(--glass-border);
+            backdrop-filter: blur(8px);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s ease;
+            box-shadow: var(--shadow-soft);
+        }
+
+        .action-btn:active .action-icon-bg {
+            transform: scale(0.9);
+            background: var(--glass-bg-strong);
+        }
+
+        .action-btn i {
+            font-size: 22px;
+            color: var(--text-main);
+            text-shadow: 0 1px 2px rgba(0,0,0,0.3);
+        }
+
+        .action-label {
+            font-size: 12px;
+            font-weight: 500;
+            text-shadow: 0 1px 2px rgba(0,0,0,0.5);
+        }
+
+        /* 错误提示 */
+        .error-toast {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(17, 14, 12, 0.86);
+            border: 1px solid rgba(207, 139, 114, 0.5);
+            padding: 15px 25px;
+            border-radius: 8px;
+            text-align: center;
+            z-index: 30;
+            display: none;
+        }
+
+        .error-toast i {
+            font-size: 32px;
+            color: var(--brand-accent);
+            margin-bottom: 10px;
+            display: block;
+        }
+
+        /* 手势提示 */
+        .gesture-hint {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(17, 14, 12, 0.72);
+            border: 1px solid rgba(165, 143, 128, 0.4);
+            padding: 20px;
+            border-radius: 12px;
+            backdrop-filter: blur(8px);
+            z-index: 25;
+            text-align: center;
+            pointer-events: none;
+            opacity: 0;
+            transition: opacity 0.5s ease;
+        }
+
+        .gesture-hint.show {
+            opacity: 1;
+        }
+
+        .gesture-icon {
+            font-size: 40px;
+            margin-bottom: 10px;
+            display: block;
+            color: var(--brand-secondary);
+        }

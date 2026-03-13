@@ -1,0 +1,304 @@
+/* Index page desktop/tablet styles */
+body.index-page {
+    height: 100dvh;
+    overflow: hidden;
+}
+
+.theme-toggle {
+    position: fixed;
+    right: 1rem;
+    bottom: max(1rem, env(safe-area-inset-bottom));
+    z-index: 1030;
+    width: 48px;
+    height: 48px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--color-bg-card-strong);
+    border: 1px solid var(--color-border);
+    border-radius: 50%;
+    cursor: pointer;
+    transition: all var(--transition-fast);
+    color: var(--color-text-primary);
+    font-size: var(--font-size-lg);
+    box-shadow: var(--shadow-md);
+}
+
+.theme-toggle:hover {
+    background: var(--color-bg-hover);
+    border-color: var(--color-border-strong);
+    transform: translateY(-2px) scale(1.03);
+}
+
+.theme-toggle i {
+    transition: transform var(--transition-base);
+}
+
+.theme-toggle:hover i {
+    transform: rotate(180deg);
+}
+
+.action-card.disabled {
+    opacity: 0.5;
+    pointer-events: none;
+    filter: grayscale(100%);
+}
+
+.main-container {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(340px, 1fr));
+    gap: clamp(0.9rem, 1.8vh, 1.4rem);
+    width: 100%;
+    max-width: 1180px;
+    margin: 0 auto;
+    height: 100dvh;
+    align-content: center;
+    padding: clamp(4.4rem, 8vh, 5.6rem) 1rem 1rem;
+}
+
+.module-card {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+    min-height: 0;
+    position: relative;
+    overflow: hidden;
+}
+
+.module-card::before {
+    content: "";
+    position: absolute;
+    inset: 0 auto auto 0;
+    width: 12rem;
+    height: 12rem;
+    border-radius: 50%;
+    background: radial-gradient(circle, rgba(165, 143, 128, 0.16), transparent 68%);
+    transform: translate(-32%, -32%);
+    pointer-events: none;
+}
+
+.header-main {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 0.75rem;
+    margin-bottom: 0.75rem;
+}
+
+.card-title {
+    font-size: 1.45rem;
+    font-weight: 600;
+    margin: 0;
+    display: flex;
+    align-items: center;
+    gap: 0.65rem;
+    letter-spacing: 0.04em;
+}
+
+.card-subtitle {
+    text-align: left;
+    margin: 0;
+    font-size: 0.92rem;
+    color: var(--color-text-secondary);
+    padding-left: 2.25rem;
+}
+
+.env-stats {
+    padding-left: 2.25rem;
+    text-align: left;
+    margin: 0;
+    font-size: 0.88rem;
+    color: var(--color-text-secondary);
+    line-height: 1.7;
+}
+
+.button-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1rem;
+}
+
+.action-card {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 0.9rem;
+    padding: clamp(1rem, 1.9vh, 1.35rem) 0.9rem;
+    background: rgba(255, 255, 255, 0.78);
+    border: 1px solid var(--color-border);
+    border-radius: 24px;
+    text-decoration: none;
+    color: var(--color-text-primary);
+    transition: all var(--transition-fast);
+    position: relative;
+    overflow: hidden;
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+}
+
+.action-card:hover {
+    transform: translateY(-4px);
+    box-shadow: var(--shadow-lg);
+    border-color: var(--color-border-strong);
+}
+
+.icon-box {
+    width: 56px;
+    height: 56px;
+    border-radius: 18px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.4rem;
+    background: rgba(165, 143, 128, 0.22);
+    color: var(--color-primary);
+    box-shadow: 0 8px 18px rgba(109, 88, 72, 0.12);
+    transition: all var(--transition-fast);
+}
+
+.icon-box i {
+    color: inherit;
+    opacity: 1;
+    filter: none;
+}
+
+.action-card:hover .icon-box {
+    transform: scale(1.1);
+}
+
+.action-card.warm .icon-box {
+    background: rgba(207, 139, 114, 0.14);
+    color: var(--color-accent);
+}
+
+.action-card.accent .icon-box {
+    background: rgba(198, 106, 96, 0.12);
+    color: var(--color-error);
+}
+
+.action-card.neutral .icon-box {
+    background: rgba(127, 150, 173, 0.14);
+    color: var(--color-secondary);
+}
+
+.action-card.success .icon-box {
+    background: rgba(79, 143, 116, 0.14);
+    color: var(--color-success);
+}
+
+.action-card.info .icon-box {
+    background: rgba(91, 142, 168, 0.12);
+    color: var(--color-info);
+}
+
+.action-card.warning .icon-box {
+    background: rgba(201, 151, 72, 0.12);
+    color: var(--color-warning);
+}
+
+.label {
+    font-weight: 600;
+    font-size: 0.96rem;
+    letter-spacing: 0.02em;
+}
+
+.env-selector {
+    position: relative;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.45rem 0.85rem;
+    border-radius: 999px;
+    cursor: pointer;
+    font-size: 0.85rem;
+    transition: all 0.2s ease;
+}
+
+.env-selector:hover {
+    background: var(--color-bg-hover);
+    border-color: var(--color-border-strong);
+}
+
+.env-badge {
+    font-weight: 600;
+    color: var(--color-primary);
+}
+
+.env-selector .fa-chevron-down {
+    transition: transform 0.2s ease;
+    font-size: 0.8em;
+    color: var(--color-text-tertiary);
+}
+
+.env-selector.active .fa-chevron-down {
+    transform: rotate(180deg);
+}
+
+.env-dropdown-list {
+    display: flex;
+    flex-direction: column;
+    position: absolute;
+    top: calc(100% + 8px);
+    right: 0;
+    left: auto !important;
+    width: 148px;
+    background: var(--color-bg-card-strong);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid var(--color-border);
+    border-radius: 20px;
+    box-shadow: var(--shadow-xl);
+    z-index: 2000;
+    padding: 6px;
+    opacity: 0;
+    visibility: hidden;
+    transform: translateY(-8px);
+    transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.env-selector.active .env-dropdown-list {
+    opacity: 1;
+    visibility: visible;
+    transform: translateY(0);
+}
+
+.env-dropdown-option {
+    padding: 8px 12px;
+    text-decoration: none;
+    color: var(--color-text-secondary);
+    font-size: 0.85rem;
+    transition: all 0.2s;
+    text-align: left;
+    border-radius: var(--radius-md);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.env-dropdown-option:hover {
+    background: var(--color-bg-hover);
+    color: var(--color-text-primary);
+}
+
+.env-dropdown-option.active {
+    background: var(--color-primary-bg);
+    color: var(--color-primary);
+    font-weight: 500;
+}
+
+.privacy-btn {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.45rem 0.85rem;
+    border-radius: 999px;
+    color: var(--color-text-secondary);
+    cursor: pointer;
+    font-size: 0.85rem;
+    transition: all 0.2s;
+}
+
+.privacy-btn:hover {
+    background: var(--color-bg-hover);
+}

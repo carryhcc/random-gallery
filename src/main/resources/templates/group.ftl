@@ -10,6 +10,10 @@
           rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.loli.net/ajax/libs/font-awesome/6.4.2/css/all.min.css">
     <link rel="stylesheet" href="/css/style.css">
+    <link rel="stylesheet" href="/css/web.css" media="(min-width: 769px)">
+    <link rel="stylesheet" href="/css/mobile.css" media="(max-width: 768px)">
+    <link rel="stylesheet" href="/css/pages/group-web.css" media="(min-width: 769px)">
+    <link rel="stylesheet" href="/css/pages/group-mobile.css" media="(max-width: 768px)">
     <script src="/js/heic-converter.js"></script>
     <script src="/js/theme.js"></script>
 </head>
@@ -185,12 +189,12 @@
                         imageHtml = '<div class="no-image">暂无</div>';
                     }
 
-                    newRow.innerHTML = '<td>' + groupId + '</td>' +
-                        '<td class="name-cell" title="点击查看套图">' +
+                    newRow.innerHTML = '<td data-label="ID">' + groupId + '</td>' +
+                        '<td class="name-cell" data-label="套图名称" title="点击查看套图">' +
                         groupName +
                         '</td>' +
-                        '<td style="text-align: center;"><span class="count-cell">' + groupCount + '</span></td>' +
-                        '<td class="image-cell" id="image-cell-' + groupId + '">' + imageHtml + '</td>';
+                        '<td data-label="数量" style="text-align: center;"><span class="count-cell">' + groupCount + '</span></td>' +
+                        '<td class="image-cell" data-label="预览" id="image-cell-' + groupId + '">' + imageHtml + '</td>';
                     resultsBody.appendChild(newRow);
                     
                     // 如果有图片URL，使用 HEIC 转换工具异步设置图片源
@@ -308,7 +312,7 @@
         button.className = 'pagination-button';
 
         if (pageNum === currentPageIndex) {
-            button.style.background = 'linear-gradient(135deg, var(--color-primary) 0%, var(--color-primary-dark) 100%)';
+            button.style.background = 'linear-gradient(135deg, var(--color-primary) 0%, var(--color-accent) 100%)';
             button.style.color = 'white';
             button.style.borderColor = 'var(--color-primary)';
         }

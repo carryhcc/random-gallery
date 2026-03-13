@@ -1,0 +1,25 @@
+/* Group page mobile styles */
+#results-table td[data-label] {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+}
+
+#results-table td[data-label]::before {
+    content: attr(data-label);
+    color: var(--color-text-tertiary);
+    font-size: var(--font-size-xs);
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    flex: 0 0 64px;
+}
+
+#results-table td.image-cell[data-label] {
+    justify-content: flex-start;
+}
+
+#results-table td.image-cell .group-image-container,
+#results-table td.image-cell .no-image {
+    margin-left: auto;
+}

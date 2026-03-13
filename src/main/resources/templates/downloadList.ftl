@@ -10,145 +10,14 @@
     <link href="https://fonts.loli.net/css2?family=Inter:wght@400;500;600;700&family=Poppins:wght@600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.loli.net/ajax/libs/font-awesome/6.4.2/css/all.min.css">
     <link rel="stylesheet" href="/css/style.css">
+    <link rel="stylesheet" href="/css/web.css" media="(min-width: 769px)">
+    <link rel="stylesheet" href="/css/mobile.css" media="(max-width: 768px)">
+    <link rel="stylesheet" href="/css/pages/download-list-web.css" media="(min-width: 769px)">
+    <link rel="stylesheet" href="/css/pages/download-list-mobile.css" media="(max-width: 768px)">
     <script src="/js/theme.js"></script>
     <script src="/js/heic-converter.js"></script>
     <script src="https://cdnjs.loli.net/ajax/libs/jquery.imagesloaded/5.0.0/imagesloaded.pkgd.min.js"></script>
     <script src="https://cdnjs.loli.net/ajax/libs/masonry/4.2.2/masonry.pkgd.min.js"></script>
-    <style>
-        /* --- [1. 基础布局及 Masonry 桌面端适配] --- */
-        .masonry-grid {
-            display: block; /* 必须为 block，Masonry 才能计算绝对定位 */
-            position: relative;
-            width: 100%;
-            margin: 0 auto;
-        }
-
-        /* --- [2. 核心修复：移动端样式隔离] --- */
-        @media (max-width: 768px) {
-            .masonry-grid {
-                display: grid !important;
-                grid-template-columns: repeat(2, 1fr);
-                gap: 12px;
-                height: auto !important; /* 覆盖 Masonry 计算的高度 */
-            }
-            .masonry-item {
-                position: relative !important;
-                top: 0 !important;
-                left: 0 !important;
-                width: 100% !important;
-                margin-bottom: 0 !important;
-            }
-            .masonry-grid.single-column {
-                grid-template-columns: 1fr;
-            }
-        }
-
-        /* --- [3. 还原您的全部样式细节] --- */
-        .masonry-item {
-            /* 桌面端默认宽度，Masonry 初始化后会根据 gutter 自动调整 */
-            width: calc(33.333% - 16px);
-            margin-bottom: 16px;
-            background: var(--color-bg-card);
-            border-radius: var(--radius-lg);
-            overflow: hidden;
-            cursor: pointer;
-            transition: all var(--transition-fast);
-            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
-            display: inline-block;
-            vertical-align: top;
-        }
-
-        .masonry-item:hover {
-            transform: translateY(-4px);
-            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
-        }
-
-        .masonry-item img {
-            width: 100%; height: auto; display: block; object-fit: cover;
-        }
-
-        .masonry-item-info { padding: 12px; }
-
-        .masonry-item-title {
-            font-size: var(--font-size-base); font-weight: 600;
-            color: var(--color-text-primary); margin-bottom: 8px;
-            overflow: hidden; text-overflow: ellipsis;
-            display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical;
-        }
-
-        .masonry-item-meta {
-            display: flex; align-items: center; justify-content: space-between;
-            font-size: var(--font-size-sm); color: var(--color-text-secondary);
-        }
-
-        .masonry-item-author { display: flex; align-items: center; gap: 4px; }
-
-        .count-badge { display: flex; align-items: center; gap: 4px; }
-
-        /* --- [4. 还原搜索及推荐区域样式] --- */
-        .search-section { margin-bottom: 1.5rem; }
-        .search-wrapper { position: relative; max-width: 100%; }
-        .search-input {
-            width: 100%; padding: 14px 100px 14px 16px;
-            border: 2px solid var(--color-border); border-radius: var(--radius-lg);
-            background: var(--color-bg-primary); color: var(--color-text-primary);
-            font-size: var(--font-size-base); transition: all var(--transition-fast);
-        }
-        .search-input:focus { outline: none; border-color: var(--color-primary); box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1); }
-        .search-btn {
-            position: absolute; right: 8px; top: 50%; transform: translateY(-50%);
-            background: var(--color-primary); border: none; color: white;
-            width: 40px; height: 40px; border-radius: var(--radius-md); cursor: pointer;
-            display: flex; align-items: center; justify-content: center;
-        }
-        .more-btn {
-            position: absolute; right: 56px; top: 50%; transform: translateY(-50%);
-            background: var(--color-bg-secondary); border: 1px solid var(--color-border);
-            color: var(--color-text-secondary); padding: 0 16px; height: 40px;
-            border-radius: var(--radius-md); cursor: pointer; display: flex; align-items: center; gap: 6px; font-size: var(--font-size-sm);
-        }
-        .more-btn.active i { transform: rotate(180deg); }
-
-        /* --- [5. 还原推荐列表样式] --- */
-        .recommendation-section {
-            margin-bottom: 1rem; background: var(--color-bg-card);
-            border-radius: var(--radius-lg); padding: 1rem; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
-        }
-        .recommendation-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.75rem; }
-        .recommendation-header h3 { font-size: var(--font-size-base); font-weight: 600; color: var(--color-text-primary); margin: 0; display: flex; align-items: center; gap: 0.5rem; }
-        .refresh-btn {
-            display: flex; align-items: center; gap: 0.5rem; padding: 6px 12px;
-            background: var(--color-bg-secondary); border: 1px solid var(--color-border);
-            border-radius: var(--radius-md); color: var(--color-text-secondary); cursor: pointer; font-size: var(--font-size-xs);
-        }
-        .recommendation-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(100px, 1fr)); gap: 8px; }
-
-        @media (max-width: 768px) {
-            .recommendation-grid { grid-template-columns: repeat(auto-fill, minmax(80px, 1fr)); gap: 6px; }
-        }
-
-        .recommendation-item {
-            background: var(--color-bg-secondary); border: 2px solid var(--color-border);
-            border-radius: var(--radius-md); padding: 8px 6px; text-align: center;
-            cursor: pointer; transition: all var(--transition-fast); overflow: hidden;
-            min-height: 60px; display: flex; flex-direction: column; justify-content: center;
-        }
-        .recommendation-item:hover { border-color: var(--color-primary); background: var(--color-bg-hover); transform: translateY(-2px); }
-        .recommendation-item.active { border-color: var(--color-primary); background: linear-gradient(135deg, rgba(102, 126, 234, 0.1) 0%, rgba(118, 75, 162, 0.1) 100%); }
-        .recommendation-name { font-weight: 600; font-size: var(--font-size-sm); color: var(--color-text-primary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-        .recommendation-count { font-size: 11px; color: var(--color-text-secondary); }
-
-        .clear-filter-btn {
-            margin-top: 0.75rem; display: none; align-items: center; justify-content: center;
-            gap: 0.5rem; padding: 8px 16px; background: var(--color-bg-secondary);
-            border: 1px solid var(--color-border); border-radius: var(--radius-md);
-            color: var(--color-text-secondary); cursor: pointer; width: 100%; font-size: var(--font-size-sm);
-        }
-        .clear-filter-btn.show { display: flex; }
-
-        .recommendations-container { max-height: 0; overflow: hidden; transition: max-height 0.3s ease-out; }
-        .recommendations-container.show { max-height: 1500px; transition: max-height 0.5s ease-in; }
-    </style>
 </head>
 <body>
 
@@ -168,8 +37,10 @@
     <div class="search-section animate-fade-in">
         <div class="search-wrapper">
             <input type="text" id="searchInput" class="search-input" placeholder="搜索作品标题、描述..." autocomplete="off">
-            <button id="moreBtn" class="more-btn"><i class="fas fa-chevron-down"></i> <span>更多</span></button>
-            <button id="searchBtn" class="search-btn"><i class="fas fa-search"></i></button>
+            <div class="search-actions">
+                <button id="moreBtn" class="more-btn"><i class="fas fa-chevron-down"></i> <span>更多</span></button>
+                <button id="searchBtn" class="search-btn"><i class="fas fa-search"></i></button>
+            </div>
         </div>
     </div>
 

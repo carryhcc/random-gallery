@@ -1,0 +1,26 @@
+/* Desktop and tablet styles are isolated here */
+@media (min-width: 769px) {
+    .hidden-desktop {
+        display: none !important;
+    }
+}
+
+@media (min-width: 769px) and (max-width: 1200px) {
+    .masonry-item-wrapper {
+        width: 33.3333%;
+    }
+}
+
+@media (min-width: 769px) and (max-width: 900px) {
+    .gallery-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .masonry-item-wrapper {
+        width: 50%;
+    }
+
+    .masonry-grid .masonry-item {
+        width: calc(50% - 12px);
+    }
+}

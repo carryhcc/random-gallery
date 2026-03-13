@@ -1,0 +1,17 @@
+/* Download list page desktop/tablet styles */
+.search-actions {
+    position: absolute;
+    right: 8px;
+    top: 50%;
+    transform: translateY(-50%);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.search-actions .search-btn,
+.search-actions .more-btn {
+    position: static;
+    transform: none;
+    margin: 0;
+}
