@@ -29,6 +29,10 @@
                 <i class="fas fa-grip-lines"></i>
                 <span class="hidden-mobile">单列</span>
             </button>
+            <button id="resetFiltersBtn" class="btn btn-secondary btn-sm" title="重置筛选条件">
+                <i class="fas fa-rotate-left"></i>
+                <span class="hidden-mobile">重置</span>
+            </button>
             <button class="btn btn-secondary btn-sm" onclick="window.location.href='/download'"><i class="fas fa-download"></i> <span class="hidden-mobile">图片下载</span></button>
             <button class="btn btn-secondary btn-sm" onclick="window.location.href='/'"><i class="fas fa-home"></i> <span class="hidden-mobile">首页</span></button>
         </div>
@@ -90,6 +94,7 @@
     var loadingEl = document.getElementById('loading');
     var endEl = document.getElementById('end');
     var clearFilterBtn = document.getElementById('clearFilterBtn');
+    var resetFiltersBtn = document.getElementById('resetFiltersBtn');
     var viewToggleBtn = document.getElementById('viewToggleBtn');
 
     var page = 1, isLoading = false, hasMore = true;
@@ -314,6 +319,18 @@
             });
         }
 
+        if (resetFiltersBtn) {
+            resetFiltersBtn.addEventListener('click', function() {
+                currentAuthorId = null;
+                currentTagId = null;
+                currentSearchStr = null;
+                searchInput.value = '';
+                updateUIStates();
+                hideRecs();
+                loadPage(true);
+            });
+        }
+
         // 加载初始数据
         try {
             const [aRes, tRes] = await Promise.all([
@@ -347,7 +364,7 @@
         // 搜索按钮
         searchBtn.onclick = function() {
             var v = searchInput.value.trim();
-            if(v) { currentSearchStr = v; currentAuthorId = null; currentTagId = null; updateUIStates(); loadPage(true); }
+            if(v) { currentSearchStr = v; currentAuthorId = null; currentTagId = null; updateUIStates(); loadPage(true); hideRecs(); }
         };
 
         // 更多按钮

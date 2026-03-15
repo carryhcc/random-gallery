@@ -164,6 +164,7 @@
                     const groupName = item.groupName || '';
                     const groupCount = item.groupCount || 0;
                     const groupUrl = item.groupUrl ? item.groupUrl.trim().replace(/^`|`$/g, '') : '';
+                    const isMobile = window.innerWidth <= 768;
 
                     // 添加背景图变量
                     if (groupUrl) {
@@ -176,28 +177,44 @@
                     };
                     newRow.style.cursor = 'pointer';
 
+                    const imageElementId = 'group-image-' + groupId;
                     let imageHtml = '';
                     if (groupUrl) {
                         imageHtml = '<div class="group-image-container">' +
-                            '<img src="' + groupUrl + '" alt="' + groupName + '" class="group-image" ' +
+                            '<img id="' + imageElementId + '" src="' + groupUrl + '" alt="' + groupName + '" class="group-image" ' +
                             'onclick="event.stopPropagation(); previewImage(\'' + groupUrl + '\')" title="点击预览">' +
                             '</div>';
                     } else {
                         imageHtml = '<div class="no-image">暂无</div>';
                     }
 
-                    newRow.innerHTML = '<td data-label="ID">' + groupId + '</td>' +
-                        '<td class="name-cell" data-label="套图名称" title="点击查看套图">' +
-                        groupName +
-                        '</td>' +
-                        '<td data-label="数量" style="text-align: center;"><span class="count-cell">' + groupCount + '</span></td>' +
-                        '<td class="image-cell" data-label="预览" id="image-cell-' + groupId + '">' + imageHtml + '</td>';
+                    if (isMobile) {
+                        newRow.innerHTML =
+                            '<td colspan="4" class="group-card-cell">' +
+                                '<div class="group-list-card">' +
+                                    '<div class="group-card-preview">' + imageHtml + '</div>' +
+                                    '<div class="group-card-main">' +
+                                        '<div class="group-card-name" title="点击查看套图">' + groupName + '</div>' +
+                                        '<div class="group-card-meta">' +
+                                            '<span class="group-card-badge group-card-id"><i class="fas fa-hashtag"></i>' + groupId + '</span>' +
+                                            '<span class="group-card-badge group-card-count"><i class="fas fa-images"></i>' + groupCount + '</span>' +
+                                        '</div>' +
+                                    '</div>' +
+                                '</div>' +
+                            '</td>';
+                    } else {
+                        newRow.innerHTML = '<td data-label="ID">' + groupId + '</td>' +
+                            '<td class="name-cell" data-label="套图名称" title="点击查看套图">' +
+                            groupName +
+                            '</td>' +
+                            '<td data-label="数量" style="text-align: center;"><span class="count-cell">' + groupCount + '</span></td>' +
+                            '<td class="image-cell" id="image-cell-' + groupId + '">' + imageHtml + '</td>';
+                    }
                     resultsBody.appendChild(newRow);
                     
                     // 如果有图片URL，使用 HEIC 转换工具异步设置图片源
                     if (groupUrl) {
-                        const imgCell = document.getElementById('image-cell-' + groupId);
-                        const imgElement = imgCell.querySelector('.group-image');
+                        const imgElement = document.getElementById(imageElementId);
                         if (imgElement) {
                             setImageSrc(imgElement, groupUrl).catch(err => {
                                 console.warn('图片加载失败:', groupUrl, err);
