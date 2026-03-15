@@ -1,1 +1,38 @@
 /* Download page mobile styles */
+.download-container {
+    margin-top: 94px !important;
+    padding-bottom: calc(var(--spacing-xl) + env(safe-area-inset-bottom));
+}
+
+.download-card {
+    padding: 16px;
+    border-radius: 18px;
+}
+
+.download-header {
+    margin-bottom: 16px;
+}
+
+.download-title {
+    font-size: 1.4rem;
+    line-height: 1.25;
+}
+
+.download-subtitle {
+    margin-top: 6px;
+    font-size: 0.86rem;
+}
+
+.info-section {
+    padding: 14px;
+}
+
+.info-title {
+    font-size: 1rem;
+    margin-bottom: 10px;
+}
+
+.info-list li {
+    font-size: 0.86rem;
+    line-height: 1.4;
+}

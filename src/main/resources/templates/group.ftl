@@ -36,11 +36,8 @@
 </header>
 
 <!-- 主内容 -->
-<main class="container" style="margin-top: 80px; padding-bottom: var(--spacing-xl);">
+<main class="container group-page-main" style="padding-bottom: var(--spacing-xl);">
     <div class="card animate-fade-in">
-        <div class="card-header">
-        </div>
-
         <!-- 搜索表单 -->
         <div class="search-form" style="margin-bottom: var(--spacing-lg);">
             <div class="form-group" style="flex: 1;">

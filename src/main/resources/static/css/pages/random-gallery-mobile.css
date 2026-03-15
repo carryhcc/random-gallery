@@ -1,1 +1,26 @@
 /* Random gallery page mobile styles */
+.gallery-container {
+    margin-top: 94px !important;
+    padding-bottom: calc(var(--spacing-xl) + env(safe-area-inset-bottom));
+}
+
+.gallery-grid {
+    gap: 12px;
+}
+
+.gallery-image-container,
+.gallery-image-container img {
+    min-height: 220px;
+}
+
+.gallery-overlay {
+    padding: 44px 14px 14px;
+}
+
+.group-name {
+    font-size: 0.92rem;
+}
+
+.group-id {
+    font-size: 0.75rem;
+}

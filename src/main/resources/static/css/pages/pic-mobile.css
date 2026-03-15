@@ -1,1 +1,37 @@
 /* Pic page mobile styles */
+.pic-container .card-header {
+    margin-bottom: 0.85rem;
+}
+
+.pic-container .card-title {
+    font-size: 1.22rem;
+}
+
+.pic-container .card-subtitle {
+    font-size: 0.86rem;
+    line-height: 1.35;
+}
+
+.image-wrapper {
+    min-height: 240px;
+    border-radius: 18px;
+}
+
+/* Mobile has no hover: keep the download action visible */
+.image-overlay {
+    opacity: 1;
+    align-items: flex-end;
+    justify-content: flex-end;
+    padding: 12px;
+    background: linear-gradient(180deg, transparent 64%, rgba(28, 24, 22, 0.36));
+}
+
+.download-icon-btn {
+    width: 40px;
+    height: 40px;
+}
+
+.pic-info {
+    margin-top: 0.85rem;
+    padding: 14px 16px;
+}

@@ -605,6 +605,21 @@
     
     // 初始化 Masonry 布局 (使用 Masonry.js 库)
     function initMasonry() {
+        // 移动端使用流式布局，避免 Masonry 与移动端网格规则冲突导致重叠
+        if (window.innerWidth <= 768) {
+            const grids = document.querySelectorAll('.masonry-grid');
+            grids.forEach(function(grid) {
+                grid.style.height = 'auto';
+                const items = grid.querySelectorAll('.masonry-item-wrapper');
+                items.forEach(function(item) {
+                    item.style.position = 'relative';
+                    item.style.left = '';
+                    item.style.top = '';
+                });
+            });
+            return;
+        }
+
         const grids = document.querySelectorAll('.masonry-grid');
         grids.forEach(function(grid) {
             // 初始化 Masonry

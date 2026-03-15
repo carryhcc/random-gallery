@@ -1,1 +1,55 @@
 /* Download detail page mobile styles */
+.gallery-container {
+    margin-top: 94px !important;
+    padding-bottom: calc(var(--spacing-xl) + env(safe-area-inset-bottom));
+}
+
+.detail-header {
+    margin-bottom: 14px;
+    padding: 16px;
+    border-radius: 18px;
+}
+
+.section-title {
+    margin: 16px 0 10px;
+    font-size: 1rem;
+}
+
+.tag {
+    min-height: 28px;
+    padding: 0 10px;
+    margin: 4px 6px 0 0;
+    font-size: 0.78rem;
+}
+
+.confirm-box {
+    width: calc(100vw - 24px);
+    padding: 18px;
+    border-radius: 16px;
+}
+
+.confirm-footer {
+    gap: 8px;
+}
+
+.confirm-footer .btn {
+    flex: 1;
+}
+
+/* Force single-column flow on mobile to avoid image/gif section overlap */
+#imagesSection .masonry-grid,
+#gifsSection .masonry-grid {
+    display: block !important;
+    margin-top: 0;
+    padding: 0;
+}
+
+#imagesSection .masonry-item-wrapper,
+#gifsSection .masonry-item-wrapper {
+    width: 100%;
+    float: none;
+    padding: 0 0 12px;
+    position: relative !important;
+    left: auto !important;
+    top: auto !important;
+}

@@ -5,6 +5,110 @@
     gap: 10px;
 }
 
+.gallery-container {
+    margin-top: 94px !important;
+    padding-bottom: calc(var(--spacing-xl) + env(safe-area-inset-bottom));
+}
+
+/* Mobile waterfall layout modes */
+#worksGrid.masonry-grid {
+    display: block !important;
+    margin-top: 0 !important;
+    padding: 0 !important;
+    height: auto !important;
+    column-gap: 10px;
+}
+
+#worksGrid.masonry-grid.view-single {
+    column-count: 1;
+}
+
+#worksGrid.masonry-grid.view-double {
+    column-count: 2;
+}
+
+#worksGrid.masonry-grid .masonry-item {
+    display: inline-block;
+    width: 100% !important;
+    margin: 0 0 10px !important;
+    break-inside: avoid;
+    -webkit-column-break-inside: avoid;
+    position: relative !important;
+    left: auto !important;
+    top: auto !important;
+}
+
+.recommendation-section {
+    padding: 12px;
+    border-radius: 16px;
+}
+
+.recommendation-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    margin-bottom: 10px;
+}
+
+.recommendation-header h3 {
+    font-size: 0.9rem;
+    margin: 0;
+}
+
+.recommendation-grid {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.recommendation-item {
+    min-height: 32px;
+    padding: 0 8px;
+    border-radius: 999px;
+    gap: 6px;
+    width: auto;
+    max-width: 100%;
+    flex: 0 0 auto;
+    white-space: nowrap;
+}
+
+.recommendation-item .recommendation-name {
+    gap: 6px;
+    font-size: 0.8rem;
+    min-width: 0;
+    max-width: 12ch;
+}
+
+.recommendation-item .recommendation-title {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.recommendation-item .recommendation-count-inline {
+    display: inline-flex;
+    align-items: center;
+    gap: 3px;
+    font-size: 0.68rem;
+    white-space: nowrap;
+    opacity: 0.9;
+}
+
+.recommendation-item .recommendation-count {
+    min-height: 0;
+    padding: 0;
+    font-size: 0.7rem;
+    white-space: nowrap;
+}
+
+.recommendation-empty {
+    min-height: 32px;
+    padding: 0 10px;
+    font-size: 0.78rem;
+    flex: 0 0 auto;
+}
+
 .search-actions {
     position: static;
     transform: none;
@@ -22,4 +126,14 @@
 
 .search-actions .search-btn {
     border-radius: var(--radius-full);
+}
+
+@media (max-width: 400px) {
+    #worksGrid.masonry-grid.view-double {
+        column-gap: 8px;
+    }
+
+    .recommendation-header h3 {
+        font-size: 0.84rem;
+    }
 }

@@ -62,7 +62,7 @@ body.index-page {
     gap: 1.5rem;
     min-height: 0;
     position: relative;
-    overflow: hidden;
+    overflow: visible;
 }
 
 .module-card::before {
@@ -125,7 +125,7 @@ body.index-page {
     justify-content: center;
     gap: 0.9rem;
     padding: clamp(1rem, 1.9vh, 1.35rem) 0.9rem;
-    background: rgba(255, 255, 255, 0.78);
+    background: var(--color-bg-card-strong);
     border: 1px solid var(--color-border);
     border-radius: 24px;
     text-decoration: none;
@@ -201,6 +201,48 @@ body.index-page {
     font-weight: 600;
     font-size: 0.96rem;
     letter-spacing: 0.02em;
+    color: inherit;
+}
+
+[data-theme="dark"] .action-card {
+    background: rgba(56, 52, 52, 0.78);
+    border-color: rgba(255, 244, 236, 0.14);
+}
+
+[data-theme="dark"] .action-card:hover {
+    border-color: rgba(255, 244, 236, 0.24);
+}
+
+[data-theme="dark"] .action-card .label {
+    color: #f1e9e2;
+}
+
+[data-theme="dark"] .action-card .icon-box {
+    box-shadow: 0 10px 20px rgba(0, 0, 0, 0.24);
+}
+
+[data-theme="dark"] .action-card.warm .icon-box {
+    background: rgba(215, 162, 135, 0.2);
+}
+
+[data-theme="dark"] .action-card.accent .icon-box {
+    background: rgba(217, 140, 130, 0.18);
+}
+
+[data-theme="dark"] .action-card.neutral .icon-box {
+    background: rgba(159, 180, 196, 0.2);
+}
+
+[data-theme="dark"] .action-card.success .icon-box {
+    background: rgba(116, 171, 144, 0.2);
+}
+
+[data-theme="dark"] .action-card.info .icon-box {
+    background: rgba(132, 183, 206, 0.2);
+}
+
+[data-theme="dark"] .action-card.warning .icon-box {
+    background: rgba(223, 179, 106, 0.2);
 }
 
 .env-selector {

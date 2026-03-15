@@ -1,1 +1,31 @@
 /* Pic list page mobile styles */
+#pageTitle {
+    max-width: 54vw;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.piclist-offset {
+    margin-top: 94px !important;
+    padding-bottom: calc(var(--spacing-xl) + env(safe-area-inset-bottom));
+}
+
+.masonry-item-wrapper {
+    padding: 5px;
+}
+
+.media-item,
+.masonry-item {
+    border-radius: 16px;
+}
+
+@media (max-width: 560px) {
+    #pageTitle {
+        max-width: 48vw;
+    }
+
+    .masonry-item-wrapper {
+        padding: 4px;
+    }
+}

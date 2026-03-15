@@ -25,6 +25,10 @@
     <div class="navbar-content">
         <div class="navbar-brand"><i class="fas fa-list"></i> <span>下载浏览</span></div>
         <div class="navbar-actions">
+            <button id="viewToggleBtn" class="btn btn-secondary btn-sm" title="切换到双列瀑布流">
+                <i class="fas fa-grip-lines"></i>
+                <span class="hidden-mobile">单列</span>
+            </button>
             <button class="btn btn-secondary btn-sm" onclick="window.location.href='/download'"><i class="fas fa-download"></i> <span class="hidden-mobile">图片下载</span></button>
             <button class="btn btn-secondary btn-sm" onclick="window.location.href='/'"><i class="fas fa-home"></i> <span class="hidden-mobile">首页</span></button>
         </div>
@@ -86,6 +90,7 @@
     var loadingEl = document.getElementById('loading');
     var endEl = document.getElementById('end');
     var clearFilterBtn = document.getElementById('clearFilterBtn');
+    var viewToggleBtn = document.getElementById('viewToggleBtn');
 
     var page = 1, isLoading = false, hasMore = true;
     var currentAuthorId = null, currentTagId = null, currentSearchStr = null;
@@ -93,6 +98,8 @@
     var masonryInstance = null;
     var allAuthors = [], allTags = [];
     var RECOMMENDATION_SIZE = 8;
+    var VIEW_MODE_KEY = 'download-list-view-mode';
+    var currentViewMode = 'single';
 
     // --- 核心布局管理 ---
     function isMobile() { return window.innerWidth <= 768; }
@@ -103,7 +110,6 @@
                 masonryInstance.destroy();
                 masonryInstance = null;
             }
-            updateGridMode();
         } else {
             if (!masonryInstance && worksGrid.children.length > 0) {
                 masonryInstance = new Masonry(worksGrid, {
@@ -120,11 +126,27 @@
         }
     }
 
-    function updateGridMode() {
-        if (worksGrid.querySelectorAll('.masonry-item').length <= 1) {
-            worksGrid.classList.add('single-column');
+    function setViewMode(mode) {
+        currentViewMode = mode === 'double' ? 'double' : 'single';
+        worksGrid.classList.remove('view-single', 'view-double');
+        worksGrid.classList.add(currentViewMode === 'double' ? 'view-double' : 'view-single');
+        localStorage.setItem(VIEW_MODE_KEY, currentViewMode);
+        updateViewToggleButton();
+        manageLayout();
+    }
+
+    function updateViewToggleButton() {
+        if (!viewToggleBtn) return;
+        var icon = viewToggleBtn.querySelector('i');
+        var text = viewToggleBtn.querySelector('span');
+        if (currentViewMode === 'single') {
+            if (icon) icon.className = 'fas fa-grip-lines';
+            if (text) text.textContent = '单列';
+            viewToggleBtn.title = '切换到双列瀑布流';
         } else {
-            worksGrid.classList.remove('single-column');
+            if (icon) icon.className = 'fas fa-table-columns';
+            if (text) text.textContent = '双列';
+            viewToggleBtn.title = '切换到单列瀑布流';
         }
     }
 
@@ -220,11 +242,18 @@
     function displayAuthorRecommendations() {
         var container = document.getElementById('authorRecommendations');
         var list = allAuthors.slice().sort(function() { return 0.5 - Math.random(); }).slice(0, RECOMMENDATION_SIZE);
+        if (!list.length) {
+            container.innerHTML = '<div class="recommendation-empty">暂无作者推荐</div>';
+            return;
+        }
         container.innerHTML = list.map(function(a) {
             var active = currentAuthorId === a.authorId ? 'active' : '';
-            return '<div class="recommendation-item ' + active + '" onclick="selectAuthor(\'' + a.authorId + '\')">' +
-                '<div class="recommendation-name">' + (a.authorNickname || a.authorId) + '</div>' +
-                '<div class="recommendation-count">' + (a.workCount || 0) + ' 作品</div>' +
+            return '<div class="recommendation-item type-author ' + active + '" onclick="selectAuthor(\'' + a.authorId + '\')">' +
+                '<div class="recommendation-name">' +
+                    '<i class="fas fa-user-circle"></i>' +
+                    '<span class="recommendation-title">' + (a.authorNickname || a.authorId) + '</span>' +
+                    '<span class="recommendation-count-inline"><i class="fas fa-images"></i>' + (a.workCount || 0) + '</span>' +
+                '</div>' +
                 '</div>';
         }).join('');
     }
@@ -232,11 +261,18 @@
     function displayTagRecommendations() {
         var container = document.getElementById('tagRecommendations');
         var list = allTags.slice().sort(function() { return 0.5 - Math.random(); }).slice(0, RECOMMENDATION_SIZE);
+        if (!list.length) {
+            container.innerHTML = '<div class="recommendation-empty">暂无标签推荐</div>';
+            return;
+        }
         container.innerHTML = list.map(function(t) {
             var active = currentTagId === t.id ? 'active' : '';
-            return '<div class="recommendation-item ' + active + '" onclick="selectTag(' + t.id + ')">' +
-                '<div class="recommendation-name">' + t.tagName + '</div>' +
-                '<div class="recommendation-count">' + (t.workCount || 0) + ' 作品</div>' +
+            return '<div class="recommendation-item type-tag ' + active + '" onclick="selectTag(' + t.id + ')">' +
+                '<div class="recommendation-name">' +
+                    '<i class="fas fa-hashtag"></i>' +
+                    '<span class="recommendation-title">' + t.tagName + '</span>' +
+                    '<span class="recommendation-count-inline"><i class="fas fa-images"></i>' + (t.workCount || 0) + '</span>' +
+                '</div>' +
                 '</div>';
         }).join('');
     }
@@ -267,6 +303,17 @@
 
     // --- 初始化及事件绑定 ---
     document.addEventListener('DOMContentLoaded', async function() {
+        // 布局模式：默认单列，可切换双列
+        var savedMode = localStorage.getItem(VIEW_MODE_KEY);
+        currentViewMode = savedMode === 'double' ? 'double' : 'single';
+        setViewMode(currentViewMode);
+
+        if (viewToggleBtn) {
+            viewToggleBtn.addEventListener('click', function() {
+                setViewMode(currentViewMode === 'single' ? 'double' : 'single');
+            });
+        }
+
         // 加载初始数据
         try {
             const [aRes, tRes] = await Promise.all([
