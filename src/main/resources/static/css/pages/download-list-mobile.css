@@ -39,8 +39,8 @@
 }
 
 .recommendation-section {
-    padding: 12px;
-    border-radius: 16px;
+    padding: 10px 12px;
+    border-radius: 14px;
 }
 
 .recommendation-header {
@@ -48,36 +48,55 @@
     align-items: center;
     justify-content: space-between;
     gap: 8px;
-    margin-bottom: 10px;
+    margin-bottom: 8px;
 }
 
 .recommendation-header h3 {
-    font-size: 0.9rem;
+    font-size: 0.85rem;
     margin: 0;
+}
+
+.recommendation-header .refresh-btn {
+    min-height: 28px;
+    padding: 0 10px;
+    font-size: 0.75rem;
 }
 
 .recommendation-grid {
     display: flex;
-    flex-wrap: wrap;
+    flex-wrap: nowrap;
     gap: 8px;
+    overflow-x: auto;
+    overflow-y: hidden;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+    padding-bottom: 4px;
+}
+
+.recommendation-grid::-webkit-scrollbar {
+    display: none;
 }
 
 .recommendation-item {
-    min-height: 32px;
-    padding: 0 8px;
+    min-height: 30px;
+    padding: 0 10px;
     border-radius: 999px;
-    gap: 6px;
-    width: auto;
-    max-width: 100%;
+    gap: 5px;
     flex: 0 0 auto;
     white-space: nowrap;
+    font-size: 0.78rem;
 }
 
 .recommendation-item .recommendation-name {
-    gap: 6px;
-    font-size: 0.8rem;
+    gap: 5px;
+    font-size: 0.78rem;
     min-width: 0;
-    max-width: 12ch;
+    max-width: none;
+}
+
+.recommendation-item .recommendation-name i {
+    font-size: 0.7rem;
 }
 
 .recommendation-item .recommendation-title {
@@ -89,16 +108,16 @@
 .recommendation-item .recommendation-count-inline {
     display: inline-flex;
     align-items: center;
-    gap: 3px;
-    font-size: 0.68rem;
+    gap: 2px;
+    font-size: 0.65rem;
     white-space: nowrap;
-    opacity: 0.9;
+    opacity: 0.85;
 }
 
 .recommendation-item .recommendation-count {
     min-height: 0;
     padding: 0;
-    font-size: 0.7rem;
+    font-size: 0.65rem;
     white-space: nowrap;
 }
 

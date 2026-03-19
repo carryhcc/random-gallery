@@ -14,11 +14,11 @@ COPY target/random-gallery-0.0.1-SNAPSHOT.jar app.jar
 EXPOSE 8086
 
 # 默认环境变量
-ENV DB_HOST=111.111.111.111
+ENV DB_HOST=192.168.10.1044
 ENV DB_PORT=3306
-ENV DB_NAME=test
-ENV DB_USERNAME=root
-ENV DB_PASSWORD=root
+ENV DB_NAME=testPic
+ENV DB_USERNAME=pic
+ENV DB_PASSWORD=pic
 
 # 启动命令
 ENTRYPOINT ["java", "-jar", "app.jar"]

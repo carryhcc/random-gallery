@@ -118,8 +118,8 @@
 }
 
 .recommendation-item.active {
-    border-color: rgba(165, 143, 128, 0.46);
-    background: rgba(165, 143, 128, 0.18);
+    border-color: rgba(74, 144, 184, 0.46);
+    background: rgba(74, 144, 184, 0.18);
     box-shadow: none;
     transform: none;
 }
@@ -146,5 +146,5 @@
 }
 
 [data-theme="dark"] .recommendation-item.active {
-    border-color: rgba(201, 183, 171, 0.44);
+    border-color: rgba(93, 173, 226, 0.44);
 }

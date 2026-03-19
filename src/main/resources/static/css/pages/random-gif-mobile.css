@@ -1,13 +1,13 @@
         :root {
             --app-height: 100vh;
-            --brand-primary: #a58f80;
-            --brand-secondary: #7f96ad;
-            --brand-accent: #cf8b72;
-            --text-main: #f5f1eb;
-            --text-sub: rgba(245, 241, 235, 0.86);
-            --glass-bg: rgba(255, 245, 235, 0.16);
-            --glass-bg-strong: rgba(255, 245, 235, 0.24);
-            --glass-border: rgba(255, 245, 235, 0.28);
+            --brand-primary: #4a90b8;
+            --brand-secondary: #5b8ea8;
+            --brand-accent: #e67e22;
+            --text-main: #f5f8fa;
+            --text-sub: rgba(245, 248, 250, 0.86);
+            --glass-bg: rgba(245, 248, 250, 0.16);
+            --glass-bg-strong: rgba(245, 248, 250, 0.24);
+            --glass-border: rgba(245, 248, 250, 0.28);
             --shadow-soft: 0 12px 34px rgba(0, 0, 0, 0.32);
         }
 
@@ -257,7 +257,7 @@
             left: 50%;
             transform: translate(-50%, -50%);
             background: rgba(17, 14, 12, 0.72);
-            border: 1px solid rgba(165, 143, 128, 0.4);
+            border: 1px solid rgba(74, 144, 184, 0.4);
             padding: 20px;
             border-radius: 12px;
             backdrop-filter: blur(8px);
