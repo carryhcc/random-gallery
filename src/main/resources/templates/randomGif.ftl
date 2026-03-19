@@ -38,10 +38,10 @@
         <div class="spinner"></div>
     </div>
 
-    <!-- 错误提示 -->
-    <div class="error-toast" id="errorToast">
+    <!-- 加载失败提示（已隐藏，改为自动加载下一个） -->
+    <div class="error-toast" id="errorToast" style="display: none;">
         <i class="fas fa-exclamation-circle"></i>
-        <span>加载失败，点击重试</span>
+        <span>加载失败，正在切换下一个...</span>
     </div>
 
     <!-- 底部信息 -->
@@ -146,13 +146,10 @@
         app.addEventListener('touchstart', handleTouchStart, { passive: false });
         app.addEventListener('touchend', handleTouchEnd, { passive: false });
         
-        // 错误重试
+        // 错误处理（自动加载下一个，无需点击重试）
         dom.errorToast.addEventListener('click', () => {
-             if (state.currentData) {
-                 renderGif(state.currentData);
-             } else {
-                 loadNextGif();
-             }
+            dom.errorToast.style.display = 'none';
+            loadNextGif();
         });
 
         // 键盘支持
@@ -338,12 +335,14 @@
 
     function handleError() {
         dom.loader.style.display = 'none';
-        dom.errorToast.style.display = 'block';
+        // 自动加载下一个，不显示错误提示
+        setTimeout(() => loadNextGif(), 500);
     }
 
     function showError() {
         dom.loader.style.display = 'none';
-        dom.errorToast.style.display = 'block';
+        // 自动加载下一个，不显示错误提示
+        setTimeout(() => loadNextGif(), 500);
     }
     
     function showToast(msg) {
