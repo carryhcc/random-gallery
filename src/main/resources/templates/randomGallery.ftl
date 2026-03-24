@@ -219,6 +219,15 @@
         loadPage(true);
     });
 
+    window.addEventListener('app:page-resumed', () => {
+        setTimeout(() => {
+            maybeLoadMoreIfShort();
+            if (!isLoading && hasMore && nearBottomThreshold(300)) {
+                loadPage(false);
+            }
+        }, 80);
+    });
+
     document.addEventListener('DOMContentLoaded', () => {
         loadPage(true);
 

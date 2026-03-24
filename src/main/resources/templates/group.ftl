@@ -394,6 +394,12 @@
     document.addEventListener('DOMContentLoaded', function () {
         queryGroups(1);
     });
+
+    window.addEventListener('app:page-resumed', function () {
+        setTimeout(function () {
+            generatePageNumbers();
+        }, 80);
+    });
 </script>
 </body>
 </html>

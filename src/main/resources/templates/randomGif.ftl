@@ -15,6 +15,7 @@
     <link rel="stylesheet" href="/css/mobile.css" media="(max-width: 768px)">
     <link rel="stylesheet" href="/css/pages/random-gif-web.css" media="(min-width: 769px)">
     <link rel="stylesheet" href="/css/pages/random-gif-mobile.css" media="(max-width: 768px)">
+    <script src="/js/theme.js"></script>
 </head>
 <body>
 
@@ -367,6 +368,10 @@
     }
 
     // 启动
+    window.addEventListener('app:page-resumed', function() {
+        setAppHeight();
+    });
+
     init();
 
 </script>

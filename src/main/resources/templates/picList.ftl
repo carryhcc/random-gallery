@@ -241,6 +241,14 @@
 
         window.addEventListener('scroll', checkScrollForMore, {passive: true});
         window.addEventListener('resize', checkScrollForMore, {passive: true});
+        window.addEventListener('app:page-resumed', function() {
+            setTimeout(function() {
+                if (msnry) {
+                    msnry.layout();
+                }
+                checkScrollForMore();
+            }, 80);
+        });
     }
 
     function fetchGroupInfo(id) {

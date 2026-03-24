@@ -10,6 +10,20 @@
     padding-bottom: calc(var(--spacing-xl) + env(safe-area-inset-bottom));
 }
 
+/* 移动端弱化高成本视觉效果，提升切后台恢复稳定性 */
+.navbar,
+.search-section,
+.recommendation-section {
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+}
+
+.search-section.animate-fade-in,
+.recommendation-section.animate-fade-in,
+#worksGrid.animate-fade-in {
+    animation: none;
+}
+
 /* Mobile waterfall layout modes */
 #worksGrid.masonry-grid {
     display: block !important;

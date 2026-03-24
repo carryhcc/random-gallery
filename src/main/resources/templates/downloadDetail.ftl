@@ -640,6 +640,11 @@
 
     // 页面加载时获取详情
     document.addEventListener('DOMContentLoaded', loadDetail);
+    window.addEventListener('app:page-resumed', function() {
+        setTimeout(function() {
+            initMasonry();
+        }, 80);
+    });
 
     // 确认模态框逻辑
     let confirmCallback = null;

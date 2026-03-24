@@ -5,6 +5,16 @@
     padding-right: 10px;
 }
 
+.navbar,
+.card {
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+}
+
+.card.animate-fade-in {
+    animation: none;
+}
+
 .navbar-content {
     flex-direction: row;
     align-items: center;

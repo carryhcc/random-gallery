@@ -8,6 +8,9 @@
 
     const THEME_STORAGE_KEY = 'random-gallery-theme';
     const THEME_ATTRIBUTE = 'data-theme';
+    const RESUME_CLASS = 'page-resuming';
+    const RESUME_EVENT = 'app:page-resumed';
+    let resumeTimer = null;
 
     /**
      * 获取系统主题偏好
@@ -75,15 +78,56 @@
         }
     }
 
+    function isMobileDevice() {
+        const isMobileViewport = window.matchMedia && window.matchMedia('(max-width: 768px)').matches;
+        const isTouchDevice = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
+        return isMobileViewport || isTouchDevice;
+    }
+
+    function stabilizePageOnResume() {
+        if (!isMobileDevice() || !document.body) {
+            return;
+        }
+        document.body.classList.add(RESUME_CLASS);
+        window.clearTimeout(resumeTimer);
+        resumeTimer = window.setTimeout(() => {
+            document.body.classList.remove(RESUME_CLASS);
+        }, 320);
+        window.dispatchEvent(new CustomEvent(RESUME_EVENT));
+    }
+
+    function bindResumeStabilizer() {
+        document.addEventListener('visibilitychange', () => {
+            if (!document.hidden) {
+                stabilizePageOnResume();
+            }
+        });
+
+        window.addEventListener('pageshow', (event) => {
+            if (event.persisted) {
+                stabilizePageOnResume();
+            }
+        });
+
+        window.addEventListener('focus', () => {
+            if (document.visibilityState === 'visible') {
+                stabilizePageOnResume();
+            }
+        });
+    }
+
     // 立即应用主题（避免闪烁）
     // 使用立即执行，不等待DOM加载
     initTheme();
+    bindResumeStabilizer();
 
     // 暴露到全局作用域
     window.themeManager = {
         toggle: toggleTheme,
         set: applyTheme,
         get: getCurrentTheme,
-        init: initTheme
+        init: initTheme,
+        stabilizePageOnResume: stabilizePageOnResume,
+        resumeEventName: RESUME_EVENT
     };
 })();

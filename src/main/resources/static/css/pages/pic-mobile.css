@@ -3,6 +3,16 @@
     margin-bottom: 0.85rem;
 }
 
+.navbar,
+.pic-container .card {
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+}
+
+.pic-container .card.animate-fade-in {
+    animation: none;
+}
+
 .pic-container .card-title {
     font-size: 1.22rem;
 }

@@ -11,6 +11,11 @@
     padding-bottom: calc(var(--spacing-xl) + env(safe-area-inset-bottom));
 }
 
+.navbar {
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+}
+
 .masonry-item-wrapper {
     padding: 5px;
 }
@@ -18,6 +23,10 @@
 .media-item,
 .masonry-item {
     border-radius: 16px;
+}
+
+.media-item.animate-scale-in {
+    animation: none;
 }
 
 @media (max-width: 560px) {

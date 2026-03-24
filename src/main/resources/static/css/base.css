@@ -1501,6 +1501,24 @@ a {
     text-align: right;
 }
 
+body.page-resuming *,
+body.page-resuming *::before,
+body.page-resuming *::after {
+    animation: none !important;
+    transition: none !important;
+}
+
+body.page-resuming .navbar,
+body.page-resuming .card,
+body.page-resuming .download-card,
+body.page-resuming .detail-header,
+body.page-resuming .recommendation-section,
+body.page-resuming .info-section,
+body.page-resuming .image-viewer {
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+}
+
 .animate-fade-in {
     animation: fadeInUp 0.7s cubic-bezier(0.22, 1, 0.36, 1) both;
 }

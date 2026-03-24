@@ -4,8 +4,17 @@
     padding-bottom: calc(var(--spacing-xl) + env(safe-area-inset-bottom));
 }
 
+.navbar {
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+}
+
 .gallery-grid {
     gap: 12px;
+}
+
+.gallery-grid.animate-fade-in {
+    animation: none;
 }
 
 .gallery-image-container,

@@ -388,6 +388,14 @@
         // 窗口缩放处理
         var rt;
         window.onresize = function() { clearTimeout(rt); rt = setTimeout(manageLayout, 200); };
+        window.addEventListener('app:page-resumed', function() {
+            setTimeout(function() {
+                manageLayout();
+                if (masonryInstance) {
+                    masonryInstance.layout();
+                }
+            }, 80);
+        });
 
         loadPage(true);
     });
