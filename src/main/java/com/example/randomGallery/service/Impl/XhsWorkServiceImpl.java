@@ -23,8 +23,11 @@ import com.example.randomGallery.service.mapper.XhsWorkMediaMapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+import org.springframework.web.context.request.RequestContextHolder;
+import org.springframework.web.context.request.ServletRequestAttributes;
 import org.springframework.web.util.UriComponentsBuilder;
 
+import jakarta.servlet.http.HttpServletRequest;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -111,7 +114,7 @@ public class XhsWorkServiceImpl implements XhsWorkService {
 
             // 【优化】提取所有将会显示的图片 URL 进行批量检测预热
             // 这样后续在 getSafetyUrl 中调用 imageService.isHeicImage 时就能直接命中缓存
-            if (!Boolean.TRUE.equals(privacyConfig.getEnabled())) {
+            if (!Boolean.TRUE.equals(privacyConfig.getEnabled()) && !shouldSkipHeicConversion()) {
                 List<String> allImageUrls = allMedia.stream()
                         .filter(m -> MediaTypeEnum.IMAGE.equals(m.getMediaType()))
                         .map(XhsWorkMediaDO::getMediaUrl)
@@ -183,7 +186,7 @@ public class XhsWorkServiceImpl implements XhsWorkService {
         List<XhsWorkMediaDO> allMedia = workMediaMapper.selectList(mediaWrapper);
 
         // 【优化】批量检测预热
-        if (!Boolean.TRUE.equals(privacyConfig.getEnabled())) {
+        if (!Boolean.TRUE.equals(privacyConfig.getEnabled()) && !shouldSkipHeicConversion()) {
             List<String> imageUrls = allMedia.stream()
                     .filter(m -> MediaTypeEnum.IMAGE.equals(m.getMediaType()))
                     .map(XhsWorkMediaDO::getMediaUrl)
@@ -279,6 +282,11 @@ public class XhsWorkServiceImpl implements XhsWorkService {
             return privacyConfig.getPlaceholderUrl();
         }
 
+        // Safari 浏览器原生支持 HEIC，跳过转换逻辑
+        if (shouldSkipHeicConversion()) {
+            return url;
+        }
+
         // 非隐私模式下，检测是否为 HEIC 格式
         // 注意：这里调用 imageService 会命中缓存（因为 batchDetectHeic 已经预热过了）
         if (imageService.isHEICImage(url)) {
@@ -301,5 +309,56 @@ public class XhsWorkServiceImpl implements XhsWorkService {
                 .queryParam("url", originalUrl)
                 .build()
                 .toUriString();
+    }
+
+    /**
+     * 是否应跳过 HEIC 转换（当前仅 Safari 浏览器）
+     * 使用请求级缓存避免同一请求中重复解析 User-Agent
+     *
+     * @return true 表示跳过 HEIC 转换逻辑
+     */
+    private boolean shouldSkipHeicConversion() {
+        ServletRequestAttributes attributes =
+                (ServletRequestAttributes) RequestContextHolder.getRequestAttributes();
+        if (attributes == null) {
+            return false;
+        }
+
+        HttpServletRequest request = attributes.getRequest();
+        // 使用请求属性缓存结果，避免同一请求中重复解析 User-Agent
+        final String cacheKey = "SKIP_HEIC_CONVERSION";
+        Object cached = request.getAttribute(cacheKey);
+        if (cached instanceof Boolean) {
+            return (Boolean) cached;
+        }
+
+        boolean result = detectSafariBrowser(request);
+        request.setAttribute(cacheKey, result);
+
+        if (result) {
+            log.debug("检测到 Safari 浏览器，跳过 HEIC 转换逻辑");
+        }
+
+        return result;
+    }
+
+    /**
+     * 检测是否为 Safari 浏览器
+     * 排除 Chrome、Edge、Opera、Firefox 等基于相同引擎的浏览器
+     */
+    private boolean detectSafariBrowser(HttpServletRequest request) {
+        String userAgent = request.getHeader("User-Agent");
+        if (StrUtil.isBlank(userAgent)) {
+            return false;
+        }
+
+        String ua = userAgent.toLowerCase();
+        return ua.contains("safari")
+                && !ua.contains("chrome")
+                && !ua.contains("chromium")
+                && !ua.contains("crios")
+                && !ua.contains("edg")
+                && !ua.contains("opr")
+                && !ua.contains("fxios");
     }
 }

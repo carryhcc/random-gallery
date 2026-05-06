@@ -16,6 +16,73 @@
     <link rel="stylesheet" href="/css/pages/download-web.css" media="(min-width: 769px)">
     <link rel="stylesheet" href="/css/pages/download-mobile.css" media="(max-width: 768px)">
     <script src="/js/theme.js"></script>
+    <style>
+        /* Toggle 开关样式 */
+        .clipboard-toggle {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            padding: 4px 8px;
+            border-radius: var(--radius-sm);
+            background: var(--color-bg-card);
+            border: 1px solid var(--color-border);
+        }
+
+        .clipboard-toggle-label {
+            font-size: var(--font-size-sm);
+            color: var(--color-text-secondary);
+        }
+
+        .toggle-switch {
+            position: relative;
+            display: inline-block;
+            width: 36px;
+            height: 20px;
+            cursor: pointer;
+        }
+
+        .toggle-switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+
+        .toggle-slider {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: var(--color-text-muted);
+            border-radius: var(--radius-full);
+            transition: var(--transition-fast);
+        }
+
+        .toggle-slider::before {
+            content: "";
+            position: absolute;
+            height: 16px;
+            width: 16px;
+            left: 2px;
+            bottom: 2px;
+            background-color: white;
+            border-radius: 50%;
+            transition: var(--transition-fast);
+        }
+
+        .toggle-switch input:checked + .toggle-slider {
+            background-color: var(--color-primary);
+        }
+
+        .toggle-switch input:checked + .toggle-slider::before {
+            transform: translateX(16px);
+        }
+
+        .toggle-switch input:focus-visible + .toggle-slider {
+            outline: 2px solid var(--color-border-focus);
+            outline-offset: 2px;
+        }
+    </style>
 </head>
 <body>
 
@@ -27,6 +94,15 @@
             <span>图片下载</span>
         </div>
         <div class="navbar-actions">
+            <div class="clipboard-toggle" title="自动读取粘贴板">
+                <span class="clipboard-toggle-label">
+                    <i class="fas fa-clipboard"></i>
+                </span>
+                <label class="toggle-switch">
+                    <input type="checkbox" id="autoReadClipboard" checked>
+                    <span class="toggle-slider"></span>
+                </label>
+            </div>
             <button class="btn btn-secondary btn-sm" onclick="window.location.href='/downloadList'">
                 <i class="fas fa-list"></i>
                 <span class="hidden-mobile">下载浏览</span>
@@ -110,6 +186,8 @@
     const urlInput = document.getElementById('urlInput');
     const parseBtn = document.getElementById('parseBtn');
     const toast = document.getElementById('toast');
+    const autoReadToggle = document.getElementById('autoReadClipboard');
+    const STORAGE_KEY = 'autoReadClipboard';
     let toastTimer;
 
     function showToast(message, type = 'success') {
@@ -121,13 +199,66 @@
         }, 3000);
     }
 
+    // 开关状态持久化
+    function loadToggleState() {
+        const saved = localStorage.getItem(STORAGE_KEY);
+        autoReadToggle.checked = saved !== 'false';
+    }
+
+    function saveToggleState() {
+        localStorage.setItem(STORAGE_KEY, autoReadToggle.checked);
+    }
+
+    autoReadToggle.addEventListener('change', saveToggleState);
+    loadToggleState();
+
+    // 检测文本中是否包含 HTTP 链接
+    function extractHttpUrl(text) {
+        if (!text || typeof text !== 'string') return null;
+        const match = text.match(/https?:\/\/\S+/i);
+        return match ? match[0] : null;
+    }
+
+    // 读取粘贴板并填充链接
+    async function readClipboardAndFill() {
+        if (!autoReadToggle.checked) return;
+        if (!navigator.clipboard || !navigator.clipboard.readText) return;
+
+        try {
+            const text = await navigator.clipboard.readText();
+            const url = extractHttpUrl(text);
+            if (url) {
+                // 避免重复填充相同内容
+                if (urlInput.value !== url) {
+                    urlInput.value = url;
+                    showToast('已从粘贴板读取链接', 'success');
+                }
+            }
+        } catch (err) {
+            // 静默处理权限错误
+        }
+    }
+
+    // 页面加载时读取
+    window.addEventListener('load', readClipboardAndFill);
+
+    // 页面切换回来时读取
+    document.addEventListener('visibilitychange', () => {
+        if (document.visibilityState === 'visible') {
+            readClipboardAndFill();
+        }
+    });
+
     // 解析 URL
     parseBtn.addEventListener('click', async () => {
-        const url = urlInput.value.trim();
-        if (!url) {
+        const rawInput = urlInput.value.trim();
+        if (!rawInput) {
             showToast('请输入链接', 'error');
             return;
         }
+
+        // 从输入内容中提取链接
+        const url = extractHttpUrl(rawInput) || rawInput;
 
         parseBtn.disabled = true;
         parseBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> <span>解析中...</span>';
