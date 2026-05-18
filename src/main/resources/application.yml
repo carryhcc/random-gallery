@@ -25,12 +25,10 @@ spring:
     date-format: yyyy-MM-dd HH:mm:ss
     time-zone: Asia/Shanghai
 
-# MyBatis Plus Configuration
 mybatis-plus:
   mapper-locations: classpath:mapper/*.xml
   configuration:
     map-underscore-to-camel-case: true
-    # 使用 Slf4j 输出 SQL（含参数）
     log-impl: org.apache.ibatis.logging.slf4j.Slf4jImpl
 
 config:
@@ -50,6 +48,3 @@ image:
   safe-mode:
     enabled: true
     placeholder-url: "/icons/404.svg"
-  proxy:
-    host: ${IMAGE_PROXY_HOST:192.168.10.144}
-    port: ${IMAGE_PROXY_PORT:7890}

@@ -5,9 +5,6 @@
  * - 提供统一的媒体设置接口
  */
 
-const IMAGE_PROXY_TOGGLE_KEY = 'random-gallery-image-proxy-enabled';
-const IMAGE_PROXY_TARGET_PREFIX = 'https://telegra.ph';
-
 /**
  * 为 img 元素设置源
  * @param {HTMLImageElement} imgElement - img 元素
@@ -15,8 +12,6 @@ const IMAGE_PROXY_TARGET_PREFIX = 'https://telegra.ph';
  * @returns {Promise<void>}
  */
 async function setImageSrc(imgElement, imageUrl) {
-    const resolvedImageUrl = resolveImageUrl(imageUrl);
-
     // 创建一个 Promise 来等待图片加载完成
     return new Promise((resolve) => {
         // 添加加载成功事件监听
@@ -28,7 +23,7 @@ async function setImageSrc(imgElement, imageUrl) {
 
         // 添加加载失败事件监听
         imgElement.onerror = function (error) {
-            console.warn('图片加载失败:', resolvedImageUrl, error);
+            console.warn('图片加载失败:', imageUrl, error);
             // 加载失败显示默认图
             this.onerror = null;
             this.src = '/icons/404.svg';
@@ -38,7 +33,7 @@ async function setImageSrc(imgElement, imageUrl) {
         };
 
         // 设置图片源
-        imgElement.src = resolvedImageUrl;
+        imgElement.src = imageUrl;
 
         // 如果图片已经缓存，onload 可能不会触发，需要检查
         if (imgElement.complete) {
@@ -47,33 +42,6 @@ async function setImageSrc(imgElement, imageUrl) {
             resolve();
         }
     });
-}
-
-function resolveImageUrl(imageUrl) {
-    if (!shouldProxyImageUrl(imageUrl)) {
-        return imageUrl;
-    }
-    return '/api/image/proxy?url=' + encodeURIComponent(imageUrl);
-}
-
-function shouldProxyImageUrl(imageUrl) {
-    return isImageProxyEnabled() && isTelegraPhUrl(imageUrl);
-}
-
-function isImageProxyEnabled() {
-    try {
-        return window.localStorage.getItem(IMAGE_PROXY_TOGGLE_KEY) === 'true';
-    } catch (error) {
-        console.warn('读取图片代理开关失败:', error);
-        return false;
-    }
-}
-
-function isTelegraPhUrl(imageUrl) {
-    if (!imageUrl || typeof imageUrl !== 'string') {
-        return false;
-    }
-    return imageUrl.trim().startsWith(IMAGE_PROXY_TARGET_PREFIX);
 }
 
 /**

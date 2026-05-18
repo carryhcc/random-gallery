@@ -1,12 +1,9 @@
 package com.example.randomGallery.controller;
 
 import com.example.randomGallery.service.ImageService;
-import com.example.randomGallery.service.ImageProxyUrlResolver;
-import com.example.randomGallery.service.image.ProxyImageDownloadService;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -42,7 +39,6 @@ import java.io.IOException;
 public class ImageConvertController {
 
     private final ImageService imageService;
-    private final ProxyImageDownloadService proxyImageDownloadService;
 
     /**
      * 缓存时长：1年（秒）
@@ -101,35 +97,6 @@ public class ImageConvertController {
             log.error("图片转换异常: {}", url, e);
             try {
                 writeError(response, "图片转换失败: " + e.getMessage());
-            } catch (IOException ioException) {
-                log.error("写入错误响应失败", ioException);
-            }
-        }
-    }
-
-    @GetMapping("/proxy")
-    public void proxyImage(@RequestParam String url, HttpServletResponse response) {
-        if (!ImageProxyUrlResolver.shouldProxy(url)) {
-            response.setStatus(HttpServletResponse.SC_BAD_REQUEST);
-            return;
-        }
-
-        try {
-            ResponseEntity<byte[]> proxyResponse = proxyImageDownloadService.download(url);
-            if (proxyResponse == null || proxyResponse.getBody() == null || proxyResponse.getBody().length == 0) {
-                writeError(response, "图片代理失败");
-                return;
-            }
-
-            response.setContentType(ProxyImageDownloadService.resolveContentType(proxyResponse).toString());
-            response.setContentLength(proxyResponse.getBody().length);
-            response.setHeader("Cache-Control", "public, max-age=" + CACHE_MAX_AGE);
-            response.getOutputStream().write(proxyResponse.getBody());
-            response.getOutputStream().flush();
-        } catch (Exception e) {
-            log.error("图片代理异常: {}", url, e);
-            try {
-                writeError(response, "图片代理失败: " + e.getMessage());
             } catch (IOException ioException) {
                 log.error("写入错误响应失败", ioException);
             }
