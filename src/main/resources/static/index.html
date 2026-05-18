@@ -201,11 +201,16 @@
             <div class="card-header">
                 <div class="header-main">
                     <h2 class="card-title"><i class="fas fa-cloud-download-alt"></i> 精选收藏</h2>
-                    <!-- 隐私模式切换 (Inline) -->
-                    <button class="privacy-btn" id="privacyToggle" onclick="togglePrivacy()" title="切换隐私模式">
-                        <i class="fas fa-eye" id="privacyIcon"></i>
-                        <span id="privacyText">隐私模式</span>
-                    </button>
+                    <div style="display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap;">
+                        <button class="privacy-btn" id="proxyToggle" onclick="toggleImageProxy()" title="切换图片代理">
+                            <i class="fas fa-shield-halved" id="proxyIcon"></i>
+                            <span id="proxyText">代理关闭</span>
+                        </button>
+                        <button class="privacy-btn" id="privacyToggle" onclick="togglePrivacy()" title="切换隐私模式">
+                            <i class="fas fa-eye" id="privacyIcon"></i>
+                            <span id="privacyText">隐私模式</span>
+                        </button>
+                    </div>
                 </div>
             </div>
 
@@ -229,6 +234,7 @@
     <div id="toast" class="toast"></div>
 
     <script>
+        const IMAGE_PROXY_TOGGLE_KEY = 'random-gallery-image-proxy-enabled';
         let toastTimer;
 
         function showToast(message, type = 'success') {
@@ -403,6 +409,49 @@
             }
         }
 
+        function toggleImageProxy() {
+            const nextEnabled = !isImageProxyEnabled();
+            try {
+                window.localStorage.setItem(IMAGE_PROXY_TOGGLE_KEY, String(nextEnabled));
+                updateImageProxyIcon(nextEnabled);
+                showToast(nextEnabled ? '图片代理已开启' : '图片代理已关闭', 'success');
+            } catch (error) {
+                console.error('切换图片代理失败:', error);
+                showToast('图片代理切换失败', 'error');
+            }
+        }
+
+        function isImageProxyEnabled() {
+            try {
+                return window.localStorage.getItem(IMAGE_PROXY_TOGGLE_KEY) === 'true';
+            } catch (error) {
+                console.error('读取图片代理状态失败:', error);
+                return false;
+            }
+        }
+
+        function updateImageProxyIcon(proxyEnabled) {
+            const btn = document.getElementById('proxyToggle');
+            const icon = document.getElementById('proxyIcon');
+            const text = document.getElementById('proxyText');
+
+            if (proxyEnabled) {
+                icon.style.color = '#4a90b8';
+                btn.classList.add('active');
+                text.textContent = '代理开启';
+                btn.title = '关闭图片代理';
+            } else {
+                icon.style.color = '';
+                btn.classList.remove('active');
+                text.textContent = '代理关闭';
+                btn.title = '开启图片代理';
+            }
+        }
+
+        function initImageProxyStatus() {
+            updateImageProxyIcon(isImageProxyEnabled());
+        }
+
         async function initPrivacyStatus() {
             try {
                 const response = await fetch('/api/system/privacy-mode');
@@ -417,6 +466,7 @@
 
         document.addEventListener('DOMContentLoaded', function () {
             updateThemeIcon(window.themeManager.get());
+            initImageProxyStatus();
             initPrivacyStatus();
         });
     </script>

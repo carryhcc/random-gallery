@@ -50,3 +50,6 @@ image:
   safe-mode:
     enabled: true
     placeholder-url: "/icons/404.svg"
+  proxy:
+    host: ${IMAGE_PROXY_HOST:192.168.10.144}
+    port: ${IMAGE_PROXY_PORT:7890}
