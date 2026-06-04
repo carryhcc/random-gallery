@@ -1,23 +1,19 @@
 <!DOCTYPE html>
-<html lang="zh-CN">
+<html lang="zh-CN" data-theme="dark">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="referrer" content="no-referrer">
-    <title>下载浏览 - 随机图库</title>
-    <link rel="preconnect" href="https://fonts.loli.net">
-    <link rel="preconnect" href="https://gstatic.loli.net" crossorigin>
-    <link href="https://fonts.loli.net/css2?family=Inter:wght@400;500;600;700&family=Poppins:wght@600;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.loli.net/ajax/libs/font-awesome/6.4.2/css/all.min.css">
+    <title>下载浏览</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Poppins:wght@600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
     <link rel="stylesheet" href="/css/style.css">
     <link rel="stylesheet" href="/css/web.css" media="(min-width: 769px)">
     <link rel="stylesheet" href="/css/mobile.css" media="(max-width: 768px)">
-    <link rel="stylesheet" href="/css/pages/download-list-web.css" media="(min-width: 769px)">
-    <link rel="stylesheet" href="/css/pages/download-list-mobile.css" media="(max-width: 768px)">
     <script src="/js/theme.js"></script>
     <script src="/js/heic-converter.js"></script>
-    <script src="https://cdnjs.loli.net/ajax/libs/jquery.imagesloaded/5.0.0/imagesloaded.pkgd.min.js"></script>
-    <script src="https://cdnjs.loli.net/ajax/libs/masonry/4.2.2/masonry.pkgd.min.js"></script>
 </head>
 <body>
 
@@ -100,7 +96,6 @@
     var page = 1, isLoading = false, hasMore = true;
     var currentAuthorId = null, currentTagId = null, currentSearchStr = null;
     var currentSeed = Math.floor(Math.random() * 1000000); // 初始化随机种子
-    var masonryInstance = null;
     var allAuthors = [], allTags = [];
     var RECOMMENDATION_SIZE = 8;
     var VIEW_MODE_KEY = 'download-list-view-mode';
@@ -110,25 +105,6 @@
     function isMobile() { return window.innerWidth <= 768; }
 
     function manageLayout() {
-        if (isMobile()) {
-            if (masonryInstance) {
-                masonryInstance.destroy();
-                masonryInstance = null;
-            }
-        } else {
-            if (!masonryInstance && worksGrid.children.length > 0) {
-                masonryInstance = new Masonry(worksGrid, {
-                    itemSelector: '.masonry-item',
-                    percentPosition: true,
-                    gutter: 16
-                });
-            }
-            if (masonryInstance) {
-                imagesLoaded(worksGrid).on('progress', function() {
-                    masonryInstance.layout();
-                });
-            }
-        }
     }
 
     function setViewMode(mode) {
@@ -164,7 +140,6 @@
         if (reset) {
             page = 1; worksGrid.innerHTML = ''; hasMore = true;
             endEl.classList.add('hidden'); emptyState.classList.add('hidden');
-            if (masonryInstance) { masonryInstance.destroy(); masonryInstance = null; }
             // 每次重置列表（刷新/筛选）时，生成新的随机种子
             currentSeed = Math.floor(Math.random() * 1000000);
         }
@@ -194,10 +169,6 @@
                 } else {
                     works.forEach(function(work) {
                         worksGrid.appendChild(createWorkCard(work));
-                    });
-
-                    imagesLoaded(worksGrid, function() {
-                        manageLayout();
                     });
 
                     page++;
@@ -391,9 +362,6 @@
         window.addEventListener('app:page-resumed', function() {
             setTimeout(function() {
                 manageLayout();
-                if (masonryInstance) {
-                    masonryInstance.layout();
-                }
             }, 80);
         });
 

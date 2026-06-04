@@ -1,4 +1,4 @@
-/* Desktop and tablet styles are isolated here */
+/* Desktop and tablet styles */
 @media (min-width: 769px) {
     .hidden-desktop {
         display: none !important;
@@ -6,8 +6,8 @@
 }
 
 @media (min-width: 769px) and (max-width: 1200px) {
-    .masonry-item-wrapper {
-        width: 33.3333%;
+    .masonry-grid {
+        column-count: 3;
     }
 }
 
@@ -16,11 +16,7 @@
         grid-template-columns: repeat(2, minmax(0, 1fr));
     }
 
-    .masonry-item-wrapper {
-        width: 50%;
-    }
-
-    .masonry-grid .masonry-item {
-        width: calc(50% - 12px);
+    .masonry-grid {
+        column-count: 2;
     }
 }

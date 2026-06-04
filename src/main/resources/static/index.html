@@ -1,14 +1,14 @@
 <!DOCTYPE html>
-<html lang="zh-CN">
+<html lang="zh-CN" data-theme="dark">
 
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>随机图库 - 专业图片浏览平台</title>
+    <title>随机图库</title>
 
     <!-- PWA 配置 -->
     <link rel="manifest" href="/manifest.json">
-    <meta name="theme-color" content="#a58f80">
+    <meta name="theme-color" content="#5b7fff">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -30,18 +30,13 @@
     <link rel="stylesheet" href="/css/web.css" media="(min-width: 769px)">
     <link rel="stylesheet" href="/css/mobile.css" media="(max-width: 768px)">
     <script src="/js/theme.js"></script>
-    <link rel="stylesheet" href="/css/pages/index-web.css" media="(min-width: 769px)">
-    <link rel="stylesheet" href="/css/pages/index-mobile.css" media="(max-width: 768px)">
     <!-- PWA 配置 - 放在 Head 以确保尽早捕获事件 -->
     <script>
         // PWA 安装事件监听
         let deferredPrompt;
         window.addEventListener('beforeinstallprompt', (e) => {
-            // e.preventDefault(); // 允许浏览器显示原生安装提示
             deferredPrompt = e;
-            console.log('💡 PWA 可以安装到主屏幕 (UI事件触发)');
-
-            // 确保DOM准备好后再显示按钮
+            console.log('PWA 可以安装到主屏幕');
             if (document.body) {
                 showInstallButton();
             } else {
@@ -49,10 +44,8 @@
             }
         });
 
-        // PWA 安装成功监听
         window.addEventListener('appinstalled', () => {
-            console.log('✅ PWA 已成功安装到主屏幕');
-            // 如果 toast 函数未定义（DOM未就绪），则等待
+            console.log('PWA 已成功安装到主屏幕');
             if (window.showToast) {
                 showToast('应用已安装到主屏幕！', 'success');
             }
@@ -61,48 +54,33 @@
         });
 
         function showInstallButton() {
-            // 避免重复添加
             if (document.getElementById('pwa-install-hint')) return;
-
-            console.log('📱 显示自定义安装按钮');
             const installHint = document.createElement('div');
             installHint.id = 'pwa-install-hint';
             installHint.innerHTML = `
         <div style="position: fixed; bottom: 80px; left: 50%; transform: translateX(-50%); 
-                    background: linear-gradient(135deg, #a58f80 0%, #cf8b72 100%); 
+                    background: var(--seed-primary, #5b7fff); 
                     color: white; padding: 12px 24px; border-radius: 30px; 
                     box-shadow: 0 4px 15px rgba(0,0,0,0.3); cursor: pointer; 
-                    z-index: 9999; animation: slideUp 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275); 
-                    font-size: 14px; display: flex; align-items: center; gap: 8px; border: 2px solid rgba(255,255,255,0.2);">
+                    z-index: 9999; animation: fadeInUp 0.5s cubic-bezier(0.22,1,0.36,1); 
+                    font-size: 14px; display: flex; align-items: center; gap: 8px; border: 1px solid rgba(255,255,255,0.15);">
             <i class="fas fa-download"></i>
             <span style="font-weight: 600;">安装应用</span>
         </div>
     `;
-
-            const style = document.createElement('style');
-            style.textContent = '@keyframes slideUp { from { opacity: 0; transform: translate(-50%, 40px); } to { opacity: 1; transform: translate(-50%, 0); } }';
-            document.head.appendChild(style);
-
             installHint.onclick = () => {
                 if (deferredPrompt) {
                     deferredPrompt.prompt();
                     deferredPrompt.userChoice.then((choiceResult) => {
                         if (choiceResult.outcome === 'accepted') {
-                            console.log('✅ 用户接受了安装');
-                        } else {
-                            console.log('❌ 用户拒绝了安装');
+                            console.log('用户接受了安装');
                         }
                         deferredPrompt = null;
                         installHint.remove();
                     });
-                } else {
-                    console.warn('Deferred prompt is null');
                 }
             };
-
             document.body.appendChild(installHint);
-
-            // 15秒后自动消失
             setTimeout(() => {
                 if (installHint.parentNode) {
                     installHint.style.opacity = '0';
@@ -117,11 +95,8 @@
             window.addEventListener('load', () => {
                 navigator.serviceWorker.register('/sw.js')
                     .then((registration) => {
-                        console.log('✅ Service Worker 注册成功:', registration.scope);
-
-                        // 强制更新检查
+                        console.log('Service Worker 注册成功:', registration.scope);
                         registration.update();
-
                         registration.addEventListener('updatefound', () => {
                             const newWorker = registration.installing;
                             newWorker.addEventListener('statechange', () => {
@@ -135,7 +110,7 @@
                         });
                     })
                     .catch((error) => {
-                        console.error('❌ Service Worker 注册失败:', error);
+                        console.error('Service Worker 注册失败:', error);
                     });
             });
         }
@@ -144,10 +119,39 @@
 
 <body class="index-page">
 
-    <!-- 主题切换按钮 -->
-    <button class="theme-toggle" id="themeToggle" onclick="toggleTheme()" title="切换主题">
-        <i class="fas fa-moon" id="themeIcon"></i>
-    </button>
+    <!-- 导航栏 -->
+    <header class="navbar">
+        <div class="navbar-content">
+            <div class="navbar-brand">
+                <i class="fas fa-images"></i>
+                <span>随机图库</span>
+            </div>
+            <div class="navbar-actions">
+                <!-- 环境切换器 -->
+                <div class="env-selector" id="env-component" onclick="toggleDropdown()">
+                    <i class="fas fa-circle" style="font-size:6px; color:var(--seed-primary);"></i>
+                    <span id="selected-env-text" class="env-badge">加载中...</span>
+                    <i class="fas fa-chevron-down" style="font-size:.6rem;"></i>
+                    <div class="env-dropdown-list" id="env-dropdown-menu">
+                        <a href="#" data-env="dev" class="env-dropdown-option"
+                            onclick="selectEnvironment('dev'); event.stopPropagation();">开发环境</a>
+                        <a href="#" data-env="test" class="env-dropdown-option"
+                            onclick="selectEnvironment('test'); event.stopPropagation();">测试环境</a>
+                        <a href="#" data-env="prod" class="env-dropdown-option"
+                            onclick="selectEnvironment('prod'); event.stopPropagation();">生产环境</a>
+                    </div>
+                </div>
+                <!-- 隐私模式 -->
+                <button class="btn btn-secondary btn-sm" id="privacyToggle" onclick="togglePrivacy()" title="隐私模式">
+                    <i class="fas fa-eye" id="privacyIcon"></i>
+                </button>
+                <!-- 主题切换 -->
+                <button class="btn btn-secondary btn-sm" id="themeToggle" onclick="toggleTheme()" title="切换主题">
+                    <i class="fas fa-sun" id="themeIcon"></i>
+                </button>
+            </div>
+        </div>
+    </header>
 
     <!-- 主容器 -->
     <div class="main-container">
@@ -157,19 +161,6 @@
             <div class="card-header">
                 <div class="header-main">
                     <h2 class="card-title"><i class="fas fa-server"></i> 本地图库</h2>
-                    <!-- 环境切换器 -->
-                    <div class="env-selector" id="env-component" onclick="toggleDropdown()">
-                        <span id="selected-env-text" class="env-badge">加载中...</span>
-                        <i class="fas fa-chevron-down"></i>
-                        <div class="env-dropdown-list" id="env-dropdown-menu">
-                            <a href="#" data-env="dev" class="env-dropdown-option"
-                                onclick="selectEnvironment('dev'); event.stopPropagation();">开发环境</a>
-                            <a href="#" data-env="test" class="env-dropdown-option"
-                                onclick="selectEnvironment('test'); event.stopPropagation();">测试环境</a>
-                            <a href="#" data-env="prod" class="env-dropdown-option"
-                                onclick="selectEnvironment('prod'); event.stopPropagation();">生产环境</a>
-                        </div>
-                    </div>
                 </div>
                 <p class="env-stats" id="envStats">
                     <span class="loading-text"><i class="fas fa-spinner fa-spin"></i> 数据同步中...</span>
@@ -201,11 +192,6 @@
             <div class="card-header">
                 <div class="header-main">
                     <h2 class="card-title"><i class="fas fa-cloud-download-alt"></i> 精选收藏</h2>
-                    <!-- 隐私模式切换 (Inline) -->
-                    <button class="privacy-btn" id="privacyToggle" onclick="togglePrivacy()" title="切换隐私模式">
-                        <i class="fas fa-eye" id="privacyIcon"></i>
-                        <span id="privacyText">隐私模式</span>
-                    </button>
                 </div>
             </div>
 
@@ -241,21 +227,18 @@
             }, 3000);
         }
 
-        // Dropdown Logic - Restored to robust ID-based approach
+        // Dropdown Logic
         function toggleDropdown() {
-            // Stop propagation if event is passed (defensive), but mainly rely on ID toggle
             const selector = document.getElementById('env-component');
             selector.classList.toggle('active');
         }
 
         function selectEnvironment(targetEnv) {
-            // Dropdown closing is handled by parent click or outside click
             const selector = document.getElementById('env-component');
             selector.classList.remove('active');
             switchEnvironment(targetEnv);
         }
 
-        // Close dropdown when clicking outside
         window.onclick = function (event) {
             const selector = document.getElementById('env-component');
             if (selector && !selector.contains(event.target)) {
@@ -265,7 +248,6 @@
 
         async function updateEnvStatus() {
             try {
-                // Get environment details
                 const response = await fetch('/api/system/env/currentInfo');
                 if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
 
@@ -273,29 +255,26 @@
                 const data = result.data;
                 const currentEnv = data.env;
 
-                // Update Selector Text
                 const selectedEnvText = document.getElementById('selected-env-text');
                 const envMap = { dev: '开发环境', test: '测试环境', prod: '生产环境' };
                 selectedEnvText.textContent = envMap[currentEnv] || "未知环境";
 
-                // Update Active State in Menu
                 document.querySelectorAll('.env-dropdown-option').forEach(item => {
                     if (item.dataset.env === currentEnv) item.classList.add('active');
                     else item.classList.remove('active');
                 });
 
-                // Update Stats
                 const envStats = document.getElementById('envStats');
                 envStats.innerHTML = `
                     <i class="fas fa-database"></i> 分组: ${data.groupCount || 0}
-                    <span style="margin: 0 8px; color: var(--color-border);">|</span>
+                    <span style="margin: 0 8px; color: var(--seed-border);">|</span>
                     <i class="fas fa-image"></i> 图片: ${data.picCount || 0}
                 `;
 
             } catch (error) {
                 console.error("Failed to get env status:", error);
                 document.getElementById('selected-env-text').textContent = "获取失败";
-                document.getElementById('envStats').innerHTML = '<span class="error-text">无法连接服务器</span>';
+                document.getElementById('envStats').innerHTML = '<span style="color:var(--danger);">无法连接服务器</span>';
             }
         }
 
@@ -344,7 +323,7 @@
         function updateThemeIcon(theme) {
             const themeIcon = document.getElementById('themeIcon');
             if (themeIcon) {
-                themeIcon.className = theme === 'light' ? 'fas fa-sun' : 'fas fa-moon';
+                themeIcon.className = theme === 'light' ? 'fas fa-moon' : 'fas fa-sun';
                 themeIcon.parentElement.title = theme === 'light' ? '切换到深色模式' : '切换到浅色模式';
             }
         }
@@ -354,7 +333,7 @@
             try {
                 const btn = document.getElementById('privacyToggle');
                 const icon = document.getElementById('privacyIcon');
-                const isEnabled = icon.classList.contains('fa-eye'); // Currently visible -> requesting hidden (privacy enabled)
+                const isEnabled = icon.classList.contains('fa-eye');
 
                 const response = await fetch('/api/system/privacy-mode?enabled=' + isEnabled);
                 if (response.ok) {
@@ -375,29 +354,20 @@
         function updatePrivacyIcon(privacyEnabled) {
             const btn = document.getElementById('privacyToggle');
             const icon = document.getElementById('privacyIcon');
-            const text = document.getElementById('privacyText');
             const gifBtn = document.getElementById('randomGifBtn');
 
             if (privacyEnabled) {
-                // Privacy ON
                 icon.className = 'fas fa-eye-slash';
                 btn.classList.add('active');
-                icon.style.color = '#ff6b6b';
-                text.textContent = "隐私开启";
+                icon.style.color = 'var(--danger)';
                 btn.title = "关闭隐私模式";
-
-                // Disable GIF Button
                 gifBtn.classList.add('disabled');
-                gifBtn.removeAttribute('href'); // Remove link to ensure no navigation
+                gifBtn.removeAttribute('href');
             } else {
-                // Privacy OFF
                 icon.className = 'fas fa-eye';
                 btn.classList.remove('active');
                 icon.style.color = '';
-                text.textContent = "隐私模式";
                 btn.title = "开启隐私模式";
-
-                // Enable GIF Button
                 gifBtn.classList.remove('disabled');
                 gifBtn.setAttribute('href', '/randomGif');
             }
@@ -419,69 +389,6 @@
             updateThemeIcon(window.themeManager.get());
             initPrivacyStatus();
         });
-    </script>
-
-    <!-- PWA Service Worker 注册 -->
-
-
-
-    <!-- 移动端自动缩放适配脚本 -->
-    <script>
-        (function () {
-            // 只有在首页且是移动端（或需要缩放的小屏幕）才执行
-            function fitContent() {
-                const container = document.querySelector('.home-container');
-                if (!container) return;
-
-                // 重置 transform 以便获取自然尺寸
-                container.style.transform = 'none';
-
-                const viewportW = window.innerWidth;
-                const viewportH = window.innerHeight;
-
-                // 获取容器的自然尺寸
-                // 注意：由于设置了 padding: 20px，offsetWidth 包含了 padding
-                const contentW = container.offsetWidth;
-                const contentH = container.offsetHeight;
-
-                // 计算需要的缩放比例
-                // 留出一点边距 (Safe area)
-                const safePadding = 10;
-                const availableW = viewportW - safePadding * 2;
-                const availableH = viewportH - safePadding * 2;
-
-                const scaleX = availableW / contentW;
-                const scaleY = availableH / contentH;
-
-                // 取最小值作为缩放比例，确保完整显示
-                // 只有当需要缩小时才缩小 (scale < 1)
-                // 或者用户希望始终填满屏幕？ "缩放 在一个页面显示所有" -> 意味着即使屏幕很大，也可以保持 1 或者适当放大？
-                // 通常只处理缩小的情况，防止在大屏幕上变得过大
-                // 但是在小屏幕手机上，必须缩小
-                let scale = Math.min(scaleX, scaleY);
-
-                // 稍微限制一下放大的最大倍数，防止模糊
-                if (scale > 1.2) scale = 1.2;
-
-                // 应用缩放
-                // container.style.transformOrigin = 'center center'; // 已由 flex 居中
-                container.style.transform = `scale(${scale})`;
-            }
-
-            // 初始化
-            window.addEventListener('load', fitContent);
-            window.addEventListener('resize', fitContent);
-
-            // 针对某些特定的移动端方向变化
-            window.addEventListener('orientationchange', function () {
-                setTimeout(fitContent, 100);
-            });
-
-            // 立即执行一次
-            if (document.readyState === 'complete') {
-                fitContent();
-            }
-        })();
     </script>
 </body>
 

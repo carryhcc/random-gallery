@@ -1,21 +1,216 @@
 <!DOCTYPE html>
-<html lang="zh-CN">
+<html lang="zh-CN" data-theme="dark">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <meta name="referrer" content="no-referrer">
-    <title>随机动图 - 随机图库</title>
-    <link rel="preconnect" href="https://fonts.loli.net">
-    <link rel="preconnect" href="https://gstatic.loli.net" crossorigin>
-    <link href="https://fonts.loli.net/css2?family=Inter:wght@400;500;600;700&family=Poppins:wght@600;700&display=swap"
+    <title>随机动图</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Poppins:wght@600;700&display=swap"
           rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.loli.net/ajax/libs/font-awesome/6.4.2/css/all.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
     <link rel="stylesheet" href="/css/style.css">
     <link rel="stylesheet" href="/css/web.css" media="(min-width: 769px)">
     <link rel="stylesheet" href="/css/mobile.css" media="(max-width: 768px)">
-    <link rel="stylesheet" href="/css/pages/random-gif-web.css" media="(min-width: 769px)">
-    <link rel="stylesheet" href="/css/pages/random-gif-mobile.css" media="(max-width: 768px)">
     <script src="/js/theme.js"></script>
+    <style>
+        /* Full-screen immersive video player */
+        body { overflow: hidden; background: #000; }
+        body::before, body::after { display: none; }
+
+        .app-container {
+            position: relative;
+            width: 100vw;
+            height: var(--app-height, 100vh);
+            overflow: hidden;
+            background: #000;
+        }
+
+        .video-wrapper {
+            position: absolute;
+            inset: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            opacity: 0;
+            transition: opacity .4s ease;
+        }
+        .video-wrapper.show { opacity: 1; }
+
+        .video-wrapper video {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+            background: #000;
+        }
+        .video-wrapper video.cover {
+            object-fit: cover;
+        }
+
+        .overlay-top {
+            position: absolute;
+            top: 0; left: 0; right: 0;
+            height: 120px;
+            background: linear-gradient(to bottom, rgba(0,0,0,.5), transparent);
+            pointer-events: none;
+            z-index: 2;
+        }
+        .overlay-bottom {
+            position: absolute;
+            bottom: 0; left: 0; right: 0;
+            height: 200px;
+            background: linear-gradient(to top, rgba(0,0,0,.65), transparent);
+            pointer-events: none;
+            z-index: 2;
+        }
+
+        .back-btn {
+            position: absolute;
+            top: max(16px, env(safe-area-inset-top));
+            left: 16px;
+            z-index: 10;
+            width: 40px; height: 40px;
+            border-radius: 50%;
+            background: rgba(255,255,255,.1);
+            border: 1px solid rgba(255,255,255,.12);
+            color: #fff;
+            display: flex; align-items: center; justify-content: center;
+            font-size: .9rem;
+            cursor: pointer;
+            backdrop-filter: blur(8px);
+            transition: all .2s;
+        }
+        .back-btn:hover { background: rgba(255,255,255,.2); }
+
+        .loader {
+            position: absolute;
+            top: 50%; left: 50%;
+            transform: translate(-50%, -50%);
+            z-index: 5;
+        }
+        .loader .spinner {
+            width: 36px; height: 36px;
+            border: 3px solid rgba(255,255,255,.15);
+            border-top-color: #fff;
+            border-radius: 50%;
+            animation: spin .8s linear infinite;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+
+        .error-toast {
+            position: absolute;
+            top: 50%; left: 50%;
+            transform: translate(-50%, -50%);
+            z-index: 5;
+            padding: 10px 20px;
+            border-radius: 20px;
+            background: rgba(0,0,0,.7);
+            color: #fff;
+            font-size: .82rem;
+            display: flex; align-items: center; gap: 8px;
+            cursor: pointer;
+            backdrop-filter: blur(8px);
+        }
+
+        .info-panel {
+            position: absolute;
+            bottom: max(24px, env(safe-area-inset-bottom));
+            left: 16px;
+            right: 80px;
+            z-index: 10;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+        .author-info {
+            display: flex; align-items: center; gap: 6px;
+            color: #fff;
+            font-size: .88rem; font-weight: 600;
+            cursor: pointer;
+        }
+        .work-title {
+            color: rgba(255,255,255,.8);
+            font-size: .78rem;
+            line-height: 1.5;
+            max-height: 3em;
+            overflow: hidden;
+            cursor: pointer;
+        }
+
+        .action-bar {
+            position: absolute;
+            right: 12px;
+            bottom: max(80px, calc(env(safe-area-inset-bottom) + 60px));
+            z-index: 10;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 20px;
+        }
+        .action-btn {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 4px;
+            cursor: pointer;
+        }
+        .action-icon-bg {
+            width: 44px; height: 44px;
+            border-radius: 50%;
+            background: rgba(255,255,255,.1);
+            border: 1px solid rgba(255,255,255,.12);
+            display: flex; align-items: center; justify-content: center;
+            color: #fff;
+            font-size: .9rem;
+            backdrop-filter: blur(8px);
+            transition: all .2s;
+        }
+        .action-btn:hover .action-icon-bg {
+            background: rgba(255,255,255,.2);
+            transform: scale(1.05);
+        }
+        .action-label {
+            font-size: .65rem;
+            color: rgba(255,255,255,.7);
+        }
+
+        .gesture-hint {
+            position: absolute;
+            bottom: max(40%, env(safe-area-inset-bottom));
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 10;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 8px;
+            color: rgba(255,255,255,.6);
+            font-size: .78rem;
+            opacity: 0;
+            transition: opacity .4s;
+            pointer-events: none;
+        }
+        .gesture-hint.show { opacity: 1; }
+        .gesture-icon {
+            font-size: 1.4rem;
+            animation: gestureBounce 1.2s ease-in-out infinite;
+        }
+        @keyframes gestureBounce {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-8px); }
+        }
+
+        /* Desktop: constrain aspect ratio */
+        @media (min-width: 769px) {
+            .app-container {
+                max-width: 480px;
+                margin: 0 auto;
+                border-left: 1px solid rgba(255,255,255,.05);
+                border-right: 1px solid rgba(255,255,255,.05);
+            }
+        }
+    </style>
 </head>
 <body>
 

@@ -1,20 +1,18 @@
 <!DOCTYPE html>
-<html lang="zh-CN">
+<html lang="zh-CN" data-theme="dark">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="referrer" content="no-referrer">
-    <title>图片下载 - 随机图库</title>
-    <link rel="preconnect" href="https://fonts.loli.net">
-    <link rel="preconnect" href="https://gstatic.loli.net" crossorigin>
-    <link href="https://fonts.loli.net/css2?family=Inter:wght@400;500;600;700&family=Poppins:wght@600;700&display=swap"
+    <title>图片下载</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Poppins:wght@600;700&display=swap"
           rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.loli.net/ajax/libs/font-awesome/6.4.2/css/all.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
     <link rel="stylesheet" href="/css/style.css">
     <link rel="stylesheet" href="/css/web.css" media="(min-width: 769px)">
     <link rel="stylesheet" href="/css/mobile.css" media="(max-width: 768px)">
-    <link rel="stylesheet" href="/css/pages/download-web.css" media="(min-width: 769px)">
-    <link rel="stylesheet" href="/css/pages/download-mobile.css" media="(max-width: 768px)">
     <script src="/js/theme.js"></script>
     <style>
         /* Toggle 开关样式 */
@@ -219,6 +217,16 @@
         return match ? match[0] : null;
     }
 
+    // 防抖计时器
+    let readClipboardTimer = null;
+    const READ_DELAY = 300; // 延迟读取，等待页面完全激活
+
+    // 读取粘贴板并填充链接（带防抖）
+    function scheduleReadClipboard() {
+        if (readClipboardTimer) clearTimeout(readClipboardTimer);
+        readClipboardTimer = setTimeout(readClipboardAndFill, READ_DELAY);
+    }
+
     // 读取粘贴板并填充链接
     async function readClipboardAndFill() {
         if (!autoReadToggle.checked) return;
@@ -242,12 +250,26 @@
     // 页面加载时读取
     window.addEventListener('load', readClipboardAndFill);
 
-    // 页面切换回来时读取
+    // 页面切换回来时读取（多种事件确保移动端兼容）
     document.addEventListener('visibilitychange', () => {
         if (document.visibilityState === 'visible') {
-            readClipboardAndFill();
+            scheduleReadClipboard();
         }
     });
+
+    // window focus 事件（比 visibilitychange 更可靠）
+    window.addEventListener('focus', scheduleReadClipboard);
+
+    // pageshow 事件（处理浏览器前进后退、从后台恢复）
+    window.addEventListener('pageshow', (event) => {
+        // persisted 表示页面从 bfcache 恢复
+        if (event.persisted) {
+            scheduleReadClipboard();
+        }
+    });
+
+    // 输入框获得焦点时也尝试读取
+    urlInput.addEventListener('focus', scheduleReadClipboard);
 
     // 解析 URL
     parseBtn.addEventListener('click', async () => {

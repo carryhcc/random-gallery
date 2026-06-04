@@ -1,21 +1,17 @@
 <!DOCTYPE html>
-<html lang="zh-CN">
+<html lang="zh-CN" data-theme="dark">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>套图详情 - 随机图库</title>
-    <link rel="preconnect" href="https://fonts.loli.net">
-    <link rel="preconnect" href="https://gstatic.loli.net" crossorigin>
-    <link href="https://fonts.loli.net/css2?family=Inter:wght@400;500;600;700&family=Poppins:wght@600;700&display=swap"
+    <title>套图详情</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Poppins:wght@600;700&display=swap"
           rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.loli.net/ajax/libs/font-awesome/6.4.2/css/all.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
     <link rel="stylesheet" href="/css/style.css">
     <link rel="stylesheet" href="/css/web.css" media="(min-width: 769px)">
     <link rel="stylesheet" href="/css/mobile.css" media="(max-width: 768px)">
-    <link rel="stylesheet" href="/css/pages/pic-list-web.css" media="(min-width: 769px)">
-    <link rel="stylesheet" href="/css/pages/pic-list-mobile.css" media="(max-width: 768px)">
-    <script src="https://cdnjs.loli.net/ajax/libs/masonry/4.2.2/masonry.pkgd.min.js"></script>
-    <script src="https://cdnjs.loli.net/ajax/libs/jquery.imagesloaded/5.0.0/imagesloaded.pkgd.min.js"></script>
     <script src="/js/heic-converter.js"></script>
     <script src="/js/theme.js"></script>
 </head>
@@ -83,7 +79,6 @@
     let currentGroupName = '';
     let totalGroupCount = 0;
     const scrollThreshold = 400;
-    let msnry; // Masonry instance
 
     function updatePageTitle() {
         const pageTitle = document.getElementById('pageTitle');
@@ -185,25 +180,6 @@
             gallery.appendChild(wrapper);
             newWrappers.push(wrapper);
         });
-        
-        // 初始化或更新 Masonry
-        if (!msnry) {
-             msnry = new Masonry(gallery, {
-                itemSelector: '.masonry-item-wrapper',
-                percentPosition: true
-            });
-        } else {
-            msnry.appended(newWrappers);
-        }
-        
-        // 图片加载进度更新布局
-        if (typeof imagesLoaded === 'function') {
-            imagesLoaded(newWrappers).on('progress', function() {
-                msnry.layout();
-            }).on('always', function() {
-                checkScrollForMore();
-            });
-        }
 
         updatePageTitle();
     }
@@ -243,9 +219,6 @@
         window.addEventListener('resize', checkScrollForMore, {passive: true});
         window.addEventListener('app:page-resumed', function() {
             setTimeout(function() {
-                if (msnry) {
-                    msnry.layout();
-                }
                 checkScrollForMore();
             }, 80);
         });
