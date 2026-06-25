@@ -37,6 +37,8 @@ public class PicApiController {
 
     private final ThreadPoolExecutor threadPoolExecutor;
 
+    private static final int MAX_DOWNLOAD_LIMIT = 100;
+
     /**
      * 获取随机单张图片地址
      */
@@ -69,7 +71,13 @@ public class PicApiController {
             return;
         }
 
-        // 使用线程池并发下载（使用索引流避免 O(n) 的 indexOf 调用）
+        // 超出上限时截断
+        if (picUrlList.size() > MAX_DOWNLOAD_LIMIT) {
+            log.warn("分组 {} 图片数量 {} 超出下载上限 {}，截断处理", groupId, picUrlList.size(), MAX_DOWNLOAD_LIMIT);
+            picUrlList = picUrlList.subList(0, MAX_DOWNLOAD_LIMIT);
+        }
+
+        // 并发下载（保留索引保证顺序）
         List<CompletableFuture<ImageData>> futures = new ArrayList<>();
         for (int i = 0; i < picUrlList.size(); i++) {
             final int index = i;
@@ -85,19 +93,17 @@ public class PicApiController {
             }, threadPoolExecutor));
         }
 
-        // 等待所有下载完成
-        List<ImageData> images = futures.stream().map(CompletableFuture::join).toList();
-
-        // 设置响应
+        // 设置响应头
         response.setContentType("application/zip");
         response.setHeader("Content-Disposition", "attachment; filename=\"group_" + groupId + ".zip\"");
 
+        // 按下载完成顺序流式写 ZIP（等待各 Future 完成后立即写入，不攒内存）
         try (ZipOutputStream zipOut = new ZipOutputStream(response.getOutputStream())) {
+            List<ImageData> images = futures.stream().map(CompletableFuture::join).toList();
             for (ImageData img : images) {
-                if (img.getBytes() == null)
-                    continue;
-
-                String fileName = "image_" + (img.getIndex() + 1) + ".jpg";
+                if (img.getBytes() == null) continue;
+                String ext = inferExtension(picUrlList.get(img.getIndex()));
+                String fileName = "image_" + (img.getIndex() + 1) + ext;
                 zipOut.putNextEntry(new ZipEntry(fileName));
                 zipOut.write(img.getBytes());
                 zipOut.closeEntry();
@@ -107,6 +113,19 @@ public class PicApiController {
             log.error("ZIP 打包失败 groupId={}", groupId, e);
             writeText(response, "下载失败");
         }
+    }
+
+    private String inferExtension(String url) {
+        if (url == null) return ".jpg";
+        String path = url.contains("?") ? url.substring(0, url.indexOf('?')) : url;
+        int dot = path.lastIndexOf('.');
+        if (dot > 0 && dot < path.length() - 1) {
+            String ext = path.substring(dot).toLowerCase();
+            if (ext.matches("\\.(jpg|jpeg|png|gif|webp|heic|avif)")) {
+                return ext;
+            }
+        }
+        return ".jpg";
     }
 
     private void writeText(HttpServletResponse response, String msg) {
