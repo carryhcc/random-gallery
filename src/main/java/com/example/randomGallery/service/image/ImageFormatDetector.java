@@ -2,8 +2,8 @@ package com.example.randomGallery.service.image;
 
 import cn.hutool.core.collection.CollUtil;
 import cn.hutool.core.util.StrUtil;
-import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.ResponseEntity;
@@ -13,7 +13,6 @@ import org.springframework.web.client.RestTemplate;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 
 /**
  * 图片格式检测服务
@@ -31,15 +30,20 @@ import java.util.concurrent.Executors;
  */
 @Slf4j
 @Service
-@RequiredArgsConstructor
 public class ImageFormatDetector {
 
     private final RestTemplate restTemplate;
 
     /**
-     * 使用虚拟线程池执行并发IO任务
+     * 使用虚拟线程池执行并发IO任务（Spring管理生命周期）
      */
-    private final ExecutorService executor = Executors.newVirtualThreadPerTaskExecutor();
+    private final ExecutorService executor;
+
+    public ImageFormatDetector(RestTemplate restTemplate,
+                               @Qualifier("heicDetectorExecutor") ExecutorService executor) {
+        this.restTemplate = restTemplate;
+        this.executor = executor;
+    }
 
     /**
      * 基于URL规则快速判断是否为HEIC

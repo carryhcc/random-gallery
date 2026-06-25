@@ -57,6 +57,14 @@ public class ThreadPoolConfig {
     }
 
     /**
+     * 虚拟线程执行器（用于HEIC格式检测并发IO任务）
+     */
+    @Bean(destroyMethod = "shutdown")
+    public ExecutorService heicDetectorExecutor() {
+        return Executors.newVirtualThreadPerTaskExecutor();
+    }
+
+    /**
      * 自定义线程工厂
      */
     private static class CustomThreadFactory implements ThreadFactory {
