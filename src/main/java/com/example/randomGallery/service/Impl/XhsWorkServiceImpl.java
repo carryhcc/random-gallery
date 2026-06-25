@@ -22,11 +22,8 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
-import org.springframework.web.context.request.RequestContextHolder;
-import org.springframework.web.context.request.ServletRequestAttributes;
 import org.springframework.web.util.UriComponentsBuilder;
 
-import jakarta.servlet.http.HttpServletRequest;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -50,7 +47,7 @@ public class XhsWorkServiceImpl implements XhsWorkService {
 
     @Override
     public XhsWorkPageVO pageXhsWorksWithFilter(int page, int pageSize, String authorId, Long tagId, String str,
-                                                Integer seed) {
+                                                Integer seed, boolean skipHeicConversion) {
         // 分页查询基础表
         Page<XhsWorkBaseDO> pageParam = new Page<>(page, pageSize);
         LambdaQueryWrapper<XhsWorkBaseDO> wrapper = Wrappers.lambdaQuery();
@@ -99,7 +96,7 @@ public class XhsWorkServiceImpl implements XhsWorkService {
 
             // 【优化】提取所有将会显示的图片 URL 进行批量检测预热
             // 这样后续在 getSafetyUrl 中调用 imageService.isHeicImage 时就能直接命中缓存
-            if (!Boolean.TRUE.equals(privacyConfig.getEnabled()) && !shouldSkipHeicConversion()) {
+            if (!Boolean.TRUE.equals(privacyConfig.getEnabled()) && !skipHeicConversion) {
                 List<String> allImageUrls = allMedia.stream()
                         .filter(m -> MediaTypeEnum.IMAGE.equals(m.getMediaType()))
                         .map(XhsWorkMediaDO::getMediaUrl)
@@ -136,7 +133,7 @@ public class XhsWorkServiceImpl implements XhsWorkService {
                 if (!imageMediaList.isEmpty()) {
                     int randomIndex = ThreadLocalRandom.current().nextInt(imageMediaList.size());
                     String mediaUrl = imageMediaList.get(randomIndex).getMediaUrl();
-                    mediaUrl = getSafetyUrl(mediaUrl);
+                    mediaUrl = getSafetyUrl(mediaUrl, skipHeicConversion);
                     vo.setCoverImageUrl(mediaUrl);
                 }
                 voList.add(vo);
@@ -152,7 +149,7 @@ public class XhsWorkServiceImpl implements XhsWorkService {
     }
 
     @Override
-    public XhsWorkDetailVO getXhsWorkDetail(String workId) {
+    public XhsWorkDetailVO getXhsWorkDetail(String workId, boolean skipHeicConversion) {
         // 查询基础信息
         LambdaQueryWrapper<XhsWorkBaseDO> baseWrapper = Wrappers.lambdaQuery();
         baseWrapper.eq(XhsWorkBaseDO::getWorkId, workId);
@@ -171,7 +168,7 @@ public class XhsWorkServiceImpl implements XhsWorkService {
         List<XhsWorkMediaDO> allMedia = workMediaMapper.selectList(mediaWrapper);
 
         // 【优化】批量检测预热
-        if (!Boolean.TRUE.equals(privacyConfig.getEnabled()) && !shouldSkipHeicConversion()) {
+        if (!Boolean.TRUE.equals(privacyConfig.getEnabled()) && !skipHeicConversion) {
             List<String> imageUrls = allMedia.stream()
                     .filter(m -> MediaTypeEnum.IMAGE.equals(m.getMediaType()))
                     .map(XhsWorkMediaDO::getMediaUrl)
@@ -181,7 +178,7 @@ public class XhsWorkServiceImpl implements XhsWorkService {
 
         // 定义一个临时的lambda变量（方法内），避免重复代码
         Function<XhsWorkMediaDO, XhsWorkMediaDO> urlProcessor = m -> {
-            m.setMediaUrl(getSafetyUrl(m.getMediaUrl()));
+            m.setMediaUrl(getSafetyUrl(m.getMediaUrl(), skipHeicConversion));
             return m;
         };
 
@@ -265,17 +262,18 @@ public class XhsWorkServiceImpl implements XhsWorkService {
      * 获取安全的图片 URL
      * 如果是隐私模式，返回占位符；否则检测 HEIC 并返回转换后的 URL
      *
-     * @param url 原始 URL
+     * @param url                原始 URL
+     * @param skipHeicConversion 是否跳过 HEIC 转换（Safari 浏览器原生支持）
      * @return 处理后的 URL
      */
-    private String getSafetyUrl(String url) {
+    private String getSafetyUrl(String url, boolean skipHeicConversion) {
         // 隐私模式下返回占位符
         if (Boolean.TRUE.equals(privacyConfig.getEnabled())) {
             return privacyConfig.getPlaceholderUrl();
         }
 
         // Safari 浏览器原生支持 HEIC，跳过转换逻辑
-        if (shouldSkipHeicConversion()) {
+        if (skipHeicConversion) {
             return url;
         }
 
@@ -301,75 +299,5 @@ public class XhsWorkServiceImpl implements XhsWorkService {
                 .queryParam("url", originalUrl)
                 .build()
                 .toUriString();
-    }
-
-    /**
-     * 是否应跳过 HEIC 转换（当前仅 Safari 浏览器）
-     * 使用请求级缓存避免同一请求中重复解析 User-Agent
-     *
-     * @return true 表示跳过 HEIC 转换逻辑
-     */
-    private boolean shouldSkipHeicConversion() {
-        ServletRequestAttributes attributes =
-                (ServletRequestAttributes) RequestContextHolder.getRequestAttributes();
-        if (attributes == null) {
-            return false;
-        }
-
-        HttpServletRequest request = attributes.getRequest();
-        // 使用请求属性缓存结果，避免同一请求中重复解析 User-Agent
-        final String cacheKey = "SKIP_HEIC_CONVERSION";
-        Object cached = request.getAttribute(cacheKey);
-        if (cached instanceof Boolean) {
-            return (Boolean) cached;
-        }
-
-        boolean result = detectSafariBrowser(request);
-        request.setAttribute(cacheKey, result);
-
-        if (result) {
-            log.debug("检测到 Safari 浏览器，跳过 HEIC 转换逻辑");
-        }
-
-        return result;
-    }
-
-    /**
-     * 检测是否为 Safari 浏览器
-     * 排除 Chrome、Edge、Opera、Firefox 等基于相同引擎的浏览器
-     */
-    private boolean detectSafariBrowser(HttpServletRequest request) {
-        String userAgent = request.getHeader("User-Agent");
-        String secChUa = request.getHeader("Sec-CH-UA");
-        return isSafariBrowser(userAgent, secChUa);
-    }
-
-    static boolean isSafariBrowser(String userAgent, String secChUa) {
-        if (StrUtil.isBlank(userAgent)) {
-            return false;
-        }
-
-        String ua = userAgent.toLowerCase();
-        String chUa = StrUtil.blankToDefault(secChUa, "").toLowerCase();
-
-        if (chUa.contains("google chrome")
-                || chUa.contains("chromium")
-                || chUa.contains("microsoft edge")
-                || chUa.contains("opera")
-                || chUa.contains("firefox")) {
-            return false;
-        }
-
-        return ua.contains("safari")
-                && !ua.contains("chrome")
-                && !ua.contains("chromium")
-                && !ua.contains("crios")
-                && !ua.contains("edg")
-                && !ua.contains("edga")
-                && !ua.contains("edgios")
-                && !ua.contains("opr")
-                && !ua.contains("opios")
-                && !ua.contains("fxios")
-                && !ua.contains("firefox");
     }
 }

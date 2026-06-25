@@ -9,6 +9,7 @@ import com.example.randomGallery.entity.VO.TagVO;
 import com.example.randomGallery.entity.VO.XhsWorkDetailVO;
 import com.example.randomGallery.entity.VO.XhsWorkPageVO;
 import com.example.randomGallery.service.*;
+import com.example.randomGallery.utils.UserAgentUtils;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.bind.annotation.*;
@@ -45,14 +46,15 @@ public class XhsWorkApiController {
     @GetMapping("/list")
     public Result<XhsWorkPageVO> listWorks(
             @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "5") int size, // Default to 5 as requested
+            @RequestParam(defaultValue = "5") int size,
             @RequestParam(required = false) String authorId,
             @RequestParam(required = false) Long tagId,
             @RequestParam(required = false) String str,
-            @RequestParam(required = false) Integer seed) {
-        log.info("查询作品列表，page={}, size={}, authorId={}, tagId={}, str={}, seed={}", page, size, authorId, tagId, str,
-                seed);
-        XhsWorkPageVO result = xhsWorkService.pageXhsWorksWithFilter(page, size, authorId, tagId, str, seed);
+            @RequestParam(required = false) Integer seed,
+            @RequestHeader(value = "User-Agent", required = false) String userAgent,
+            @RequestHeader(value = "Sec-CH-UA", required = false) String secChUa) {
+        boolean skipHeicConversion = UserAgentUtils.isSafari(userAgent, secChUa);
+        XhsWorkPageVO result = xhsWorkService.pageXhsWorksWithFilter(page, size, authorId, tagId, str, seed, skipHeicConversion);
         return Result.success(result);
     }
 
@@ -80,9 +82,12 @@ public class XhsWorkApiController {
      * 查询作品详情
      */
     @GetMapping("/detail/{workId}")
-    public Result<XhsWorkDetailVO> getWorkDetail(@PathVariable String workId) {
-        log.info("查询作品详情，workId={}", workId);
-        XhsWorkDetailVO detail = xhsWorkService.getXhsWorkDetail(workId);
+    public Result<XhsWorkDetailVO> getWorkDetail(
+            @PathVariable String workId,
+            @RequestHeader(value = "User-Agent", required = false) String userAgent,
+            @RequestHeader(value = "Sec-CH-UA", required = false) String secChUa) {
+        boolean skipHeicConversion = UserAgentUtils.isSafari(userAgent, secChUa);
+        XhsWorkDetailVO detail = xhsWorkService.getXhsWorkDetail(workId, skipHeicConversion);
         if (ObjectUtil.isNull(detail)) {
             return Result.error("作品不存在");
         }
