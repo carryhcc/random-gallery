@@ -41,7 +41,7 @@ public class XhsDataSaveService {
      * 核心入库逻辑：支持事务回滚
      */
     @Transactional(rollbackFor = Exception.class)
-    @CacheEvict(value = { "authors", "tags" }, allEntries = true)
+    @CacheEvict(value = { "authors", "tags", "gifIds" }, allEntries = true)
     public void saveXhsData(String jsonStr) {
         try {
             DownLoadInfo downLoadInfo = objectMapper.readValue(jsonStr, DownLoadInfo.class);
@@ -148,7 +148,7 @@ public class XhsDataSaveService {
 
         // 3. 批量插入
         if (CollUtil.isNotEmpty(waitToInsert)) {
-            waitToInsert.forEach(workMediaMapper::insert);
+            workMediaMapper.insertBatch(waitToInsert);
             log.info("作品 {} 批量插入媒体数据 {} 条", workId, waitToInsert.size());
         }
     }

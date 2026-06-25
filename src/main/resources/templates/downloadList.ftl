@@ -84,6 +84,12 @@
 </main>
 
 <script>
+    function escHtml(s) {
+        return String(s == null ? '' : s)
+            .replace(/&/g, '&amp;').replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+    }
+
     // 变量初始化
     var searchInput = document.getElementById('searchInput');
     var searchBtn = document.getElementById('searchBtn');
@@ -152,7 +158,6 @@
             var url = '/api/xhsWork/list?page=' + page + '&size=10';
             if (currentAuthorId) url += '&authorId=' + encodeURIComponent(currentAuthorId);
             if (currentTagId) url += '&tagId=' + encodeURIComponent(currentTagId);
-            if (currentTagId) url += '&tagId=' + encodeURIComponent(currentTagId);
             if (currentSearchStr) url += '&str=' + encodeURIComponent(currentSearchStr);
             // 只有在没有特定筛选条件（不是作者也不是标签筛选）且不是搜索时，才使用随机排序
             // 如果用户进行了筛选，通常期望按时间倒序查看相关内容，或者也可以随机，这里先对全列表应用随机
@@ -190,14 +195,14 @@
         card.className = 'masonry-item';
         card.onclick = function() { window.location.href = '/downloadDetail?workId=' + encodeURIComponent(work.workId); };
 
-        var title = work.workTitle || '无标题';
-        var author = work.authorNickname || '未知作者';
+        var title = escHtml(work.workTitle || '无标题');
+        var author = escHtml(work.authorNickname || '未知作者');
         var imgCount = work.imageCount || 0;
         var coverUrl = work.coverImageUrl || '';
 
         var html = '';
         if (coverUrl) {
-            html += '<img src="" data-src="' + coverUrl + '" alt="' + title + '" onerror="this.onerror=null;this.src=\'/icons/404.svg\';">';
+            html += '<img src="" data-src="' + escHtml(coverUrl) + '" alt="' + title + '" onerror="this.onerror=null;this.src=\'/icons/404.svg\';">';
         }
         html += '<div class="masonry-item-info">';
         html += '  <div class="masonry-item-title">' + title + '</div>';
@@ -231,7 +236,7 @@
             return '<div class="recommendation-item type-author ' + active + '" onclick="selectAuthor(\'' + a.authorId + '\')">' +
                 '<div class="recommendation-name">' +
                     '<i class="fas fa-user-circle"></i>' +
-                    '<span class="recommendation-title">' + (a.authorNickname || a.authorId) + '</span>' +
+                    '<span class="recommendation-title">' + escHtml(a.authorNickname || a.authorId) + '</span>' +
                     '<span class="recommendation-count-inline"><i class="fas fa-images"></i>' + (a.workCount || 0) + '</span>' +
                 '</div>' +
                 '</div>';
@@ -250,7 +255,7 @@
             return '<div class="recommendation-item type-tag ' + active + '" onclick="selectTag(' + t.id + ')">' +
                 '<div class="recommendation-name">' +
                     '<i class="fas fa-hashtag"></i>' +
-                    '<span class="recommendation-title">' + t.tagName + '</span>' +
+                    '<span class="recommendation-title">' + escHtml(t.tagName) + '</span>' +
                     '<span class="recommendation-count-inline"><i class="fas fa-images"></i>' + (t.workCount || 0) + '</span>' +
                 '</div>' +
                 '</div>';
@@ -404,7 +409,7 @@
                                     return '<div class="recommendation-item type-tag ' + active + '" onclick="selectTag(' + t.id + ')">' +
                                         '<div class="recommendation-name">' +
                                         '<i class="fas fa-hashtag"></i>' +
-                                        '<span class="recommendation-title">' + t.tagName + '</span>' +
+                                        '<span class="recommendation-title">' + escHtml(t.tagName) + '</span>' +
                                         '<span class="recommendation-count-inline"><i class="fas fa-images"></i>' + (t.workCount || 0) + '</span>' +
                                         '</div></div>';
                                 }).join('');

@@ -10,6 +10,7 @@ import com.example.randomGallery.service.mapper.GroupServiceMapper;
 import com.example.randomGallery.service.mapper.PicServiceMapper;
 import com.example.randomGallery.utils.ResettableTimer;
 import jakarta.annotation.PostConstruct;
+import jakarta.annotation.PreDestroy;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -80,7 +81,7 @@ public class CacheService {
     public PicCount getDefaultEnvInfo() {
         PicCount picCount = new PicCount();
         picCount.setEnv(getDefaultEnv());
-        picCount.setGroupCount(maxGroupId);
+        picCount.setGroupCount((long) totalGroupCount);
         picCount.setPicCount((long) validPicIds.size());
         return picCount;
     }
@@ -106,6 +107,13 @@ public class CacheService {
     private void initTimer() {
         if (timerEnabled) {
             this.resettableTimer = new ResettableTimer(this, timerDelayMinutes, timerTargetEnv);
+        }
+    }
+
+    @PreDestroy
+    public void destroy() {
+        if (resettableTimer != null) {
+            resettableTimer.close();
         }
     }
 
