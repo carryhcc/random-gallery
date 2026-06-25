@@ -23,7 +23,7 @@ public class CacheConfig {
                 buildCache("tags", 1, 24),
                 buildCache("gifIds", 1, 24),
                 buildCache("heiCDetectCache", 5000, 24),
-                buildCache("heiCConvertCache", 50, 1)
+                buildWeightedCache("heiCConvertCache", 100L * 1024 * 1024, 1)
         ));
         return manager;
     }
@@ -32,6 +32,19 @@ public class CacheConfig {
         return new CaffeineCache(name,
                 Caffeine.newBuilder()
                         .maximumSize(maxSize)
+                        .expireAfterWrite(ttlHours, TimeUnit.HOURS)
+                        .recordStats()
+                        .build());
+    }
+
+    private CaffeineCache buildWeightedCache(String name, long maxWeightBytes, long ttlHours) {
+        return new CaffeineCache(name,
+                Caffeine.newBuilder()
+                        .maximumWeight(maxWeightBytes)
+                        .weigher((Object key, Object value) -> {
+                            if (value instanceof byte[] bytes) return bytes.length;
+                            return 1;
+                        })
                         .expireAfterWrite(ttlHours, TimeUnit.HOURS)
                         .recordStats()
                         .build());
