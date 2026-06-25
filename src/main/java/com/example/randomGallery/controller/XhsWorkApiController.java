@@ -53,8 +53,10 @@ public class XhsWorkApiController {
             @RequestParam(required = false) String str,
             @RequestParam(required = false) Integer seed,
             @RequestHeader(value = "User-Agent", required = false) String userAgent,
-            @RequestHeader(value = "Sec-CH-UA", required = false) String secChUa) {
-        boolean skipHeicConversion = UserAgentUtils.isSafari(userAgent, secChUa);
+            @RequestHeader(value = "Sec-CH-UA", required = false) String secChUa,
+            @RequestHeader(value = "X-Client-Native", required = false) String clientNative) {
+        boolean skipHeicConversion = UserAgentUtils.isSafari(userAgent, secChUa)
+                || "android".equalsIgnoreCase(clientNative);
         XhsWorkPageVO result = xhsWorkService.pageXhsWorksWithFilter(page, size, authorId, tagId, str, seed, skipHeicConversion);
         return Result.success(result);
     }
@@ -97,8 +99,10 @@ public class XhsWorkApiController {
     public Result<XhsWorkDetailVO> getWorkDetail(
             @PathVariable String workId,
             @RequestHeader(value = "User-Agent", required = false) String userAgent,
-            @RequestHeader(value = "Sec-CH-UA", required = false) String secChUa) {
-        boolean skipHeicConversion = UserAgentUtils.isSafari(userAgent, secChUa);
+            @RequestHeader(value = "Sec-CH-UA", required = false) String secChUa,
+            @RequestHeader(value = "X-Client-Native", required = false) String clientNative) {
+        boolean skipHeicConversion = UserAgentUtils.isSafari(userAgent, secChUa)
+                || "android".equalsIgnoreCase(clientNative);
         XhsWorkDetailVO detail = xhsWorkService.getXhsWorkDetail(workId, skipHeicConversion);
         if (ObjectUtil.isNull(detail)) {
             throw new NotFoundException("作品不存在");
