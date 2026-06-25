@@ -15,7 +15,7 @@ import com.example.randomgallery.android.databinding.ActivityMainBinding
 import com.example.randomgallery.android.data.local.AppPrefs
 import com.example.randomgallery.android.ui.download.DownloadManageViewModel
 import com.example.randomgallery.android.util.applySystemBarsPadding
-import com.google.android.material.snackbar.Snackbar
+import com.example.randomgallery.android.util.showTopMessage
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 
@@ -86,7 +86,7 @@ class MainActivity : AppCompatActivity() {
                         finish()
                     } else {
                         backPressedAt = now
-                        Snackbar.make(binding.root, "再按一次返回键退出", Snackbar.LENGTH_SHORT).show()
+                        showTopMessage("再按一次返回键退出", 2000)
                     }
                 } else {
                     navController.navigateUp()
@@ -116,7 +116,7 @@ class MainActivity : AppCompatActivity() {
             } else {
                 "提交失败：${result.exceptionOrNull()?.message}"
             }
-            Snackbar.make(binding.root, msg, Snackbar.LENGTH_LONG).show()
+            showTopMessage(msg)
         }
     }
 }
