@@ -13,7 +13,12 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 /**
  * 标签服务实现类
@@ -90,18 +95,54 @@ public class TagServiceImpl implements TagService {
             return;
         }
 
-        // 按空格拆分标签
-        String[] tagArray = workTags.trim().split("\\s+");
+        List<String> tagNames = Arrays.stream(workTags.trim().split("\\s+"))
+                .map(String::trim)
+                .filter(s -> !s.isEmpty())
+                .distinct()
+                .collect(Collectors.toList());
 
-        for (String tagName : tagArray) {
-            tagName = tagName.trim();
-            if (!tagName.isEmpty()) {
-                // 获取或创建标签
-                Long tagId = getOrCreateTag(tagName);
-                if (tagId != null) {
-                    // 创建标签作品关联
-                    createTagWorkRelation(tagId, workId);
+        if (tagNames.isEmpty()) {
+            return;
+        }
+
+        // Batch query existing tags (1 SELECT instead of N)
+        List<TagDO> existingTags = tagMapper.selectList(
+                new QueryWrapper<TagDO>().in("tag_name", tagNames));
+        Map<String, Long> nameToId = existingTags.stream()
+                .collect(Collectors.toMap(TagDO::getTagName, TagDO::getId));
+
+        // Insert missing tags individually (safe under concurrent transactions)
+        for (String tagName : tagNames) {
+            if (!nameToId.containsKey(tagName)) {
+                Long id = getOrCreateTag(tagName);
+                if (id != null) {
+                    nameToId.put(tagName, id);
                 }
+            }
+        }
+
+        List<Long> allTagIds = new ArrayList<>(nameToId.values());
+        if (allTagIds.isEmpty()) {
+            return;
+        }
+
+        // Batch query existing relations (1 SELECT instead of N)
+        Set<Long> existingTagIds = tagWorkMapper.selectList(
+                        new QueryWrapper<TagWorkDO>()
+                                .eq("work_id", workId)
+                                .in("tag_id", allTagIds))
+                .stream()
+                .map(TagWorkDO::getTagId)
+                .collect(Collectors.toSet());
+
+        // Insert only missing relations
+        for (Long tagId : allTagIds) {
+            if (!existingTagIds.contains(tagId)) {
+                TagWorkDO rel = new TagWorkDO();
+                rel.setTagId(tagId);
+                rel.setWorkId(workId);
+                rel.setCreateTime(LocalDateTime.now());
+                tagWorkMapper.insert(rel);
             }
         }
     }
