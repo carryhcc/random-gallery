@@ -7,7 +7,7 @@ import com.example.randomGallery.entity.VO.TagVO;
 import com.example.randomGallery.service.TagService;
 import com.example.randomGallery.service.mapper.TagMapper;
 import com.example.randomGallery.service.mapper.TagWorkMapper;
-import org.springframework.beans.factory.annotation.Autowired;
+import lombok.RequiredArgsConstructor;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -19,13 +19,12 @@ import java.util.List;
  * 标签服务实现类
  */
 @Service
+@RequiredArgsConstructor
 public class TagServiceImpl implements TagService {
 
-    @Autowired
-    private TagMapper tagMapper;
+    private final TagMapper tagMapper;
 
-    @Autowired
-    private TagWorkMapper tagWorkMapper;
+    private final TagWorkMapper tagWorkMapper;
 
     @Override
     @Cacheable(value = "tags", unless = "#result == null || #result.isEmpty()")
