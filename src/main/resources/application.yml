@@ -22,7 +22,7 @@ spring:
       max-lifetime: 1800000
       pool-name: RandomGallery-HikariPool
   config:
-    import: classpath:db.yaml
+    import: optional:classpath:db.yaml
   freemarker:
     template-loader-path: classpath:/templates/
     suffix: .ftl
@@ -64,3 +64,11 @@ cache:
 
 admin:
   allowed-ips: "127.0.0.1,0:0:0:0:0:0:0:1,::1"
+
+# 当 db.yaml 不存在时（如 Docker 容器）从环境变量读取
+db:
+  host: ${DB_HOST:localhost}
+  port: ${DB_PORT:3306}
+  name: ${DB_NAME:testPic}
+  username: ${DB_USERNAME:pic}
+  password: ${DB_PASSWORD:pic}
