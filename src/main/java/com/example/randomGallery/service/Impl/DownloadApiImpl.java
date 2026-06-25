@@ -77,7 +77,7 @@ public class DownloadApiImpl implements DownloadApi {
      * 核心入库逻辑：支持事务回滚
      */
     @Transactional(rollbackFor = Exception.class)
-    @CacheEvict(value = { "authors", "tags" }, allEntries = true)
+    @CacheEvict(value = { "authors", "tags", "gifIds" }, allEntries = true)
     public void saveXhsData(String jsonStr) {
         try {
             DownLoadInfo downLoadInfo = objectMapper.readValue(jsonStr, DownLoadInfo.class);

@@ -20,6 +20,7 @@ import com.example.randomGallery.service.mapper.XhsWorkBaseMapper;
 import com.example.randomGallery.service.mapper.XhsWorkMediaMapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 import org.springframework.web.context.request.RequestContextHolder;
 import org.springframework.web.context.request.ServletRequestAttributes;
@@ -225,10 +226,17 @@ public class XhsWorkServiceImpl implements XhsWorkService {
 
     @Override
     public RandomGifVO getRandomGif() {
-        return workMediaMapper.randomGifInfo();
+        List<Long> ids = getAllGifIds();
+        if (ids == null || ids.isEmpty()) {
+            log.warn("数据库中没有可用的GIF");
+            return null;
+        }
+        Long randomId = ids.get(ThreadLocalRandom.current().nextInt(ids.size()));
+        return workMediaMapper.getGifById(randomId);
     }
 
     @Override
+    @Cacheable(value = "gifIds", key = "'all'")
     public List<Long> getAllGifIds() {
         // 查询所有GIF类型且未删除的媒体ID
         LambdaQueryWrapper<XhsWorkMediaDO> wrapper = Wrappers.lambdaQuery();
