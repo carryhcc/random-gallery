@@ -34,9 +34,17 @@ public interface TagService {
 
     /**
      * 处理作品标签（解析work_tags字段并创建关联）
-     * 
+     *
      * @param workTags 作品标签字符串（空格分隔）
      * @param workId   作品ID
      */
     void processWorkTags(String workTags, String workId);
+
+    /**
+     * 根据关键词搜索标签
+     *
+     * @param keyword 搜索关键词
+     * @return 匹配的标签列表（最多20条，按作品数量降序）
+     */
+    List<TagVO> searchTags(String keyword);
 }

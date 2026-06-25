@@ -62,6 +62,10 @@
                 <h3><i class="fas fa-tag"></i> 标签推荐</h3>
                 <button class="refresh-btn" onclick="refreshTags()"><i class="fas fa-sync-alt"></i> <span>下一批</span></button>
             </div>
+            <div class="tag-search-wrapper" style="margin: 8px 0;">
+                <input type="text" id="tagSearchInput" placeholder="搜索标签..." autocomplete="off"
+                       style="width: 100%; padding: 6px 10px; border-radius: 6px; border: 1px solid var(--color-border); background: var(--color-bg-secondary); color: var(--color-text); font-size: 13px; box-sizing: border-box;">
+            </div>
             <div id="tagRecommendations" class="recommendation-grid"></div>
             <button id="clearFilterBtn" class="clear-filter-btn"><i class="fas fa-times-circle"></i> <span>清除筛选</span></button>
         </div>
@@ -306,7 +310,7 @@
         try {
             const [aRes, tRes] = await Promise.all([
                 fetch('/api/xhsWork/authors').then(r => r.json()),
-                fetch('/api/xhsWork/tags').then(r => r.json())
+                fetch('/api/xhsWork/tags?limit=50').then(r => r.json())
             ]);
             if(aRes.code === 200) allAuthors = aRes.data;
             if(tRes.code === 200) allTags = tRes.data;
@@ -323,6 +327,15 @@
                 const tagObj = allTags.find(t => t.tagName === tagName);
                 if (tagObj) {
                     currentTagId = tagObj.id;
+                } else {
+                    // Tag not in top 50, search for it
+                    try {
+                        const searchRes = await fetch('/api/xhsWork/tags/search?q=' + encodeURIComponent(tagName)).then(r => r.json());
+                        if (searchRes.code === 200 && searchRes.data) {
+                            const found = searchRes.data.find(t => t.tagName === tagName);
+                            if (found) currentTagId = found.id;
+                        }
+                    } catch(e) {}
                 }
             }
             
@@ -364,6 +377,42 @@
                 manageLayout();
             }, 80);
         });
+
+        // Tag search with debounce
+        var tagSearchTimeout = null;
+        var tagSearchInput = document.getElementById('tagSearchInput');
+        if (tagSearchInput) {
+            tagSearchInput.addEventListener('input', function() {
+                clearTimeout(tagSearchTimeout);
+                var q = tagSearchInput.value.trim();
+                if (!q) {
+                    displayTagRecommendations();
+                    return;
+                }
+                tagSearchTimeout = setTimeout(function() {
+                    fetch('/api/xhsWork/tags/search?q=' + encodeURIComponent(q))
+                        .then(function(r) { return r.json(); })
+                        .then(function(res) {
+                            if (res.code === 200 && res.data) {
+                                var container = document.getElementById('tagRecommendations');
+                                if (!res.data.length) {
+                                    container.innerHTML = '<div class="recommendation-empty">未找到标签</div>';
+                                    return;
+                                }
+                                container.innerHTML = res.data.map(function(t) {
+                                    var active = currentTagId === t.id ? 'active' : '';
+                                    return '<div class="recommendation-item type-tag ' + active + '" onclick="selectTag(' + t.id + ')">' +
+                                        '<div class="recommendation-name">' +
+                                        '<i class="fas fa-hashtag"></i>' +
+                                        '<span class="recommendation-title">' + t.tagName + '</span>' +
+                                        '<span class="recommendation-count-inline"><i class="fas fa-images"></i>' + (t.workCount || 0) + '</span>' +
+                                        '</div></div>';
+                                }).join('');
+                            }
+                        });
+                }, 300);
+            });
+        }
 
         loadPage(true);
     });

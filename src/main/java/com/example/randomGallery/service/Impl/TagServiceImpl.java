@@ -16,6 +16,7 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Collections;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -86,6 +87,14 @@ public class TagServiceImpl implements TagService {
             tagWorkDO.setCreateTime(LocalDateTime.now());
             tagWorkMapper.insert(tagWorkDO);
         }
+    }
+
+    @Override
+    public List<TagVO> searchTags(String keyword) {
+        if (keyword == null || keyword.trim().isEmpty()) {
+            return Collections.emptyList();
+        }
+        return tagMapper.selectByKeyword(keyword.trim());
     }
 
     @Override

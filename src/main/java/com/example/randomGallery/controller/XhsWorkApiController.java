@@ -70,12 +70,23 @@ public class XhsWorkApiController {
     }
 
     /**
-     * 获取所有标签列表
+     * 获取标签列表（支持 limit 参数限制返回数量）
      */
     @GetMapping("/tags")
-    public Result<List<TagVO>> getTags() {
-        log.info("获取标签列表");
+    public Result<List<TagVO>> getTags(@RequestParam(required = false) Integer limit) {
         List<TagVO> tags = tagService.getAllTags();
+        if (limit != null && limit > 0 && limit < tags.size()) {
+            tags = tags.subList(0, limit);
+        }
+        return Result.success(tags);
+    }
+
+    /**
+     * 根据关键词搜索标签
+     */
+    @GetMapping("/tags/search")
+    public Result<List<TagVO>> searchTags(@RequestParam String q) {
+        List<TagVO> tags = tagService.searchTags(q);
         return Result.success(tags);
     }
 

@@ -3,12 +3,25 @@
 <mapper namespace="com.example.randomGallery.service.mapper.TagMapper">
 
     <select id="selectTagsWithWorkCount" resultType="com.example.randomGallery.entity.VO.TagVO">
-        SELECT t.id, 
-               t.tag_name as tagName, 
+        SELECT t.id,
+               t.tag_name as tagName,
                COUNT(tw.work_id) as workCount
         FROM tags t
         LEFT JOIN tag_work tw ON t.id = tw.tag_id
         GROUP BY t.id, t.tag_name
+        ORDER BY workCount DESC
+    </select>
+
+    <select id="selectByKeyword" resultType="com.example.randomGallery.entity.VO.TagVO">
+        SELECT t.id,
+               t.tag_name AS tagName,
+               COUNT(tw.work_id) AS workCount
+        FROM tags t
+        LEFT JOIN tag_work tw ON t.id = tw.tag_id
+        WHERE t.tag_name LIKE CONCAT('%', #{keyword}, '%')
+        GROUP BY t.id, t.tag_name
+        ORDER BY workCount DESC
+        LIMIT 20
     </select>
 
 </mapper>
