@@ -16,7 +16,9 @@ public class WebMvcConfig implements WebMvcConfigurer {
         registry.addInterceptor(adminIpInterceptor)
                 .addPathPatterns(
                         "/api/xhsWork/migrate",
-                        "/api/system/env/**"
+                        "/api/system/env/dev",
+                        "/api/system/env/test",
+                        "/api/system/env/prod"
                 );
     }
 }
