@@ -1,7 +1,6 @@
 package com.example.randomGallery.service.Impl;
 
 import cn.hutool.core.bean.BeanUtil;
-import cn.hutool.core.util.ObjectUtil;
 import com.example.randomGallery.entity.DO.GroupDO;
 import com.example.randomGallery.entity.QO.GroupQry;
 import com.example.randomGallery.entity.VO.GroupPageVO;
@@ -34,7 +33,9 @@ public class GroupServiceApiImpl implements GroupServiceApi {
     @Override
     public GroupVO queryGroupById(Long groupId) {
         GroupDO groupDO = groupServiceMapper.selectById(groupId);
-        ObjectUtil.defaultIfNull(groupDO, new GroupDO());
+        if (groupDO == null) {
+            return new GroupVO();
+        }
         return BeanUtil.copyProperties(groupDO, GroupVO.class);
     }
 

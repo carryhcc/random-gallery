@@ -15,6 +15,9 @@
             and group_id = #{qry.groupId}
         </if>
     </select>
+    <select id="selectAllValidPicIds" resultType="java.lang.Long">
+        SELECT id FROM pic_info WHERE is_delete = 0 ORDER BY id
+    </select>
     <select id="queryPicCountInfo" resultType="com.example.randomGallery.entity.VO.GroupVO">
         SELECT
             p.pic_url AS groupUrl,

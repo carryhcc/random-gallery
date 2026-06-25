@@ -111,6 +111,11 @@ public class CacheService {
 
         log.info("图片ID缓存完成 - 最小值: {}, 最大值: {}", minId, maxId);
 
+        // 加载所有有效 ID 到内存，用于随机命中
+        List<Long> ids = picServiceMapper.selectAllValidPicIds();
+        this.validPicIds = Collections.unmodifiableList(ids);
+        log.info("有效图片ID列表缓存完成，共 {} 条", ids.size());
+
         // 缓存分组ID (from pic_info)
         PicDO maxGroupPic = picServiceMapper
                 .selectOne(new QueryWrapper<PicDO>().select("group_id").orderByDesc("group_id").last("LIMIT 1"));
@@ -124,18 +129,15 @@ public class CacheService {
     }
 
     /**
-     * 获取随机图片ID
+     * 获取随机图片ID（从有效 ID 列表中随机取，保证命中）
      */
     public Long getRandomId() {
-        if (minId == null || maxId == null) {
-            log.warn("图片ID缓存未初始化，返回null");
+        List<Long> ids = validPicIds;
+        if (ids == null || ids.isEmpty()) {
+            log.warn("有效图片ID缓存为空，返回null");
             return null;
         }
-        if (minId > maxId) {
-            log.warn("图片ID范围无效 (min: {}, max: {})", minId, maxId);
-            return null;
-        }
-        return ThreadLocalRandom.current().nextLong(minId, maxId + 1);
+        return ids.get(ThreadLocalRandom.current().nextInt(ids.size()));
     }
 
     /**
@@ -191,6 +193,9 @@ public class CacheService {
             log.debug("定时器已重置");
         }
     }
+
+    // 内存存储有效图片 ID 列表，用于保证随机命中
+    private volatile List<Long> validPicIds = Collections.emptyList();
 
     // 内存存储随机序列
     private volatile List<Long> shuffledSeq = Collections.emptyList();

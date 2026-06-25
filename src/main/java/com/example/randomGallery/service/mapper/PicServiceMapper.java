@@ -9,6 +9,8 @@ import com.example.randomGallery.entity.VO.PicVO;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
 
+import java.util.List;
+
 @Mapper
 public interface PicServiceMapper extends BaseMapper<PicDO> {
 
@@ -18,4 +20,9 @@ public interface PicServiceMapper extends BaseMapper<PicDO> {
     IPage<PicVO> selectPicPage(IPage<PicVO> page, @Param("qry") PicQry qry);
 
     GroupVO queryPicCountInfo(@Param("groupId") Long groupId);
+
+    /**
+     * 查询所有有效图片 ID（用于随机取图）
+     */
+    List<Long> selectAllValidPicIds();
 }
