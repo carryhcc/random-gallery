@@ -19,7 +19,7 @@ public class EnvContext {
 
     @Getter
     @Setter
-    private String currentEnv;
+    private volatile String currentEnv;
 
     @PostConstruct
     public void init() {
