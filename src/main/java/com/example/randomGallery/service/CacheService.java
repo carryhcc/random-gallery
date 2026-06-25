@@ -71,7 +71,7 @@ public class CacheService {
         PicCount picCount = new PicCount();
         picCount.setEnv(getDefaultEnv());
         picCount.setGroupCount(maxGroupId);
-        picCount.setPicCount(maxId);
+        picCount.setPicCount((long) validPicIds.size());
         return picCount;
     }
 

@@ -97,7 +97,7 @@ public class PicApiController {
         response.setContentType("application/zip");
         response.setHeader("Content-Disposition", "attachment; filename=\"group_" + groupId + ".zip\"");
 
-        // 按下载完成顺序流式写 ZIP（等待各 Future 完成后立即写入，不攒内存）
+        // 等待所有下载完成后写 ZIP（峰值内存为 N 张图片字节之和，上限 MAX_DOWNLOAD_LIMIT 张）
         try (ZipOutputStream zipOut = new ZipOutputStream(response.getOutputStream())) {
             List<ImageData> images = futures.stream().map(CompletableFuture::join).toList();
             for (ImageData img : images) {

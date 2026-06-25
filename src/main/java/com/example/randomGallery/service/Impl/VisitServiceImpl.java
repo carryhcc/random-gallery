@@ -91,7 +91,6 @@ public class VisitServiceImpl implements VisitService {
 
     private VisitUserDO getOrCreateVisitUser(String uuid, String ip, String userAgentStr,
                                              UserAgent userAgent) {
-        // 加 synchronized 简单防止高并发下同一UUID瞬间创建多个用户
 
         // 先根据UUID查询
         VisitUserDO visitUser = visitUserMapper.selectOne(new LambdaQueryWrapper<VisitUserDO>()
@@ -122,9 +121,13 @@ public class VisitServiceImpl implements VisitService {
             try {
                 visitUserMapper.insert(visitUser);
             } catch (Exception e) {
-                // 忽略唯一约束冲突，重新查询
+                // 唯一约束冲突，重新查询
                 visitUser = visitUserMapper
                         .selectOne(new LambdaQueryWrapper<VisitUserDO>().eq(VisitUserDO::getUuid, uuid));
+                if (visitUser == null) {
+                    log.error("唯一约束冲突后仍无法查询到用户, uuid={}", uuid, e);
+                    throw new RuntimeException("无法创建或查询访客用户", e);
+                }
             }
         } else {
             // 更新老用户
