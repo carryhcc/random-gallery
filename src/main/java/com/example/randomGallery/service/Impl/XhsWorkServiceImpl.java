@@ -7,7 +7,6 @@ import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.example.randomGallery.config.PrivacyConfig;
-import com.example.randomGallery.entity.DO.TagWorkDO;
 import com.example.randomGallery.entity.DO.XhsWorkBaseDO;
 import com.example.randomGallery.entity.DO.XhsWorkMediaDO;
 import com.example.randomGallery.entity.VO.RandomGifVO;
@@ -17,7 +16,6 @@ import com.example.randomGallery.entity.VO.XhsWorkPageVO;
 import com.example.randomGallery.entity.common.MediaTypeEnum;
 import com.example.randomGallery.service.ImageService;
 import com.example.randomGallery.service.XhsWorkService;
-import com.example.randomGallery.service.mapper.TagWorkMapper;
 import com.example.randomGallery.service.mapper.XhsWorkBaseMapper;
 import com.example.randomGallery.service.mapper.XhsWorkMediaMapper;
 import lombok.RequiredArgsConstructor;
@@ -46,7 +44,6 @@ public class XhsWorkServiceImpl implements XhsWorkService {
 
     private final XhsWorkBaseMapper workBaseMapper;
     private final XhsWorkMediaMapper workMediaMapper;
-    private final TagWorkMapper tagWorkMapper;
     private final PrivacyConfig privacyConfig;
     private final ImageService imageService;
 
@@ -68,22 +65,9 @@ public class XhsWorkServiceImpl implements XhsWorkService {
         if (ObjectUtil.isNotEmpty(authorId)) {
             wrapper.eq(ObjectUtil.isNotNull(authorId), XhsWorkBaseDO::getAuthorId, authorId);
         }
-        // 如果指定了标签ID，需要通过tag_work关联表查询work_id列表
+        // 如果指定了标签ID，使用子查询避免全量加载到内存
         if (ObjectUtil.isNotEmpty(tagId)) {
-            // 查询tag_work表获取该标签关联的所有work_id
-            LambdaQueryWrapper<TagWorkDO> tagWorkWrapper = Wrappers.lambdaQuery();
-            tagWorkWrapper.eq(TagWorkDO::getTagId, tagId);
-            List<TagWorkDO> tagWorkList = tagWorkMapper.selectList(tagWorkWrapper);
-            if (CollUtil.isEmpty(tagWorkList)) {
-                XhsWorkPageVO emptyResult = new XhsWorkPageVO();
-                emptyResult.setWorks(new ArrayList<>());
-                emptyResult.setHasMore(false);
-                return emptyResult;
-            }
-            // 提取work_id列表
-            List<String> workIds = tagWorkList.stream().map(TagWorkDO::getWorkId).collect(Collectors.toList());
-            // 添加work_id的in条件
-            wrapper.in(XhsWorkBaseDO::getWorkId, workIds);
+            wrapper.inSql(XhsWorkBaseDO::getWorkId, "SELECT work_id FROM tag_work WHERE tag_id = " + tagId);
         }
         // 添加字符串查询条件
         if (StrUtil.isNotEmpty(str)) {
