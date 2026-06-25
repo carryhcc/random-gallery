@@ -76,6 +76,16 @@ public class GlobalExceptionHandler {
     }
 
     /**
+     * 处理资源未找到异常
+     */
+    @ExceptionHandler(NotFoundException.class)
+    public ResponseEntity<Result<Void>> handleNotFoundException(NotFoundException e) {
+        log.warn("资源未找到: {}", e.getMessage());
+        return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                .body(Result.error(404, e.getMessage()));
+    }
+
+    /**
      * 处理运行时异常
      */
     @ExceptionHandler(RuntimeException.class)

@@ -9,6 +9,7 @@ import com.example.randomGallery.entity.VO.TagVO;
 import com.example.randomGallery.entity.VO.XhsWorkDetailVO;
 import com.example.randomGallery.entity.VO.XhsWorkPageVO;
 import com.example.randomGallery.service.*;
+import com.example.randomGallery.exception.NotFoundException;
 import com.example.randomGallery.utils.UserAgentUtils;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -89,7 +90,7 @@ public class XhsWorkApiController {
         boolean skipHeicConversion = UserAgentUtils.isSafari(userAgent, secChUa);
         XhsWorkDetailVO detail = xhsWorkService.getXhsWorkDetail(workId, skipHeicConversion);
         if (ObjectUtil.isNull(detail)) {
-            return Result.error("作品不存在");
+            throw new NotFoundException("作品不存在");
         }
         return Result.success(detail);
     }
@@ -143,7 +144,7 @@ public class XhsWorkApiController {
         log.info("根据ID获取GIF详情: {}", id);
         RandomGifVO gif = xhsWorkService.getGifById(id);
         if (gif == null) {
-            return Result.error("未找到对应的GIF");
+            throw new NotFoundException("未找到对应的GIF");
         }
         return Result.success(gif);
     }
