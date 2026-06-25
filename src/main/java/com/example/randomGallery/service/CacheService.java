@@ -193,34 +193,36 @@ public class CacheService {
     }
 
     // 内存存储随机序列
-    private List<Long> shuffledSeq;
+    private volatile List<Long> shuffledSeq = Collections.emptyList();
 
     /**
-     * 获取随机序列的不可变副本，防止外部修改
+     * 获取随机序列（已是不可变列表，直接返回）
      */
     public List<Long> getShuffledSeq() {
-        return shuffledSeq != null ? Collections.unmodifiableList(shuffledSeq) : Collections.emptyList();
+        return shuffledSeq;
     }
     // 总图片数
     @Getter
-    public Integer totalImageCount;
+    private volatile Integer totalImageCount = 0;
     // 总分组数
     @Getter
-    public Integer totalGroupCount;
+    private volatile Integer totalGroupCount = 0;
 
     /**
      * 初始化随机序列和总图片数（懒加载：首次调用时初始化）
      */
-    public void buildGroupIDList() {
+    public synchronized void buildGroupIDList() {
         // 从数据库中查询所有实际存在的group_id
         List<Object> groupIds = groupServiceMapper.selectObjs(new QueryWrapper<GroupDO>().select("group_id"));
 
-        List<Long> groupIdList = groupIds.stream().map(obj -> Convert.toLong(obj.toString())).collect(Collectors.toList());
+        List<Long> groupIdList = groupIds.stream()
+                .map(obj -> Convert.toLong(obj.toString()))
+                .collect(Collectors.toList());
 
         totalGroupCount = groupIdList.size();
-        // 打乱顺序
         Collections.shuffle(groupIdList);
-        shuffledSeq = groupIdList;
+        // 赋值不可变列表，读线程拿到引用后不受影响
+        shuffledSeq = Collections.unmodifiableList(groupIdList);
         log.info("初始化随机数列: {}", totalGroupCount);
     }
 }
