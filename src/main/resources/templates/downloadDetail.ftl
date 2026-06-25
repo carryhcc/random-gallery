@@ -116,6 +116,12 @@
     let touchStartX = 0;
     let touchEndX = 0;
 
+    function escHtml(s) {
+        return String(s == null ? '' : s)
+            .replace(/&/g, '&amp;').replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+    }
+
     function showToast(message, type = 'success') {
         clearTimeout(toastTimer);
         toast.textContent = message;
@@ -208,7 +214,7 @@
         if (!tags || tags.trim() === '') return '';
         const tagArray = tags.trim().split(/\s+/);
         return tagArray.map(function(tag) {
-            return '<span class="tag clickable" data-tag-name="' + tag + '">' + tag + '</span>';
+            return '<span class="tag clickable" data-tag-name="' + escHtml(tag) + '">' + escHtml(tag) + '</span>';
         }).join('');
     }
 
@@ -224,7 +230,7 @@
         }
         if (tags.length === 0) return '';
         return tags.map(function(tag) {
-            return '<span class="tag">' + tag + '</span>';
+            return '<span class="tag">' + escHtml(tag) + '</span>';
         }).join('');
     }
 
@@ -335,30 +341,30 @@
 
                 // 渲染头部信息
                 detailHeader.innerHTML =
-                    '<div class="detail-title">' + (base.workTitle || '无标题') + '</div>' +
+                    '<div class="detail-title">' + escHtml(base.workTitle || '无标题') + '</div>' +
                     '<div class="detail-meta">' +
                         '<div class="meta-item">' +
                             '<i class="fas fa-user"></i>' +
-                            '<a href="#" class="detail-author-name" data-author-id="' + (base.authorId || '') + '">' + (base.authorNickname || '未知作者') + '</a>' +
-                            '<a href="' + (base.authorUrl || '#') + '" target="_blank" class="btn btn-sm btn-secondary" style="margin-left: 0.5rem;" title="访问作者主页">' +
+                            '<a href="#" class="detail-author-name" data-author-id="' + escHtml(base.authorId || '') + '">' + escHtml(base.authorNickname || '未知作者') + '</a>' +
+                            '<a href="' + escHtml(base.authorUrl || '#') + '" target="_blank" class="btn btn-sm btn-secondary" style="margin-left: 0.5rem;" title="访问作者主页">' +
                                 '<i class="fas fa-external-link-alt"></i>' +
                             '</a>' +
                         '</div>' +
                         '<div class="meta-item">' +
                             '<i class="fas fa-calendar"></i>' +
-                            '<span>' + (base.publishTime || '未知时间') + '</span>' +
+                            '<span>' + escHtml(base.publishTime || '未知时间') + '</span>' +
                         '</div>' +
                         '<div class="meta-item">' +
                             '<i class="fas fa-heart"></i>' +
-                            '<span>' + (base.likeCount || '0') + ' 点赞</span>' +
+                            '<span>' + escHtml(base.likeCount || '0') + ' 点赞</span>' +
                         '</div>' +
                         '<div class="meta-item">' +
                             '<i class="fas fa-star"></i>' +
-                            '<span>' + (base.collectCount || '0') + ' 收藏</span>' +
+                            '<span>' + escHtml(base.collectCount || '0') + ' 收藏</span>' +
                         '</div>' +
                         '<div class="meta-item">' +
                             '<i class="fas fa-comment"></i>' +
-                            '<span>' + (base.commentCount || '0') + ' 评论</span>' +
+                            '<span>' + escHtml(base.commentCount || '0') + ' 评论</span>' +
                         '</div>' +
                     '</div>' +
                     (descHtml ? '<div class="work-description">' + descHtml + '</div>' : '') +

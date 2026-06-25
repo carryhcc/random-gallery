@@ -61,7 +61,7 @@ interface ApiService {
     suspend fun getAuthors(): ApiResponse<List<AuthorVO>>
 
     @GET("api/xhsWork/tags")
-    suspend fun getTags(): ApiResponse<List<TagVO>>
+    suspend fun getTags(@Query("limit") limit: Int = 200): ApiResponse<List<TagVO>>
 
     @GET("api/xhsWork/randomGif")
     suspend fun getRandomGif(): ApiResponse<RandomGifVO>
