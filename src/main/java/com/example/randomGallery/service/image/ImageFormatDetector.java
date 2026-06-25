@@ -3,6 +3,7 @@ package com.example.randomGallery.service.image;
 import cn.hutool.core.collection.CollUtil;
 import cn.hutool.core.util.StrUtil;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -34,9 +35,9 @@ public class ImageFormatDetector {
      */
     private final ExecutorService executor;
 
-    public ImageFormatDetector(RestTemplate restTemplate,
+    public ImageFormatDetector(HeicDetectCacheService heicDetectCacheService,
                                @Qualifier("heicDetectorExecutor") ExecutorService executor) {
-        this.restTemplate = restTemplate;
+        this.heicDetectCacheService = heicDetectCacheService;
         this.executor = executor;
     }
 
