@@ -3,12 +3,7 @@ package com.example.randomGallery.service.image;
 import cn.hutool.core.collection.CollUtil;
 import cn.hutool.core.util.StrUtil;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Qualifier;
-import org.springframework.cache.annotation.Cacheable;
-import org.springframework.http.HttpMethod;
-import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
-import org.springframework.web.client.RestTemplate;
 
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
@@ -32,7 +27,7 @@ import java.util.concurrent.ExecutorService;
 @Service
 public class ImageFormatDetector {
 
-    private final RestTemplate restTemplate;
+    private final HeicDetectCacheService heicDetectCacheService;
 
     /**
      * 使用虚拟线程池执行并发IO任务（Spring管理生命周期）
@@ -72,48 +67,17 @@ public class ImageFormatDetector {
 
     /**
      * 基于HTTP Content-Type检测是否为HEIC（带缓存）
-     * 
+     *
      * <p>
      * 通过发送HEAD请求获取Content-Type响应头来判断图片格式。
      * 检测结果会被缓存，避免重复请求。
-     * 
+     * 委托给 {@link HeicDetectCacheService} 以确保 @Cacheable AOP 代理正确生效。
+     *
      * @param url 图片URL
      * @return 如果Content-Type为 image/heic 或 image/heif 返回true
      */
-    @Cacheable(value = "heiCDetectCache", key = "#url", unless = "#result == null")
     public boolean isHEICByContentType(String url) {
-        if (StrUtil.isEmpty(url)) {
-            return false;
-        }
-
-        // 先尝试URL快速检测
-        if (isHEICByUrl(url)) {
-            return true;
-        }
-
-        try {
-            log.debug("发送HEAD请求检测图片格式: {}", url);
-
-            ResponseEntity<Void> response = restTemplate.exchange(
-                    url,
-                    HttpMethod.HEAD,
-                    null,
-                    Void.class);
-
-            String contentType = response.getHeaders().getContentType() != null
-                    ? response.getHeaders().getContentType().toString().toLowerCase()
-                    : "";
-
-            boolean isHEIC = contentType.contains("image/heic") || contentType.contains("image/heif");
-
-            log.debug("Content-Type检测结果: {} -> {}", contentType, isHEIC ? "HEIC" : "非HEIC");
-
-            return isHEIC;
-
-        } catch (Exception e) {
-            log.warn("Content-Type检测失败: {}, 异常: {}", url, e.getMessage());
-            return false;
-        }
+        return heicDetectCacheService.isHEICByContentType(url);
     }
 
     /**
@@ -195,8 +159,8 @@ public class ImageFormatDetector {
         List<CompletableFuture<Void>> futures = uniqueUrls.stream()
                 .map(url -> CompletableFuture.runAsync(() -> {
                     try {
-                        // 调用检测方法，结果会被缓存
-                        isHEICByContentType(url);
+                        // 通过 Spring 代理调用，确保缓存被正确写入
+                        heicDetectCacheService.isHEICByContentType(url);
                     } catch (Exception e) {
                         // 忽略异常，不影响其他URL的检测
                         log.debug("预检测异常（已忽略）: {}", url);
