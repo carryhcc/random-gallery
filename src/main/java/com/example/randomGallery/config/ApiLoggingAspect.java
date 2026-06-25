@@ -30,7 +30,11 @@ import java.util.Map;
 @Component
 public class ApiLoggingAspect {
 
-    private final ObjectMapper objectMapper = new ObjectMapper();
+    private final ObjectMapper objectMapper;
+
+    public ApiLoggingAspect(ObjectMapper objectMapper) {
+        this.objectMapper = objectMapper;
+    }
 
     @Pointcut("execution(* com.example.randomGallery.controller..*(..))")
     public void apiControllerMethods() {
