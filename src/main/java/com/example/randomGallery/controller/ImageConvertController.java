@@ -73,6 +73,14 @@ public class ImageConvertController {
         try {
             log.info("收到图片转换请求: {}", url);
 
+            if (!isAllowedUrl(url)) {
+                log.warn("拒绝非白名单URL的图片转换请求: {}", url);
+                response.setStatus(HttpServletResponse.SC_FORBIDDEN);
+                response.setContentType("text/plain;charset=UTF-8");
+                response.getWriter().write("不允许的图片来源");
+                return;
+            }
+
             // 调用Service层进行转换（自动缓存）
             byte[] imageData = imageService.convertImage(url);
 
@@ -104,8 +112,26 @@ public class ImageConvertController {
     }
 
     /**
+     * 检查URL是否在允许的白名单内
+     *
+     * @param url 待检查的URL
+     * @return 是否允许
+     */
+    private boolean isAllowedUrl(String url) {
+        if (url == null || url.isBlank()) return false;
+        if (url.startsWith("/")) return true;
+        try {
+            java.net.URI uri = java.net.URI.create(url);
+            String host = uri.getHost();
+            return host != null && (host.endsWith("xhscdn.com") || host.equals("localhost"));
+        } catch (Exception e) {
+            return false;
+        }
+    }
+
+    /**
      * 写入错误响应
-     * 
+     *
      * @param response HTTP响应对象
      * @param message  错误消息
      * @throws IOException IO异常
