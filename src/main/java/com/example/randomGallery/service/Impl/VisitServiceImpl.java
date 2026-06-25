@@ -89,8 +89,8 @@ public class VisitServiceImpl implements VisitService {
         }
     }
 
-    private synchronized VisitUserDO getOrCreateVisitUser(String uuid, String ip, String userAgentStr,
-                                                          UserAgent userAgent) {
+    private VisitUserDO getOrCreateVisitUser(String uuid, String ip, String userAgentStr,
+                                             UserAgent userAgent) {
         // 加 synchronized 简单防止高并发下同一UUID瞬间创建多个用户
 
         // 先根据UUID查询
