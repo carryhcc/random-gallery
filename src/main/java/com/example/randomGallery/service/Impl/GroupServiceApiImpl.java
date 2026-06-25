@@ -2,7 +2,6 @@ package com.example.randomGallery.service.Impl;
 
 import cn.hutool.core.bean.BeanUtil;
 import cn.hutool.core.util.ObjectUtil;
-import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.example.randomGallery.entity.DO.GroupDO;
 import com.example.randomGallery.entity.QO.GroupQry;
 import com.example.randomGallery.entity.VO.GroupPageVO;
@@ -12,13 +11,11 @@ import com.example.randomGallery.entity.common.PageResult;
 import com.example.randomGallery.service.CacheService;
 import com.example.randomGallery.service.GroupServiceApi;
 import com.example.randomGallery.service.mapper.GroupServiceMapper;
-import com.example.randomGallery.service.mapper.PicServiceMapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -33,7 +30,6 @@ public class GroupServiceApiImpl implements GroupServiceApi {
 
     private final GroupServiceMapper groupServiceMapper;
     private final CacheService cacheService;
-    private final PicServiceMapper picServiceMapper;
 
     @Override
     public GroupVO queryGroupById(Long groupId) {
@@ -60,20 +56,8 @@ public class GroupServiceApiImpl implements GroupServiceApi {
 
     @Override
     public void updateGroupInfo() {
-        // 定时任务更新分组图片/总数信息
-        List<Object> objs = groupServiceMapper.selectObjs(new QueryWrapper<GroupDO>().select("group_id"));
-        List<Long> groupIdList = (objs != null)
-                ? objs.stream().map(obj -> Long.valueOf(obj.toString())).toList()
-                : Collections.emptyList();
-
-        for (Long groupId : groupIdList) {
-            GroupVO groupVO = picServiceMapper.queryPicCountInfo(groupId);
-            if (groupVO != null) {
-                GroupDO groupDO = BeanUtil.copyProperties(groupVO, GroupDO.class);
-                groupServiceMapper.updateById(groupDO);
-                log.info("定时任务更新分组图片/总数信息: {}", groupVO);
-            }
-        }
+        groupServiceMapper.batchUpdateGroupStats();
+        log.info("定时任务批量更新分组统计信息完成");
     }
 
     /**

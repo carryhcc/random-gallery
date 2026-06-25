@@ -22,4 +22,9 @@ public interface GroupServiceMapper extends BaseMapper<GroupDO> {
      * 条件查询分组列表 (Paged)
      */
     IPage<GroupVO> selectGroupPage(IPage<GroupVO> page, @Param("qry") GroupQry qry);
+
+    /**
+     * 批量更新所有分组的 group_count、group_url、group_name
+     */
+    void batchUpdateGroupStats();
 }

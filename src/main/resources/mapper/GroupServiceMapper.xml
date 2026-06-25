@@ -38,4 +38,22 @@
         FROM group_info
         <include refid="groupQueryCondition"/>
     </select>
+
+    <update id="batchUpdateGroupStats">
+        UPDATE group_info g
+        INNER JOIN (
+            SELECT
+                p.group_id,
+                COUNT(1)            AS group_count,
+                MIN(p.pic_url)      AS group_url,
+                MIN(p.pic_name)     AS group_name
+            FROM pic_info p
+            WHERE p.is_delete = 0
+            GROUP BY p.group_id
+        ) t ON g.group_id = t.group_id
+        SET
+            g.group_count = t.group_count,
+            g.group_url   = t.group_url,
+            g.group_name  = t.group_name
+    </update>
 </mapper>
