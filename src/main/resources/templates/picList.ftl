@@ -94,19 +94,7 @@
         isLoading = true;
         document.getElementById('loading').classList.remove('hidden');
 
-        const requestData = {
-            groupId: window.currentGroupId,
-            pageIndex: currentPage,
-            pageSize: pageSize
-        };
-
-        fetch('/api/pic/list', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify(requestData)
-        })
+        fetch('/api/pic/list?groupId=' + (window.currentGroupId || '') + '&pageIndex=' + currentPage + '&pageSize=' + pageSize)
             .then(response => response.json())
             .then(result => {
                 if (result.code === 200) {

@@ -51,8 +51,15 @@ public class PicApiController {
     /**
      * 根据分组id查询图片列表
      */
-    @PostMapping("/list")
-    public Result<List<PicVO>> list(@RequestBody PicQry qry) {
+    @GetMapping("/list")
+    public Result<List<PicVO>> list(
+            @RequestParam(required = false) Long groupId,
+            @RequestParam(defaultValue = "1") int pageIndex,
+            @RequestParam(defaultValue = "10") int pageSize) {
+        PicQry qry = new PicQry();
+        qry.setGroupId(groupId);
+        qry.setPageIndex(pageIndex);
+        qry.setPageSize(pageSize);
         List<PicVO> list = picServiceApi.list(qry);
         return Result.success("获取图片成功", list);
     }

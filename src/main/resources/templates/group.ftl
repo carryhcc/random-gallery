@@ -120,34 +120,14 @@
     let totalPages = 0;
     let totalCount = 0;
 
-    function postData(url, data) {
-        return fetch(url, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify(data)
-        }).then(response => {
-            if (!response.ok) {
-                throw new Error('HTTP Error, status: ' + response.status);
-            }
-            return response.json();
-        });
-    }
-
     function queryGroups(pageIndex) {
         currentPageIndex = pageIndex || 1;
         const groupNameInput = document.getElementById('groupName').value;
         const groupName = groupNameInput === '' ? null : groupNameInput;
-        const requestData = {
-            groupName: groupName,
-            pageIndex: currentPageIndex,
-            pageSize: pageSize
-        };
-
         showLoadingState();
-
-        postData('/api/group/list', requestData).then(response => {
+        let url = '/api/group/list?pageIndex=' + currentPageIndex + '&pageSize=' + pageSize;
+        if (groupName) url += '&groupName=' + encodeURIComponent(groupName);
+        fetch(url).then(function(r) { return r.json(); }).then(response => {
             const pageData = response.data || {};
             const groups = pageData.list || [];
 

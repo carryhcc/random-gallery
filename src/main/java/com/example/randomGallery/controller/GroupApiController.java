@@ -37,8 +37,15 @@ public class GroupApiController {
     /**
      * 查询分组列表
      */
-    @PostMapping("/list")
-    public Result<PageResult<GroupVO>> queryGroupList(@RequestBody GroupQry qry) {
+    @GetMapping("/list")
+    public Result<PageResult<GroupVO>> queryGroupList(
+            @RequestParam(required = false) String groupName,
+            @RequestParam(defaultValue = "1") int pageIndex,
+            @RequestParam(defaultValue = "10") int pageSize) {
+        GroupQry qry = new GroupQry();
+        qry.setGroupName(groupName);
+        qry.setPageIndex(pageIndex);
+        qry.setPageSize(pageSize);
         log.info("查询分组列表，参数: {}", qry);
         PageResult<GroupVO> result = groupServiceApi.queryGroupList(qry);
         return Result.success("查询成功", result);
