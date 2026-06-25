@@ -1,6 +1,7 @@
 package com.example.randomgallery.android.data.network
 
 import com.example.randomgallery.android.data.model.*
+import retrofit2.http.Body
 import retrofit2.http.DELETE
 import retrofit2.http.GET
 import retrofit2.http.POST
