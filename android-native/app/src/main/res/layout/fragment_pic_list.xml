@@ -1,0 +1,71 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.swiperefreshlayout.widget.SwipeRefreshLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:id="@+id/swipeRefresh"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:orientation="vertical"
+        android:paddingHorizontal="@dimen/page_padding_horizontal"
+        android:paddingTop="@dimen/page_padding_top"
+        android:paddingBottom="@dimen/page_padding_bottom">
+
+        <!-- Header -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:gravity="center_vertical"
+            android:orientation="horizontal"
+            android:paddingBottom="@dimen/spacing_xs">
+
+            <TextView
+                android:id="@+id/title"
+                style="@style/TextPageTitle"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="@string/pic_list_title" />
+
+            <ImageButton
+                android:id="@+id/btnRandom"
+                android:layout_width="@dimen/icon_size"
+                android:layout_height="@dimen/icon_size"
+                android:minWidth="@dimen/touch_target_min"
+                android:minHeight="@dimen/touch_target_min"
+                android:background="@drawable/bg_secondary_button"
+                android:contentDescription="@string/back_home"
+                android:scaleType="centerInside"
+                android:src="@drawable/ic_action_back"
+                app:tint="@color/text_primary"
+                android:padding="@dimen/spacing_sm" />
+        </LinearLayout>
+
+        <!-- Image grid -->
+        <androidx.recyclerview.widget.RecyclerView
+            android:id="@+id/recycler"
+            android:layout_width="match_parent"
+            android:layout_height="0dp"
+            android:layout_marginTop="@dimen/item_gap"
+            android:layout_weight="1"
+            android:clipToPadding="false"
+            android:paddingBottom="@dimen/item_gap" />
+
+        <!-- Empty state -->
+        <TextView
+            android:id="@+id/emptyView"
+            style="@style/TextBody"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:background="@drawable/bg_surface_card"
+            android:gravity="center"
+            android:padding="@dimen/spacing_xxl"
+            android:text="@string/empty_pic"
+            android:textColor="@color/muted_color"
+            android:visibility="gone" />
+
+    </LinearLayout>
+
+</androidx.swiperefreshlayout.widget.SwipeRefreshLayout>

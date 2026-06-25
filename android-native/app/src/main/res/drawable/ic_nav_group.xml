@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 套图图标：相册叠层 -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="24dp"
+    android:height="24dp"
+    android:viewportWidth="24"
+    android:viewportHeight="24">
+    <!-- 后层 -->
+    <path android:fillColor="#FF000000" android:fillAlpha="0.35"
+        android:pathData="M6,4 L20,4 Q21,4 21,5 L21,17 Q21,18 20,18 L6,18 Q5,18 5,17 L5,5 Q5,4 6,4 Z"/>
+    <!-- 中层 -->
+    <path android:fillColor="#FF000000" android:fillAlpha="0.6"
+        android:pathData="M4,6 L18,6 Q19,6 19,7 L19,19 Q19,20 18,20 L4,20 Q3,20 3,19 L3,7 Q3,6 4,6 Z"/>
+    <!-- 前层主图 -->
+    <path android:fillColor="#FF000000"
+        android:pathData="M2,8.5 L16,8.5 Q17,8.5 17,9.5 L17,21 Q17,22 16,22 L2,22 Q1,22 1,21 L1,9.5 Q1,8.5 2,8.5 Z"/>
+    <!-- 山峰图案 -->
+    <path android:fillColor="#FFFFFFFF"
+        android:pathData="M3,19.5 L6,15.5 L9,18 L12,14 L15,19.5 Z"/>
+    <path android:fillColor="#FFFFFFFF"
+        android:pathData="M10.5,12 A1.5,1.5 0,1,0 10.5,11.99 Z"/>
+</vector>

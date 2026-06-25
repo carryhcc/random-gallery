@@ -1,0 +1,91 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- ═══════════════════════════════════════════════
+         Display Title — Hero / Home title (28sp)
+         ═══════════════════════════════════════════════ -->
+    <style name="TextDisplayTitle">
+        <item name="android:textSize">28sp</item>
+        <item name="android:textStyle">bold</item>
+        <item name="android:textColor">@color/text_primary</item>
+        <item name="android:letterSpacing">-0.01</item>
+    </style>
+
+    <!-- ═══════════════════════════════════════════════
+         Page Title — Screen-level headings (22sp)
+         ═══════════════════════════════════════════════ -->
+    <style name="TextPageTitle">
+        <item name="android:textSize">22sp</item>
+        <item name="android:textStyle">bold</item>
+        <item name="android:textColor">@color/text_primary</item>
+    </style>
+
+    <!-- ═══════════════════════════════════════════════
+         Section Title — Section headers (18sp)
+         ═══════════════════════════════════════════════ -->
+    <style name="TextSectionTitle">
+        <item name="android:textSize">18sp</item>
+        <item name="android:textStyle">bold</item>
+        <item name="android:textColor">@color/text_primary</item>
+    </style>
+
+    <!-- ═══════════════════════════════════════════════
+         Subtitle — Secondary headings (16sp)
+         ═══════════════════════════════════════════════ -->
+    <style name="TextSubtitle">
+        <item name="android:textSize">16sp</item>
+        <item name="android:fontFamily">sans-serif-medium</item>
+        <item name="android:textColor">@color/text_primary</item>
+    </style>
+
+    <!-- ═══════════════════════════════════════════════
+         Body — Primary body text (15sp)
+         ═══════════════════════════════════════════════ -->
+    <style name="TextBody">
+        <item name="android:textSize">15sp</item>
+        <item name="android:textColor">@color/text_primary</item>
+    </style>
+
+    <!-- ═══════════════════════════════════════════════
+         Button — Button labels (14sp)
+         ═══════════════════════════════════════════════ -->
+    <style name="TextButton">
+        <item name="android:textSize">14sp</item>
+        <item name="android:fontFamily">sans-serif-medium</item>
+        <item name="android:textColor">@color/text_on_primary</item>
+    </style>
+
+    <!-- ═══════════════════════════════════════════════
+         Meta — Metadata / secondary info (13sp)
+         ═══════════════════════════════════════════════ -->
+    <style name="TextMeta">
+        <item name="android:textSize">13sp</item>
+        <item name="android:textColor">@color/text_secondary</item>
+    </style>
+
+    <!-- ═══════════════════════════════════════════════
+         Caption — Small labels, badges (12sp)
+         ═══════════════════════════════════════════════ -->
+    <style name="TextCaption">
+        <item name="android:textSize">12sp</item>
+        <item name="android:textColor">@color/text_secondary</item>
+    </style>
+
+    <!-- ═══════════════════════════════════════════════
+         Small — Fine print, hints (11sp)
+         ═══════════════════════════════════════════════ -->
+    <style name="TextSmall">
+        <item name="android:textSize">11sp</item>
+        <item name="android:textColor">@color/muted_color</item>
+    </style>
+
+    <!-- ═══════════════════════════════════════════════
+         Overline — Section labels, uppercase (11sp)
+         ═══════════════════════════════════════════════ -->
+    <style name="TextOverline">
+        <item name="android:textSize">11sp</item>
+        <item name="android:textStyle">bold</item>
+        <item name="android:textColor">@color/muted_color</item>
+        <item name="android:letterSpacing">0.1</item>
+        <item name="android:textAllCaps">true</item>
+    </style>
+</resources>

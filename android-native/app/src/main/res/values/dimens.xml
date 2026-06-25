@@ -1,0 +1,95 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- ═══════════════════════════════════════════════
+         Spacing Scale (4dp base grid)
+         ═══════════════════════════════════════════════ -->
+    <dimen name="spacing_2xs">2dp</dimen>
+    <dimen name="spacing_xs">4dp</dimen>
+    <dimen name="spacing_sm">8dp</dimen>
+    <dimen name="spacing_md">12dp</dimen>
+    <dimen name="spacing_lg">16dp</dimen>
+    <dimen name="spacing_xl">20dp</dimen>
+    <dimen name="spacing_xxl">24dp</dimen>
+
+    <!-- ═══════════════════════════════════════════════
+         Page Padding — consistent across all screens
+         ═══════════════════════════════════════════════ -->
+    <dimen name="page_padding_horizontal">18dp</dimen>
+    <dimen name="page_padding_top">16dp</dimen>
+    <dimen name="page_padding_bottom">12dp</dimen>
+
+    <!-- ═══════════════════════════════════════════════
+         Card Dimensions
+         ═══════════════════════════════════════════════ -->
+    <dimen name="card_radius">18dp</dimen>
+    <dimen name="card_radius_sm">14dp</dimen>
+    <dimen name="card_radius_lg">24dp</dimen>
+    <dimen name="card_padding">18dp</dimen>
+    <dimen name="card_padding_sm">14dp</dimen>
+    <dimen name="card_elevation">0dp</dimen>
+
+    <!-- ═══════════════════════════════════════════════
+         Button Dimensions
+         ═══════════════════════════════════════════════ -->
+    <dimen name="button_height">46dp</dimen>
+    <dimen name="button_height_sm">38dp</dimen>
+    <dimen name="button_height_lg">50dp</dimen>
+    <dimen name="button_radius">15dp</dimen>
+    <dimen name="button_padding_horizontal">16dp</dimen>
+
+    <!-- ═══════════════════════════════════════════════
+         Icon / Touch Target
+         ═══════════════════════════════════════════════ -->
+    <dimen name="icon_size_sm">36dp</dimen>
+    <dimen name="icon_size">42dp</dimen>
+    <dimen name="icon_size_lg">46dp</dimen>
+    <dimen name="touch_target_min">48dp</dimen>
+
+    <!-- ═══════════════════════════════════════════════
+         Section / Item Gaps
+         ═══════════════════════════════════════════════ -->
+    <dimen name="section_gap">22dp</dimen>
+    <dimen name="item_gap">14dp</dimen>
+    <dimen name="element_gap">10dp</dimen>
+
+    <!-- ═══════════════════════════════════════════════
+         Grid
+         ═══════════════════════════════════════════════ -->
+    <dimen name="grid_item_margin">5dp</dimen>
+    <dimen name="grid_gutter">10dp</dimen>
+
+    <!-- ═══════════════════════════════════════════════
+         Bottom Navigation
+         ═══════════════════════════════════════════════ -->
+    <dimen name="bottom_nav_margin_horizontal">16dp</dimen>
+    <dimen name="bottom_nav_margin_bottom">12dp</dimen>
+    <dimen name="bottom_nav_elevation">0dp</dimen>
+    <dimen name="bottom_nav_min_height">72dp</dimen>
+    <dimen name="bottom_nav_icon_size">30dp</dimen>
+
+    <!-- ═══════════════════════════════════════════════
+         Miscellaneous
+         ═══════════════════════════════════════════════ -->
+    <dimen name="input_height">46dp</dimen>
+    <dimen name="input_height_lg">50dp</dimen>
+    <dimen name="badge_radius">8dp</dimen>
+    <dimen name="divider_height">1dp</dimen>
+    <dimen name="module_icon_size">36dp</dimen>
+
+    <!-- Skeleton placeholders -->
+    <dimen name="skeleton_margin_horizontal">50dp</dimen>
+    <dimen name="skeleton_margin_horizontal_wide">70dp</dimen>
+    <dimen name="skeleton_height_large">200dp</dimen>
+    <dimen name="skeleton_height_small">20dp</dimen>
+    <dimen name="skeleton_height_tiny">16dp</dimen>
+
+    <!-- GIF overlay gradients -->
+    <dimen name="gif_gradient_top_height">120dp</dimen>
+    <dimen name="gif_gradient_bottom_height">260dp</dimen>
+    <dimen name="gif_info_panel_margin_end">86dp</dimen>
+
+    <!-- Filter button widths -->
+    <dimen name="btn_search_width">72dp</dimen>
+    <dimen name="btn_more_width">58dp</dimen>
+    <dimen name="btn_reset_width">88dp</dimen>
+</resources>

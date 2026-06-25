@@ -1,0 +1,540 @@
+package com.example.randomgallery.android.ui.home
+
+import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.*
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
+import androidx.compose.runtime.livedata.observeAsState
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.dp
+import com.example.randomgallery.android.ui.common.*
+import com.example.randomgallery.android.ui.theme.*
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun HomeScreen(
+    viewModel: HomeViewModel,
+    onGroupClick: (com.example.randomgallery.android.data.model.GroupVO) -> Unit,
+    onNavigateToPicList: (groupId: Long, groupName: String) -> Unit,
+    onNavigateToRandomPic: () -> Unit,
+    onNavigateToRandomGif: () -> Unit,
+    onNavigateToDownloadManage: () -> Unit,
+    onNavigateToRandomGallery: () -> Unit,
+    onNavigateToGroupList: () -> Unit,
+    onNavigateToDownloadList: () -> Unit
+) {
+    val envInfo by viewModel.envInfo.observeAsState()
+    val privacy by viewModel.privacy.observeAsState(true)
+    val localEnv by viewModel.localEnv.observeAsState("")
+    val baseUrl by viewModel.baseUrl.observeAsState("")
+    val urlList by viewModel.urlList.observeAsState(emptyList())
+    val randomGroup by viewModel.randomGroup.observeAsState()
+    val baseUrlMessage by viewModel.baseUrlMessage.observeAsState()
+    val privacyMessage by viewModel.privacyMessage.observeAsState()
+
+    var showSettings by remember { mutableStateOf(false) }
+    val snackbarHostState = remember { SnackbarHostState() }
+
+    LaunchedEffect(Unit) {
+        viewModel.loadEnvInfo()
+        viewModel.loadPrivacy()
+    }
+
+    LaunchedEffect(baseUrlMessage) {
+        baseUrlMessage?.let { snackbarHostState.showSnackbar(it.getOrElse { e -> e.message ?: "失败" }) }
+    }
+    LaunchedEffect(privacyMessage) {
+        privacyMessage?.let { snackbarHostState.showSnackbar(it.getOrElse { e -> e.message ?: "失败" }) }
+    }
+    LaunchedEffect(randomGroup) {
+        randomGroup?.onSuccess { group ->
+            group.groupId?.let { onNavigateToPicList(it, group.groupName ?: "套图详情") }
+        }?.onFailure { snackbarHostState.showSnackbar(it.message ?: "获取失败") }
+    }
+
+    val picCount = envInfo?.getOrNull()?.picCount ?: 0
+    val groupCount = envInfo?.getOrNull()?.groupCount ?: 0
+
+    TopSnackbarBox(snackbarHostState) {
+    Scaffold(
+        containerColor = FeedBackground,
+        contentWindowInsets = WindowInsets(0, 0, 0, 0),
+        topBar = {
+            TopAppBar(
+                title = {
+                    Text("随机图库", fontWeight = FontWeight.SemiBold)
+                },
+                actions = {
+                    IconButton(onClick = { showSettings = true }) {
+                        Icon(Icons.Filled.Settings, contentDescription = "设置")
+                    }
+                },
+                colors = TopAppBarDefaults.topAppBarColors(
+                    containerColor = MaterialTheme.colorScheme.surface,
+                    titleContentColor = MaterialTheme.colorScheme.onSurface
+                )
+            )
+        }
+    ) { padding ->
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(padding)
+                .background(FeedBackground)
+                .verticalScroll(rememberScrollState())
+                .padding(Spacing.lg),
+            verticalArrangement = Arrangement.spacedBy(Spacing.lg)
+        ) {
+
+            // ── 第一区：本地图库 ──────────────────────────────────
+            SectionCard {
+                // 区块标题 + 统计
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.SpaceBetween
+                ) {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(Spacing.sm)
+                    ) {
+                        Icon(
+                            Icons.Filled.PhotoLibrary,
+                            contentDescription = null,
+                            tint = XhsRed,
+                            modifier = Modifier.size(22.dp)
+                        )
+                        Text("本地图库", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+                    }
+                    // 加载中用骨架，有数据就显示
+                    if (envInfo == null) {
+                        XhsLoadingBox(Modifier.size(16.dp))
+                    } else if (groupCount > 0 || picCount > 0) {
+                        Row(
+                            horizontalArrangement = Arrangement.spacedBy(Spacing.md),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            StatChip(label = "分组", value = groupCount.toString())
+                            StatChip(label = "图片", value = picCount.toString())
+                        }
+                    }
+                }
+
+                Spacer(Modifier.height(Spacing.md))
+
+                // 2×2 功能格
+                Column(verticalArrangement = Arrangement.spacedBy(Spacing.md)) {
+                    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(Spacing.md)) {
+                        FuncCard(
+                            icon = Icons.Filled.Shuffle,
+                            label = "随机图片",
+                            tint = Color(0xFF6B7FD7),
+                            bg = Color(0xFFEEF0FB),
+                            modifier = Modifier.weight(1f),
+                            onClick = onNavigateToRandomPic
+                        )
+                        FuncCard(
+                            icon = Icons.Filled.GridView,
+                            label = "随机画廊",
+                            tint = XhsRed,
+                            bg = XhsRedSoft,
+                            modifier = Modifier.weight(1f),
+                            onClick = onNavigateToRandomGallery
+                        )
+                    }
+                    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(Spacing.md)) {
+                        FuncCard(
+                            icon = Icons.Filled.Collections,
+                            label = "随机套图",
+                            tint = Color(0xFFE05252),
+                            bg = Color(0xFFFDECEC),
+                            modifier = Modifier.weight(1f),
+                            onClick = { viewModel.randomGroup() }
+                        )
+                        FuncCard(
+                            icon = Icons.Filled.FormatListBulleted,
+                            label = "分组列表",
+                            tint = Color(0xFF7A7A82),
+                            bg = Color(0xFFF0F0F3),
+                            modifier = Modifier.weight(1f),
+                            onClick = onNavigateToGroupList
+                        )
+                    }
+                }
+            }
+
+            // ── 第二区：精选收藏（XHS 数据）───────────────────────
+            SectionCard {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(Spacing.sm),
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Icon(
+                        Icons.Filled.CloudDownload,
+                        contentDescription = null,
+                        tint = Color(0xFF4A90D9),
+                        modifier = Modifier.size(22.dp)
+                    )
+                    Text("精选收藏", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+                }
+
+                Spacer(Modifier.height(Spacing.md))
+
+                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(Spacing.md)) {
+                    FuncCard(
+                        icon = Icons.Filled.Animation,
+                        label = "随机动图",
+                        tint = Color(0xFF3BAD7A),
+                        bg = Color(0xFFE8F7F1),
+                        modifier = Modifier.weight(1f),
+                        onClick = onNavigateToRandomGif
+                    )
+                    FuncCard(
+                        icon = Icons.Filled.PhotoAlbum,
+                        label = "下载浏览",
+                        tint = Color(0xFF4A90D9),
+                        bg = Color(0xFFE8F1FB),
+                        modifier = Modifier.weight(1f),
+                        onClick = onNavigateToDownloadList
+                    )
+                }
+
+                Spacer(Modifier.height(Spacing.md))
+
+                // 全宽——下载管理
+                FuncCardWide(
+                    icon = Icons.Filled.Download,
+                    label = "图片下载管理",
+                    tint = Color(0xFFE09830),
+                    bg = Color(0xFFFBF3E3),
+                    onClick = onNavigateToDownloadManage
+                )
+            }
+        }
+    }
+
+    if (showSettings) {
+        SettingsDialog(
+            currentUrl = baseUrl,
+            urlList = urlList,
+            privacyEnabled = privacy,
+            currentEnv = localEnv,
+            onDismiss = { showSettings = false },
+            onSelectUrl = { viewModel.selectBaseUrl(it) },
+            onAddUrl = { viewModel.addAndSelectUrl(it) },
+            onRemoveUrl = { viewModel.removeUrl(it) },
+            onPrivacyToggle = { viewModel.setPrivacy(it) },
+            onSwitchEnv = { viewModel.switchEnv(it) }
+        )
+    }
+    } // end TopSnackbarBox
+}
+
+// ── 区块容器卡片 ───────────────────────────────────────────────────
+
+@Composable
+private fun SectionCard(content: @Composable ColumnScope.() -> Unit) {
+    Surface(
+        shape = RoundedCornerShape(18.dp),
+        color = MaterialTheme.colorScheme.surface,
+        modifier = Modifier.fillMaxWidth()
+    ) {
+        Column(modifier = Modifier.padding(Spacing.lg), content = content)
+    }
+}
+
+// ── 统计小标签 ─────────────────────────────────────────────────────
+
+@Composable
+private fun StatChip(label: String, value: String) {
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(Spacing.xs)
+    ) {
+        Text(
+            "$label: ",
+            style = MaterialTheme.typography.bodySmall,
+            color = TextSecondary
+        )
+        Text(
+            value,
+            style = MaterialTheme.typography.bodySmall,
+            fontWeight = FontWeight.SemiBold,
+            color = MaterialTheme.colorScheme.onSurface
+        )
+    }
+}
+
+// ── 功能方格（1/2 宽）──────────────────────────────────────────────
+
+@Composable
+private fun FuncCard(
+    icon: ImageVector,
+    label: String,
+    tint: Color,
+    bg: Color,
+    modifier: Modifier = Modifier,
+    onClick: () -> Unit
+) {
+    Column(
+        modifier = modifier
+            .clip(RoundedCornerShape(14.dp))
+            .background(FeedBackground)
+            .clickable(onClick = onClick)
+            .padding(vertical = Spacing.xl, horizontal = Spacing.lg),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.spacedBy(Spacing.md)
+    ) {
+        Box(
+            modifier = Modifier
+                .size(52.dp)
+                .clip(RoundedCornerShape(14.dp))
+                .background(bg),
+            contentAlignment = Alignment.Center
+        ) {
+            Icon(icon, contentDescription = null, tint = tint, modifier = Modifier.size(26.dp))
+        }
+        Text(
+            label,
+            style = MaterialTheme.typography.bodyMedium,
+            fontWeight = FontWeight.Medium,
+            color = MaterialTheme.colorScheme.onSurface
+        )
+    }
+}
+
+// ── 功能宽格（全宽）──────────────────────────────────────────────
+
+@Composable
+private fun FuncCardWide(
+    icon: ImageVector,
+    label: String,
+    tint: Color,
+    bg: Color,
+    onClick: () -> Unit
+) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(14.dp))
+            .background(FeedBackground)
+            .clickable(onClick = onClick)
+            .padding(horizontal = Spacing.xl, vertical = Spacing.lg),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.Center
+    ) {
+        Box(
+            modifier = Modifier
+                .size(44.dp)
+                .clip(RoundedCornerShape(12.dp))
+                .background(bg),
+            contentAlignment = Alignment.Center
+        ) {
+            Icon(icon, contentDescription = null, tint = tint, modifier = Modifier.size(22.dp))
+        }
+        Spacer(Modifier.width(Spacing.md))
+        Text(
+            label,
+            style = MaterialTheme.typography.bodyMedium,
+            fontWeight = FontWeight.Medium,
+            color = MaterialTheme.colorScheme.onSurface
+        )
+    }
+}
+
+// ── 设置弹窗 ──────────────────────────────────────────────────────
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun SettingsDialog(
+    currentUrl: String,
+    urlList: List<String>,
+    privacyEnabled: Boolean,
+    currentEnv: String,
+    onDismiss: () -> Unit,
+    onSelectUrl: (String) -> Unit,
+    onAddUrl: (String) -> Unit,
+    onRemoveUrl: (String) -> Unit,
+    onPrivacyToggle: (Boolean) -> Unit,
+    onSwitchEnv: (String) -> Unit
+) {
+    var newUrlInput by remember { mutableStateOf("") }
+    var dropdownExpanded by remember { mutableStateOf(false) }
+    val envOptions = listOf("dev", "test", "prod")
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("设置", fontWeight = FontWeight.SemiBold, style = MaterialTheme.typography.titleMedium) },
+        text = {
+            Column(verticalArrangement = Arrangement.spacedBy(0.dp)) {
+
+                // ── 服务器地址 ─────────────────────────────────────
+                SettingsRow(label = "服务器") {
+                    // 下拉选择已保存的地址
+                    ExposedDropdownMenuBox(
+                        expanded = dropdownExpanded,
+                        onExpandedChange = { if (urlList.isNotEmpty()) dropdownExpanded = it }
+                    ) {
+                        OutlinedTextField(
+                            value = currentUrl.ifBlank { "未设置" },
+                            onValueChange = {},
+                            readOnly = true,
+                            singleLine = true,
+                            textStyle = MaterialTheme.typography.bodySmall,
+                            trailingIcon = {
+                                if (urlList.isNotEmpty())
+                                    ExposedDropdownMenuDefaults.TrailingIcon(expanded = dropdownExpanded)
+                            },
+                            modifier = Modifier.fillMaxWidth().menuAnchor(MenuAnchorType.PrimaryNotEditable),
+                            shape = RoundedCornerShape(10.dp),
+                            colors = OutlinedTextFieldDefaults.colors(
+                                focusedBorderColor = XhsRed,
+                                unfocusedBorderColor = DividerColor
+                            )
+                        )
+                        ExposedDropdownMenu(
+                            expanded = dropdownExpanded,
+                            onDismissRequest = { dropdownExpanded = false }
+                        ) {
+                            urlList.forEach { url ->
+                                DropdownMenuItem(
+                                    text = {
+                                        Row(
+                                            Modifier.fillMaxWidth(),
+                                            verticalAlignment = Alignment.CenterVertically
+                                        ) {
+                                            Text(
+                                                text = url,
+                                                style = MaterialTheme.typography.bodySmall,
+                                                color = if (url == currentUrl) XhsRed else MaterialTheme.colorScheme.onSurface,
+                                                fontWeight = if (url == currentUrl) FontWeight.SemiBold else FontWeight.Normal,
+                                                modifier = Modifier.weight(1f)
+                                            )
+                                            if (url == currentUrl) {
+                                                Icon(Icons.Filled.Check, null, tint = XhsRed, modifier = Modifier.size(14.dp))
+                                            }
+                                        }
+                                    },
+                                    trailingIcon = {
+                                        IconButton(
+                                            onClick = { onRemoveUrl(url) },
+                                            modifier = Modifier.size(32.dp)
+                                        ) {
+                                            Icon(Icons.Filled.Close, "删除", tint = TextTertiary, modifier = Modifier.size(14.dp))
+                                        }
+                                    },
+                                    onClick = {
+                                        onSelectUrl(url)
+                                        dropdownExpanded = false
+                                        onDismiss()
+                                    }
+                                )
+                            }
+                        }
+                    }
+
+                    Spacer(Modifier.height(Spacing.sm))
+
+                    // 添加新地址
+                    Row(
+                        horizontalArrangement = Arrangement.spacedBy(Spacing.sm),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        OutlinedTextField(
+                            value = newUrlInput,
+                            onValueChange = { newUrlInput = it },
+                            placeholder = { Text("添加新地址…", style = MaterialTheme.typography.bodySmall, color = TextSecondary) },
+                            singleLine = true,
+                            textStyle = MaterialTheme.typography.bodySmall,
+                            modifier = Modifier.weight(1f).height(46.dp),
+                            shape = RoundedCornerShape(10.dp),
+                            colors = OutlinedTextFieldDefaults.colors(
+                                focusedBorderColor = XhsRed,
+                                unfocusedBorderColor = DividerColor
+                            )
+                        )
+                        IconButton(
+                            onClick = {
+                                if (newUrlInput.isNotBlank()) {
+                                    onAddUrl(newUrlInput.trim())
+                                    newUrlInput = ""
+                                    onDismiss()
+                                }
+                            },
+                            modifier = Modifier.size(40.dp),
+                            colors = IconButtonDefaults.iconButtonColors(containerColor = XhsRed)
+                        ) {
+                            Icon(Icons.Filled.Add, "添加", tint = Color.White, modifier = Modifier.size(18.dp))
+                        }
+                    }
+                }
+
+                XhsDivider()
+
+                // ── 环境选择 ───────────────────────────────────────
+                SettingsRow(label = "环境") {
+                    SingleChoiceSegmentedButtonRow(modifier = Modifier.fillMaxWidth()) {
+                        envOptions.forEachIndexed { index, env ->
+                            SegmentedButton(
+                                selected = currentEnv == env,
+                                onClick = { onSwitchEnv(env) },
+                                shape = SegmentedButtonDefaults.itemShape(index, envOptions.size),
+                                colors = SegmentedButtonDefaults.colors(
+                                    activeContainerColor = XhsRedSoft,
+                                    activeContentColor = XhsRed,
+                                    activeBorderColor = XhsRed
+                                ),
+                                icon = {}
+                            ) {
+                                Text(env, style = MaterialTheme.typography.bodySmall,
+                                    fontWeight = if (currentEnv == env) FontWeight.SemiBold else FontWeight.Normal)
+                            }
+                        }
+                    }
+                }
+
+                XhsDivider()
+
+                // ── 隐私模式 ───────────────────────────────────────
+                Row(
+                    Modifier.fillMaxWidth().padding(vertical = Spacing.sm),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text("隐私模式", style = MaterialTheme.typography.bodyMedium)
+                    Switch(
+                        checked = privacyEnabled,
+                        onCheckedChange = onPrivacyToggle,
+                        colors = SwitchDefaults.colors(checkedThumbColor = XhsRed, checkedTrackColor = XhsRedSoft)
+                    )
+                }
+            }
+        },
+        confirmButton = {
+            TextButton(onClick = onDismiss) {
+                Text("关闭", color = TextSecondary, style = MaterialTheme.typography.bodyMedium)
+            }
+        }
+    )
+}
+
+@Composable
+private fun SettingsRow(label: String, content: @Composable () -> Unit) {
+    Column(modifier = Modifier.fillMaxWidth().padding(vertical = Spacing.sm)) {
+        Text(label, style = MaterialTheme.typography.labelSmall, color = TextSecondary,
+            modifier = Modifier.padding(bottom = Spacing.xs))
+        content()
+    }
+}

@@ -1,0 +1,109 @@
+<?xml version="1.0" encoding="utf-8"?>
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:layout_marginBottom="@dimen/item_gap"
+    android:clickable="true"
+    android:focusable="true"
+    android:foreground="?attr/selectableItemBackground">
+
+    <FrameLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content">
+
+        <ImageView
+            android:id="@+id/image"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:adjustViewBounds="true"
+            android:contentDescription="@null"
+            android:scaleType="fitCenter" />
+
+        <com.example.randomgallery.android.ui.widget.AspectRatioVideoView
+            android:id="@+id/videoView"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:background="@android:color/black"
+            android:visibility="gone" />
+
+        <TextView
+            android:id="@+id/index"
+            style="@style/TextCaption"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="top|start"
+            android:layout_margin="@dimen/spacing_sm"
+            android:background="@color/index_badge_bg"
+            android:paddingHorizontal="@dimen/spacing_sm"
+            android:paddingVertical="3dp"
+            android:text="@string/media_index_template"
+            android:textColor="@color/text_on_primary"
+            android:textStyle="bold" />
+
+        <TextView
+            android:id="@+id/playBadge"
+            style="@style/TextCaption"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="top|end"
+            android:layout_margin="@dimen/spacing_sm"
+            android:background="@color/gif_badge_bg"
+            android:paddingHorizontal="@dimen/spacing_sm"
+            android:paddingVertical="3dp"
+            android:text="@string/media_live_badge"
+            android:textColor="@color/text_on_primary"
+            android:textStyle="bold"
+            android:visibility="gone" />
+
+        <LinearLayout
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="bottom|end"
+            android:layout_margin="@dimen/spacing_sm"
+            android:background="@color/action_bar_bg"
+            android:gravity="center"
+            android:orientation="horizontal"
+            android:paddingHorizontal="@dimen/spacing_xs"
+            android:paddingVertical="@dimen/spacing_xs">
+
+            <ImageButton
+                android:id="@+id/previewBtn"
+                android:layout_width="@dimen/icon_size_sm"
+                android:layout_height="@dimen/icon_size_sm"
+                android:minWidth="@dimen/icon_size_sm"
+                android:minHeight="@dimen/icon_size_sm"
+                android:background="@android:color/transparent"
+                android:contentDescription="@string/preview"
+                android:padding="@dimen/spacing_xs"
+                android:src="@drawable/ic_action_preview"
+                app:tint="@color/text_on_primary" />
+
+            <ImageButton
+                android:id="@+id/downloadBtn"
+                android:layout_width="@dimen/icon_size_sm"
+                android:layout_height="@dimen/icon_size_sm"
+                android:layout_marginStart="@dimen/spacing_xs"
+                android:minWidth="@dimen/icon_size_sm"
+                android:minHeight="@dimen/icon_size_sm"
+                android:background="@android:color/transparent"
+                android:contentDescription="@string/download"
+                android:padding="@dimen/spacing_xs"
+                android:src="@drawable/ic_nav_download"
+                app:tint="@color/text_on_primary" />
+
+            <ImageButton
+                android:id="@+id/deleteBtn"
+                android:layout_width="@dimen/icon_size_sm"
+                android:layout_height="@dimen/icon_size_sm"
+                android:layout_marginStart="@dimen/spacing_xs"
+                android:minWidth="@dimen/icon_size_sm"
+                android:minHeight="@dimen/icon_size_sm"
+                android:background="@android:color/transparent"
+                android:contentDescription="@string/delete"
+                android:padding="@dimen/spacing_xs"
+                android:src="@drawable/ic_action_delete"
+                app:tint="@color/text_on_primary" />
+        </LinearLayout>
+    </FrameLayout>
+</FrameLayout>

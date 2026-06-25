@@ -1,0 +1,9 @@
+.gradle/
+.idea/
+local.properties
+keystore.properties
+build/
+app/build/
+window_dump.xml
+ANDROID_AUDIT.md
+UI_REMEDIATION_PLAN.md

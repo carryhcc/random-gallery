@@ -13,8 +13,8 @@ COPY target/random-gallery-0.0.1-SNAPSHOT.jar app.jar
 # 声明端口
 EXPOSE 8086
 
-# 默认环境变量
-ENV DB_HOST=192.168.10.144
+# 默认环境变量（运行时请通过 -e 覆盖）
+ENV DB_HOST=localhost
 ENV DB_PORT=3306
 ENV DB_NAME=testPic
 ENV DB_USERNAME=pic

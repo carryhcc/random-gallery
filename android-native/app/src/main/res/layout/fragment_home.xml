@@ -1,0 +1,357 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.swiperefreshlayout.widget.SwipeRefreshLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:id="@+id/swipeRefresh"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:orientation="vertical"
+        android:paddingHorizontal="@dimen/page_padding_horizontal"
+        android:paddingTop="@dimen/page_padding_top"
+        android:paddingBottom="@dimen/page_padding_bottom">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:gravity="center_vertical"
+            android:orientation="horizontal">
+
+            <ImageView
+                android:layout_width="@dimen/icon_size"
+                android:layout_height="@dimen/icon_size"
+                android:background="@drawable/bg_icon_round_rect"
+                android:contentDescription="@null"
+                android:padding="@dimen/spacing_sm"
+                android:src="@drawable/ic_nav_gallery"
+                app:tint="@color/primary_color" />
+
+            <TextView
+                style="@style/TextPageTitle"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="@dimen/spacing_xs"
+                android:layout_weight="1"
+                android:ellipsize="end"
+                android:maxLines="1"
+                android:text="@string/home_title"
+                android:textSize="20sp" />
+
+            <TextView
+                android:id="@+id/envInfo"
+                style="@style/TextMeta"
+                android:layout_width="72dp"
+                android:layout_height="@dimen/icon_size"
+                android:layout_marginStart="@dimen/spacing_xs"
+                android:background="@drawable/bg_secondary_button"
+                android:clickable="true"
+                android:ellipsize="end"
+                android:focusable="true"
+                android:gravity="center"
+                android:maxLines="1"
+                android:paddingHorizontal="@dimen/spacing_sm"
+                android:textColor="@color/text_primary"
+                android:textStyle="bold" />
+
+            <ImageButton
+                android:id="@+id/btnPrivacyQuick"
+                android:layout_width="@dimen/icon_size"
+                android:layout_height="@dimen/icon_size"
+                android:layout_marginStart="@dimen/spacing_xs"
+                android:background="@drawable/bg_secondary_button"
+                android:contentDescription="@string/home_privacy_toggle"
+                android:padding="@dimen/spacing_md"
+                android:src="@drawable/ic_action_eye"
+                app:tint="@color/text_primary" />
+
+            <ImageButton
+                android:id="@+id/btnSettings"
+                android:layout_width="@dimen/icon_size"
+                android:layout_height="@dimen/icon_size"
+                android:layout_marginStart="@dimen/spacing_xs"
+                android:background="@drawable/bg_secondary_button"
+                android:contentDescription="@string/home_settings"
+                android:padding="@dimen/spacing_md"
+                android:src="@drawable/ic_action_settings"
+                app:tint="@color/text_primary" />
+        </LinearLayout>
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/spacing_lg"
+            android:background="@drawable/bg_surface_card"
+            android:orientation="vertical"
+            android:padding="@dimen/card_padding">
+
+            <TextView
+                style="@style/TextPageTitle"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/home_local_gallery" />
+
+            <TextView
+                android:id="@+id/localStats"
+                style="@style/TextSubtitle"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/spacing_sm"
+                android:textColor="@color/text_secondary" />
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/spacing_lg"
+                android:orientation="horizontal">
+
+                <LinearLayout
+                    android:id="@+id/btnRandomPic"
+                    android:layout_width="0dp"
+                    android:layout_height="100dp"
+                    android:layout_weight="1"
+                    android:background="@drawable/bg_surface_card"
+                    android:clickable="true"
+                    android:focusable="true"
+                    android:foreground="?attr/selectableItemBackground"
+                    android:gravity="center"
+                    android:orientation="vertical">
+
+                    <ImageView
+                        android:layout_width="@dimen/module_icon_size"
+                        android:layout_height="@dimen/module_icon_size"
+                        android:background="@drawable/bg_icon_round_rect"
+                        android:contentDescription="@null"
+                        android:padding="@dimen/spacing_sm"
+                        android:src="@drawable/ic_home_photo"
+                        app:tint="@color/primary_color" />
+
+                    <TextView
+                        style="@style/TextSubtitle"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="@dimen/spacing_sm"
+                        android:text="@string/home_random_pic" />
+                </LinearLayout>
+
+                <Space
+                    android:layout_width="@dimen/item_gap"
+                    android:layout_height="1dp" />
+
+                <LinearLayout
+                    android:id="@+id/btnRandomGallery"
+                    android:layout_width="0dp"
+                    android:layout_height="100dp"
+                    android:layout_weight="1"
+                    android:background="@drawable/bg_surface_card"
+                    android:clickable="true"
+                    android:focusable="true"
+                    android:foreground="?attr/selectableItemBackground"
+                    android:gravity="center"
+                    android:orientation="vertical">
+
+                    <ImageView
+                        android:layout_width="@dimen/module_icon_size"
+                        android:layout_height="@dimen/module_icon_size"
+                        android:background="@drawable/bg_icon_accent"
+                        android:contentDescription="@null"
+                        android:padding="@dimen/spacing_sm"
+                        android:src="@drawable/ic_home_grid"
+                        app:tint="@color/accent_color" />
+
+                    <TextView
+                        style="@style/TextSubtitle"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="@dimen/spacing_sm"
+                        android:text="@string/home_random_gallery" />
+                </LinearLayout>
+            </LinearLayout>
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/item_gap"
+                android:orientation="horizontal">
+
+                <LinearLayout
+                    android:id="@+id/btnRandomGroup"
+                    android:layout_width="0dp"
+                    android:layout_height="100dp"
+                    android:layout_weight="1"
+                    android:background="@drawable/bg_surface_card"
+                    android:clickable="true"
+                    android:focusable="true"
+                    android:foreground="?attr/selectableItemBackground"
+                    android:gravity="center"
+                    android:orientation="vertical">
+
+                    <ImageView
+                        android:layout_width="@dimen/module_icon_size"
+                        android:layout_height="@dimen/module_icon_size"
+                        android:background="@drawable/bg_icon_accent"
+                        android:contentDescription="@null"
+                        android:padding="@dimen/spacing_sm"
+                        android:src="@drawable/ic_nav_stack"
+                        app:tint="@color/accent_color" />
+
+                    <TextView
+                        style="@style/TextSubtitle"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="@dimen/spacing_sm"
+                        android:text="@string/home_random_group" />
+                </LinearLayout>
+
+                <Space
+                    android:layout_width="@dimen/item_gap"
+                    android:layout_height="1dp" />
+
+                <LinearLayout
+                    android:id="@+id/btnGroupList"
+                    android:layout_width="0dp"
+                    android:layout_height="100dp"
+                    android:layout_weight="1"
+                    android:background="@drawable/bg_surface_card"
+                    android:clickable="true"
+                    android:focusable="true"
+                    android:foreground="?attr/selectableItemBackground"
+                    android:gravity="center"
+                    android:orientation="vertical">
+
+                    <ImageView
+                        android:layout_width="@dimen/module_icon_size"
+                        android:layout_height="@dimen/module_icon_size"
+                        android:background="@drawable/bg_icon_info"
+                        android:contentDescription="@null"
+                        android:padding="@dimen/spacing_sm"
+                        android:src="@drawable/ic_nav_group"
+                        app:tint="@color/info_color" />
+
+                    <TextView
+                        style="@style/TextSubtitle"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="@dimen/spacing_sm"
+                        android:text="@string/home_group_list" />
+                </LinearLayout>
+            </LinearLayout>
+        </LinearLayout>
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/spacing_lg"
+            android:background="@drawable/bg_surface_card"
+            android:orientation="vertical"
+            android:padding="@dimen/card_padding">
+
+            <TextView
+                style="@style/TextPageTitle"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/home_featured_collection" />
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/spacing_lg"
+                android:orientation="horizontal">
+
+                <LinearLayout
+                    android:id="@+id/btnRandomGif"
+                    android:layout_width="0dp"
+                    android:layout_height="100dp"
+                    android:layout_weight="1"
+                    android:background="@drawable/bg_surface_card"
+                    android:clickable="true"
+                    android:focusable="true"
+                    android:foreground="?attr/selectableItemBackground"
+                    android:gravity="center"
+                    android:orientation="vertical">
+
+                    <ImageView
+                        android:layout_width="@dimen/module_icon_size"
+                        android:layout_height="@dimen/module_icon_size"
+                        android:background="@drawable/bg_icon_success"
+                        android:contentDescription="@null"
+                        android:padding="@dimen/spacing_sm"
+                        android:src="@drawable/ic_home_video"
+                        app:tint="@color/success_color" />
+
+                    <TextView
+                        style="@style/TextSubtitle"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="@dimen/spacing_sm"
+                        android:text="@string/home_random_gif" />
+                </LinearLayout>
+
+                <Space
+                    android:layout_width="@dimen/item_gap"
+                    android:layout_height="1dp" />
+
+                <LinearLayout
+                    android:id="@+id/btnDownloadList"
+                    android:layout_width="0dp"
+                    android:layout_height="100dp"
+                    android:layout_weight="1"
+                    android:background="@drawable/bg_surface_card"
+                    android:clickable="true"
+                    android:focusable="true"
+                    android:foreground="?attr/selectableItemBackground"
+                    android:gravity="center"
+                    android:orientation="vertical">
+
+                    <ImageView
+                        android:layout_width="@dimen/module_icon_size"
+                        android:layout_height="@dimen/module_icon_size"
+                        android:background="@drawable/bg_icon_info"
+                        android:contentDescription="@null"
+                        android:padding="@dimen/spacing_sm"
+                        android:src="@drawable/ic_nav_download"
+                        app:tint="@color/info_color" />
+
+                    <TextView
+                        style="@style/TextSubtitle"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="@dimen/spacing_sm"
+                        android:text="@string/home_download_list" />
+                </LinearLayout>
+            </LinearLayout>
+
+            <LinearLayout
+                android:id="@+id/btnDownloadManage"
+                android:layout_width="match_parent"
+                android:layout_height="90dp"
+                android:layout_marginTop="@dimen/item_gap"
+                android:background="@drawable/bg_surface_card"
+                android:clickable="true"
+                android:focusable="true"
+                android:foreground="?attr/selectableItemBackground"
+                android:gravity="center"
+                android:orientation="vertical">
+
+                <ImageView
+                    android:layout_width="@dimen/module_icon_size"
+                    android:layout_height="@dimen/module_icon_size"
+                    android:background="@drawable/bg_icon_warning"
+                    android:contentDescription="@null"
+                    android:padding="@dimen/spacing_sm"
+                    android:src="@drawable/ic_home_download"
+                    app:tint="@color/warning_color" />
+
+                <TextView
+                    style="@style/TextSubtitle"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="@dimen/spacing_sm"
+                    android:text="@string/home_download_manage" />
+            </LinearLayout>
+        </LinearLayout>
+
+    </LinearLayout>
+
+</androidx.swiperefreshlayout.widget.SwipeRefreshLayout>

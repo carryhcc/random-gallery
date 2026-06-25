@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="primary_color">#7EA0FF</color>
+    <color name="primary_dark">#6688F0</color>
+    <color name="primary_pressed">#5575D8</color>
+    <color name="primary_gradient_start">#FF6688F0</color>
+    <color name="primary_gradient_end">#FF8CA7FF</color>
+    <color name="primary_pressed_start">#FF5575D8</color>
+    <color name="primary_pressed_end">#FF718FE8</color>
+
+    <color name="accent_color">#FF8A65</color>
+
+    <color name="surface_bg">#0B0F17</color>
+    <color name="surface_card">#171D29</color>
+    <color name="surface_elevated">#101620</color>
+    <color name="surface_alt">#202838</color>
+
+    <color name="text_primary">#F2F5FA</color>
+    <color name="text_secondary">#B6C0CF</color>
+    <color name="text_on_primary">#FFFFFFFF</color>
+    <color name="muted_color">#8E99AA</color>
+
+    <color name="success_color">#46D58A</color>
+    <color name="error_color">#FF7D7D</color>
+
+    <color name="border_color">#2B3545</color>
+    <color name="divider_color">#243044</color>
+    <color name="glass_border">#33FFFFFF</color>
+
+    <color name="bottom_nav_bg">#121824</color>
+    <color name="bottom_nav_stroke">#2B3545</color>
+    <color name="skeleton_color">#202838</color>
+    <color name="overlay_bg">#E60B0F17</color>
+    <color name="index_badge_bg">#B30B0F17</color>
+    <color name="gif_badge_bg">#CCFF8A65</color>
+    <color name="action_bar_bg">#B30B0F17</color>
+    <color name="glass_surface">#2EFFFFFF</color>
+    <color name="glass_surface_pressed">#45FFFFFF</color>
+
+    <color name="module_icon_bg">#26385F</color>
+    <color name="info_color">#72B9FF</color>
+    <color name="warning_color">#FFCA6B</color>
+    <color name="purple_color">#C9A8FF</color>
+    <color name="info_icon_bg">#223852</color>
+    <color name="success_icon_bg">#1D3F31</color>
+    <color name="warning_icon_bg">#47371F</color>
+    <color name="purple_icon_bg">#342B4A</color>
+    <color name="accent_icon_bg">#4A2C25</color>
+</resources>

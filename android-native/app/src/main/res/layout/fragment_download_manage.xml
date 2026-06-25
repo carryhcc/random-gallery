@@ -1,0 +1,143 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:fillViewport="true"
+    android:scrollbars="none">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:paddingHorizontal="@dimen/page_padding_horizontal"
+        android:paddingTop="@dimen/page_padding_top"
+        android:paddingBottom="@dimen/page_padding_bottom">
+
+        <!-- Header -->
+        <TextView
+            style="@style/TextPageTitle"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/download_manage_title" />
+
+        <TextView
+            style="@style/TextMeta"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/spacing_xs"
+            android:text="@string/download_manage_subtitle"
+            android:textColor="@color/muted_color" />
+
+        <!-- Input card -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/section_gap"
+            android:background="@drawable/bg_surface_card"
+            android:orientation="vertical"
+            android:padding="@dimen/card_padding">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:gravity="center_vertical"
+                android:orientation="horizontal"
+                android:paddingBottom="@dimen/spacing_md">
+
+                <TextView
+                    style="@style/TextMeta"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:text="@string/download_manage_auto_clipboard"
+                    android:textColor="@color/text_primary"
+                    android:textStyle="bold" />
+
+                <com.google.android.material.materialswitch.MaterialSwitch
+                    android:id="@+id/switchAutoClipboard"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:checked="true"
+                    android:contentDescription="@string/download_manage_auto_clipboard" />
+            </LinearLayout>
+
+            <EditText
+                android:id="@+id/inputUrl"
+                android:layout_width="match_parent"
+                android:layout_height="@dimen/input_height_lg"
+                android:background="@drawable/bg_input"
+                android:hint="@string/download_manage_url_hint"
+                android:importantForAutofill="no"
+                android:inputType="textUri"
+                android:paddingHorizontal="@dimen/spacing_md"
+                android:textColor="@color/text_primary"
+                android:textColorHint="@color/muted_color" />
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/item_gap"
+                android:orientation="horizontal">
+
+                <Button
+                    android:id="@+id/btnSubmit"
+                    style="@style/TextButton"
+                    android:layout_width="0dp"
+                    android:layout_height="@dimen/button_height"
+                    android:layout_weight="1"
+                    android:background="@drawable/bg_primary_button"
+                    android:text="@string/download_manage_submit"
+                    android:textStyle="bold" />
+
+                <Space
+                    android:layout_width="@dimen/element_gap"
+                    android:layout_height="1dp" />
+
+                <Button
+                    android:id="@+id/btnViewList"
+                    android:layout_width="0dp"
+                    android:layout_height="@dimen/button_height"
+                    android:layout_weight="1"
+                    android:background="@drawable/bg_secondary_button"
+                    android:text="@string/download_manage_view_list"
+                    android:textColor="@color/text_primary"
+                    android:textStyle="bold" />
+            </LinearLayout>
+
+            <ProgressBar
+                android:id="@+id/progress"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center_horizontal"
+                android:layout_marginTop="@dimen/item_gap"
+                android:visibility="gone" />
+        </LinearLayout>
+
+        <!-- Help card -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/spacing_lg"
+            android:background="@drawable/bg_surface_card"
+            android:orientation="vertical"
+            android:padding="@dimen/card_padding">
+
+            <TextView
+                style="@style/TextBody"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/section_usage_guide"
+                android:textStyle="bold" />
+
+            <TextView
+                style="@style/TextMeta"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/element_gap"
+                android:lineSpacingExtra="@dimen/spacing_xs"
+                android:text="@string/download_manage_help" />
+        </LinearLayout>
+
+    </LinearLayout>
+</ScrollView>

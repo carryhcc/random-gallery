@@ -1,0 +1,159 @@
+package com.example.randomgallery.android.ui.piclist
+
+import android.app.DownloadManager
+import android.content.Context
+import android.net.Uri
+import android.os.Environment
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.staggeredgrid.*
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.FileDownload
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
+import androidx.compose.runtime.livedata.observeAsState
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.unit.dp
+import coil.compose.AsyncImage
+import coil.request.ImageRequest
+import com.example.randomgallery.android.ui.common.*
+import com.example.randomgallery.android.ui.theme.*
+import com.example.randomgallery.android.util.ImageUrlResolver
+
+@Composable
+fun PicListScreen(
+    viewModel: PicListViewModel,
+    groupId: Long,
+    groupName: String,
+    onBack: () -> Unit
+) {
+    val context = LocalContext.current
+    val items by viewModel.items.observeAsState(emptyList())
+    val loading by viewModel.loading.observeAsState(false)
+    val error by viewModel.error.observeAsState()
+    val gridState = rememberLazyStaggeredGridState()
+    val snackbarHostState = remember { SnackbarHostState() }
+    var snackbarMsg by remember { mutableStateOf<String?>(null) }
+
+    LaunchedEffect(snackbarMsg) {
+        snackbarMsg?.let { snackbarHostState.showSnackbar(it); snackbarMsg = null }
+    }
+
+    LaunchedEffect(groupId) {
+        viewModel.groupId = groupId
+        if (items.isEmpty()) viewModel.refresh()
+    }
+
+    // 距底部 4 条时触发加载下一页
+    LaunchedEffect(gridState) {
+        snapshotFlow {
+            val info = gridState.layoutInfo
+            (info.visibleItemsInfo.lastOrNull()?.index ?: 0) to info.totalItemsCount
+        }.collect { (last, total) ->
+            if (total > 0 && last >= total - 2) viewModel.loadMore()
+        }
+    }
+
+    TopSnackbarBox(snackbarHostState) {
+    Scaffold(
+        containerColor = FeedBackground,
+        contentWindowInsets = WindowInsets(0, 0, 0, 0),
+        topBar = { XhsTopBar(title = groupName.ifBlank { "套图详情" }, onBack = onBack) }
+    ) { padding ->
+        Box(
+            Modifier
+                .fillMaxSize()
+                .padding(padding)
+                .background(FeedBackground)
+        ) {
+            when {
+                items.isEmpty() && loading -> XhsLoadingBox(Modifier.fillMaxSize())
+                items.isEmpty() && !loading ->
+                    XhsEmptyState(error ?: "暂无图片", onRetry = { viewModel.refresh() }, modifier = Modifier.fillMaxSize())
+                else -> {
+                    LazyVerticalStaggeredGrid(
+                        state = gridState,
+                        columns = StaggeredGridCells.Fixed(2),
+                        contentPadding = PaddingValues(Spacing.sm),
+                        verticalItemSpacing = Spacing.sm,
+                        horizontalArrangement = Arrangement.spacedBy(Spacing.sm),
+                        modifier = Modifier.fillMaxSize()
+                    ) {
+                        items(items = items, key = { it.id ?: 0L }) { pic ->
+                            val url = ImageUrlResolver.displayUrl(pic.picUrl)
+                            var imageLoaded by remember(url) { mutableStateOf(false) }
+                            Box(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .clip(RoundedCornerShape(10.dp))
+                                    .background(SurfaceMuted)
+                            ) {
+                                AsyncImage(
+                                    model = ImageRequest.Builder(context)
+                                        .data(url)
+                                        .crossfade(true)
+                                        .build(),
+                                    contentDescription = pic.picName,
+                                    contentScale = ContentScale.FillWidth,
+                                    onSuccess = { imageLoaded = true },
+                                    modifier = Modifier.fillMaxWidth()
+                                )
+                                // 图片加载完成后才显示下载按钮
+                                if (imageLoaded) {
+                                    Box(
+                                        modifier = Modifier
+                                            .align(Alignment.BottomEnd)
+                                            .padding(Spacing.xs)
+                                            .size(28.dp)
+                                            .clip(CircleShape)
+                                            .background(Color.Black.copy(alpha = 0.40f)),
+                                        contentAlignment = Alignment.Center
+                                    ) {
+                                        IconButton(
+                                            onClick = {
+                                                downloadImage(context, url)
+                                                snackbarMsg = "图片正在下载…"
+                                            },
+                                            modifier = Modifier.size(28.dp)
+                                        ) {
+                                            Icon(
+                                                Icons.Filled.FileDownload,
+                                                contentDescription = "下载",
+                                                tint = Color.White,
+                                                modifier = Modifier.size(16.dp)
+                                            )
+                                        }
+                                    }
+                                }
+                            }
+                        }
+
+                        if (loading) {
+                            item(span = StaggeredGridItemSpan.FullLine) {
+                                XhsLoadingBox(Modifier.fillMaxWidth().height(48.dp))
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+    } // end TopSnackbarBox
+}
+
+private fun downloadImage(context: Context, url: String) {
+    val filename = "rg_${System.currentTimeMillis()}.jpg"
+    val request = DownloadManager.Request(Uri.parse(url))
+        .setTitle(filename)
+        .setNotificationVisibility(DownloadManager.Request.VISIBILITY_VISIBLE_NOTIFY_COMPLETED)
+        .setDestinationInExternalPublicDir(Environment.DIRECTORY_PICTURES, "RandomGallery/$filename")
+        .setAllowedOverMetered(true)
+    (context.getSystemService(Context.DOWNLOAD_SERVICE) as DownloadManager).enqueue(request)
+}

@@ -1,0 +1,108 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:paddingHorizontal="@dimen/page_padding_horizontal"
+    android:paddingTop="@dimen/page_padding_top"
+    android:paddingBottom="@dimen/page_padding_bottom">
+
+    <LinearLayout
+        android:id="@+id/searchBarContainer"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:background="@drawable/bg_surface_card"
+        android:gravity="center_vertical"
+        android:orientation="horizontal"
+        android:padding="@dimen/card_padding_sm">
+
+        <EditText
+            android:id="@+id/inputKeyword"
+            android:layout_width="0dp"
+            android:layout_height="@dimen/input_height"
+            android:layout_weight="1"
+            android:background="@drawable/bg_input"
+            android:hint="@string/group_keyword_hint"
+            android:importantForAutofill="no"
+            android:inputType="text"
+            android:paddingHorizontal="@dimen/spacing_md"
+            android:textColor="@color/text_primary"
+            android:textColorHint="@color/muted_color"
+            android:textSize="14sp" />
+
+        <Button
+            android:id="@+id/btnSearch"
+            style="@style/TextButton"
+            android:layout_width="wrap_content"
+            android:layout_height="@dimen/input_height"
+            android:layout_marginStart="@dimen/spacing_sm"
+            android:background="@drawable/bg_primary_button"
+            android:paddingHorizontal="@dimen/spacing_lg"
+            android:text="@string/search"
+            android:textSize="13sp" />
+    </LinearLayout>
+
+    <androidx.recyclerview.widget.RecyclerView
+        android:id="@+id/recycler"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_marginTop="@dimen/spacing_sm"
+        android:layout_weight="1"
+        android:clipToPadding="false"
+        android:paddingBottom="@dimen/spacing_xs" />
+
+    <TextView
+        android:id="@+id/emptyView"
+        style="@style/TextBody"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:background="@drawable/bg_surface_card"
+        android:gravity="center"
+        android:padding="@dimen/card_padding"
+        android:text="@string/empty_data"
+        android:textColor="@color/muted_color"
+        android:visibility="gone" />
+
+    <LinearLayout
+        style="?android:attr/buttonBarStyle"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="@dimen/spacing_sm"
+        android:background="@drawable/bg_surface_card"
+        android:gravity="center_vertical"
+        android:orientation="horizontal"
+        android:padding="@dimen/card_padding_sm">
+
+        <Button
+            android:id="@+id/btnPrev"
+            style="?android:attr/buttonBarButtonStyle"
+            android:layout_width="wrap_content"
+            android:layout_height="@dimen/button_height_sm"
+            android:background="@drawable/bg_secondary_button"
+            android:paddingHorizontal="@dimen/spacing_lg"
+            android:text="@string/prev_page"
+            android:textColor="@color/text_primary"
+            android:textSize="13sp" />
+
+        <TextView
+            android:id="@+id/pageInfo"
+            style="@style/TextMeta"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginHorizontal="@dimen/item_gap"
+            android:layout_weight="1"
+            android:gravity="center" />
+
+        <Button
+            android:id="@+id/btnNext"
+            style="?android:attr/buttonBarButtonStyle"
+            android:layout_width="wrap_content"
+            android:layout_height="@dimen/button_height_sm"
+            android:background="@drawable/bg_secondary_button"
+            android:paddingHorizontal="@dimen/spacing_lg"
+            android:text="@string/next_page"
+            android:textColor="@color/text_primary"
+            android:textSize="13sp" />
+    </LinearLayout>
+
+</LinearLayout>

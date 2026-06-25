@@ -33,4 +33,3 @@ build/
 .vscode/
 logs
 src/main/resources/db.yaml
-/android-native/
