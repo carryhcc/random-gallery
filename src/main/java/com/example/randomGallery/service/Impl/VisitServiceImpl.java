@@ -182,7 +182,7 @@ public class VisitServiceImpl implements VisitService {
             return ip;
         }
         int commaIndex = ip.indexOf(',');
-        if (commaIndex > 0) {
+        if (commaIndex != -1) {
             return ip.substring(0, commaIndex).trim();
         }
         return ip.trim();

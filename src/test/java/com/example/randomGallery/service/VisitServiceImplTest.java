@@ -28,7 +28,6 @@ class VisitServiceImplTest {
 
     @Test
     void extractFirstIp_shouldReturnFirst_whenCommaSeparated() {
-        // 这个测试会在 Step 3 实现 extractFirstIp 静态方法后才能通过
         String result = VisitServiceImpl.extractFirstIp("1.2.3.4, 10.0.0.1, 192.168.0.1");
         assertEquals("1.2.3.4", result);
     }
