@@ -7,7 +7,7 @@ import com.example.randomGallery.entity.VO.AuthorVO;
 import com.example.randomGallery.service.AuthorService;
 import com.example.randomGallery.service.mapper.AuthorMapper;
 import com.example.randomGallery.service.mapper.AuthorWorkMapper;
-import org.springframework.beans.factory.annotation.Autowired;
+import lombok.RequiredArgsConstructor;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -19,13 +19,12 @@ import java.util.List;
  * 作者服务实现类
  */
 @Service
+@RequiredArgsConstructor
 public class AuthorServiceImpl implements AuthorService {
 
-    @Autowired
-    private AuthorMapper authorMapper;
+    private final AuthorMapper authorMapper;
 
-    @Autowired
-    private AuthorWorkMapper authorWorkMapper;
+    private final AuthorWorkMapper authorWorkMapper;
 
     @Override
     @Cacheable(value = "authors", unless = "#result == null || #result.isEmpty()")
