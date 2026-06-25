@@ -1,12 +1,9 @@
 package com.example.randomGallery.service.Impl;
 
-import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.example.randomGallery.entity.DO.XhsWorkBaseDO;
-import com.example.randomGallery.service.AuthorService;
 import com.example.randomGallery.service.DataMigrationService;
-import com.example.randomGallery.service.TagService;
 import com.example.randomGallery.service.mapper.AuthorMapper;
 import com.example.randomGallery.service.mapper.AuthorWorkMapper;
 import com.example.randomGallery.service.mapper.TagMapper;
@@ -15,7 +12,6 @@ import com.example.randomGallery.service.mapper.XhsWorkBaseMapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 
@@ -30,12 +26,11 @@ public class DataMigrationServiceImpl implements DataMigrationService {
     private static final int PAGE_SIZE = 1000;
 
     private final XhsWorkBaseMapper workBaseMapper;
-    private final AuthorService authorService;
-    private final TagService tagService;
     private final AuthorMapper authorMapper;
     private final AuthorWorkMapper authorWorkMapper;
     private final TagMapper tagMapper;
     private final TagWorkMapper tagWorkMapper;
+    private final DataMigrationBatchService dataMigrationBatchService;
 
     @Override
     public void migrateData() {
@@ -58,8 +53,8 @@ public class DataMigrationServiceImpl implements DataMigrationService {
                 break;
             }
 
-            // 分批处理，每批使用独立事务
-            processBatch(workList);
+            // 分批处理，每批使用独立事务（通过 Spring 代理保证 @Transactional 生效）
+            dataMigrationBatchService.processBatch(workList);
 
             totalCount += workList.size();
             log.info("已处理 {} 个作品 (第 {} 页)", totalCount, currentPage);
@@ -70,29 +65,6 @@ public class DataMigrationServiceImpl implements DataMigrationService {
 
         log.info("数据迁移任务完成！总共处理了 {} 个作品", totalCount);
         log.info(getMigrationInfo());
-    }
-
-    /**
-     * 分批处理作品，每批使用独立事务
-     */
-    @Transactional(rollbackFor = Exception.class)
-    public void processBatch(List<XhsWorkBaseDO> workList) {
-        for (XhsWorkBaseDO work : workList) {
-            String workId = work.getWorkId();
-            String authorId = work.getAuthorId();
-            String workTags = work.getWorkTags();
-
-            // 处理作者信息
-            if (authorId != null && !authorId.trim().isEmpty()) {
-                authorService.saveOrUpdateAuthor(authorId, work.getAuthorNickname(), work.getAuthorUrl());
-                authorService.createAuthorWorkRelation(authorId, workId);
-            }
-
-            // 处理标签
-            if (workTags != null && !workTags.trim().isEmpty()) {
-                tagService.processWorkTags(workTags, workId);
-            }
-        }
     }
 
     @Override
