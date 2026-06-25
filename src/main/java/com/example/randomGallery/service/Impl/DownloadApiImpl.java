@@ -184,7 +184,7 @@ public class DownloadApiImpl implements DownloadApi {
 
         // 3. 批量插入
         if (CollUtil.isNotEmpty(waitToInsert)) {
-            waitToInsert.forEach(workMediaMapper::insert);
+            workMediaMapper.insertBatch(waitToInsert);
             log.info("作品 {} 批量插入媒体数据 {} 条", workId, waitToInsert.size());
         }
     }

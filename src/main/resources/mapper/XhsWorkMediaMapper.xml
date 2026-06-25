@@ -30,4 +30,11 @@
            AND xwm.media_type = 'gif'
            AND xwm.is_delete = 0;
      </select>
+    <insert id="insertBatch">
+        INSERT INTO xhs_work_media (work_base_id, work_id, media_type, media_url, sort_index, create_time)
+        VALUES
+        <foreach collection="list" item="item" separator=",">
+            (#{item.workBaseId}, #{item.workId}, #{item.mediaType.value}, #{item.mediaUrl}, #{item.sortIndex}, #{item.createTime})
+        </foreach>
+    </insert>
 </mapper>
