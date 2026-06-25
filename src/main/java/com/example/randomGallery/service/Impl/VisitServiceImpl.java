@@ -13,6 +13,7 @@ import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 import org.springframework.stereotype.Service;
 
 import java.net.Inet4Address;
@@ -33,6 +34,7 @@ public class VisitServiceImpl implements VisitService {
 
     private final VisitUserMapper visitUserMapper;
     private final VisitLogMapper visitLogMapper;
+    private final ThreadPoolTaskExecutor taskExecutor;
 
     // 不再使用 @Async 注解整个方法，改用内部异步处理，确保Request数据在主线程提取
     @Override
@@ -54,7 +56,7 @@ public class VisitServiceImpl implements VisitService {
             // 2. 异步执行数据库操作
             CompletableFuture.runAsync(() -> {
                 doRecordVisit(ip, userAgentStr, uuid, uri, method, queryString, duration, status);
-            });
+            }, taskExecutor);
 
         } catch (Exception e) {
             log.error("准备记录访问日志失败", e);
@@ -172,7 +174,18 @@ public class VisitServiceImpl implements VisitService {
         if (ip == null || ip.isEmpty() || "unknown".equalsIgnoreCase(ip)) {
             ip = request.getRemoteAddr();
         }
-        return ip;
+        return extractFirstIp(ip);
+    }
+
+    public static String extractFirstIp(String ip) {
+        if (ip == null || ip.isEmpty()) {
+            return ip;
+        }
+        int commaIndex = ip.indexOf(',');
+        if (commaIndex > 0) {
+            return ip.substring(0, commaIndex).trim();
+        }
+        return ip.trim();
     }
 
     private String limitString(String str, int maxLength) {
