@@ -61,3 +61,6 @@ cache:
     enabled: false
     delay-minutes: 10
     target-env: dev
+
+admin:
+  allowed-ips: "127.0.0.1,0:0:0:0:0:0:0:1,::1"
