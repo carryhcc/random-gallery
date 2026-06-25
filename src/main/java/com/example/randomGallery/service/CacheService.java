@@ -13,6 +13,7 @@ import jakarta.annotation.PostConstruct;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
 import java.sql.SQLException;
@@ -47,6 +48,15 @@ public class CacheService {
     private Long minGroupId;
 
     private ResettableTimer resettableTimer;
+
+    @Value("${cache.timer.enabled:false}")
+    private boolean timerEnabled;
+
+    @Value("${cache.timer.delay-minutes:10}")
+    private long timerDelayMinutes;
+
+    @Value("${cache.timer.target-env:dev}")
+    private String timerTargetEnv;
 
     @Getter
     private String picSqlName = "cc_pic_all_dev";
@@ -94,7 +104,9 @@ public class CacheService {
     }
 
     private void initTimer() {
-        this.resettableTimer = new ResettableTimer(this, 10, "dev");
+        if (timerEnabled) {
+            this.resettableTimer = new ResettableTimer(this, timerDelayMinutes, timerTargetEnv);
+        }
     }
 
     public void cachePicId() throws SQLException {

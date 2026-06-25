@@ -55,3 +55,9 @@ image:
   safe-mode:
     enabled: true
     placeholder-url: "/icons/404.svg"
+
+cache:
+  timer:
+    enabled: false
+    delay-minutes: 10
+    target-env: dev
