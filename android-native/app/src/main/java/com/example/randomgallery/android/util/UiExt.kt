@@ -6,29 +6,25 @@ import android.content.Context
 import android.graphics.Color
 import android.os.Environment
 import android.view.Gravity
-import android.view.View
 import android.view.ViewGroup
 import android.widget.FrameLayout
 import android.widget.TextView
 import android.widget.Toast
 import androidx.core.content.getSystemService
 import androidx.core.net.toUri
-import androidx.core.view.ViewCompat
-import androidx.core.view.WindowInsetsCompat
-import androidx.core.view.updatePadding
-import com.google.android.material.snackbar.Snackbar
 
-fun View.shortSnack(text: String) {
-    Snackbar.make(this, text, Snackbar.LENGTH_SHORT).show()
+fun Context.toast(text: String) {
+    Toast.makeText(this, text, Toast.LENGTH_SHORT).show()
 }
 
+/** 顶部圆角悬浮提示，从状态栏下方滑入/淡出。统一替代底部直角 Snackbar。 */
 fun Activity.showTopMessage(msg: String, durationMs: Long = 3000) {
     val root = window.decorView as ViewGroup
     val density = resources.displayMetrics.density
     val hPad = (16 * density).toInt()
     val vPad = (10 * density).toInt()
     val radius = (12 * density)
-    val topMargin = (72 * density).toInt()
+    val marginTop = (72 * density).toInt()
 
     val bg = android.graphics.drawable.GradientDrawable().apply {
         setColor(Color.parseColor("#CC1C1C1E"))
@@ -49,7 +45,7 @@ fun Activity.showTopMessage(msg: String, durationMs: Long = 3000) {
         FrameLayout.LayoutParams.WRAP_CONTENT
     ).apply {
         gravity = Gravity.TOP or Gravity.CENTER_HORIZONTAL
-        topMargin = topMargin
+        topMargin = marginTop
     }
 
     tv.alpha = 0f
@@ -61,10 +57,6 @@ fun Activity.showTopMessage(msg: String, durationMs: Long = 3000) {
         tv.animate().alpha(0f).translationY(-(24 * density)).setDuration(200)
             .withEndAction { root.removeView(tv) }.start()
     }, durationMs)
-}
-
-fun Context.toast(text: String) {
-    Toast.makeText(this, text, Toast.LENGTH_SHORT).show()
 }
 
 fun Context.downloadToPublic(url: String, fileName: String) {
@@ -94,29 +86,5 @@ fun buildDownloadFileName(url: String, prefix: String, defaultExt: String): Stri
         lastSegment
     } else {
         "$lastSegment.$cleanExt"
-    }
-}
-
-fun View.applySystemBarsPadding(
-    top: Boolean = true,
-    bottom: Boolean = true,
-    left: Boolean = false,
-    right: Boolean = false
-) {
-    val initialLeft = paddingLeft
-    val initialTop = paddingTop
-    val initialRight = paddingRight
-    val initialBottom = paddingBottom
-    ViewCompat.setOnApplyWindowInsetsListener(this) { view, insets ->
-        val bars = insets.getInsets(
-            WindowInsetsCompat.Type.systemBars() or WindowInsetsCompat.Type.displayCutout()
-        )
-        view.updatePadding(
-            left = initialLeft + if (left) bars.left else 0,
-            top = initialTop + if (top) bars.top else 0,
-            right = initialRight + if (right) bars.right else 0,
-            bottom = initialBottom + if (bottom) bars.bottom else 0
-        )
-        insets
     }
 }

@@ -3,96 +3,36 @@ package com.example.randomgallery.android
 import android.content.ClipboardManager
 import android.content.Context
 import android.os.Bundle
-import androidx.activity.OnBackPressedCallback
+import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
-import androidx.core.view.isVisible
+import androidx.appcompat.app.AppCompatDelegate
 import androidx.lifecycle.lifecycleScope
-import androidx.navigation.NavGraph.Companion.findStartDestination
-import androidx.navigation.NavOptions
-import androidx.navigation.fragment.NavHostFragment
-import com.example.randomgallery.android.databinding.ActivityMainBinding
 import com.example.randomgallery.android.data.local.AppPrefs
+import com.example.randomgallery.android.ui.AppNavHost
 import com.example.randomgallery.android.ui.download.DownloadManageViewModel
-import com.example.randomgallery.android.util.applySystemBarsPadding
+import com.example.randomgallery.android.ui.theme.RandomGalleryTheme
 import com.example.randomgallery.android.util.showTopMessage
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 
+/**
+ * 单 Activity 宿主。整个 App 的页面切换由 Compose Navigation（[AppNavHost]）驱动，
+ * 不再使用 Fragment / nav_graph.xml / BottomNavigationView。
+ */
 class MainActivity : AppCompatActivity() {
 
-    private lateinit var binding: ActivityMainBinding
-    private var backPressedAt = 0L
-    private var isSyncingNav = false
     private var lastAutoSubmittedUrl: String? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
-        androidx.appcompat.app.AppCompatDelegate.setDefaultNightMode(
-            androidx.appcompat.app.AppCompatDelegate.MODE_NIGHT_NO
-        )
+        AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_NO)
         enableEdgeToEdge()   // Android 15+ 强制全面屏，提前主动适配
         super.onCreate(savedInstanceState)
-        binding = ActivityMainBinding.inflate(layoutInflater)
-        setContentView(binding.root)
-
-        val navHost = supportFragmentManager.findFragmentById(R.id.nav_host) as NavHostFragment
-        val navController = navHost.navController
-        val topLevelIds = setOf(
-            R.id.homeFragment,
-            R.id.randomGalleryFragment,
-            R.id.groupListFragment,
-            R.id.downloadListFragment
-        )
-        // Pages where bottom nav should stay visible (tabs + secondary pages)
-        val navVisibleIds = topLevelIds + setOf(
-            R.id.picListFragment
-        )
-
-        binding.navHost.applySystemBarsPadding(top = false, bottom = false, left = false, right = false)
-        binding.bottomNav.applySystemBarsPadding(top = false, bottom = true, left = false, right = false)
-
-        // Custom bottom nav listener — avoids setupWithNavController state-sync bugs
-        binding.bottomNav.setOnItemSelectedListener { item ->
-            if (isSyncingNav) return@setOnItemSelectedListener true
-            val currentDest = navController.currentDestination?.id
-            if (currentDest == item.itemId) return@setOnItemSelectedListener true
-            val startDestId = navController.graph.findStartDestination().id
-            val options = NavOptions.Builder()
-                .setLaunchSingleTop(true)
-                .setPopUpTo(startDestId, inclusive = false)
-                .build()
-            runCatching {
-                navController.navigate(item.itemId, null, options)
-            }.onFailure {
-                runCatching { navController.navigate(item.itemId) }
+        setContent {
+            RandomGalleryTheme {
+                AppNavHost()
             }
-            true
         }
-
-        // Sync bottom nav checked state with destination changes
-        navController.addOnDestinationChangedListener { _, destination, _ ->
-            isSyncingNav = true
-            binding.bottomNav.menu.setGroupCheckable(0, true, true)
-            binding.bottomNav.selectedItemId = destination.id
-            isSyncingNav = false
-            binding.bottomNav.isVisible = destination.id in navVisibleIds
-        }
-
-        onBackPressedDispatcher.addCallback(this, object : OnBackPressedCallback(true) {
-            override fun handleOnBackPressed() {
-                if (navController.currentDestination?.id == R.id.homeFragment) {
-                    val now = System.currentTimeMillis()
-                    if (now - backPressedAt < 2000) {
-                        finish()
-                    } else {
-                        backPressedAt = now
-                        showTopMessage("再按一次返回键退出", 2000)
-                    }
-                } else {
-                    navController.navigateUp()
-                }
-            }
-        })
     }
 
     override fun onWindowFocusChanged(hasFocus: Boolean) {
