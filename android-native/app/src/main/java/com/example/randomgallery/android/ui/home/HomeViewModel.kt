@@ -12,7 +12,9 @@ import com.example.randomgallery.android.data.model.GroupVO
 import com.example.randomgallery.android.data.model.PicCount
 import com.example.randomgallery.android.data.repository.GalleryRepository
 import com.example.randomgallery.android.ui.common.SingleLiveEvent
+import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.launch
 
 class HomeViewModel(
@@ -37,14 +39,12 @@ class HomeViewModel(
     private val _urlList = MutableLiveData<List<String>>(emptyList())
     val urlList: LiveData<List<String>> = _urlList
 
-    private val _baseUrlMessage = SingleLiveEvent<Result<String>>()
-    val baseUrlMessage: LiveData<Result<String>> = _baseUrlMessage
+    // 一次性 UI 消息（不会在页面返回时重播）
+    private val _messages = Channel<String>(Channel.BUFFERED)
+    val messages = _messages.receiveAsFlow()
 
     private val _randomGroup = SingleLiveEvent<Result<GroupVO>>()
     val randomGroup: LiveData<Result<GroupVO>> = _randomGroup
-
-    private val _privacyMessage = SingleLiveEvent<Result<String>>()
-    val privacyMessage: LiveData<Result<String>> = _privacyMessage
 
     init {
         viewModelScope.launch {
@@ -68,7 +68,7 @@ class HomeViewModel(
             if (result.isFailure) {
                 val url = AppContainer.currentBaseUrl()
                 val msg = result.exceptionOrNull()?.message ?: "未知错误"
-                _baseUrlMessage.value = Result.failure(Exception("连接失败 ($url): $msg"))
+                _messages.trySend("连接失败 ($url): $msg")
             }
         }
     }
@@ -84,11 +84,11 @@ class HomeViewModel(
             repository().setPrivacyMode(enabled)
                 .onSuccess {
                     _privacy.value = it
-                    _privacyMessage.value = Result.success(if (it) "隐私模式已开启" else "隐私模式已关闭")
+                    _messages.trySend(if (it) "隐私模式已开启" else "隐私模式已关闭")
                 }
                 .onFailure {
                     _privacy.value = !enabled
-                    _privacyMessage.value = Result.failure(it)
+                    _messages.trySend("失败：${it.message ?: "未知错误"}")
                 }
         }
     }
@@ -96,20 +96,19 @@ class HomeViewModel(
     fun switchEnv(env: String) {
         viewModelScope.launch {
             val result = repository().switchEnv(env)
-            if (result.isSuccess) {
-                _baseUrlMessage.value = Result.success("已切换到 $env 环境")
-            } else {
-                _baseUrlMessage.value = Result.failure(
-                    Exception("切换失败：${result.exceptionOrNull()?.message ?: "未知错误"}")
-                )
-            }
+            _messages.trySend(
+                if (result.isSuccess) "已切换到 $env 环境"
+                else "切换失败：${result.exceptionOrNull()?.message ?: "未知错误"}"
+            )
             loadEnvInfo()
         }
     }
 
     fun randomGroup() {
         viewModelScope.launch {
-            _randomGroup.value = repository().getRandomGroupInfo()
+            val result = repository().getRandomGroupInfo()
+            _randomGroup.value = result
+            result.onFailure { _messages.trySend("获取失败：${it.message}") }
         }
     }
 
@@ -118,7 +117,7 @@ class HomeViewModel(
         viewModelScope.launch {
             AppContainer.updateBaseUrl(appContext, url)
             _baseUrl.value = AppContainer.currentBaseUrl()
-            _baseUrlMessage.value = Result.success("已切换到 $url")
+            _messages.trySend("已切换到 $url")
             loadEnvInfo()
         }
     }
@@ -127,9 +126,7 @@ class HomeViewModel(
     fun addAndSelectUrl(rawUrl: String) {
         val sanitized = BaseUrlConfig.sanitize(rawUrl)
         if (sanitized == null) {
-            _baseUrlMessage.value = Result.failure(
-                IllegalArgumentException("请输入完整的 http:// 或 https:// 地址")
-            )
+            _messages.trySend("请输入完整的 http:// 或 https:// 地址")
             return
         }
         viewModelScope.launch {
@@ -140,7 +137,7 @@ class HomeViewModel(
             }
             AppContainer.updateBaseUrl(appContext, sanitized)
             _baseUrl.value = AppContainer.currentBaseUrl()
-            _baseUrlMessage.value = Result.success("服务地址已更新，正在连接...")
+            _messages.trySend("服务地址已更新，正在连接...")
             loadEnvInfo()
         }
     }

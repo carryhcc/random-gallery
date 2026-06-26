@@ -10,16 +10,19 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import android.app.Activity
 import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.example.randomgallery.android.ui.common.*
 import com.example.randomgallery.android.ui.theme.*
+import com.example.randomgallery.android.util.showTopMessage
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -40,33 +43,27 @@ fun HomeScreen(
     val baseUrl by viewModel.baseUrl.observeAsState("")
     val urlList by viewModel.urlList.observeAsState(emptyList())
     val randomGroup by viewModel.randomGroup.observeAsState()
-    val baseUrlMessage by viewModel.baseUrlMessage.observeAsState()
-    val privacyMessage by viewModel.privacyMessage.observeAsState()
 
     var showSettings by remember { mutableStateOf(false) }
-    val snackbarHostState = remember { SnackbarHostState() }
+    val context = LocalContext.current
 
     LaunchedEffect(Unit) {
         viewModel.loadEnvInfo()
         viewModel.loadPrivacy()
+        viewModel.messages.collect { msg ->
+            (context as? Activity)?.showTopMessage(msg)
+        }
     }
 
-    LaunchedEffect(baseUrlMessage) {
-        baseUrlMessage?.let { snackbarHostState.showSnackbar(it.getOrElse { e -> e.message ?: "失败" }) }
-    }
-    LaunchedEffect(privacyMessage) {
-        privacyMessage?.let { snackbarHostState.showSnackbar(it.getOrElse { e -> e.message ?: "失败" }) }
-    }
     LaunchedEffect(randomGroup) {
         randomGroup?.onSuccess { group ->
             group.groupId?.let { onNavigateToPicList(it, group.groupName ?: "套图详情") }
-        }?.onFailure { snackbarHostState.showSnackbar(it.message ?: "获取失败") }
+        }
     }
 
     val picCount = envInfo?.getOrNull()?.picCount ?: 0
     val groupCount = envInfo?.getOrNull()?.groupCount ?: 0
 
-    TopSnackbarBox(snackbarHostState) {
     Scaffold(
         containerColor = FeedBackground,
         contentWindowInsets = WindowInsets(0, 0, 0, 0),
@@ -239,7 +236,6 @@ fun HomeScreen(
             onSwitchEnv = { viewModel.switchEnv(it) }
         )
     }
-    } // end TopSnackbarBox
 }
 
 // ── 区块容器卡片 ───────────────────────────────────────────────────
