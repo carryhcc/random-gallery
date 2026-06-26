@@ -95,7 +95,14 @@ class HomeViewModel(
 
     fun switchEnv(env: String) {
         viewModelScope.launch {
-            repository().switchEnv(env)
+            val result = repository().switchEnv(env)
+            if (result.isSuccess) {
+                _baseUrlMessage.value = Result.success("已切换到 $env 环境")
+            } else {
+                _baseUrlMessage.value = Result.failure(
+                    Exception("切换失败：${result.exceptionOrNull()?.message ?: "未知错误"}")
+                )
+            }
             loadEnvInfo()
         }
     }

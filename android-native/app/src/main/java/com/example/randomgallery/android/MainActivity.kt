@@ -52,9 +52,13 @@ class MainActivity : AppCompatActivity() {
 
             val result = AppContainer.repository(this@MainActivity).addDownloadTask(url)
             val msg = if (result.isSuccess) {
-                "✓ 已自动提交下载：…${url.takeLast(30)}"
+                "✓ 已加入下载队列"
             } else {
-                "提交失败：${result.exceptionOrNull()?.message}"
+                val err = result.exceptionOrNull()
+                val isNetworkError = err is java.net.UnknownHostException
+                    || err is java.net.ConnectException
+                    || err is java.net.SocketTimeoutException
+                if (isNetworkError) "提交失败：网络连接错误" else "提交失败：${err?.message ?: "未知错误"}"
             }
             showTopMessage(msg)
         }
