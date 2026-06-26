@@ -33,3 +33,13 @@ build/
 .vscode/
 logs
 src/main/resources/db.yaml
+
+# Local tooling & generated artifacts
+.canvas-meta.json
+.claude/
+AGENTS.md
+docs/
+*.dmg
+*.pkg
+package-desktop.sh
+app_icon.png
