@@ -39,6 +39,8 @@ import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateMapOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.snapshotFlow
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.compose.ui.Alignment
@@ -56,7 +58,6 @@ import com.example.randomgallery.android.ui.theme.RandomGalleryTheme
 import com.example.randomgallery.android.ui.theme.Spacing
 import com.example.randomgallery.android.util.ImageUrlResolver
 import androidx.compose.ui.platform.LocalContext
-import kotlin.math.absoluteValue
 
 /** 随机图库瀑布流（小红书风）。复用现有 RandomGalleryViewModel，只重做 UI。 */
 @OptIn(ExperimentalMaterial3Api::class)
@@ -71,6 +72,8 @@ fun RandomGalleryScreen(
     val error by viewModel.error.collectAsStateWithLifecycle()
 
     val gridState = rememberLazyStaggeredGridState()
+    // 图片真实宽高比缓存（URL → ratio），避免重组/复用时跳动
+    val ratioCache = remember { mutableStateMapOf<String, Float>() }
 
     // 首次进入加载一次；从返回栈回来时复用已有数据，不重复拉取
     LaunchedEffect(Unit) {
@@ -141,7 +144,7 @@ fun RandomGalleryScreen(
                         modifier = Modifier.fillMaxSize()
                     ) {
                         items(items = groups) { group ->
-                            FeedCard(group = group, onClick = { onGroupClick(group) })
+                            FeedCard(group = group, ratioCache = ratioCache, onClick = { onGroupClick(group) })
                         }
                     }
                 }
@@ -151,11 +154,15 @@ fun RandomGalleryScreen(
 }
 
 @Composable
-private fun FeedCard(group: GroupVO, onClick: () -> Unit) {
+private fun FeedCard(
+    group: GroupVO,
+    ratioCache: MutableMap<String, Float>,
+    onClick: () -> Unit
+) {
     val context = LocalContext.current
-    // 用 groupId 派生一个稳定的宽高比，营造瀑布流的错落感
-    val ratios = listOf(0.74f, 1.0f, 1.32f, 0.86f, 1.15f)
-    val ratio = ratios[((group.groupId ?: 0L).toInt().absoluteValue) % ratios.size]
+    val url = ImageUrlResolver.displayUrl(group.groupUrl) ?: ""
+    // 未知尺寸时先用 1:1 占位，加载成功后过渡到真实比例（限制在 3:4 ~ 4:3 之间）
+    val ratio = ratioCache[url] ?: 1f
 
     Surface(
         shape = RoundedCornerShape(14.dp),
@@ -168,11 +175,17 @@ private fun FeedCard(group: GroupVO, onClick: () -> Unit) {
         Column {
             AsyncImage(
                 model = ImageRequest.Builder(context)
-                    .data(ImageUrlResolver.displayUrl(group.groupUrl))
+                    .data(url)
                     .crossfade(true)
                     .build(),
                 contentDescription = group.groupName,
                 contentScale = ContentScale.Crop,
+                onSuccess = { state ->
+                    val size = state.painter.intrinsicSize
+                    if (size.width > 0f && size.height > 0f) {
+                        ratioCache[url] = (size.width / size.height).coerceIn(0.75f, 1.33f)
+                    }
+                },
                 modifier = Modifier
                     .fillMaxWidth()
                     .aspectRatio(ratio)
@@ -230,6 +243,7 @@ private fun FeedCardPreview() {
     RandomGalleryTheme {
         FeedCard(
             group = GroupVO(groupId = 3L, groupName = "夏日海边写真合集 清新自然", groupUrl = null, groupCount = 24),
+            ratioCache = remember { mutableStateMapOf() },
             onClick = {}
         )
     }
