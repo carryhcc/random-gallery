@@ -1,10 +1,7 @@
 package com.example.randomgallery.android.ui.downloaddetail
 
-import android.app.DownloadManager
-import android.content.Context
-import android.net.Uri
-import android.os.Environment
 import android.view.ViewGroup
+import android.content.Context
 import androidx.annotation.OptIn
 import androidx.compose.animation.Crossfade
 import androidx.compose.animation.animateColorAsState
@@ -59,6 +56,8 @@ import com.example.randomgallery.android.data.model.XhsWorkMedia
 import com.example.randomgallery.android.ui.common.*
 import com.example.randomgallery.android.ui.theme.*
 import com.example.randomgallery.android.util.ImageUrlResolver
+import com.example.randomgallery.android.util.Downloader
+import com.example.randomgallery.android.util.MediaKind
 
 private data class MediaItem2(
     val id: Long,
@@ -220,7 +219,7 @@ fun DownloadDetailScreen(
                                     pagerState = imgPagerState,
                                     onDelete = { deleteTargetId = it },
                                     onDownload = { url ->
-                                        downloadToGallery(context, url, false)
+                                        Downloader.enqueue(context, url, MediaKind.IMAGE)
                                         Messenger.show("图片正在下载，请稍候…")
                                     },
                                     onImageClick = { url -> fullScreenUrl = url }
@@ -239,7 +238,7 @@ fun DownloadDetailScreen(
                                     pagerState = vidPagerState,
                                     onDelete = { deleteTargetId = it },
                                     onDownload = { url ->
-                                        downloadToGallery(context, url, true)
+                                        Downloader.enqueue(context, url, MediaKind.VIDEO)
                                         Messenger.show("视频正在下载，请稍候…")
                                     },
                                     onImageClick = null
@@ -633,23 +632,6 @@ private fun BoxScope.LivePhotoPage(
         }
     }
 }
-
-// ── 下载到相册 ────────────────────────────────────────────────────────
-
-private fun downloadToGallery(context: Context, url: String, isVideo: Boolean) {
-    val ext = if (isVideo) "mp4" else "jpg"
-    val filename = "rg_${System.currentTimeMillis()}.$ext"
-    val request = DownloadManager.Request(Uri.parse(url))
-        .setTitle(filename)
-        .setNotificationVisibility(DownloadManager.Request.VISIBILITY_VISIBLE_NOTIFY_COMPLETED)
-        .setDestinationInExternalPublicDir(
-            if (isVideo) Environment.DIRECTORY_MOVIES else Environment.DIRECTORY_PICTURES,
-            "RandomGallery/$filename"
-        )
-        .setAllowedOverMetered(true)
-    (context.getSystemService(Context.DOWNLOAD_SERVICE) as DownloadManager).enqueue(request)
-}
-
 // ── Shimmer 特效 ──────────────────────────────────────────────────────
 
 @Composable

@@ -1,9 +1,5 @@
 package com.example.randomgallery.android.ui.piclist
 
-import android.app.DownloadManager
-import android.content.Context
-import android.net.Uri
-import android.os.Environment
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.staggeredgrid.*
@@ -26,6 +22,9 @@ import coil.request.ImageRequest
 import com.example.randomgallery.android.ui.common.*
 import com.example.randomgallery.android.ui.theme.*
 import com.example.randomgallery.android.util.ImageUrlResolver
+import com.example.randomgallery.android.util.Downloader
+import com.example.randomgallery.android.util.MediaKind
+import android.content.Context
 
 @Composable
 fun PicListScreen(
@@ -96,7 +95,7 @@ fun PicListScreen(
                                 if (imageLoaded) {
                                     IconButton(
                                         onClick = {
-                                            downloadImage(context, url)
+                                            Downloader.enqueue(context, url ?: "", MediaKind.IMAGE)
                                             Messenger.show("图片正在下载…")
                                         },
                                         modifier = Modifier.align(Alignment.BottomEnd)
@@ -130,14 +129,4 @@ fun PicListScreen(
             }
         }
     }
-}
-
-private fun downloadImage(context: Context, url: String) {
-    val filename = "rg_${System.currentTimeMillis()}.jpg"
-    val request = DownloadManager.Request(Uri.parse(url))
-        .setTitle(filename)
-        .setNotificationVisibility(DownloadManager.Request.VISIBILITY_VISIBLE_NOTIFY_COMPLETED)
-        .setDestinationInExternalPublicDir(Environment.DIRECTORY_PICTURES, "RandomGallery/$filename")
-        .setAllowedOverMetered(true)
-    (context.getSystemService(Context.DOWNLOAD_SERVICE) as DownloadManager).enqueue(request)
 }

@@ -27,7 +27,8 @@ import coil.request.ImageRequest
 import com.example.randomgallery.android.ui.common.*
 import com.example.randomgallery.android.ui.theme.*
 import com.example.randomgallery.android.util.ImageUrlResolver
-import com.example.randomgallery.android.util.downloadToPublic
+import com.example.randomgallery.android.util.Downloader
+import com.example.randomgallery.android.util.MediaKind
 
 @Composable
 fun RandomPicScreen(
@@ -140,7 +141,7 @@ fun RandomPicScreen(
                     FloatingActionButton(
                         onClick = {
                             if (imageUrl.isNotBlank()) {
-                                context.downloadToPublic(imageUrl, "random_${System.currentTimeMillis()}.jpg")
+                                Downloader.enqueue(context, imageUrl, MediaKind.IMAGE)
                                 Messenger.show("已加入下载队列")
                             }
                         },
