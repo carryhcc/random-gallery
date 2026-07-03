@@ -162,7 +162,7 @@ private fun FeedCard(
     val context = LocalContext.current
     val url = ImageUrlResolver.displayUrl(group.groupUrl) ?: ""
     // 未知尺寸时先用 1:1 占位，加载成功后过渡到真实比例（限制在 3:4 ~ 4:3 之间）
-    val ratio = ratioCache[url] ?: 1f
+    val ratio = if (url.isBlank()) 1f else ratioCache[url] ?: 1f
 
     Surface(
         shape = RoundedCornerShape(14.dp),
@@ -182,7 +182,7 @@ private fun FeedCard(
                 contentScale = ContentScale.Crop,
                 onSuccess = { state ->
                     val size = state.painter.intrinsicSize
-                    if (size.width > 0f && size.height > 0f) {
+                    if (url.isNotBlank() && size.width > 0f && size.height > 0f) {
                         ratioCache[url] = (size.width / size.height).coerceIn(0.75f, 1.33f)
                     }
                 },
