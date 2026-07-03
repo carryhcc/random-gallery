@@ -86,7 +86,7 @@ fun PicListScreen(
                         horizontalArrangement = Arrangement.spacedBy(Spacing.sm),
                         modifier = Modifier.fillMaxSize()
                     ) {
-                        items(items = items, key = { it.id ?: 0L }) { pic ->
+                        itemsIndexed(items = items, key = { index, pic -> pic.id ?: "idx_$index" }) { _, pic ->
                             val url = ImageUrlResolver.displayUrl(pic.picUrl)
                             var imageLoaded by remember(url) { mutableStateOf(false) }
                             Box(

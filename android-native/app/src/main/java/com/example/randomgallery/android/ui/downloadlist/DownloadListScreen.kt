@@ -122,7 +122,7 @@ fun DownloadListScreen(
                             horizontalArrangement = Arrangement.spacedBy(Spacing.md),
                             modifier = Modifier.fillMaxSize()
                         ) {
-                            items(items = works, key = { it.workId ?: it.id ?: 0L }) { work ->
+                            itemsIndexed(items = works, key = { index, work -> work.workId ?: work.id ?: "idx_$index" }) { _, work ->
                                 WorkCard(work = work, onClick = {
                                     onWorkClick(
                                         work.workId ?: "",

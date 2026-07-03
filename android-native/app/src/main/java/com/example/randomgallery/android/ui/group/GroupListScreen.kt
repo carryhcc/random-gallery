@@ -10,6 +10,7 @@ import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.GridItemSpan
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
+import androidx.compose.foundation.lazy.grid.itemsIndexed
 import androidx.compose.foundation.lazy.grid.rememberLazyGridState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -121,7 +122,7 @@ fun GroupListScreen(
                             horizontalArrangement = Arrangement.spacedBy(Spacing.md),
                             modifier = Modifier.fillMaxSize()
                         ) {
-                            items(items = groups, key = { it.groupId ?: 0L }) { group ->
+                            itemsIndexed(items = groups, key = { index, group -> group.groupId ?: "idx_$index" }) { _, group ->
                                 GroupCard(group = group, onClick = { onGroupClick(group) })
                             }
                             item(span = { GridItemSpan(2) }) {
