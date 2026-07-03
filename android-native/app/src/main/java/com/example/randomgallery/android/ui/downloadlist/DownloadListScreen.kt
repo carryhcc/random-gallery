@@ -42,14 +42,6 @@ fun DownloadListScreen(
     var showFilter by remember { mutableStateOf(false) }
     val gridState = rememberLazyStaggeredGridState()
 
-    LaunchedEffect(Unit) {
-        if (!viewModel.hasStarted) {
-            viewModel.hasStarted = true
-            viewModel.init()
-            viewModel.refresh()
-        }
-    }
-
     // Infinite scroll
     LaunchedEffect(gridState) {
         snapshotFlow {

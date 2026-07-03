@@ -1,5 +1,6 @@
 package com.example.randomgallery.android.ui.downloadlist
 
+import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.randomgallery.android.data.model.AuthorVO
@@ -14,7 +15,8 @@ import kotlinx.coroutines.launch
 import kotlin.random.Random
 
 class DownloadListViewModel(
-    private val repository: GalleryRepository
+    private val repository: GalleryRepository,
+    savedStateHandle: SavedStateHandle
 ) : ViewModel() {
 
     private val _works = MutableStateFlow<List<XhsWorkListVO>>(emptyList())
@@ -39,13 +41,17 @@ class DownloadListViewModel(
     private var hasMore = true
     private var isLoadingInFlight = false  // 防止 snapshotFlow 同帧多次触发
 
-    // 首屏是否已加载过。视图重建（从返回栈回到本页）时不再重复拉取，避免多余请求与内容被重新洗牌。
-    var hasStarted = false
-
     var authorId: String? = null
     var tagId: Long? = null
     var keyword: String? = null
     private var seed: Int = Random.nextInt(1, 999999)
+
+    init {
+        authorId = savedStateHandle.get<String>("filterAuthorId")
+        keyword = savedStateHandle.get<String>("filterKeyword")
+        init()
+        loadMore()
+    }
 
     fun init() {
         viewModelScope.launch {

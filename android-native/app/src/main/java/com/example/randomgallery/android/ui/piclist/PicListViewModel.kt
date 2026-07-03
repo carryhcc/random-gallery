@@ -1,5 +1,6 @@
 package com.example.randomgallery.android.ui.piclist
 
+import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.randomgallery.android.data.model.PicVO
@@ -10,7 +11,8 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 
 class PicListViewModel(
-    private val repository: GalleryRepository
+    private val repository: GalleryRepository,
+    savedStateHandle: SavedStateHandle
 ) : ViewModel() {
 
     private val _items = MutableStateFlow<List<PicVO>>(emptyList())
@@ -24,7 +26,9 @@ class PicListViewModel(
 
     private var currentPage = 1
     private var hasMore = true
-    var groupId: Long = 0
+    private val groupId: Long = savedStateHandle.get<Long>("groupId") ?: 0L
+
+    init { refresh() }
 
     fun refresh() {
         currentPage = 1

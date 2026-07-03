@@ -30,7 +30,6 @@ import com.example.randomgallery.android.util.ImageUrlResolver
 @Composable
 fun PicListScreen(
     viewModel: PicListViewModel,
-    groupId: Long,
     groupName: String,
     onBack: () -> Unit
 ) {
@@ -39,11 +38,6 @@ fun PicListScreen(
     val loading by viewModel.loading.collectAsStateWithLifecycle()
     val error by viewModel.error.collectAsStateWithLifecycle()
     val gridState = rememberLazyStaggeredGridState()
-
-    LaunchedEffect(groupId) {
-        viewModel.groupId = groupId
-        if (items.isEmpty()) viewModel.refresh()
-    }
 
     // 距底部 4 条时触发加载下一页
     LaunchedEffect(gridState) {

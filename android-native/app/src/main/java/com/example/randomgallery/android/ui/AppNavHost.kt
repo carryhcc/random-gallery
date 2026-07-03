@@ -21,6 +21,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
+import androidx.lifecycle.createSavedStateHandle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.NavHostController
@@ -110,149 +111,147 @@ fun AppNavHost() {
 
     Box {
         Scaffold(
-        contentWindowInsets = WindowInsets(0, 0, 0, 0),
-        bottomBar = {
-            if (showBottomBar) {
-                NavigationBar {
-                    bottomTabs.forEach { tab ->
-                        NavigationBarItem(
-                            selected = currentBase == tab.route,
-                            onClick = { navController.switchTab(tab.route) },
-                            icon = { Icon(painterResource(tab.iconRes), contentDescription = null) },
-                            label = { Text(stringResource(tab.labelRes)) }
-                        )
+            contentWindowInsets = WindowInsets(0, 0, 0, 0),
+            bottomBar = {
+                if (showBottomBar) {
+                    NavigationBar {
+                        bottomTabs.forEach { tab ->
+                            NavigationBarItem(
+                                selected = currentBase == tab.route,
+                                onClick = { navController.switchTab(tab.route) },
+                                icon = { Icon(painterResource(tab.iconRes), contentDescription = null) },
+                                label = { Text(stringResource(tab.labelRes)) }
+                            )
+                        }
                     }
                 }
             }
-        }
-    ) { innerPadding ->
-        NavHost(
-            navController = navController,
-            startDestination = Routes.HOME,
-            modifier = Modifier.padding(innerPadding)
-        ) {
-            composable(Routes.HOME) {
-                val vm: HomeViewModel = viewModel { HomeViewModel(context.applicationContext) }
-                HomeScreen(
-                    viewModel = vm,
-                    onGroupClick = { _ -> },
-                    onNavigateToPicList = { groupId, groupName ->
-                        if (groupId > 0L) navController.toPicList(groupId, groupName)
-                    },
-                    onNavigateToRandomPic = { navController.navigate(Routes.RANDOM_PIC) },
-                    onNavigateToRandomGif = { navController.navigate(Routes.RANDOM_GIF) },
-                    onNavigateToDownloadManage = { navController.navigate(Routes.DOWNLOAD_MANAGE) },
-                    onNavigateToRandomGallery = { navController.switchTab(Routes.RANDOM_GALLERY) },
-                    onNavigateToGroupList = { navController.switchTab(Routes.GROUP_LIST) },
-                    onNavigateToDownloadList = { navController.switchTab(Routes.DOWNLOAD_LIST) }
-                )
-            }
-
-            composable(Routes.RANDOM_PIC) {
-                val vm: RandomPicViewModel = viewModel { RandomPicViewModel(AppContainer.repository(context)) }
-                RandomPicScreen(
-                    viewModel = vm,
-                    onBack = { navController.navigateUp() },
-                    onGroupClick = { groupId, groupName -> navController.toPicList(groupId, groupName) }
-                )
-            }
-
-            composable(Routes.RANDOM_GALLERY) {
-                val vm: RandomGalleryViewModel = viewModel { RandomGalleryViewModel(AppContainer.repository(context)) }
-                RandomGalleryScreen(
-                    viewModel = vm,
-                    onGroupClick = { group -> navController.toPicList(group.groupId ?: 0L, group.groupName ?: "套图详情") },
-                    onBack = { navController.navigateUp() }
-                )
-            }
-
-            composable(Routes.GROUP_LIST) {
-                val vm: GroupListViewModel = viewModel { GroupListViewModel(AppContainer.repository(context)) }
-                GroupListScreen(
-                    viewModel = vm,
-                    onGroupClick = { group -> navController.toPicList(group.groupId ?: 0L, group.groupName ?: "套图详情") },
-                    onBack = { navController.navigateUp() }
-                )
-            }
-
-            composable(Routes.RANDOM_GIF) {
-                val vm: RandomGifViewModel = viewModel { RandomGifViewModel(AppContainer.repository(context)) }
-                RandomGifScreen(
-                    onBack = { navController.navigateUp() },
-                    onDetail = { workId -> navController.toDownloadDetail(workId) },
-                    onAuthor = { authorId -> navController.toDownloadList(authorId = authorId) },
-                    viewModel = vm
-                )
-            }
-
-            composable(Routes.DOWNLOAD_MANAGE) {
-                val vm: DownloadManageViewModel = viewModel { DownloadManageViewModel(AppContainer.repository(context)) }
-                DownloadManageScreen(
-                    viewModel = vm,
-                    onBack = { navController.navigateUp() }
-                )
-            }
-
-            composable(
-                route = "${Routes.PIC_LIST}/{groupId}/{groupName}",
-                arguments = listOf(
-                    navArgument("groupId") { type = NavType.LongType },
-                    navArgument("groupName") { type = NavType.StringType }
-                )
-            ) { entry ->
-                val vm: PicListViewModel = viewModel { PicListViewModel(AppContainer.repository(context)) }
-                PicListScreen(
-                    viewModel = vm,
-                    groupId = entry.arguments?.getLong("groupId") ?: 0L,
-                    groupName = entry.arguments?.getString("groupName") ?: "套图详情",
-                    onBack = { navController.navigateUp() }
-                )
-            }
-
-            composable(
-                route = "${Routes.DOWNLOAD_DETAIL}/{workId}?coverImageUrl={coverImageUrl}",
-                arguments = listOf(
-                    navArgument("workId") { type = NavType.StringType },
-                    navArgument("coverImageUrl") {
-                        type = NavType.StringType; defaultValue = ""
-                    }
-                )
-            ) { entry ->
-                val vm: DownloadDetailViewModel = viewModel { DownloadDetailViewModel(AppContainer.repository(context)) }
-                DownloadDetailScreen(
-                    viewModel = vm,
-                    workId = entry.arguments?.getString("workId") ?: "",
-                    coverImageUrl = entry.arguments?.getString("coverImageUrl") ?: "",
-                    onBack = { navController.navigateUp() },
-                    onAuthorClick = { authorId, _ -> navController.toDownloadList(authorId = authorId) },
-                    onTagClick = { tag -> navController.toDownloadList(keyword = tag) }
-                )
-            }
-
-            composable(
-                route = "${Routes.DOWNLOAD_LIST}?filterAuthorId={filterAuthorId}&filterKeyword={filterKeyword}",
-                arguments = listOf(
-                    navArgument("filterAuthorId") {
-                        type = NavType.StringType; nullable = true; defaultValue = null
-                    },
-                    navArgument("filterKeyword") {
-                        type = NavType.StringType; nullable = true; defaultValue = null
-                    }
-                )
-            ) { entry ->
-                val vm: DownloadListViewModel = viewModel { DownloadListViewModel(AppContainer.repository(context)) }
-                // 首次进入前注入筛选参数，与旧 Fragment 行为一致
-                if (!vm.hasStarted) {
-                    entry.arguments?.getString("filterAuthorId")?.let { vm.authorId = it }
-                    entry.arguments?.getString("filterKeyword")?.let { vm.keyword = it }
+        ) { innerPadding ->
+            NavHost(
+                navController = navController,
+                startDestination = Routes.HOME,
+                modifier = Modifier.padding(innerPadding)
+            ) {
+                composable(Routes.HOME) {
+                    val vm: HomeViewModel = viewModel { HomeViewModel(context.applicationContext) }
+                    HomeScreen(
+                        viewModel = vm,
+                        onGroupClick = { _ -> },
+                        onNavigateToPicList = { groupId, groupName ->
+                            if (groupId > 0L) navController.toPicList(groupId, groupName)
+                        },
+                        onNavigateToRandomPic = { navController.navigate(Routes.RANDOM_PIC) },
+                        onNavigateToRandomGif = { navController.navigate(Routes.RANDOM_GIF) },
+                        onNavigateToDownloadManage = { navController.navigate(Routes.DOWNLOAD_MANAGE) },
+                        onNavigateToRandomGallery = { navController.switchTab(Routes.RANDOM_GALLERY) },
+                        onNavigateToGroupList = { navController.switchTab(Routes.GROUP_LIST) },
+                        onNavigateToDownloadList = { navController.switchTab(Routes.DOWNLOAD_LIST) }
+                    )
                 }
-                DownloadListScreen(
-                    viewModel = vm,
-                    onWorkClick = { workId, coverImageUrl -> navController.toDownloadDetail(workId, coverImageUrl) },
-                    onBack = { navController.navigateUp() }
-                )
+
+                composable(Routes.RANDOM_PIC) {
+                    val vm: RandomPicViewModel = viewModel { RandomPicViewModel(AppContainer.repository(context)) }
+                    RandomPicScreen(
+                        viewModel = vm,
+                        onBack = { navController.navigateUp() },
+                        onGroupClick = { groupId, groupName -> navController.toPicList(groupId, groupName) }
+                    )
+                }
+
+                composable(Routes.RANDOM_GALLERY) {
+                    val vm: RandomGalleryViewModel = viewModel { RandomGalleryViewModel(AppContainer.repository(context)) }
+                    RandomGalleryScreen(
+                        viewModel = vm,
+                        onGroupClick = { group -> navController.toPicList(group.groupId ?: 0L, group.groupName ?: "套图详情") },
+                        onBack = { navController.navigateUp() }
+                    )
+                }
+
+                composable(Routes.GROUP_LIST) {
+                    val vm: GroupListViewModel = viewModel { GroupListViewModel(AppContainer.repository(context)) }
+                    GroupListScreen(
+                        viewModel = vm,
+                        onGroupClick = { group -> navController.toPicList(group.groupId ?: 0L, group.groupName ?: "套图详情") },
+                        onBack = { navController.navigateUp() }
+                    )
+                }
+
+                composable(Routes.RANDOM_GIF) {
+                    val vm: RandomGifViewModel = viewModel { RandomGifViewModel(AppContainer.repository(context)) }
+                    RandomGifScreen(
+                        onBack = { navController.navigateUp() },
+                        onDetail = { workId -> navController.toDownloadDetail(workId) },
+                        onAuthor = { authorId -> navController.toDownloadList(authorId = authorId) },
+                        viewModel = vm
+                    )
+                }
+
+                composable(Routes.DOWNLOAD_MANAGE) {
+                    val vm: DownloadManageViewModel = viewModel { DownloadManageViewModel(AppContainer.repository(context)) }
+                    DownloadManageScreen(
+                        viewModel = vm,
+                        onBack = { navController.navigateUp() }
+                    )
+                }
+
+                composable(
+                    route = "${Routes.PIC_LIST}/{groupId}/{groupName}",
+                    arguments = listOf(
+                        navArgument("groupId") { type = NavType.LongType },
+                        navArgument("groupName") { type = NavType.StringType }
+                    )
+                ) { entry ->
+                    val vm: PicListViewModel = viewModel {
+                        PicListViewModel(AppContainer.repository(context), createSavedStateHandle())
+                    }
+                    PicListScreen(
+                        viewModel = vm,
+                        groupName = entry.arguments?.getString("groupName") ?: "套图详情",
+                        onBack = { navController.navigateUp() }
+                    )
+                }
+
+                composable(
+                    route = "${Routes.DOWNLOAD_DETAIL}/{workId}?coverImageUrl={coverImageUrl}",
+                    arguments = listOf(
+                        navArgument("workId") { type = NavType.StringType },
+                        navArgument("coverImageUrl") {
+                            type = NavType.StringType; defaultValue = ""
+                        }
+                    )
+                ) { entry ->
+                    val vm: DownloadDetailViewModel = viewModel { DownloadDetailViewModel(AppContainer.repository(context)) }
+                    DownloadDetailScreen(
+                        viewModel = vm,
+                        workId = entry.arguments?.getString("workId") ?: "",
+                        coverImageUrl = entry.arguments?.getString("coverImageUrl") ?: "",
+                        onBack = { navController.navigateUp() },
+                        onAuthorClick = { authorId, _ -> navController.toDownloadList(authorId = authorId) },
+                        onTagClick = { tag -> navController.toDownloadList(keyword = tag) }
+                    )
+                }
+
+                composable(
+                    route = "${Routes.DOWNLOAD_LIST}?filterAuthorId={filterAuthorId}&filterKeyword={filterKeyword}",
+                    arguments = listOf(
+                        navArgument("filterAuthorId") {
+                            type = NavType.StringType; nullable = true; defaultValue = null
+                        },
+                        navArgument("filterKeyword") {
+                            type = NavType.StringType; nullable = true; defaultValue = null
+                        }
+                    )
+                ) {
+                    val vm: DownloadListViewModel = viewModel {
+                        DownloadListViewModel(AppContainer.repository(context), createSavedStateHandle())
+                    }
+                    DownloadListScreen(
+                        viewModel = vm,
+                        onWorkClick = { workId, coverImageUrl -> navController.toDownloadDetail(workId, coverImageUrl) },
+                        onBack = { navController.navigateUp() }
+                    )
+                }
             }
-        }
         }
         TopMessageHost(Modifier.align(Alignment.TopCenter))
     }
