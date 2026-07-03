@@ -94,21 +94,19 @@ fun PicListScreen(
                                 )
                                 // 图片加载完成后才显示下载按钮
                                 if (imageLoaded) {
-                                    Box(
-                                        modifier = Modifier
-                                            .align(Alignment.BottomEnd)
-                                            .padding(Spacing.xs)
-                                            .size(28.dp)
-                                            .clip(CircleShape)
-                                            .background(Color.Black.copy(alpha = 0.40f)),
-                                        contentAlignment = Alignment.Center
+                                    IconButton(
+                                        onClick = {
+                                            downloadImage(context, url)
+                                            Messenger.show("图片正在下载…")
+                                        },
+                                        modifier = Modifier.align(Alignment.BottomEnd)
                                     ) {
-                                        IconButton(
-                                            onClick = {
-                                                downloadImage(context, url)
-                                                Messenger.show("图片正在下载…")
-                                            },
-                                            modifier = Modifier.size(28.dp)
+                                        Box(
+                                            modifier = Modifier
+                                                .size(28.dp)
+                                                .clip(CircleShape)
+                                                .background(Color.Black.copy(alpha = 0.40f)),
+                                            contentAlignment = Alignment.Center
                                         ) {
                                             Icon(
                                                 Icons.Filled.FileDownload,

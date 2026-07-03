@@ -96,7 +96,6 @@ fun GroupListScreen(
                         )
                         IconButton(
                             onClick = { viewModel.query(keyword.trim().ifBlank { null }) },
-                            modifier = Modifier.size(40.dp),
                             colors = IconButtonDefaults.iconButtonColors(containerColor = MaterialTheme.colorScheme.primary)
                         ) {
                             Icon(Icons.Filled.Search, contentDescription = "搜索", tint = MaterialTheme.colorScheme.onPrimary, modifier = Modifier.size(18.dp))

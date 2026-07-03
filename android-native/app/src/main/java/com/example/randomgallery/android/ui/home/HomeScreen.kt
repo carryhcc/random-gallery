@@ -422,8 +422,7 @@ private fun SettingsDialog(
                                     },
                                     trailingIcon = {
                                         IconButton(
-                                            onClick = { onRemoveUrl(url) },
-                                            modifier = Modifier.size(32.dp)
+                                            onClick = { onRemoveUrl(url) }
                                         ) {
                                             Icon(Icons.Filled.Close, "删除", tint = MaterialTheme.xhs.textTertiary, modifier = Modifier.size(14.dp))
                                         }
@@ -466,7 +465,6 @@ private fun SettingsDialog(
                                     onDismiss()
                                 }
                             },
-                            modifier = Modifier.size(40.dp),
                             colors = IconButtonDefaults.iconButtonColors(containerColor = MaterialTheme.colorScheme.primary)
                         ) {
                             Icon(Icons.Filled.Add, "添加", tint = MaterialTheme.colorScheme.onPrimary, modifier = Modifier.size(18.dp))
