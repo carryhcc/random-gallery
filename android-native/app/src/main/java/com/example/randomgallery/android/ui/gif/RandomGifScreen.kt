@@ -17,6 +17,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.compose.ui.Alignment
+import kotlinx.coroutines.launch
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
@@ -82,6 +83,8 @@ fun RandomGifScreen(
     val pagerState = rememberPagerState(pageCount = { gifList.size.coerceAtLeast(1) })
     val settledPage = pagerState.settledPage
     val preloadPage = settledPage + 1
+    var retryTick by remember { mutableIntStateOf(0) }
+    val scope = rememberCoroutineScope()
 
     // 监听两个 player 的事件，分别更新对应 page 的状态
     DisposableEffect(settledPage) {
@@ -135,7 +138,7 @@ fun RandomGifScreen(
     }
 
     // 页面稳定后加载 & 预加载
-    LaunchedEffect(settledPage, gifList.size) {
+    LaunchedEffect(settledPage, gifList.size, retryTick) {
         if (gifList.isEmpty()) return@LaunchedEffect
         if (settledPage >= gifList.size - 2) viewModel.loadNext()
 
@@ -168,19 +171,11 @@ fun RandomGifScreen(
         }
     }
 
-    // 2 秒超时：仍在缓冲则标记失效并自动跳过
-    LaunchedEffect(settledPage) {
-        kotlinx.coroutines.delay(2000)
+    // 8 秒超时：仍在缓冲则标记失效，显示重试/跳过按钮
+    LaunchedEffect(settledPage, retryTick) {
+        kotlinx.coroutines.delay(8000)
         if (stateOf(settledPage).playerReady == true)
             pageStates[settledPage] = stateOf(settledPage).copy(playerReady = null)
-    }
-    val curFailed = stateOf(settledPage).playerReady == null
-    LaunchedEffect(curFailed, settledPage) {
-        if (curFailed && gifList.isNotEmpty()) {
-            val next = settledPage + 1
-            if (next < gifList.size) pagerState.animateScrollToPage(next)
-            else viewModel.loadNext()
-        }
     }
 
     Box(Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background)) {
@@ -265,14 +260,31 @@ fun RandomGifScreen(
                             }
                             if (page == settledPage && ps.playerReady == null) {
                                 Box(
-                                    Modifier.fillMaxSize().background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.85f)),
+                                    Modifier.fillMaxSize().background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.9f)),
                                     Alignment.Center
                                 ) {
-                                    Text(
-                                        "链接已失效，正在跳过…",
-                                        style = MaterialTheme.typography.bodySmall,
-                                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                                    )
+                                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                                        Text(
+                                            "加载失败或链接已失效",
+                                            style = MaterialTheme.typography.bodySmall,
+                                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                                        )
+                                        Spacer(Modifier.height(Spacing.sm))
+                                        Row(horizontalArrangement = Arrangement.spacedBy(Spacing.sm)) {
+                                            TextButton(onClick = {
+                                                playerUrls[settledPage % 2] = ""
+                                                pageStates[settledPage] = PageState(playerReady = true, videoRatio = 3f / 4f)
+                                                retryTick++
+                                            }) { Text("重试") }
+                                            TextButton(onClick = {
+                                                scope.launch {
+                                                    val next = settledPage + 1
+                                                    if (next < gifList.size) pagerState.animateScrollToPage(next)
+                                                    else viewModel.loadNext()
+                                                }
+                                            }) { Text("跳过") }
+                                        }
+                                    }
                                 }
                             }
                         }
