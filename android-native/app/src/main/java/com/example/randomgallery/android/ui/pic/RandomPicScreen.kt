@@ -5,6 +5,7 @@ import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Download
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material3.*
@@ -19,6 +20,7 @@ import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
 import coil.request.ImageRequest
@@ -52,25 +54,9 @@ fun RandomPicScreen(
     }
 
     TopSnackbarBox(snackbarHostState) {
-    Scaffold(
-        containerColor = Color.Black,
-        contentWindowInsets = WindowInsets(0, 0, 0, 0),
-        topBar = {
-            XhsTopBar(
-                title = groupState?.getOrNull()?.groupName ?: "随机一图",
-                onBack = onBack,
-                actions = {
-                    IconButton(onClick = { viewModel.loadRandomPic() }) {
-                        Icon(Icons.Filled.Refresh, contentDescription = "换一张", tint = NeutralWhite)
-                    }
-                }
-            )
-        }
-    ) { padding ->
         Box(
             Modifier
                 .fillMaxSize()
-                .padding(padding)
                 .background(Color.Black)
                 .pointerInput(Unit) {
                     detectTapGestures(onDoubleTap = { viewModel.loadRandomPic() })
@@ -97,11 +83,40 @@ fun RandomPicScreen(
                 }
             }
 
-            // Bottom gradient + download button
+            // 顶部沉浸式操作条：黑色渐变上覆盖白色图标/标题
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .align(Alignment.TopCenter)
+                    .background(
+                        Brush.verticalGradient(listOf(Color.Black.copy(alpha = 0.55f), Color.Transparent))
+                    )
+                    .statusBarsPadding()
+                    .padding(horizontal = Spacing.xs, vertical = Spacing.xs),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                IconButton(onClick = onBack) {
+                    Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "返回", tint = Color.White)
+                }
+                Text(
+                    text = groupState?.getOrNull()?.groupName ?: "随机一图",
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.SemiBold,
+                    color = Color.White,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                    modifier = Modifier.weight(1f)
+                )
+                IconButton(onClick = { viewModel.loadRandomPic() }) {
+                    Icon(Icons.Filled.Refresh, contentDescription = "换一张", tint = Color.White)
+                }
+            }
+
+            // 底部渐变 + 操作按钮（避开手势导航条）
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(120.dp)
+                    .height(140.dp)
                     .align(Alignment.BottomCenter)
                     .background(
                         Brush.verticalGradient(listOf(Color.Transparent, Color.Black.copy(alpha = 0.6f)))
@@ -109,7 +124,9 @@ fun RandomPicScreen(
                 contentAlignment = Alignment.BottomEnd
             ) {
                 Row(
-                    modifier = Modifier.padding(Spacing.lg),
+                    modifier = Modifier
+                        .navigationBarsPadding()
+                        .padding(Spacing.lg),
                     horizontalArrangement = Arrangement.spacedBy(Spacing.md)
                 ) {
                     picState?.getOrNull()?.groupId?.let { gid ->
@@ -118,7 +135,7 @@ fun RandomPicScreen(
                             onClick = { onGroupClick(gid, groupName) },
                             colors = ButtonDefaults.filledTonalButtonColors(
                                 containerColor = Color.White.copy(alpha = 0.2f),
-                                contentColor = NeutralWhite
+                                contentColor = Color.White
                             ),
                             shape = RoundedCornerShape(24.dp)
                         ) { Text("查看套图", fontWeight = FontWeight.Medium) }
@@ -139,20 +156,20 @@ fun RandomPicScreen(
                 }
             }
 
-            // Hint label
+            // 提示标签（顶部操作条下方）
             if (picState?.isSuccess == true) {
                 Box(
                     Modifier
                         .align(Alignment.TopCenter)
-                        .padding(top = Spacing.lg)
+                        .statusBarsPadding()
+                        .padding(top = 64.dp)
                         .clip(RoundedCornerShape(20.dp))
                         .background(Color.Black.copy(alpha = 0.3f))
                         .padding(horizontal = Spacing.md, vertical = Spacing.xs)
                 ) {
-                    Text("双击换一张", style = MaterialTheme.typography.labelSmall, color = NeutralWhite.copy(alpha = 0.7f))
+                    Text("双击换一张", style = MaterialTheme.typography.labelSmall, color = Color.White.copy(alpha = 0.7f))
                 }
             }
         }
-    }
     }
 }
