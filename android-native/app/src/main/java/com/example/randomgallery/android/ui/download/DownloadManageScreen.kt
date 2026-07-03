@@ -76,6 +76,7 @@ fun DownloadManageScreen(
                 .fillMaxSize()
                 .padding(padding)
                 .background(FeedBackground)
+                .navigationBarsPadding()
                 .padding(Spacing.lg),
             verticalArrangement = Arrangement.spacedBy(Spacing.lg)
         ) {

@@ -13,10 +13,6 @@
         <item name="colorOnSurfaceVariant">@color/text_secondary</item>
         <item name="colorOutline">@color/border_color</item>
         <item name="android:colorAccent">@color/primary_color</item>
-        <item name="android:statusBarColor">@color/surface_bg</item>
-        <item name="android:windowLightStatusBar">true</item>
-        <item name="android:navigationBarColor">@color/bottom_nav_bg</item>
-        <item name="android:windowLightNavigationBar" tools:targetApi="o_mr1">true</item>
         <item name="android:windowBackground">@color/surface_bg</item>
         <item name="android:forceDarkAllowed" tools:targetApi="q">false</item>
     </style>

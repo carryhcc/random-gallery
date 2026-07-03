@@ -352,7 +352,10 @@ fun DownloadDetailScreen(
                         }
                     }
 
-                    item { Spacer(Modifier.height(Spacing.xl)) }
+                    item {
+                        Spacer(Modifier.height(Spacing.xl))
+                        Spacer(Modifier.windowInsetsBottomHeight(WindowInsets.navigationBars))
+                    }
                 }
             }
         }
