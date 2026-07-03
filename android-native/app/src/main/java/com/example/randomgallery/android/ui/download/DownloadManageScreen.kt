@@ -9,7 +9,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ContentPaste
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
-import androidx.compose.runtime.livedata.observeAsState
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
@@ -26,10 +26,9 @@ fun DownloadManageScreen(
     onBack: () -> Unit
 ) {
     val context = LocalContext.current
-    val loading by viewModel.loading.observeAsState(false)
-    val submitResult by viewModel.submitResult.observeAsState()
-    val lastResolvedUrl by viewModel.lastResolvedUrl.observeAsState()
-    val autoReadClipboard by viewModel.autoReadClipboard.observeAsState(false)
+    val loading by viewModel.loading.collectAsStateWithLifecycle()
+    val lastResolvedUrl by viewModel.lastResolvedUrl.collectAsStateWithLifecycle()
+    val autoReadClipboard by viewModel.autoReadClipboard.collectAsStateWithLifecycle()
 
     var urlInput by remember { mutableStateOf("") }
     val snackbarHostState = remember { SnackbarHostState() }
@@ -49,8 +48,8 @@ fun DownloadManageScreen(
         onDispose { view.viewTreeObserver.removeOnWindowFocusChangeListener(listener) }
     }
 
-    LaunchedEffect(submitResult) {
-        submitResult?.let { result ->
+    LaunchedEffect(Unit) {
+        viewModel.submitEvents.collect { result ->
             val msg = if (result.isSuccess) {
                 val urlHint = lastResolvedUrl?.let { url ->
                     val short = if (url.length > 40) "…${url.takeLast(30)}" else url

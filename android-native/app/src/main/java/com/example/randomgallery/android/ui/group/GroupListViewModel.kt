@@ -1,25 +1,26 @@
 package com.example.randomgallery.android.ui.group
 
-import androidx.lifecycle.LiveData
-import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.randomgallery.android.data.model.GroupVO
 import com.example.randomgallery.android.data.repository.GalleryRepository
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 
 class GroupListViewModel(
     private val repository: GalleryRepository
 ) : ViewModel() {
 
-    private val _groups = MutableLiveData<List<GroupVO>>(emptyList())
-    val groups: LiveData<List<GroupVO>> = _groups
+    private val _groups = MutableStateFlow<List<GroupVO>>(emptyList())
+    val groups: StateFlow<List<GroupVO>> = _groups.asStateFlow()
 
-    private val _pageInfo = MutableLiveData("第 1 页")
-    val pageInfo: LiveData<String> = _pageInfo
+    private val _pageInfo = MutableStateFlow("第 1 页")
+    val pageInfo: StateFlow<String> = _pageInfo.asStateFlow()
 
-    private val _error = MutableLiveData<String?>()
-    val error: LiveData<String?> = _error
+    private val _error = MutableStateFlow<String?>(null)
+    val error: StateFlow<String?> = _error.asStateFlow()
 
     private var page = 1
     private var totalPages = 1

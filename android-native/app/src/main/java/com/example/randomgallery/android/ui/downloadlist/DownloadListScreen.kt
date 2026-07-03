@@ -13,7 +13,7 @@ import androidx.compose.material.icons.filled.Image
 import androidx.compose.material.icons.filled.VideoLibrary
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
-import androidx.compose.runtime.livedata.observeAsState
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -33,11 +33,11 @@ fun DownloadListScreen(
     onWorkClick: (workId: String, coverImageUrl: String) -> Unit,
     onBack: () -> Unit
 ) {
-    val works by viewModel.works.observeAsState(emptyList())
-    val authors by viewModel.authors.observeAsState(emptyList())
-    val tags by viewModel.tags.observeAsState(emptyList())
-    val loading by viewModel.loading.observeAsState(false)
-    val error by viewModel.error.observeAsState()
+    val works by viewModel.works.collectAsStateWithLifecycle()
+    val authors by viewModel.authors.collectAsStateWithLifecycle()
+    val tags by viewModel.tags.collectAsStateWithLifecycle()
+    val loading by viewModel.loading.collectAsStateWithLifecycle()
+    val error by viewModel.error.collectAsStateWithLifecycle()
 
     var showFilter by remember { mutableStateOf(false) }
     val gridState = rememberLazyStaggeredGridState()

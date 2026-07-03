@@ -24,7 +24,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
-import androidx.compose.runtime.livedata.observeAsState
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -79,9 +79,7 @@ fun DownloadDetailScreen(
     onTagClick: (tag: String) -> Unit = {}
 ) {
     val context = LocalContext.current
-    val detailState by viewModel.detail.observeAsState()
-    val deleteResult by viewModel.deleteResult.observeAsState()
-    val deleteMediaResult by viewModel.deleteMediaResult.observeAsState()
+    val detailState by viewModel.detail.collectAsStateWithLifecycle()
 
     val snackbarHostState = remember { SnackbarHostState() }
     var showDeleteWorkDialog by remember { mutableStateOf(false) }
@@ -94,15 +92,19 @@ fun DownloadDetailScreen(
     }
 
     LaunchedEffect(workId) { viewModel.load(workId) }
-    LaunchedEffect(deleteResult) {
-        deleteResult?.onSuccess { onBack() }
-            ?.onFailure { snackbarHostState.showSnackbar(it.message ?: "删除失败") }
+    LaunchedEffect(Unit) {
+        viewModel.deleteWorkEvents.collect {
+            it.onSuccess { onBack() }
+                .onFailure { e -> snackbarHostState.showSnackbar(e.message ?: "删除失败") }
+        }
     }
-    LaunchedEffect(deleteMediaResult) {
-        deleteMediaResult?.onFailure { snackbarHostState.showSnackbar(it.message ?: "删除失败") }
+    LaunchedEffect(Unit) {
+        viewModel.deleteMediaEvents.collect {
+            it.onFailure { e -> snackbarHostState.showSnackbar(e.message ?: "删除失败") }
+        }
     }
 
-    val detail = detailState?.getOrNull()
+    val detail = (detailState as? UiState.Success)?.data
     val base = detail?.baseInfo
 
     val imageMedia: List<MediaItem2> = remember(detail, coverImageUrl) {
@@ -196,9 +198,9 @@ fun DownloadDetailScreen(
         }
     ) { padding ->
         when {
-            detailState == null -> XhsLoadingBox(Modifier.fillMaxSize().padding(padding))
-            detailState!!.isFailure -> XhsEmptyState(
-                detailState!!.exceptionOrNull()?.message ?: "加载失败",
+            detailState is UiState.Loading -> XhsLoadingBox(Modifier.fillMaxSize().padding(padding))
+            detailState is UiState.Error -> XhsEmptyState(
+                (detailState as UiState.Error).message,
                 onRetry = { viewModel.load(workId) },
                 modifier = Modifier.fillMaxSize().padding(padding)
             )

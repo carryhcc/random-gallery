@@ -1,25 +1,26 @@
 package com.example.randomgallery.android.ui.gallery
 
-import androidx.lifecycle.LiveData
-import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.randomgallery.android.data.model.GroupVO
 import com.example.randomgallery.android.data.repository.GalleryRepository
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 
 class RandomGalleryViewModel(
     private val repository: GalleryRepository
 ) : ViewModel() {
 
-    private val _groups = MutableLiveData<List<GroupVO>>(emptyList())
-    val groups: LiveData<List<GroupVO>> = _groups
+    private val _groups = MutableStateFlow<List<GroupVO>>(emptyList())
+    val groups: StateFlow<List<GroupVO>> = _groups.asStateFlow()
 
-    private val _loading = MutableLiveData(false)
-    val loading: LiveData<Boolean> = _loading
+    private val _loading = MutableStateFlow(false)
+    val loading: StateFlow<Boolean> = _loading.asStateFlow()
 
-    private val _error = MutableLiveData<String?>()
-    val error: LiveData<String?> = _error
+    private val _error = MutableStateFlow<String?>(null)
+    val error: StateFlow<String?> = _error.asStateFlow()
 
     private var page = 0
     private var hasMore = true
@@ -32,12 +33,12 @@ class RandomGalleryViewModel(
     }
 
     fun loadMore(refresh: Boolean = false) {
-        if (_loading.value == true || !hasMore) return
+        if (_loading.value || !hasMore) return
         _loading.value = true
         viewModelScope.launch {
             repository.loadMoreGroups(page = page, refresh = refresh)
                 .onSuccess {
-                    _groups.value = (_groups.value ?: emptyList()) + it.images
+                    _groups.value = _groups.value + it.images
                     hasMore = it.hasMore
                     page += 1
                     _error.value = null

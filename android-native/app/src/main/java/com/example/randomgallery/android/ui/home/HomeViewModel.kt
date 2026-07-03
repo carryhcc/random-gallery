@@ -1,8 +1,6 @@
 package com.example.randomgallery.android.ui.home
 
 import android.content.Context
-import androidx.lifecycle.LiveData
-import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.randomgallery.android.AppContainer
@@ -11,8 +9,12 @@ import com.example.randomgallery.android.data.local.AppPrefs
 import com.example.randomgallery.android.data.model.GroupVO
 import com.example.randomgallery.android.data.model.PicCount
 import com.example.randomgallery.android.data.repository.GalleryRepository
-import com.example.randomgallery.android.ui.common.SingleLiveEvent
+import com.example.randomgallery.android.ui.common.UiState
 import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.launch
@@ -24,27 +26,27 @@ class HomeViewModel(
     private fun repository(): GalleryRepository = AppContainer.repository(appContext)
     private val prefs by lazy { AppPrefs(appContext) }
 
-    private val _envInfo = MutableLiveData<Result<PicCount>>()
-    val envInfo: LiveData<Result<PicCount>> = _envInfo
+    private val _envInfo = MutableStateFlow<UiState<PicCount>>(UiState.Loading)
+    val envInfo: StateFlow<UiState<PicCount>> = _envInfo.asStateFlow()
 
-    private val _privacy = MutableLiveData<Boolean>(true)
-    val privacy: LiveData<Boolean> = _privacy
+    private val _privacy = MutableStateFlow(true)
+    val privacy: StateFlow<Boolean> = _privacy.asStateFlow()
 
-    private val _localEnv = MutableLiveData<String>()
-    val localEnv: LiveData<String> = _localEnv
+    private val _localEnv = MutableStateFlow("")
+    val localEnv: StateFlow<String> = _localEnv.asStateFlow()
 
-    private val _baseUrl = MutableLiveData<String>()
-    val baseUrl: LiveData<String> = _baseUrl
+    private val _baseUrl = MutableStateFlow("")
+    val baseUrl: StateFlow<String> = _baseUrl.asStateFlow()
 
-    private val _urlList = MutableLiveData<List<String>>(emptyList())
-    val urlList: LiveData<List<String>> = _urlList
+    private val _urlList = MutableStateFlow<List<String>>(emptyList())
+    val urlList: StateFlow<List<String>> = _urlList.asStateFlow()
 
     // 一次性 UI 消息（不会在页面返回时重播）
     private val _messages = Channel<String>(Channel.BUFFERED)
     val messages = _messages.receiveAsFlow()
 
-    private val _randomGroup = SingleLiveEvent<Result<GroupVO>>()
-    val randomGroup: LiveData<Result<GroupVO>> = _randomGroup
+    private val _randomGroupEvents = Channel<Result<GroupVO>>(Channel.BUFFERED)
+    val randomGroupEvents: Flow<Result<GroupVO>> = _randomGroupEvents.receiveAsFlow()
 
     init {
         viewModelScope.launch {
@@ -64,7 +66,10 @@ class HomeViewModel(
     fun loadEnvInfo() {
         viewModelScope.launch {
             val result = repository().getCurrentEnvInfo()
-            _envInfo.value = result
+            _envInfo.value = result.fold(
+                onSuccess = { UiState.Success(it) },
+                onFailure = { UiState.Error(it.message ?: "加载失败") }
+            )
             if (result.isFailure) {
                 val url = AppContainer.currentBaseUrl()
                 val msg = result.exceptionOrNull()?.message ?: "未知错误"
@@ -107,7 +112,7 @@ class HomeViewModel(
     fun randomGroup() {
         viewModelScope.launch {
             val result = repository().getRandomGroupInfo()
-            _randomGroup.value = result
+            _randomGroupEvents.trySend(result)
             result.onFailure { _messages.trySend("获取失败：${it.message}") }
         }
     }

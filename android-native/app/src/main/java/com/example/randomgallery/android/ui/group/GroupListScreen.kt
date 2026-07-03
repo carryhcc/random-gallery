@@ -20,7 +20,7 @@ import androidx.compose.material.icons.filled.Image
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
-import androidx.compose.runtime.livedata.observeAsState
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -43,9 +43,9 @@ fun GroupListScreen(
     onGroupClick: (GroupVO) -> Unit,
     onBack: () -> Unit
 ) {
-    val groups by viewModel.groups.observeAsState(emptyList())
-    val pageInfo by viewModel.pageInfo.observeAsState("第 1 页")
-    val error by viewModel.error.observeAsState()
+    val groups by viewModel.groups.collectAsStateWithLifecycle()
+    val pageInfo by viewModel.pageInfo.collectAsStateWithLifecycle()
+    val error by viewModel.error.collectAsStateWithLifecycle()
 
     var keyword by remember { mutableStateOf("") }
     val gridState = rememberLazyGridState()

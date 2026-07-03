@@ -1,45 +1,57 @@
 package com.example.randomgallery.android.ui.downloaddetail
 
-import androidx.lifecycle.LiveData
-import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.randomgallery.android.data.model.XhsWorkDetailVO
 import com.example.randomgallery.android.data.repository.GalleryRepository
-import com.example.randomgallery.android.ui.common.SingleLiveEvent
+import com.example.randomgallery.android.ui.common.UiState
+import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.launch
 
 class DownloadDetailViewModel(
     private val repository: GalleryRepository
 ) : ViewModel() {
 
-    private val _detail = MutableLiveData<Result<XhsWorkDetailVO>>()
-    val detail: LiveData<Result<XhsWorkDetailVO>> = _detail
+    private val _detail = MutableStateFlow<UiState<XhsWorkDetailVO>>(UiState.Loading)
+    val detail: StateFlow<UiState<XhsWorkDetailVO>> = _detail.asStateFlow()
 
-    private val _deleteResult = SingleLiveEvent<Result<String>>()
-    val deleteResult: LiveData<Result<String>> = _deleteResult
+    private val _deleteWorkEvents = Channel<Result<String>>(Channel.BUFFERED)
+    val deleteWorkEvents: Flow<Result<String>> = _deleteWorkEvents.receiveAsFlow()
 
-    private val _deleteMediaResult = SingleLiveEvent<Result<String>>()
-    val deleteMediaResult: LiveData<Result<String>> = _deleteMediaResult
+    private val _deleteMediaEvents = Channel<Result<String>>(Channel.BUFFERED)
+    val deleteMediaEvents: Flow<Result<String>> = _deleteMediaEvents.receiveAsFlow()
 
     fun load(workId: String) {
         viewModelScope.launch {
-            _detail.value = repository.getWorkDetail(workId)
+            val result = repository.getWorkDetail(workId)
+            _detail.value = result.fold(
+                onSuccess = { UiState.Success(it) },
+                onFailure = { UiState.Error(it.message ?: "加载失败") }
+            )
         }
     }
 
     fun deleteWork(workId: String) {
         viewModelScope.launch {
-            _deleteResult.value = repository.deleteWork(workId)
+            _deleteWorkEvents.trySend(repository.deleteWork(workId))
         }
     }
 
     fun deleteMedia(mediaId: Long, workId: String) {
         viewModelScope.launch {
             val result = repository.deleteMedia(mediaId)
-            _deleteMediaResult.value = result
+            _deleteMediaEvents.trySend(result)
             if (result.isSuccess) {
-                _detail.value = repository.getWorkDetail(workId)
+                val detailResult = repository.getWorkDetail(workId)
+                _detail.value = detailResult.fold(
+                    onSuccess = { UiState.Success(it) },
+                    onFailure = { UiState.Error(it.message ?: "加载失败") }
+                )
             }
         }
     }

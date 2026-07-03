@@ -15,7 +15,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
-import androidx.compose.runtime.livedata.observeAsState
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -54,9 +54,9 @@ fun RandomGifScreen(
     viewModel: RandomGifViewModel
 ) {
     val context = LocalContext.current
-    val gifList by viewModel.gifList.observeAsState(emptyList())
-    val loading by viewModel.loading.observeAsState(false)
-    val error by viewModel.error.observeAsState()
+    val gifList by viewModel.gifList.collectAsStateWithLifecycle()
+    val loading by viewModel.loading.collectAsStateWithLifecycle()
+    val error by viewModel.error.collectAsStateWithLifecycle()
 
     // 两个 ExoPlayer 轮换：page 偶数用 players[0]，奇数用 players[1]
     // 这个映射是固定的，与任何 Compose 状态无关，不存在时序 gap

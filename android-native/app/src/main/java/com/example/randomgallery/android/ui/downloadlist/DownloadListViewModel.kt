@@ -1,13 +1,14 @@
 package com.example.randomgallery.android.ui.downloadlist
 
-import androidx.lifecycle.LiveData
-import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.randomgallery.android.data.model.AuthorVO
 import com.example.randomgallery.android.data.model.TagVO
 import com.example.randomgallery.android.data.model.XhsWorkListVO
 import com.example.randomgallery.android.data.repository.GalleryRepository
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import kotlin.random.Random
@@ -16,23 +17,23 @@ class DownloadListViewModel(
     private val repository: GalleryRepository
 ) : ViewModel() {
 
-    private val _works = MutableLiveData<List<XhsWorkListVO>>(emptyList())
-    val works: LiveData<List<XhsWorkListVO>> = _works
+    private val _works = MutableStateFlow<List<XhsWorkListVO>>(emptyList())
+    val works: StateFlow<List<XhsWorkListVO>> = _works.asStateFlow()
 
-    private val _authors = MutableLiveData<List<AuthorVO>>(emptyList())
-    val authors: LiveData<List<AuthorVO>> = _authors
+    private val _authors = MutableStateFlow<List<AuthorVO>>(emptyList())
+    val authors: StateFlow<List<AuthorVO>> = _authors.asStateFlow()
 
-    private val _tags = MutableLiveData<List<TagVO>>(emptyList())
-    val tags: LiveData<List<TagVO>> = _tags
+    private val _tags = MutableStateFlow<List<TagVO>>(emptyList())
+    val tags: StateFlow<List<TagVO>> = _tags.asStateFlow()
 
-    private val _viewMode = MutableLiveData("single")
-    val viewMode: LiveData<String> = _viewMode
+    private val _viewMode = MutableStateFlow("single")
+    val viewMode: StateFlow<String> = _viewMode.asStateFlow()
 
-    private val _loading = MutableLiveData(false)
-    val loading: LiveData<Boolean> = _loading
+    private val _loading = MutableStateFlow(false)
+    val loading: StateFlow<Boolean> = _loading.asStateFlow()
 
-    private val _error = MutableLiveData<String?>()
-    val error: LiveData<String?> = _error
+    private val _error = MutableStateFlow<String?>(null)
+    val error: StateFlow<String?> = _error.asStateFlow()
 
     private var page = 1
     private var hasMore = true
@@ -86,7 +87,7 @@ class DownloadListViewModel(
                     if (page == 1) {
                         _works.value = it.works
                     } else {
-                        _works.value = (_works.value ?: emptyList()) + it.works
+                        _works.value = _works.value + it.works
                     }
                     hasMore = it.hasMore
                     page += 1

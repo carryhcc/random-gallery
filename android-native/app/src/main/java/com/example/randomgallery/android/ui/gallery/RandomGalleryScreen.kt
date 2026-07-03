@@ -39,8 +39,8 @@ import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.runtime.snapshotFlow
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -66,15 +66,15 @@ fun RandomGalleryScreen(
     onGroupClick: (GroupVO) -> Unit,
     onBack: () -> Unit
 ) {
-    val groups by viewModel.groups.observeAsState(emptyList())
-    val loading by viewModel.loading.observeAsState(false)
-    val error by viewModel.error.observeAsState(null)
+    val groups by viewModel.groups.collectAsStateWithLifecycle()
+    val loading by viewModel.loading.collectAsStateWithLifecycle()
+    val error by viewModel.error.collectAsStateWithLifecycle()
 
     val gridState = rememberLazyStaggeredGridState()
 
     // 首次进入加载一次；从返回栈回来时复用已有数据，不重复拉取
     LaunchedEffect(Unit) {
-        if (viewModel.groups.value.isNullOrEmpty()) viewModel.refresh()
+        if (viewModel.groups.value.isEmpty()) viewModel.refresh()
     }
 
     // 触底自动加载更多

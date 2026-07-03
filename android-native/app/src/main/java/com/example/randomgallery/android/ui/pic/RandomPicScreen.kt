@@ -10,7 +10,7 @@ import androidx.compose.material.icons.filled.Download
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
-import androidx.compose.runtime.livedata.observeAsState
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -37,8 +37,8 @@ fun RandomPicScreen(
     onGroupClick: (groupId: Long, groupName: String) -> Unit = { _, _ -> }
 ) {
     val context = LocalContext.current
-    val picState by viewModel.picState.observeAsState()
-    val groupState by viewModel.groupState.observeAsState()
+    val picState by viewModel.picState.collectAsStateWithLifecycle()
+    val groupState by viewModel.groupState.collectAsStateWithLifecycle()
 
     val snackbarHostState = remember { SnackbarHostState() }
     var imageUrl by remember { mutableStateOf("") }
@@ -46,10 +46,10 @@ fun RandomPicScreen(
     LaunchedEffect(Unit) { viewModel.loadRandomPic() }
 
     LaunchedEffect(picState) {
-        picState?.onSuccess { pic ->
-            imageUrl = ImageUrlResolver.displayUrl(pic.picUrl) ?: ""
-        }?.onFailure {
-            snackbarHostState.showSnackbar(it.message ?: "加载失败")
+        when (val state = picState) {
+            is UiState.Success -> imageUrl = ImageUrlResolver.displayUrl(state.data.picUrl) ?: ""
+            is UiState.Error -> snackbarHostState.showSnackbar(state.message)
+            else -> Unit
         }
     }
 
@@ -63,10 +63,10 @@ fun RandomPicScreen(
                 }
         ) {
             when {
-                picState == null -> XhsLoadingBox(Modifier.fillMaxSize())
-                picState?.isFailure == true && imageUrl.isBlank() ->
+                picState is UiState.Loading -> XhsLoadingBox(Modifier.fillMaxSize())
+                picState is UiState.Error && imageUrl.isBlank() ->
                     XhsEmptyState(
-                        picState!!.exceptionOrNull()?.message ?: "加载失败",
+                        (picState as UiState.Error).message,
                         onRetry = { viewModel.loadRandomPic() },
                         modifier = Modifier.fillMaxSize()
                     )
@@ -99,7 +99,7 @@ fun RandomPicScreen(
                     Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "返回", tint = Color.White)
                 }
                 Text(
-                    text = groupState?.getOrNull()?.groupName ?: "随机一图",
+                    text = groupState?.groupName ?: "随机一图",
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.SemiBold,
                     color = Color.White,
@@ -129,8 +129,8 @@ fun RandomPicScreen(
                         .padding(Spacing.lg),
                     horizontalArrangement = Arrangement.spacedBy(Spacing.md)
                 ) {
-                    picState?.getOrNull()?.groupId?.let { gid ->
-                        val groupName = groupState?.getOrNull()?.groupName ?: "套图详情"
+                    (picState as? UiState.Success)?.data?.groupId?.let { gid ->
+                        val groupName = groupState?.groupName ?: "套图详情"
                         FilledTonalButton(
                             onClick = { onGroupClick(gid, groupName) },
                             colors = ButtonDefaults.filledTonalButtonColors(
@@ -157,7 +157,7 @@ fun RandomPicScreen(
             }
 
             // 提示标签（顶部操作条下方）
-            if (picState?.isSuccess == true) {
+            if (picState is UiState.Success) {
                 Box(
                     Modifier
                         .align(Alignment.TopCenter)

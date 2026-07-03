@@ -11,7 +11,7 @@ import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import android.app.Activity
-import androidx.compose.runtime.livedata.observeAsState
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -37,12 +37,11 @@ fun HomeScreen(
     onNavigateToGroupList: () -> Unit,
     onNavigateToDownloadList: () -> Unit
 ) {
-    val envInfo by viewModel.envInfo.observeAsState()
-    val privacy by viewModel.privacy.observeAsState(true)
-    val localEnv by viewModel.localEnv.observeAsState("")
-    val baseUrl by viewModel.baseUrl.observeAsState("")
-    val urlList by viewModel.urlList.observeAsState(emptyList())
-    val randomGroup by viewModel.randomGroup.observeAsState()
+    val envInfo by viewModel.envInfo.collectAsStateWithLifecycle()
+    val privacy by viewModel.privacy.collectAsStateWithLifecycle()
+    val localEnv by viewModel.localEnv.collectAsStateWithLifecycle()
+    val baseUrl by viewModel.baseUrl.collectAsStateWithLifecycle()
+    val urlList by viewModel.urlList.collectAsStateWithLifecycle()
 
     var showSettings by remember { mutableStateOf(false) }
     val context = LocalContext.current
@@ -55,14 +54,16 @@ fun HomeScreen(
         }
     }
 
-    LaunchedEffect(randomGroup) {
-        randomGroup?.onSuccess { group ->
-            group.groupId?.let { onNavigateToPicList(it, group.groupName ?: "套图详情") }
+    LaunchedEffect(Unit) {
+        viewModel.randomGroupEvents.collect { result ->
+            result.onSuccess { group ->
+                group.groupId?.let { onNavigateToPicList(it, group.groupName ?: "套图详情") }
+            }
         }
     }
 
-    val picCount = envInfo?.getOrNull()?.picCount ?: 0
-    val groupCount = envInfo?.getOrNull()?.groupCount ?: 0
+    val picCount = (envInfo as? UiState.Success)?.data?.picCount ?: 0
+    val groupCount = (envInfo as? UiState.Success)?.data?.groupCount ?: 0
 
     Scaffold(
         containerColor = MaterialTheme.colorScheme.background,
@@ -115,7 +116,7 @@ fun HomeScreen(
                         Text("本地图库", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
                     }
                     // 加载中用骨架，有数据就显示
-                    if (envInfo == null) {
+                    if (envInfo is UiState.Loading) {
                         XhsLoadingBox(Modifier.size(16.dp))
                     } else if (groupCount > 0 || picCount > 0) {
                         Row(
