@@ -23,7 +23,6 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
-import androidx.compose.material3.minimumInteractiveComponentSize
 import androidx.compose.runtime.*
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.compose.ui.Alignment
@@ -484,16 +483,16 @@ private fun MediaPagerBox(
 
 @Composable
 private fun MediaOverlayButton(icon: ImageVector, desc: String, onClick: () -> Unit) {
-    Box(
-        Modifier
-            .minimumInteractiveComponentSize()
-            .size(30.dp)
-            .clip(CircleShape)
-            .background(Color.Black.copy(alpha = 0.35f))
-            .clickable(onClick = onClick),
-        contentAlignment = Alignment.Center
-    ) {
-        Icon(icon, desc, tint = Color.White, modifier = Modifier.size(15.dp))
+    IconButton(onClick = onClick) {
+        Box(
+            Modifier
+                .size(30.dp)
+                .clip(CircleShape)
+                .background(Color.Black.copy(alpha = 0.35f)),
+            contentAlignment = Alignment.Center
+        ) {
+            Icon(icon, desc, tint = Color.White, modifier = Modifier.size(15.dp))
+        }
     }
 }
 
