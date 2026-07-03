@@ -183,7 +183,7 @@ fun RandomGifScreen(
         }
     }
 
-    Box(Modifier.fillMaxSize().background(FeedBackground)) {
+    Box(Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background)) {
         when {
             loading && gifList.isEmpty() -> XhsLoadingBox(Modifier.fillMaxSize())
             error != null && gifList.isEmpty() -> XhsEmptyState(
@@ -207,10 +207,10 @@ fun RandomGifScreen(
                     Column(
                         modifier = Modifier
                             .fillMaxSize()
-                            .background(FeedBackground)
+                            .background(MaterialTheme.colorScheme.background)
                             .background(
                                 Brush.verticalGradient(
-                                    listOf(XhsRed.copy(alpha = 0.08f), Color.Transparent),
+                                    listOf(MaterialTheme.colorScheme.primary.copy(alpha = 0.08f), Color.Transparent),
                                     endY = 500f
                                 )
                             )
@@ -227,7 +227,7 @@ fun RandomGifScreen(
                                 .fillMaxWidth()
                                 .aspectRatio(animatedRatio)
                                 .clip(RoundedCornerShape(20.dp))
-                                .background(SurfaceMuted)
+                                .background(MaterialTheme.colorScheme.surfaceVariant)
                         ) {
                             if (player != null) {
                                 AndroidView(
@@ -255,9 +255,9 @@ fun RandomGifScreen(
                             }
 
                             if (page == settledPage && ps.playerReady == true) {
-                                Box(Modifier.fillMaxSize().background(SurfaceMuted), Alignment.Center) {
+                                Box(Modifier.fillMaxSize().background(MaterialTheme.colorScheme.surfaceVariant), Alignment.Center) {
                                     CircularProgressIndicator(
-                                        color = XhsRed.copy(alpha = 0.5f),
+                                        color = MaterialTheme.colorScheme.primary.copy(alpha = 0.5f),
                                         modifier = Modifier.size(28.dp),
                                         strokeWidth = 2.dp
                                     )
@@ -265,13 +265,13 @@ fun RandomGifScreen(
                             }
                             if (page == settledPage && ps.playerReady == null) {
                                 Box(
-                                    Modifier.fillMaxSize().background(SurfaceMuted.copy(alpha = 0.85f)),
+                                    Modifier.fillMaxSize().background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.85f)),
                                     Alignment.Center
                                 ) {
                                     Text(
                                         "链接已失效，正在跳过…",
                                         style = MaterialTheme.typography.bodySmall,
-                                        color = TextSecondary
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant
                                     )
                                 }
                             }
@@ -290,7 +290,7 @@ fun RandomGifScreen(
                                         text = title,
                                         style = MaterialTheme.typography.bodyMedium,
                                         fontWeight = FontWeight.Medium,
-                                        color = TextPrimary,
+                                        color = MaterialTheme.colorScheme.onSurface,
                                         maxLines = 2,
                                         overflow = TextOverflow.Ellipsis,
                                         modifier = Modifier
@@ -304,7 +304,7 @@ fun RandomGifScreen(
                                     Text(
                                         text = "@$nickname",
                                         style = MaterialTheme.typography.bodySmall,
-                                        color = XhsRed,
+                                        color = MaterialTheme.colorScheme.primary,
                                         textDecoration = TextDecoration.Underline,
                                         modifier = Modifier
                                             .clip(RoundedCornerShape(4.dp))
@@ -336,7 +336,7 @@ fun RandomGifScreen(
                             Modifier
                                 .size(if (isActive) 8.dp else 5.dp)
                                 .clip(CircleShape)
-                                .background(if (isActive) XhsRed else XhsRed.copy(alpha = 0.25f))
+                                .background(if (isActive) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.primary.copy(alpha = 0.25f))
                         )
                     }
                 }
@@ -344,9 +344,9 @@ fun RandomGifScreen(
                 Box(Modifier.align(Alignment.TopStart).statusBarsPadding().padding(Spacing.sm)) {
                     IconButton(
                         onClick = onBack,
-                        colors = IconButtonDefaults.iconButtonColors(containerColor = XhsRed.copy(alpha = 0.1f))
+                        colors = IconButtonDefaults.iconButtonColors(containerColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.1f))
                     ) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, "返回", tint = XhsRed)
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, "返回", tint = MaterialTheme.colorScheme.primary)
                     }
                 }
             }

@@ -52,11 +52,8 @@ import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
 import coil.request.ImageRequest
 import com.example.randomgallery.android.data.model.GroupVO
-import com.example.randomgallery.android.ui.theme.FeedBackground
 import com.example.randomgallery.android.ui.theme.RandomGalleryTheme
-import com.example.randomgallery.android.ui.theme.SurfaceMuted
 import com.example.randomgallery.android.ui.theme.Spacing
-import com.example.randomgallery.android.ui.theme.TextSecondary
 import com.example.randomgallery.android.util.ImageUrlResolver
 import androidx.compose.ui.platform.LocalContext
 import kotlin.math.absoluteValue
@@ -92,7 +89,7 @@ fun RandomGalleryScreen(
     }
 
     Scaffold(
-        containerColor = FeedBackground,
+        containerColor = MaterialTheme.colorScheme.background,
         contentWindowInsets = WindowInsets(0, 0, 0, 0),
         topBar = {
             TopAppBar(
@@ -118,7 +115,7 @@ fun RandomGalleryScreen(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(innerPadding)
-                .background(FeedBackground)
+                .background(MaterialTheme.colorScheme.background)
         ) {
             when {
                 groups.isEmpty() && loading -> {
@@ -179,7 +176,7 @@ private fun FeedCard(group: GroupVO, onClick: () -> Unit) {
                 modifier = Modifier
                     .fillMaxWidth()
                     .aspectRatio(ratio)
-                    .background(SurfaceMuted)
+                    .background(MaterialTheme.colorScheme.surfaceVariant)
             )
             Row(
                 modifier = Modifier.padding(Spacing.md),
@@ -197,14 +194,14 @@ private fun FeedCard(group: GroupVO, onClick: () -> Unit) {
                 Icon(
                     imageVector = Icons.Filled.Image,
                     contentDescription = null,
-                    tint = TextSecondary,
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
                     modifier = Modifier.size(13.dp)
                 )
                 Spacer(Modifier.width(2.dp))
                 Text(
                     text = "${group.groupCount ?: 0}",
                     style = MaterialTheme.typography.labelSmall,
-                    color = TextSecondary
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
             }
         }
@@ -220,7 +217,7 @@ private fun EmptyState(message: String, onRetry: () -> Unit, modifier: Modifier 
         Text(
             text = message,
             style = MaterialTheme.typography.bodyMedium,
-            color = TextSecondary
+            color = MaterialTheme.colorScheme.onSurfaceVariant
         )
         Spacer(Modifier.height(Spacing.lg))
         Button(onClick = onRetry) { Text("重新加载") }

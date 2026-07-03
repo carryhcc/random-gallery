@@ -63,7 +63,7 @@ fun PicListScreen(
 
     TopSnackbarBox(snackbarHostState) {
     Scaffold(
-        containerColor = FeedBackground,
+        containerColor = MaterialTheme.colorScheme.background,
         contentWindowInsets = WindowInsets(0, 0, 0, 0),
         topBar = { XhsTopBar(title = groupName.ifBlank { "套图详情" }, onBack = onBack) }
     ) { padding ->
@@ -71,7 +71,7 @@ fun PicListScreen(
             Modifier
                 .fillMaxSize()
                 .padding(padding)
-                .background(FeedBackground)
+                .background(MaterialTheme.colorScheme.background)
         ) {
             when {
                 items.isEmpty() && loading -> XhsLoadingBox(Modifier.fillMaxSize())
@@ -93,7 +93,7 @@ fun PicListScreen(
                                 modifier = Modifier
                                     .fillMaxWidth()
                                     .clip(RoundedCornerShape(10.dp))
-                                    .background(SurfaceMuted)
+                                    .background(MaterialTheme.colorScheme.surfaceVariant)
                             ) {
                                 AsyncImage(
                                     model = ImageRequest.Builder(context)

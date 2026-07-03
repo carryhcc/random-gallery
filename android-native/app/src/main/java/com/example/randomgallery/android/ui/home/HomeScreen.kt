@@ -65,7 +65,7 @@ fun HomeScreen(
     val groupCount = envInfo?.getOrNull()?.groupCount ?: 0
 
     Scaffold(
-        containerColor = FeedBackground,
+        containerColor = MaterialTheme.colorScheme.background,
         contentWindowInsets = WindowInsets(0, 0, 0, 0),
         topBar = {
             TopAppBar(
@@ -88,7 +88,7 @@ fun HomeScreen(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(padding)
-                .background(FeedBackground)
+                .background(MaterialTheme.colorScheme.background)
                 .verticalScroll(rememberScrollState())
                 .padding(Spacing.lg),
             verticalArrangement = Arrangement.spacedBy(Spacing.lg)
@@ -109,7 +109,7 @@ fun HomeScreen(
                         Icon(
                             Icons.Filled.PhotoLibrary,
                             contentDescription = null,
-                            tint = XhsRed,
+                            tint = MaterialTheme.colorScheme.primary,
                             modifier = Modifier.size(22.dp)
                         )
                         Text("本地图库", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
@@ -136,16 +136,16 @@ fun HomeScreen(
                         FuncCard(
                             icon = Icons.Filled.Shuffle,
                             label = "随机图片",
-                            tint = Color(0xFF6B7FD7),
-                            bg = Color(0xFFEEF0FB),
+                            tint = MaterialTheme.xhs.accentIndigo,
+                            bg = MaterialTheme.xhs.accentIndigoSoft,
                             modifier = Modifier.weight(1f),
                             onClick = onNavigateToRandomPic
                         )
                         FuncCard(
                             icon = Icons.Filled.GridView,
                             label = "随机画廊",
-                            tint = XhsRed,
-                            bg = XhsRedSoft,
+                            tint = MaterialTheme.colorScheme.primary,
+                            bg = MaterialTheme.colorScheme.primaryContainer,
                             modifier = Modifier.weight(1f),
                             onClick = onNavigateToRandomGallery
                         )
@@ -154,16 +154,16 @@ fun HomeScreen(
                         FuncCard(
                             icon = Icons.Filled.Collections,
                             label = "随机套图",
-                            tint = Color(0xFFE05252),
-                            bg = Color(0xFFFDECEC),
+                            tint = MaterialTheme.xhs.accentCoral,
+                            bg = MaterialTheme.xhs.accentCoralSoft,
                             modifier = Modifier.weight(1f),
                             onClick = { viewModel.randomGroup() }
                         )
                         FuncCard(
                             icon = Icons.Filled.FormatListBulleted,
                             label = "分组列表",
-                            tint = Color(0xFF7A7A82),
-                            bg = Color(0xFFF0F0F3),
+                            tint = MaterialTheme.colorScheme.secondary,
+                            bg = MaterialTheme.xhs.accentGreySoft,
                             modifier = Modifier.weight(1f),
                             onClick = onNavigateToGroupList
                         )
@@ -181,7 +181,7 @@ fun HomeScreen(
                     Icon(
                         Icons.Filled.CloudDownload,
                         contentDescription = null,
-                        tint = Color(0xFF4A90D9),
+                        tint = MaterialTheme.xhs.accentBlue,
                         modifier = Modifier.size(22.dp)
                     )
                     Text("精选收藏", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
@@ -193,16 +193,16 @@ fun HomeScreen(
                     FuncCard(
                         icon = Icons.Filled.Animation,
                         label = "随机动图",
-                        tint = Color(0xFF3BAD7A),
-                        bg = Color(0xFFE8F7F1),
+                        tint = MaterialTheme.xhs.accentGreen,
+                        bg = MaterialTheme.xhs.accentGreenSoft,
                         modifier = Modifier.weight(1f),
                         onClick = onNavigateToRandomGif
                     )
                     FuncCard(
                         icon = Icons.Filled.PhotoAlbum,
                         label = "下载浏览",
-                        tint = Color(0xFF4A90D9),
-                        bg = Color(0xFFE8F1FB),
+                        tint = MaterialTheme.xhs.accentBlue,
+                        bg = MaterialTheme.xhs.accentBlueSoft,
                         modifier = Modifier.weight(1f),
                         onClick = onNavigateToDownloadList
                     )
@@ -214,8 +214,8 @@ fun HomeScreen(
                 FuncCardWide(
                     icon = Icons.Filled.Download,
                     label = "图片下载管理",
-                    tint = Color(0xFFE09830),
-                    bg = Color(0xFFFBF3E3),
+                    tint = MaterialTheme.xhs.accentOrange,
+                    bg = MaterialTheme.xhs.accentOrangeSoft,
                     onClick = onNavigateToDownloadManage
                 )
             }
@@ -262,7 +262,7 @@ private fun StatChip(label: String, value: String) {
         Text(
             "$label: ",
             style = MaterialTheme.typography.bodySmall,
-            color = TextSecondary
+            color = MaterialTheme.colorScheme.onSurfaceVariant
         )
         Text(
             value,
@@ -287,7 +287,7 @@ private fun FuncCard(
     Column(
         modifier = modifier
             .clip(RoundedCornerShape(14.dp))
-            .background(FeedBackground)
+            .background(MaterialTheme.colorScheme.background)
             .clickable(onClick = onClick)
             .padding(vertical = Spacing.xl, horizontal = Spacing.lg),
         horizontalAlignment = Alignment.CenterHorizontally,
@@ -325,7 +325,7 @@ private fun FuncCardWide(
         modifier = Modifier
             .fillMaxWidth()
             .clip(RoundedCornerShape(14.dp))
-            .background(FeedBackground)
+            .background(MaterialTheme.colorScheme.background)
             .clickable(onClick = onClick)
             .padding(horizontal = Spacing.xl, vertical = Spacing.lg),
         verticalAlignment = Alignment.CenterVertically,
@@ -396,8 +396,8 @@ private fun SettingsDialog(
                             modifier = Modifier.fillMaxWidth().menuAnchor(MenuAnchorType.PrimaryNotEditable),
                             shape = RoundedCornerShape(10.dp),
                             colors = OutlinedTextFieldDefaults.colors(
-                                focusedBorderColor = XhsRed,
-                                unfocusedBorderColor = DividerColor
+                                focusedBorderColor = MaterialTheme.colorScheme.primary,
+                                unfocusedBorderColor = MaterialTheme.colorScheme.outline
                             )
                         )
                         ExposedDropdownMenu(
@@ -414,12 +414,12 @@ private fun SettingsDialog(
                                             Text(
                                                 text = url,
                                                 style = MaterialTheme.typography.bodySmall,
-                                                color = if (url == currentUrl) XhsRed else MaterialTheme.colorScheme.onSurface,
+                                                color = if (url == currentUrl) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface,
                                                 fontWeight = if (url == currentUrl) FontWeight.SemiBold else FontWeight.Normal,
                                                 modifier = Modifier.weight(1f)
                                             )
                                             if (url == currentUrl) {
-                                                Icon(Icons.Filled.Check, null, tint = XhsRed, modifier = Modifier.size(14.dp))
+                                                Icon(Icons.Filled.Check, null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(14.dp))
                                             }
                                         }
                                     },
@@ -428,7 +428,7 @@ private fun SettingsDialog(
                                             onClick = { onRemoveUrl(url) },
                                             modifier = Modifier.size(32.dp)
                                         ) {
-                                            Icon(Icons.Filled.Close, "删除", tint = TextTertiary, modifier = Modifier.size(14.dp))
+                                            Icon(Icons.Filled.Close, "删除", tint = MaterialTheme.xhs.textTertiary, modifier = Modifier.size(14.dp))
                                         }
                                     },
                                     onClick = {
@@ -451,14 +451,14 @@ private fun SettingsDialog(
                         OutlinedTextField(
                             value = newUrlInput,
                             onValueChange = { newUrlInput = it },
-                            placeholder = { Text("添加新地址…", style = MaterialTheme.typography.bodySmall, color = TextSecondary) },
+                            placeholder = { Text("添加新地址…", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant) },
                             singleLine = true,
                             textStyle = MaterialTheme.typography.bodySmall,
                             modifier = Modifier.weight(1f).height(46.dp),
                             shape = RoundedCornerShape(10.dp),
                             colors = OutlinedTextFieldDefaults.colors(
-                                focusedBorderColor = XhsRed,
-                                unfocusedBorderColor = DividerColor
+                                focusedBorderColor = MaterialTheme.colorScheme.primary,
+                                unfocusedBorderColor = MaterialTheme.colorScheme.outline
                             )
                         )
                         IconButton(
@@ -470,9 +470,9 @@ private fun SettingsDialog(
                                 }
                             },
                             modifier = Modifier.size(40.dp),
-                            colors = IconButtonDefaults.iconButtonColors(containerColor = XhsRed)
+                            colors = IconButtonDefaults.iconButtonColors(containerColor = MaterialTheme.colorScheme.primary)
                         ) {
-                            Icon(Icons.Filled.Add, "添加", tint = Color.White, modifier = Modifier.size(18.dp))
+                            Icon(Icons.Filled.Add, "添加", tint = MaterialTheme.colorScheme.onPrimary, modifier = Modifier.size(18.dp))
                         }
                     }
                 }
@@ -488,9 +488,9 @@ private fun SettingsDialog(
                                 onClick = { onSwitchEnv(env) },
                                 shape = SegmentedButtonDefaults.itemShape(index, envOptions.size),
                                 colors = SegmentedButtonDefaults.colors(
-                                    activeContainerColor = XhsRedSoft,
-                                    activeContentColor = XhsRed,
-                                    activeBorderColor = XhsRed
+                                    activeContainerColor = MaterialTheme.colorScheme.primaryContainer,
+                                    activeContentColor = MaterialTheme.colorScheme.primary,
+                                    activeBorderColor = MaterialTheme.colorScheme.primary
                                 ),
                                 icon = {}
                             ) {
@@ -513,14 +513,14 @@ private fun SettingsDialog(
                     Switch(
                         checked = privacyEnabled,
                         onCheckedChange = onPrivacyToggle,
-                        colors = SwitchDefaults.colors(checkedThumbColor = XhsRed, checkedTrackColor = XhsRedSoft)
+                        colors = SwitchDefaults.colors(checkedThumbColor = MaterialTheme.colorScheme.primary, checkedTrackColor = MaterialTheme.colorScheme.primaryContainer)
                     )
                 }
             }
         },
         confirmButton = {
             TextButton(onClick = onDismiss) {
-                Text("关闭", color = TextSecondary, style = MaterialTheme.typography.bodyMedium)
+                Text("关闭", color = MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.bodyMedium)
             }
         }
     )
@@ -529,7 +529,7 @@ private fun SettingsDialog(
 @Composable
 private fun SettingsRow(label: String, content: @Composable () -> Unit) {
     Column(modifier = Modifier.fillMaxWidth().padding(vertical = Spacing.sm)) {
-        Text(label, style = MaterialTheme.typography.labelSmall, color = TextSecondary,
+        Text(label, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant,
             modifier = Modifier.padding(bottom = Spacing.xs))
         content()
     }

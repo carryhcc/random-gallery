@@ -67,7 +67,7 @@ fun DownloadManageScreen(
 
     TopSnackbarBox(snackbarHostState) {
     Scaffold(
-        containerColor = FeedBackground,
+        containerColor = MaterialTheme.colorScheme.background,
         contentWindowInsets = WindowInsets(0, 0, 0, 0),
         topBar = { XhsTopBar(title = "下载管理", onBack = onBack) }
     ) { padding ->
@@ -75,7 +75,7 @@ fun DownloadManageScreen(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(padding)
-                .background(FeedBackground)
+                .background(MaterialTheme.colorScheme.background)
                 .navigationBarsPadding()
                 .padding(Spacing.lg),
             verticalArrangement = Arrangement.spacedBy(Spacing.lg)
@@ -91,10 +91,10 @@ fun DownloadManageScreen(
                         value = urlInput,
                         onValueChange = { urlInput = it },
                         label = { Text("小红书链接") },
-                        placeholder = { Text("粘贴分享链接 …", color = TextSecondary) },
+                        placeholder = { Text("粘贴分享链接 …", color = MaterialTheme.colorScheme.onSurfaceVariant) },
                         minLines = 3,
                         modifier = Modifier.fillMaxWidth(),
-                        colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = XhsRed),
+                        colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = MaterialTheme.colorScheme.primary),
                         trailingIcon = {
                             IconButton(onClick = {
                                 val cm = context.getSystemService(Context.CLIPBOARD_SERVICE) as? ClipboardManager
@@ -102,7 +102,7 @@ fun DownloadManageScreen(
                                 val extracted = DownloadManageViewModel.extractHttpUrl(text)
                                 if (!extracted.isNullOrBlank()) urlInput = extracted
                             }) {
-                                Icon(Icons.Filled.ContentPaste, contentDescription = "粘贴", tint = XhsRed)
+                                Icon(Icons.Filled.ContentPaste, contentDescription = "粘贴", tint = MaterialTheme.colorScheme.primary)
                             }
                         }
                     )
@@ -113,10 +113,10 @@ fun DownloadManageScreen(
                             .height(48.dp),
                         enabled = !loading,
                         shape = RoundedCornerShape(12.dp),
-                        colors = ButtonDefaults.buttonColors(containerColor = XhsRed)
+                        colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary)
                     ) {
                         if (loading) {
-                            CircularProgressIndicator(Modifier.size(20.dp), color = NeutralWhite, strokeWidth = 2.dp)
+                            CircularProgressIndicator(Modifier.size(20.dp), color = MaterialTheme.colorScheme.onPrimary, strokeWidth = 2.dp)
                         } else {
                             Text("提交下载", fontWeight = FontWeight.Bold)
                         }
@@ -138,12 +138,12 @@ fun DownloadManageScreen(
                 ) {
                     Column {
                         Text("自动读取剪贴板", style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.Medium)
-                        Text("进入页面时自动粘贴链接", style = MaterialTheme.typography.bodySmall, color = TextSecondary)
+                        Text("进入页面时自动粘贴链接", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                     }
                     Switch(
                         checked = autoReadClipboard,
                         onCheckedChange = { viewModel.setAutoReadClipboard(it) },
-                        colors = SwitchDefaults.colors(checkedThumbColor = XhsRed, checkedTrackColor = XhsRedSoft)
+                        colors = SwitchDefaults.colors(checkedThumbColor = MaterialTheme.colorScheme.primary, checkedTrackColor = MaterialTheme.colorScheme.primaryContainer)
                     )
                 }
             }

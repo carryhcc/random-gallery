@@ -1,23 +1,19 @@
 package com.example.randomgallery.android.ui.common
 
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import com.example.randomgallery.android.ui.theme.*
+import com.example.randomgallery.android.ui.theme.Spacing
 
 /**
  * 顶部 Snackbar 容器：将 SnackbarHost 叠加在内容顶部，
- * 避免被底部键盘遮挡。用法：把原来 Scaffold 的 snackbarHost 参数移除，
- * 用此函数包裹整个 Scaffold。
+ * 避免被底部键盘遮挡。
  */
 @Composable
 fun TopSnackbarBox(
@@ -76,14 +72,11 @@ fun XhsEmptyState(
         Text(
             text = message,
             style = MaterialTheme.typography.bodyMedium,
-            color = TextSecondary
+            color = MaterialTheme.colorScheme.onSurfaceVariant
         )
         if (onRetry != null) {
             Spacer(Modifier.height(Spacing.lg))
-            Button(
-                onClick = onRetry,
-                colors = ButtonDefaults.buttonColors(containerColor = XhsRed)
-            ) { Text("重新加载") }
+            Button(onClick = onRetry) { Text("重新加载") }
         }
     }
 }
@@ -91,24 +84,11 @@ fun XhsEmptyState(
 @Composable
 fun XhsLoadingBox(modifier: Modifier = Modifier) {
     Box(modifier = modifier, contentAlignment = Alignment.Center) {
-        CircularProgressIndicator(color = XhsRed, strokeWidth = 2.5.dp)
+        CircularProgressIndicator(color = MaterialTheme.colorScheme.primary, strokeWidth = 2.5.dp)
     }
 }
 
 @Composable
-fun XhsTag(text: String, modifier: Modifier = Modifier) {
-    Text(
-        text = text,
-        style = MaterialTheme.typography.labelSmall,
-        color = XhsRed,
-        modifier = modifier
-            .clip(RoundedCornerShape(4.dp))
-            .background(XhsRedSoft)
-            .padding(horizontal = Spacing.sm, vertical = Spacing.xxs)
-    )
-}
-
-@Composable
 fun XhsDivider() {
-    HorizontalDivider(color = DividerColor, thickness = 0.5.dp)
+    HorizontalDivider(color = MaterialTheme.colorScheme.outline, thickness = 0.5.dp)
 }

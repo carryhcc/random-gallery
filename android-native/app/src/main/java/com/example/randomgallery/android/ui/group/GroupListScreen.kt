@@ -56,7 +56,7 @@ fun GroupListScreen(
     }
 
     Scaffold(
-        containerColor = FeedBackground,
+        containerColor = MaterialTheme.colorScheme.background,
         contentWindowInsets = WindowInsets(0, 0, 0, 0),
         topBar = { XhsTopBar(title = "套图列表", onBack = onBack) }
     ) { padding ->
@@ -64,7 +64,7 @@ fun GroupListScreen(
             Modifier
                 .fillMaxSize()
                 .padding(padding)
-                .background(FeedBackground)
+                .background(MaterialTheme.colorScheme.background)
         ) {
             // ── 搜索栏（顶部时显示，下滑时隐藏）─────────────────────
             AnimatedVisibility(
@@ -84,22 +84,22 @@ fun GroupListScreen(
                         OutlinedTextField(
                             value = keyword,
                             onValueChange = { keyword = it },
-                            placeholder = { Text("搜索套图名称", color = TextSecondary, style = MaterialTheme.typography.bodySmall) },
+                            placeholder = { Text("搜索套图名称", color = MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.bodySmall) },
                             singleLine = true,
                             textStyle = MaterialTheme.typography.bodySmall,
                             modifier = Modifier.weight(1f).height(46.dp),
                             shape = RoundedCornerShape(24.dp),
                             colors = OutlinedTextFieldDefaults.colors(
-                                focusedBorderColor = XhsRed,
-                                unfocusedBorderColor = DividerColor
+                                focusedBorderColor = MaterialTheme.colorScheme.primary,
+                                unfocusedBorderColor = MaterialTheme.colorScheme.outline
                             )
                         )
                         IconButton(
                             onClick = { viewModel.query(keyword.trim().ifBlank { null }) },
                             modifier = Modifier.size(40.dp),
-                            colors = IconButtonDefaults.iconButtonColors(containerColor = XhsRed)
+                            colors = IconButtonDefaults.iconButtonColors(containerColor = MaterialTheme.colorScheme.primary)
                         ) {
-                            Icon(Icons.Filled.Search, contentDescription = "搜索", tint = NeutralWhite, modifier = Modifier.size(18.dp))
+                            Icon(Icons.Filled.Search, contentDescription = "搜索", tint = MaterialTheme.colorScheme.onPrimary, modifier = Modifier.size(18.dp))
                         }
                     }
                     XhsDivider()
@@ -146,16 +146,16 @@ fun GroupListScreen(
                 ) {
                     IconButton(
                         onClick = { viewModel.prevPage() },
-                        colors = IconButtonDefaults.iconButtonColors(containerColor = XhsRedSoft)
+                        colors = IconButtonDefaults.iconButtonColors(containerColor = MaterialTheme.colorScheme.primaryContainer)
                     ) {
-                        Icon(Icons.Filled.ChevronLeft, "上一页", tint = XhsRed)
+                        Icon(Icons.Filled.ChevronLeft, "上一页", tint = MaterialTheme.colorScheme.primary)
                     }
-                    Text(pageInfo, style = MaterialTheme.typography.bodySmall, color = TextSecondary, fontWeight = FontWeight.Medium)
+                    Text(pageInfo, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant, fontWeight = FontWeight.Medium)
                     IconButton(
                         onClick = { viewModel.nextPage() },
-                        colors = IconButtonDefaults.iconButtonColors(containerColor = XhsRedSoft)
+                        colors = IconButtonDefaults.iconButtonColors(containerColor = MaterialTheme.colorScheme.primaryContainer)
                     ) {
-                        Icon(Icons.Filled.ChevronRight, "下一页", tint = XhsRed)
+                        Icon(Icons.Filled.ChevronRight, "下一页", tint = MaterialTheme.colorScheme.primary)
                     }
                 }
             }
@@ -184,7 +184,7 @@ private fun GroupCard(group: GroupVO, onClick: () -> Unit) {
                 modifier = Modifier
                     .fillMaxWidth()
                     .aspectRatio(3f / 4f)
-                    .background(SurfaceMuted)
+                    .background(MaterialTheme.colorScheme.surfaceVariant)
             )
 
             // 底部渐变蒙层 + 文字

@@ -11,7 +11,6 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.FilterList
 import androidx.compose.material.icons.filled.Image
 import androidx.compose.material.icons.filled.VideoLibrary
-import androidx.compose.ui.graphics.Color
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.runtime.livedata.observeAsState
@@ -62,7 +61,7 @@ fun DownloadListScreen(
     }
 
     Scaffold(
-        containerColor = FeedBackground,
+        containerColor = MaterialTheme.colorScheme.background,
         contentWindowInsets = WindowInsets(0, 0, 0, 0),
         topBar = {
             XhsTopBar(
@@ -80,7 +79,7 @@ fun DownloadListScreen(
             Modifier
                 .fillMaxSize()
                 .padding(padding)
-                .background(FeedBackground)
+                .background(MaterialTheme.colorScheme.background)
         ) {
             if (showFilter) {
                 FilterPanel(
@@ -163,7 +162,7 @@ private fun WorkCard(work: XhsWorkListVO, onClick: () -> Unit) {
                 modifier = Modifier
                     .fillMaxWidth()
                     .aspectRatio(ratio)
-                    .background(SurfaceMuted)
+                    .background(MaterialTheme.colorScheme.surfaceVariant)
             )
             Column(Modifier.padding(Spacing.md)) {
                 Text(
@@ -180,7 +179,7 @@ private fun WorkCard(work: XhsWorkListVO, onClick: () -> Unit) {
                     Text(
                         text = work.authorNickname ?: "",
                         style = MaterialTheme.typography.bodySmall,
-                        color = TextSecondary,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis,
                         modifier = Modifier.weight(1f)
@@ -192,12 +191,12 @@ private fun WorkCard(work: XhsWorkListVO, onClick: () -> Unit) {
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         if (imgCount > 0) {
-                            Icon(Icons.Filled.Image, null, tint = TextTertiary, modifier = Modifier.size(11.dp))
-                            Text("$imgCount", style = MaterialTheme.typography.bodySmall, color = TextTertiary)
+                            Icon(Icons.Filled.Image, null, tint = MaterialTheme.xhs.textTertiary, modifier = Modifier.size(11.dp))
+                            Text("$imgCount", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.xhs.textTertiary)
                         }
                         if (vidCount > 0) {
-                            Icon(Icons.Filled.VideoLibrary, null, tint = Color(0xFF4A90D9), modifier = Modifier.size(11.dp))
-                            Text("$vidCount", style = MaterialTheme.typography.bodySmall, color = TextTertiary)
+                            Icon(Icons.Filled.VideoLibrary, null, tint = MaterialTheme.xhs.accentBlue, modifier = Modifier.size(11.dp))
+                            Text("$vidCount", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.xhs.textTertiary)
                         }
                     }
                 }
@@ -234,11 +233,11 @@ private fun FilterPanel(
             label = { Text("关键词") },
             singleLine = true,
             modifier = Modifier.fillMaxWidth(),
-            colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = XhsRed)
+            colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = MaterialTheme.colorScheme.primary)
         )
 
         if (authors.isNotEmpty()) {
-            Text("作者", style = MaterialTheme.typography.labelMedium, color = TextSecondary)
+            Text("作者", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
             FlowRow(horizontalArrangement = Arrangement.spacedBy(Spacing.sm)) {
                 authors.take(8).forEach { (name, id) ->
                     FilterChip(
@@ -246,8 +245,8 @@ private fun FilterPanel(
                         onClick = { authorId = if (authorId == id) null else id },
                         label = { Text(name, maxLines = 1) },
                         colors = FilterChipDefaults.filterChipColors(
-                            selectedContainerColor = XhsRedSoft,
-                            selectedLabelColor = XhsRed
+                            selectedContainerColor = MaterialTheme.colorScheme.primaryContainer,
+                            selectedLabelColor = MaterialTheme.colorScheme.primary
                         )
                     )
                 }
@@ -255,7 +254,7 @@ private fun FilterPanel(
         }
 
         if (tags.isNotEmpty()) {
-            Text("标签", style = MaterialTheme.typography.labelMedium, color = TextSecondary)
+            Text("标签", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
             FlowRow(horizontalArrangement = Arrangement.spacedBy(Spacing.sm)) {
                 tags.take(8).forEach { (name, id) ->
                     FilterChip(
@@ -263,8 +262,8 @@ private fun FilterPanel(
                         onClick = { tagId = if (tagId == id) null else id },
                         label = { Text(name, maxLines = 1) },
                         colors = FilterChipDefaults.filterChipColors(
-                            selectedContainerColor = XhsRedSoft,
-                            selectedLabelColor = XhsRed
+                            selectedContainerColor = MaterialTheme.colorScheme.primaryContainer,
+                            selectedLabelColor = MaterialTheme.colorScheme.primary
                         )
                     )
                 }
@@ -276,7 +275,7 @@ private fun FilterPanel(
             Button(
                 onClick = { onApply(authorId, tagId, kw) },
                 modifier = Modifier.weight(1f),
-                colors = ButtonDefaults.buttonColors(containerColor = XhsRed)
+                colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary)
             ) { Text("应用") }
         }
     }

@@ -181,7 +181,7 @@ fun DownloadDetailScreen(
 
     TopSnackbarBox(snackbarHostState) {
     Scaffold(
-        containerColor = FeedBackground,
+        containerColor = MaterialTheme.colorScheme.background,
         contentWindowInsets = WindowInsets(0, 0, 0, 0),
         topBar = {
             XhsTopBar(
@@ -189,7 +189,7 @@ fun DownloadDetailScreen(
                 onBack = onBack,
                 actions = {
                     IconButton(onClick = { showDeleteWorkDialog = true }) {
-                        Icon(Icons.Filled.Delete, contentDescription = "删除作品", tint = XhsRed)
+                        Icon(Icons.Filled.Delete, contentDescription = "删除作品", tint = MaterialTheme.colorScheme.primary)
                     }
                 }
             )
@@ -204,7 +204,7 @@ fun DownloadDetailScreen(
             )
             else -> {
                 LazyColumn(
-                    Modifier.fillMaxSize().padding(padding).background(FeedBackground)
+                    Modifier.fillMaxSize().padding(padding).background(MaterialTheme.colorScheme.background)
                 ) {
                     // ── 媒体 Tab + Pager ──────────────────────────────
                     item {
@@ -261,7 +261,7 @@ fun DownloadDetailScreen(
 
                             if (imageMedia.isEmpty() && videoMedia.isEmpty()) {
                                 Box(Modifier.fillMaxWidth().height(260.dp), contentAlignment = Alignment.Center) {
-                                    Text("暂无媒体", color = TextSecondary)
+                                    Text("暂无媒体", color = MaterialTheme.colorScheme.onSurfaceVariant)
                                 }
                             }
 
@@ -310,11 +310,11 @@ fun DownloadDetailScreen(
                                         modifier = Modifier
                                             .clip(RoundedCornerShape(20.dp))
                                             .clickable { base.authorId?.let { onAuthorClick(it, name) } }
-                                            .background(XhsRedSoft)
+                                            .background(MaterialTheme.colorScheme.primaryContainer)
                                             .padding(horizontal = Spacing.md, vertical = Spacing.xs)
                                     ) {
-                                        Icon(Icons.Filled.Person, null, tint = XhsRed, modifier = Modifier.size(14.dp))
-                                        Text(name, style = MaterialTheme.typography.bodySmall, fontWeight = FontWeight.Medium, color = XhsRed)
+                                        Icon(Icons.Filled.Person, null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(14.dp))
+                                        Text(name, style = MaterialTheme.typography.bodySmall, fontWeight = FontWeight.Medium, color = MaterialTheme.colorScheme.primary)
                                     }
                                 }
 
@@ -322,7 +322,7 @@ fun DownloadDetailScreen(
                                     LazyRow(horizontalArrangement = Arrangement.spacedBy(Spacing.sm)) {
                                         items(tags) { tag ->
                                             Box(
-                                                Modifier.clip(RoundedCornerShape(16.dp)).background(SurfaceMuted)
+                                                Modifier.clip(RoundedCornerShape(16.dp)).background(MaterialTheme.colorScheme.surfaceVariant)
                                                     .clickable { onTagClick(tag) }
                                                     .padding(horizontal = Spacing.md, vertical = Spacing.xs)
                                             ) {
@@ -334,19 +334,19 @@ fun DownloadDetailScreen(
 
                                 base?.publishTime?.let {
                                     Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(Spacing.xs)) {
-                                        Icon(Icons.Filled.AccessTime, null, tint = TextTertiary, modifier = Modifier.size(13.dp))
-                                        Text(it, style = MaterialTheme.typography.bodySmall, color = TextTertiary)
+                                        Icon(Icons.Filled.AccessTime, null, tint = MaterialTheme.xhs.textTertiary, modifier = Modifier.size(13.dp))
+                                        Text(it, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.xhs.textTertiary)
                                     }
                                 }
 
                                 base?.workDescription?.takeIf { it.isNotBlank() }?.let { desc ->
-                                    FormattedDescription(text = desc, maxLines = 6)
+                                    FormattedDescription(text = desc, maxLines = 6, topicColor = MaterialTheme.xhs.topicLink)
                                 }
 
                                 Row(horizontalArrangement = Arrangement.spacedBy(Spacing.md)) {
-                                    base?.likeCount?.let { StatBadge(Icons.Filled.Favorite, it, Color(0xFFE05252)) }
-                                    base?.collectCount?.let { StatBadge(Icons.Filled.Bookmark, it, Color(0xFFE09830)) }
-                                    base?.commentCount?.let { StatBadge(Icons.Filled.ChatBubble, it, TextSecondary) }
+                                    base?.likeCount?.let { StatBadge(Icons.Filled.Favorite, it, MaterialTheme.xhs.accentCoral) }
+                                    base?.collectCount?.let { StatBadge(Icons.Filled.Bookmark, it, MaterialTheme.xhs.accentOrange) }
+                                    base?.commentCount?.let { StatBadge(Icons.Filled.ChatBubble, it, MaterialTheme.colorScheme.onSurfaceVariant) }
                                 }
                             }
                         }
@@ -402,7 +402,7 @@ fun DownloadDetailScreen(
             text = { Text("删除这个媒体文件？此操作不可撤销。") },
             confirmButton = {
                 TextButton(onClick = { viewModel.deleteMedia(mediaId, workId); deleteTargetId = null },
-                    colors = ButtonDefaults.textButtonColors(contentColor = XhsRed)) { Text("删除") }
+                    colors = ButtonDefaults.textButtonColors(contentColor = MaterialTheme.colorScheme.primary)) { Text("删除") }
             },
             dismissButton = { TextButton(onClick = { deleteTargetId = null }) { Text("取消") } }
         )
@@ -415,7 +415,7 @@ fun DownloadDetailScreen(
             text = { Text("确定要删除整个作品及其所有媒体吗？此操作不可撤销。") },
             confirmButton = {
                 TextButton(onClick = { viewModel.deleteWork(workId); showDeleteWorkDialog = false },
-                    colors = ButtonDefaults.textButtonColors(contentColor = XhsRed)) { Text("删除") }
+                    colors = ButtonDefaults.textButtonColors(contentColor = MaterialTheme.colorScheme.primary)) { Text("删除") }
             },
             dismissButton = { TextButton(onClick = { showDeleteWorkDialog = false }) { Text("取消") } }
         )
@@ -437,7 +437,7 @@ private fun MediaPagerBox(
     Box(
         Modifier
             .fillMaxWidth()
-            .background(FeedBackground)
+            .background(MaterialTheme.colorScheme.background)
             .padding(vertical = Spacing.md)
     ) {
         HorizontalPager(
@@ -685,9 +685,9 @@ private fun BrokenPlaceholder(isVideo: Boolean) {
         Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(Spacing.sm)) {
             Icon(
                 if (isVideo) Icons.Filled.VideocamOff else Icons.Filled.BrokenImage,
-                null, tint = TextTertiary, modifier = Modifier.size(44.dp)
+                null, tint = MaterialTheme.xhs.textTertiary, modifier = Modifier.size(44.dp)
             )
-            Text(if (isVideo) "视频已过期" else "图片已过期", style = MaterialTheme.typography.labelSmall, color = TextTertiary)
+            Text(if (isVideo) "视频已过期" else "图片已过期", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.xhs.textTertiary)
         }
     }
 }
@@ -702,15 +702,15 @@ private fun PageIndicator(total: Int, current: Int, modifier: Modifier = Modifie
             repeat(total) { i ->
                 Box(
                     Modifier.size(if (i == current) 7.dp else 5.dp).clip(CircleShape)
-                        .background(if (i == current) XhsRed else DividerColor)
+                        .background(if (i == current) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outline)
                 )
             }
         } else {
             Box(
-                Modifier.clip(RoundedCornerShape(20.dp)).background(DividerColor)
+                Modifier.clip(RoundedCornerShape(20.dp)).background(MaterialTheme.colorScheme.outline)
                     .padding(horizontal = Spacing.sm, vertical = Spacing.xxs)
             ) {
-                Text("${current + 1} / $total", style = MaterialTheme.typography.labelSmall, color = TextSecondary)
+                Text("${current + 1} / $total", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
             }
         }
     }
@@ -719,10 +719,10 @@ private fun PageIndicator(total: Int, current: Int, modifier: Modifier = Modifie
 // ── 富文本描述（话题高亮）────────────────────────────────────────────
 
 @Composable
-private fun FormattedDescription(text: String, maxLines: Int = Int.MAX_VALUE) {
+private fun FormattedDescription(text: String, maxLines: Int = Int.MAX_VALUE, topicColor: Color) {
     // 匹配 #任意文字[话题]# 或 #任意文字# 两种格式
     val topicRegex = Regex("""#([^#]+?)(?:\[话题])?#""")
-    val annotatedString = remember(text) {
+    val annotatedString = remember(text, topicColor) {
         buildAnnotatedString {
             var cursor = 0
             for (match in topicRegex.findAll(text)) {
@@ -733,7 +733,7 @@ private fun FormattedDescription(text: String, maxLines: Int = Int.MAX_VALUE) {
                     }
                 }
                 // 话题高亮
-                withStyle(androidx.compose.ui.text.SpanStyle(color = androidx.compose.ui.graphics.Color(0xFF1A77FF), fontWeight = FontWeight.Medium)) {
+                withStyle(androidx.compose.ui.text.SpanStyle(color = topicColor, fontWeight = FontWeight.Medium)) {
                     append("#${match.groupValues[1]}")
                 }
                 cursor = match.range.last + 1
@@ -746,7 +746,7 @@ private fun FormattedDescription(text: String, maxLines: Int = Int.MAX_VALUE) {
     Text(
         text = annotatedString,
         style = MaterialTheme.typography.bodySmall,
-        color = TextSecondary,
+        color = MaterialTheme.colorScheme.onSurfaceVariant,
         maxLines = maxLines,
         overflow = TextOverflow.Ellipsis
     )
@@ -757,12 +757,12 @@ private fun FormattedDescription(text: String, maxLines: Int = Int.MAX_VALUE) {
 @Composable
 private fun MediaTabPill(label: String, count: Int, selected: Boolean, onClick: () -> Unit) {
     val bgColor by animateColorAsState(
-        targetValue = if (selected) XhsRed else MaterialTheme.colorScheme.surfaceVariant,
+        targetValue = if (selected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surfaceVariant,
         animationSpec = tween(150),
         label = "pill_bg"
     )
     val textColor by animateColorAsState(
-        targetValue = if (selected) Color.White else MaterialTheme.colorScheme.onSurfaceVariant,
+        targetValue = if (selected) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurfaceVariant,
         animationSpec = tween(150),
         label = "pill_text"
     )
@@ -789,6 +789,6 @@ private fun MediaTabPill(label: String, count: Int, selected: Boolean, onClick: 
 private fun StatBadge(icon: ImageVector, value: String, tint: Color) {
     Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(Spacing.xs)) {
         Icon(icon, null, tint = tint, modifier = Modifier.size(13.dp))
-        Text(value, style = MaterialTheme.typography.bodySmall, color = TextSecondary)
+        Text(value, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
     }
 }
