@@ -39,12 +39,6 @@ fun PicListScreen(
     val loading by viewModel.loading.collectAsStateWithLifecycle()
     val error by viewModel.error.collectAsStateWithLifecycle()
     val gridState = rememberLazyStaggeredGridState()
-    val snackbarHostState = remember { SnackbarHostState() }
-    var snackbarMsg by remember { mutableStateOf<String?>(null) }
-
-    LaunchedEffect(snackbarMsg) {
-        snackbarMsg?.let { snackbarHostState.showSnackbar(it); snackbarMsg = null }
-    }
 
     LaunchedEffect(groupId) {
         viewModel.groupId = groupId
@@ -61,7 +55,6 @@ fun PicListScreen(
         }
     }
 
-    TopSnackbarBox(snackbarHostState) {
     Scaffold(
         containerColor = MaterialTheme.colorScheme.background,
         contentWindowInsets = WindowInsets(0, 0, 0, 0),
@@ -119,7 +112,7 @@ fun PicListScreen(
                                         IconButton(
                                             onClick = {
                                                 downloadImage(context, url)
-                                                snackbarMsg = "图片正在下载…"
+                                                Messenger.show("图片正在下载…")
                                             },
                                             modifier = Modifier.size(28.dp)
                                         ) {
@@ -145,7 +138,6 @@ fun PicListScreen(
             }
         }
     }
-    } // end TopSnackbarBox
 }
 
 private fun downloadImage(context: Context, url: String) {

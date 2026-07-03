@@ -9,9 +9,9 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.lifecycleScope
 import com.example.randomgallery.android.data.local.AppPrefs
 import com.example.randomgallery.android.ui.AppNavHost
+import com.example.randomgallery.android.ui.common.Messenger
 import com.example.randomgallery.android.ui.download.DownloadManageViewModel
 import com.example.randomgallery.android.ui.theme.RandomGalleryTheme
-import com.example.randomgallery.android.util.showTopMessage
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 
@@ -58,7 +58,7 @@ class MainActivity : AppCompatActivity() {
                     || err is java.net.SocketTimeoutException
                 if (isNetworkError) "提交失败：网络连接错误" else "提交失败：${err?.message ?: "未知错误"}"
             }
-            showTopMessage(msg)
+            Messenger.show(msg, isError = result.isFailure)
         }
     }
 }

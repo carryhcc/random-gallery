@@ -3,6 +3,7 @@ package com.example.randomgallery.android.ui
 import android.app.Activity
 import android.net.Uri
 import androidx.activity.compose.BackHandler
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Icon
@@ -15,6 +16,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
@@ -48,7 +50,8 @@ import com.example.randomgallery.android.ui.pic.RandomPicScreen
 import com.example.randomgallery.android.ui.pic.RandomPicViewModel
 import com.example.randomgallery.android.ui.piclist.PicListScreen
 import com.example.randomgallery.android.ui.piclist.PicListViewModel
-import com.example.randomgallery.android.util.showTopMessage
+import com.example.randomgallery.android.ui.common.Messenger
+import com.example.randomgallery.android.ui.common.TopMessageHost
 
 /**
  * 纯 Compose 导航宿主。替代原 Fragment + nav_graph.xml + BottomNavigationView 体系。
@@ -101,11 +104,12 @@ fun AppNavHost() {
             activity?.finish()
         } else {
             backPressedAt = now
-            activity?.showTopMessage("再按一次返回键退出", 2000)
+            Messenger.show("再按一次返回键退出")
         }
     }
 
-    Scaffold(
+    Box {
+        Scaffold(
         contentWindowInsets = WindowInsets(0, 0, 0, 0),
         bottomBar = {
             if (showBottomBar) {
@@ -249,6 +253,8 @@ fun AppNavHost() {
                 )
             }
         }
+        }
+        TopMessageHost(Modifier.align(Alignment.TopCenter))
     }
 }
 

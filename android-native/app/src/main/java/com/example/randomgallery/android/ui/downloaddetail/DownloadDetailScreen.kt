@@ -81,26 +81,20 @@ fun DownloadDetailScreen(
     val context = LocalContext.current
     val detailState by viewModel.detail.collectAsStateWithLifecycle()
 
-    val snackbarHostState = remember { SnackbarHostState() }
     var showDeleteWorkDialog by remember { mutableStateOf(false) }
     var deleteTargetId by remember { mutableStateOf<Long?>(null) }
     var fullScreenUrl by remember { mutableStateOf<String?>(null) }
-    var snackbarMsg by remember { mutableStateOf<String?>(null) }
-
-    LaunchedEffect(snackbarMsg) {
-        snackbarMsg?.let { snackbarHostState.showSnackbar(it); snackbarMsg = null }
-    }
 
     LaunchedEffect(workId) { viewModel.load(workId) }
     LaunchedEffect(Unit) {
         viewModel.deleteWorkEvents.collect {
             it.onSuccess { onBack() }
-                .onFailure { e -> snackbarHostState.showSnackbar(e.message ?: "删除失败") }
+                .onFailure { e -> Messenger.show(e.message ?: "删除失败", isError = true) }
         }
     }
     LaunchedEffect(Unit) {
         viewModel.deleteMediaEvents.collect {
-            it.onFailure { e -> snackbarHostState.showSnackbar(e.message ?: "删除失败") }
+            it.onFailure { e -> Messenger.show(e.message ?: "删除失败", isError = true) }
         }
     }
 
@@ -181,7 +175,6 @@ fun DownloadDetailScreen(
         base?.workTags?.trim()?.split(Regex("\\s+"))?.filter { it.isNotBlank() } ?: emptyList()
     }
 
-    TopSnackbarBox(snackbarHostState) {
     Scaffold(
         containerColor = MaterialTheme.colorScheme.background,
         contentWindowInsets = WindowInsets(0, 0, 0, 0),
@@ -228,7 +221,7 @@ fun DownloadDetailScreen(
                                     onDelete = { deleteTargetId = it },
                                     onDownload = { url ->
                                         downloadToGallery(context, url, false)
-                                        snackbarMsg = "图片正在下载，请稍候…"
+                                        Messenger.show("图片正在下载，请稍候…")
                                     },
                                     onImageClick = { url -> fullScreenUrl = url }
                                 ) { media, page ->
@@ -247,7 +240,7 @@ fun DownloadDetailScreen(
                                     onDelete = { deleteTargetId = it },
                                     onDownload = { url ->
                                         downloadToGallery(context, url, true)
-                                        snackbarMsg = "视频正在下载，请稍候…"
+                                        Messenger.show("视频正在下载，请稍候…")
                                     },
                                     onImageClick = null
                                 ) { _, page ->
@@ -422,7 +415,6 @@ fun DownloadDetailScreen(
             dismissButton = { TextButton(onClick = { showDeleteWorkDialog = false }) { Text("取消") } }
         )
     }
-    } // end TopSnackbarBox
 }
 
 // ── 通用翻页容器 ──────────────────────────────────────────────────────

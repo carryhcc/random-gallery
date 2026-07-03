@@ -11,28 +11,6 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.example.randomgallery.android.ui.theme.Spacing
 
-/**
- * 顶部 Snackbar 容器：将 SnackbarHost 叠加在内容顶部，
- * 避免被底部键盘遮挡。
- */
-@Composable
-fun TopSnackbarBox(
-    snackbarHostState: SnackbarHostState,
-    modifier: Modifier = Modifier,
-    content: @Composable () -> Unit
-) {
-    Box(modifier.fillMaxSize()) {
-        content()
-        SnackbarHost(
-            hostState = snackbarHostState,
-            modifier = Modifier
-                .align(Alignment.TopCenter)
-                .statusBarsPadding()
-                .padding(top = 8.dp)
-        )
-    }
-}
-
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun XhsTopBar(

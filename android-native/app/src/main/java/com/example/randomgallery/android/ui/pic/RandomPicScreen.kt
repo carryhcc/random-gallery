@@ -28,7 +28,6 @@ import com.example.randomgallery.android.ui.common.*
 import com.example.randomgallery.android.ui.theme.*
 import com.example.randomgallery.android.util.ImageUrlResolver
 import com.example.randomgallery.android.util.downloadToPublic
-import com.example.randomgallery.android.util.toast
 
 @Composable
 fun RandomPicScreen(
@@ -40,7 +39,6 @@ fun RandomPicScreen(
     val picState by viewModel.picState.collectAsStateWithLifecycle()
     val groupState by viewModel.groupState.collectAsStateWithLifecycle()
 
-    val snackbarHostState = remember { SnackbarHostState() }
     var imageUrl by remember { mutableStateOf("") }
 
     LaunchedEffect(Unit) { viewModel.loadRandomPic() }
@@ -48,20 +46,19 @@ fun RandomPicScreen(
     LaunchedEffect(picState) {
         when (val state = picState) {
             is UiState.Success -> imageUrl = ImageUrlResolver.displayUrl(state.data.picUrl) ?: ""
-            is UiState.Error -> snackbarHostState.showSnackbar(state.message)
+            is UiState.Error -> Messenger.show(state.message, isError = true)
             else -> Unit
         }
     }
 
-    TopSnackbarBox(snackbarHostState) {
-        Box(
-            Modifier
-                .fillMaxSize()
-                .background(Color.Black)
-                .pointerInput(Unit) {
-                    detectTapGestures(onDoubleTap = { viewModel.loadRandomPic() })
-                }
-        ) {
+    Box(
+        Modifier
+            .fillMaxSize()
+            .background(Color.Black)
+            .pointerInput(Unit) {
+                detectTapGestures(onDoubleTap = { viewModel.loadRandomPic() })
+            }
+    ) {
             when {
                 picState is UiState.Loading -> XhsLoadingBox(Modifier.fillMaxSize())
                 picState is UiState.Error && imageUrl.isBlank() ->
@@ -144,7 +141,7 @@ fun RandomPicScreen(
                         onClick = {
                             if (imageUrl.isNotBlank()) {
                                 context.downloadToPublic(imageUrl, "random_${System.currentTimeMillis()}.jpg")
-                                context.toast("已加入下载队列")
+                                Messenger.show("已加入下载队列")
                             }
                         },
                         containerColor = XhsRed,
@@ -171,5 +168,4 @@ fun RandomPicScreen(
                 }
             }
         }
-    }
 }

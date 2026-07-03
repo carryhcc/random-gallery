@@ -31,7 +31,6 @@ fun DownloadManageScreen(
     val autoReadClipboard by viewModel.autoReadClipboard.collectAsStateWithLifecycle()
 
     var urlInput by remember { mutableStateOf("") }
-    val snackbarHostState = remember { SnackbarHostState() }
 
     // Android 12+ 只允许在窗口获焦时读剪贴板，用 ViewTreeObserver 监听窗口焦点
     val view = LocalView.current
@@ -59,12 +58,11 @@ fun DownloadManageScreen(
             } else {
                 result.exceptionOrNull()?.message ?: "提交失败"
             }
-            snackbarHostState.showSnackbar(msg)
+            Messenger.show(msg, isError = result.isFailure)
             if (result.isSuccess) urlInput = ""
         }
     }
 
-    TopSnackbarBox(snackbarHostState) {
     Scaffold(
         containerColor = MaterialTheme.colorScheme.background,
         contentWindowInsets = WindowInsets(0, 0, 0, 0),
@@ -148,5 +146,4 @@ fun DownloadManageScreen(
             }
         }
     }
-    } // end TopSnackbarBox
 }
