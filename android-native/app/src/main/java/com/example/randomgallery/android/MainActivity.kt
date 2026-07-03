@@ -6,7 +6,6 @@ import android.os.Bundle
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
-import androidx.appcompat.app.AppCompatDelegate
 import androidx.lifecycle.lifecycleScope
 import com.example.randomgallery.android.data.local.AppPrefs
 import com.example.randomgallery.android.ui.AppNavHost
@@ -25,7 +24,6 @@ class MainActivity : AppCompatActivity() {
     private var lastAutoSubmittedUrl: String? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
-        AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_NO)
         enableEdgeToEdge()   // Android 15+ 强制全面屏，提前主动适配
         super.onCreate(savedInstanceState)
         setContent {

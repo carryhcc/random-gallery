@@ -1,7 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources xmlns:tools="http://schemas.android.com/tools">
-    <!-- 强制沿用 light 主题，不跟随系统暗黑模式 -->
-    <style name="Theme.RandomGallery" parent="Theme.Material3.Light.NoActionBar">
+    <style name="Theme.RandomGallery" parent="Theme.Material3.Dark.NoActionBar">
         <item name="colorPrimary">@color/primary_color</item>
         <item name="colorOnPrimary">@color/text_on_primary</item>
         <item name="colorPrimaryContainer">@color/accent_color</item>
