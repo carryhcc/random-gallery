@@ -50,7 +50,7 @@ class MainActivity : AppCompatActivity() {
 
             val result = AppContainer.repository(this@MainActivity).addDownloadTask(url)
             val msg = if (result.isSuccess) {
-                "✓ 已加入下载队列"
+                getString(R.string.download_task_queued_check)
             } else {
                 val err = result.exceptionOrNull()
                 val isNetworkError = err is java.net.UnknownHostException

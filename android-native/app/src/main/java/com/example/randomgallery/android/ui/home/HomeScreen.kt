@@ -144,7 +144,7 @@ fun HomeScreen(
                         )
                         FuncCard(
                             icon = Icons.Filled.GridView,
-                            label = stringResource(R.string.home_random_gallery_label),
+                            label = stringResource(R.string.home_random_gallery),
                             tint = MaterialTheme.colorScheme.primary,
                             bg = MaterialTheme.colorScheme.primaryContainer,
                             modifier = Modifier.weight(1f),
