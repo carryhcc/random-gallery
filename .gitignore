@@ -43,3 +43,6 @@ docs/
 *.pkg
 package-desktop.sh
 app_icon.png
+
+# uiautomator debug dump
+window_dump.xml
