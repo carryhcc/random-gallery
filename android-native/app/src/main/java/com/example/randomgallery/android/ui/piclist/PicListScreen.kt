@@ -24,7 +24,6 @@ import com.example.randomgallery.android.ui.theme.*
 import com.example.randomgallery.android.util.ImageUrlResolver
 import com.example.randomgallery.android.util.Downloader
 import com.example.randomgallery.android.util.MediaKind
-import android.content.Context
 
 @Composable
 fun PicListScreen(
@@ -95,8 +94,10 @@ fun PicListScreen(
                                 if (imageLoaded) {
                                     IconButton(
                                         onClick = {
-                                            Downloader.enqueue(context, url ?: "", MediaKind.IMAGE)
-                                            Messenger.show("图片正在下载…")
+                                            if (!url.isNullOrBlank()) {
+                                                Downloader.enqueue(context, url, MediaKind.IMAGE)
+                                                Messenger.show("图片正在下载…")
+                                            }
                                         },
                                         modifier = Modifier.align(Alignment.BottomEnd)
                                     ) {

@@ -1,7 +1,6 @@
 package com.example.randomgallery.android.ui.downloaddetail
 
 import android.view.ViewGroup
-import android.content.Context
 import androidx.annotation.OptIn
 import androidx.compose.animation.Crossfade
 import androidx.compose.animation.animateColorAsState
