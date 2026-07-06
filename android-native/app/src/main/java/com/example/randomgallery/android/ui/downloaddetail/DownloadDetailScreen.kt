@@ -51,12 +51,14 @@ import coil.compose.SubcomposeAsyncImage
 import kotlinx.coroutines.launch
 import coil.request.ImageRequest
 import coil.size.Size
+import com.example.randomgallery.android.R
 import com.example.randomgallery.android.data.model.XhsWorkMedia
 import com.example.randomgallery.android.ui.common.*
 import com.example.randomgallery.android.ui.theme.*
 import com.example.randomgallery.android.util.ImageUrlResolver
 import com.example.randomgallery.android.util.Downloader
 import com.example.randomgallery.android.util.MediaKind
+import androidx.compose.ui.res.stringResource
 
 private data class MediaItem2(
     val id: Long,
@@ -182,7 +184,7 @@ fun DownloadDetailScreen(
                 onBack = onBack,
                 actions = {
                     IconButton(onClick = { showDeleteWorkDialog = true }) {
-                        Icon(Icons.Filled.Delete, contentDescription = "删除作品", tint = MaterialTheme.colorScheme.primary)
+                        Icon(Icons.Filled.Delete, contentDescription = stringResource(R.string.dd_delete_work), tint = MaterialTheme.colorScheme.primary)
                     }
                 }
             )
@@ -219,7 +221,7 @@ fun DownloadDetailScreen(
                                     onDelete = { deleteTargetId = it },
                                     onDownload = { url ->
                                         Downloader.enqueue(context, url, MediaKind.IMAGE)
-                                        Messenger.show("图片正在下载，请稍候…")
+                                        Messenger.show(context.getString(R.string.dd_img_downloading))
                                     },
                                     onImageClick = { url -> fullScreenUrl = url }
                                 ) { media, page ->
@@ -238,7 +240,7 @@ fun DownloadDetailScreen(
                                     onDelete = { deleteTargetId = it },
                                     onDownload = { url ->
                                         Downloader.enqueue(context, url, MediaKind.VIDEO)
-                                        Messenger.show("视频正在下载，请稍候…")
+                                        Messenger.show(context.getString(R.string.dd_vid_downloading))
                                     },
                                     onImageClick = null
                                 ) { _, page ->
@@ -254,7 +256,7 @@ fun DownloadDetailScreen(
 
                             if (imageMedia.isEmpty() && videoMedia.isEmpty()) {
                                 Box(Modifier.fillMaxWidth().height(260.dp), contentAlignment = Alignment.Center) {
-                                    Text("暂无媒体", color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                    Text(stringResource(R.string.dd_no_media), color = MaterialTheme.colorScheme.onSurfaceVariant)
                                 }
                             }
 
@@ -268,14 +270,14 @@ fun DownloadDetailScreen(
                                     verticalAlignment = Alignment.CenterVertically
                                 ) {
                                     MediaTabPill(
-                                        label = "图片",
+                                        label = stringResource(R.string.dd_tab_images),
                                         count = imageMedia.size,
                                         selected = selectedTab == 0,
                                         onClick = { selectedTab = 0 }
                                     )
                                     Spacer(Modifier.width(Spacing.sm))
                                     MediaTabPill(
-                                        label = "实况",
+                                        label = stringResource(R.string.dd_tab_lives),
                                         count = videoMedia.size,
                                         selected = selectedTab == 1,
                                         onClick = { selectedTab = 1 }
@@ -391,26 +393,26 @@ fun DownloadDetailScreen(
     deleteTargetId?.let { mediaId ->
         AlertDialog(
             onDismissRequest = { deleteTargetId = null },
-            title = { Text("删除媒体") },
-            text = { Text("删除这个媒体文件？此操作不可撤销。") },
+            title = { Text(stringResource(R.string.dd_delete_media)) },
+            text = { Text(stringResource(R.string.dd_delete_media_confirm)) },
             confirmButton = {
                 TextButton(onClick = { viewModel.deleteMedia(mediaId, workId); deleteTargetId = null },
-                    colors = ButtonDefaults.textButtonColors(contentColor = MaterialTheme.colorScheme.primary)) { Text("删除") }
+                    colors = ButtonDefaults.textButtonColors(contentColor = MaterialTheme.colorScheme.primary)) { Text(stringResource(R.string.common_delete)) }
             },
-            dismissButton = { TextButton(onClick = { deleteTargetId = null }) { Text("取消") } }
+            dismissButton = { TextButton(onClick = { deleteTargetId = null }) { Text(stringResource(R.string.common_cancel)) } }
         )
     }
 
     if (showDeleteWorkDialog) {
         AlertDialog(
             onDismissRequest = { showDeleteWorkDialog = false },
-            title = { Text("删除作品") },
-            text = { Text("确定要删除整个作品及其所有媒体吗？此操作不可撤销。") },
+            title = { Text(stringResource(R.string.dd_delete_work)) },
+            text = { Text(stringResource(R.string.dd_delete_work_confirm)) },
             confirmButton = {
                 TextButton(onClick = { viewModel.deleteWork(workId); showDeleteWorkDialog = false },
-                    colors = ButtonDefaults.textButtonColors(contentColor = MaterialTheme.colorScheme.primary)) { Text("删除") }
+                    colors = ButtonDefaults.textButtonColors(contentColor = MaterialTheme.colorScheme.primary)) { Text(stringResource(R.string.common_delete)) }
             },
-            dismissButton = { TextButton(onClick = { showDeleteWorkDialog = false }) { Text("取消") } }
+            dismissButton = { TextButton(onClick = { showDeleteWorkDialog = false }) { Text(stringResource(R.string.common_cancel)) } }
         )
     }
 }
@@ -459,11 +461,11 @@ private fun MediaPagerBox(
                     horizontalArrangement = Arrangement.spacedBy(Spacing.xs)
                 ) {
                     // 下载按钮
-                    MediaOverlayButton(icon = Icons.Filled.FileDownload, desc = "下载") {
+                    MediaOverlayButton(icon = Icons.Filled.FileDownload, desc = stringResource(R.string.common_download)) {
                         onDownload(media.url)
                     }
                     // 删除按钮
-                    MediaOverlayButton(icon = Icons.Filled.Delete, desc = "删除") {
+                    MediaOverlayButton(icon = Icons.Filled.Delete, desc = stringResource(R.string.common_delete)) {
                         onDelete(media.id)
                     }
                 }
@@ -622,7 +624,7 @@ private fun BoxScope.LivePhotoPage(
                     .background(Color.Black.copy(alpha = 0.45f))
                     .padding(horizontal = 6.dp, vertical = 2.dp)
             ) {
-                Text("实况", color = Color.White, fontSize = 11.sp, fontWeight = FontWeight.Medium)
+                Text(stringResource(R.string.dd_live_badge), color = Color.White, fontSize = 11.sp, fontWeight = FontWeight.Medium)
             }
         }
 
@@ -663,7 +665,7 @@ private fun BrokenPlaceholder(isVideo: Boolean) {
                 if (isVideo) Icons.Filled.VideocamOff else Icons.Filled.BrokenImage,
                 null, tint = MaterialTheme.xhs.textTertiary, modifier = Modifier.size(44.dp)
             )
-            Text(if (isVideo) "视频已过期" else "图片已过期", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.xhs.textTertiary)
+            Text(stringResource(if (isVideo) R.string.dd_vid_expired else R.string.dd_img_expired), style = MaterialTheme.typography.labelSmall, color = MaterialTheme.xhs.textTertiary)
         }
     }
 }

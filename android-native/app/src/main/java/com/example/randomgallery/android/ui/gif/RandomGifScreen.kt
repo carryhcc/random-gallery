@@ -36,6 +36,8 @@ import androidx.media3.common.util.UnstableApi
 import androidx.media3.exoplayer.ExoPlayer
 import androidx.media3.ui.AspectRatioFrameLayout
 import androidx.media3.ui.PlayerView
+import androidx.compose.ui.res.stringResource
+import com.example.randomgallery.android.R
 import com.example.randomgallery.android.ui.common.XhsEmptyState
 import com.example.randomgallery.android.ui.common.XhsLoadingBox
 import com.example.randomgallery.android.ui.theme.*
@@ -182,7 +184,7 @@ fun RandomGifScreen(
         when {
             loading && gifList.isEmpty() -> XhsLoadingBox(Modifier.fillMaxSize())
             error != null && gifList.isEmpty() -> XhsEmptyState(
-                error ?: "加载失败",
+                error ?: stringResource(R.string.common_load_failed),
                 onRetry = { viewModel.loadNext() },
                 modifier = Modifier.fillMaxSize()
             )
@@ -265,7 +267,7 @@ fun RandomGifScreen(
                                 ) {
                                     Column(horizontalAlignment = Alignment.CenterHorizontally) {
                                         Text(
-                                            "加载失败或链接已失效",
+                                            stringResource(R.string.gif_load_failed),
                                             style = MaterialTheme.typography.bodySmall,
                                             color = MaterialTheme.colorScheme.onSurfaceVariant
                                         )
@@ -275,14 +277,14 @@ fun RandomGifScreen(
                                                 playerUrls[settledPage % 2] = ""
                                                 pageStates[settledPage] = PageState(playerReady = true, videoRatio = 3f / 4f)
                                                 retryTick++
-                                            }) { Text("重试") }
+                                            }) { Text(stringResource(R.string.gif_retry)) }
                                             TextButton(onClick = {
                                                 scope.launch {
                                                     val next = settledPage + 1
                                                     if (next < gifList.size) pagerState.animateScrollToPage(next)
                                                     else viewModel.loadNext()
                                                 }
-                                            }) { Text("跳过") }
+                                            }) { Text(stringResource(R.string.gif_skip)) }
                                         }
                                     }
                                 }
@@ -358,7 +360,7 @@ fun RandomGifScreen(
                         onClick = onBack,
                         colors = IconButtonDefaults.iconButtonColors(containerColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.1f))
                     ) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, "返回", tint = MaterialTheme.colorScheme.primary)
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, stringResource(R.string.common_back), tint = MaterialTheme.colorScheme.primary)
                     }
                 }
             }

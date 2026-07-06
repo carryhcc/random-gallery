@@ -22,6 +22,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
+import androidx.compose.ui.res.stringResource
+import com.example.randomgallery.android.R
 import com.example.randomgallery.android.data.model.XhsWorkListVO
 import com.example.randomgallery.android.ui.common.*
 import com.example.randomgallery.android.ui.theme.*
@@ -57,11 +59,11 @@ fun DownloadListScreen(
         contentWindowInsets = WindowInsets(0, 0, 0, 0),
         topBar = {
             XhsTopBar(
-                title = "下载列表",
+                title = stringResource(R.string.dl_title),
                 onBack = onBack,
                 actions = {
                     IconButton(onClick = { showFilter = !showFilter }) {
-                        Icon(Icons.Filled.FilterList, contentDescription = "筛选")
+                        Icon(Icons.Filled.FilterList, contentDescription = stringResource(R.string.dl_filter))
                     }
                 }
             )
@@ -100,7 +102,7 @@ fun DownloadListScreen(
                     works.isEmpty() && loading -> XhsLoadingBox(Modifier.fillMaxSize())
                     works.isEmpty() && !loading ->
                         XhsEmptyState(
-                            error ?: "暂无内容",
+                            error ?: stringResource(R.string.common_empty),
                             onRetry = { viewModel.refresh() },
                             modifier = Modifier.fillMaxSize()
                         )
@@ -158,7 +160,7 @@ private fun WorkCard(work: XhsWorkListVO, onClick: () -> Unit) {
             )
             Column(Modifier.padding(Spacing.md)) {
                 Text(
-                    text = work.workTitle ?: "无标题",
+                    text = work.workTitle ?: stringResource(R.string.dl_untitled),
                     style = MaterialTheme.typography.titleSmall,
                     maxLines = 2,
                     overflow = TextOverflow.Ellipsis
@@ -222,14 +224,14 @@ private fun FilterPanel(
         OutlinedTextField(
             value = kw,
             onValueChange = { kw = it },
-            label = { Text("关键词") },
+            label = { Text(stringResource(R.string.dl_keyword)) },
             singleLine = true,
             modifier = Modifier.fillMaxWidth(),
             colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = MaterialTheme.colorScheme.primary)
         )
 
         if (authors.isNotEmpty()) {
-            Text("作者", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            Text(stringResource(R.string.dl_author), style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
             FlowRow(horizontalArrangement = Arrangement.spacedBy(Spacing.sm)) {
                 authors.take(8).forEach { (name, id) ->
                     FilterChip(
@@ -246,7 +248,7 @@ private fun FilterPanel(
         }
 
         if (tags.isNotEmpty()) {
-            Text("标签", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            Text(stringResource(R.string.dl_tag), style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
             FlowRow(horizontalArrangement = Arrangement.spacedBy(Spacing.sm)) {
                 tags.take(8).forEach { (name, id) ->
                     FilterChip(
@@ -263,12 +265,12 @@ private fun FilterPanel(
         }
 
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(Spacing.md)) {
-            OutlinedButton(onClick = onReset, modifier = Modifier.weight(1f)) { Text("重置") }
+            OutlinedButton(onClick = onReset, modifier = Modifier.weight(1f)) { Text(stringResource(R.string.dl_reset)) }
             Button(
                 onClick = { onApply(authorId, tagId, kw) },
                 modifier = Modifier.weight(1f),
                 colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary)
-            ) { Text("应用") }
+            ) { Text(stringResource(R.string.dl_apply)) }
         }
     }
 }

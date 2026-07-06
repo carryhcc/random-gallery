@@ -14,9 +14,11 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalView
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import android.view.ViewTreeObserver
+import com.example.randomgallery.android.R
 import com.example.randomgallery.android.ui.common.*
 import com.example.randomgallery.android.ui.theme.*
 
@@ -66,7 +68,7 @@ fun DownloadManageScreen(
     Scaffold(
         containerColor = MaterialTheme.colorScheme.background,
         contentWindowInsets = WindowInsets(0, 0, 0, 0),
-        topBar = { XhsTopBar(title = "下载管理", onBack = onBack) }
+        topBar = { XhsTopBar(title = stringResource(R.string.dm_title), onBack = onBack) }
     ) { padding ->
         Column(
             modifier = Modifier
@@ -83,12 +85,12 @@ fun DownloadManageScreen(
                 modifier = Modifier.fillMaxWidth()
             ) {
                 Column(Modifier.padding(Spacing.xl), verticalArrangement = Arrangement.spacedBy(Spacing.md)) {
-                    Text("添加下载链接", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
+                    Text(stringResource(R.string.dm_add_link), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
                     OutlinedTextField(
                         value = urlInput,
                         onValueChange = { urlInput = it },
-                        label = { Text("小红书链接") },
-                        placeholder = { Text("粘贴分享链接 …", color = MaterialTheme.colorScheme.onSurfaceVariant) },
+                        label = { Text(stringResource(R.string.dm_link_label)) },
+                        placeholder = { Text(stringResource(R.string.dm_link_hint), color = MaterialTheme.colorScheme.onSurfaceVariant) },
                         minLines = 3,
                         modifier = Modifier.fillMaxWidth(),
                         colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = MaterialTheme.colorScheme.primary),
@@ -99,7 +101,7 @@ fun DownloadManageScreen(
                                 val extracted = DownloadManageViewModel.extractHttpUrl(text)
                                 if (!extracted.isNullOrBlank()) urlInput = extracted
                             }) {
-                                Icon(Icons.Filled.ContentPaste, contentDescription = "粘贴", tint = MaterialTheme.colorScheme.primary)
+                                Icon(Icons.Filled.ContentPaste, contentDescription = stringResource(R.string.dm_paste), tint = MaterialTheme.colorScheme.primary)
                             }
                         }
                     )
@@ -115,7 +117,7 @@ fun DownloadManageScreen(
                         if (loading) {
                             CircularProgressIndicator(Modifier.size(20.dp), color = MaterialTheme.colorScheme.onPrimary, strokeWidth = 2.dp)
                         } else {
-                            Text("提交下载", fontWeight = FontWeight.Bold)
+                            Text(stringResource(R.string.dm_submit), fontWeight = FontWeight.Bold)
                         }
                     }
                 }
@@ -134,8 +136,8 @@ fun DownloadManageScreen(
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Column {
-                        Text("自动读取剪贴板", style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.Medium)
-                        Text("进入页面时自动粘贴链接", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        Text(stringResource(R.string.dm_auto_clipboard), style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.Medium)
+                        Text(stringResource(R.string.dm_auto_clipboard_desc), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                     }
                     Switch(
                         checked = autoReadClipboard,

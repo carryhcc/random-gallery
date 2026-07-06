@@ -58,6 +58,8 @@ import com.example.randomgallery.android.ui.theme.RandomGalleryTheme
 import com.example.randomgallery.android.ui.theme.Spacing
 import com.example.randomgallery.android.util.ImageUrlResolver
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
+import com.example.randomgallery.android.R
 
 /** 随机图库瀑布流（小红书风）。复用现有 RandomGalleryViewModel，只重做 UI。 */
 @OptIn(ExperimentalMaterial3Api::class)
@@ -96,15 +98,15 @@ fun RandomGalleryScreen(
         contentWindowInsets = WindowInsets(0, 0, 0, 0),
         topBar = {
             TopAppBar(
-                title = { Text("随机图库", fontWeight = FontWeight.SemiBold) },
+                title = { Text(stringResource(R.string.home_title), fontWeight = FontWeight.SemiBold) },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "返回")
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(R.string.common_back))
                     }
                 },
                 actions = {
                     IconButton(onClick = { viewModel.refresh() }) {
-                        Icon(Icons.Filled.Refresh, contentDescription = "刷新")
+                        Icon(Icons.Filled.Refresh, contentDescription = stringResource(R.string.common_refresh))
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
@@ -129,7 +131,7 @@ fun RandomGalleryScreen(
                 }
                 groups.isEmpty() && !loading -> {
                     EmptyState(
-                        message = error ?: "暂无内容",
+                        message = error ?: stringResource(R.string.common_empty),
                         onRetry = { viewModel.refresh() },
                         modifier = Modifier.align(Alignment.Center)
                     )
@@ -196,7 +198,7 @@ private fun FeedCard(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Text(
-                    text = group.groupName ?: "未命名套图",
+                    text = group.groupName ?: stringResource(R.string.group_unnamed),
                     style = MaterialTheme.typography.titleSmall,
                     color = MaterialTheme.colorScheme.onSurface,
                     maxLines = 1,
@@ -233,7 +235,7 @@ private fun EmptyState(message: String, onRetry: () -> Unit, modifier: Modifier 
             color = MaterialTheme.colorScheme.onSurfaceVariant
         )
         Spacer(Modifier.height(Spacing.lg))
-        Button(onClick = onRetry) { Text("重新加载") }
+        Button(onClick = onRetry) { Text(stringResource(R.string.common_retry)) }
     }
 }
 

@@ -19,11 +19,13 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
 import coil.request.ImageRequest
+import com.example.randomgallery.android.R
 import com.example.randomgallery.android.ui.common.*
 import com.example.randomgallery.android.ui.theme.*
 import com.example.randomgallery.android.util.ImageUrlResolver
@@ -94,10 +96,10 @@ fun RandomPicScreen(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 IconButton(onClick = onBack) {
-                    Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "返回", tint = Color.White)
+                    Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(R.string.common_back), tint = Color.White)
                 }
                 Text(
-                    text = groupState?.groupName ?: "随机一图",
+                    text = groupState?.groupName ?: stringResource(R.string.pic_title_fallback),
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.SemiBold,
                     color = Color.White,
@@ -106,7 +108,7 @@ fun RandomPicScreen(
                     modifier = Modifier.weight(1f)
                 )
                 IconButton(onClick = { viewModel.loadRandomPic() }) {
-                    Icon(Icons.Filled.Refresh, contentDescription = "换一张", tint = Color.White)
+                    Icon(Icons.Filled.Refresh, contentDescription = stringResource(R.string.pic_change), tint = Color.White)
                 }
             }
 
@@ -128,7 +130,7 @@ fun RandomPicScreen(
                     horizontalArrangement = Arrangement.spacedBy(Spacing.md)
                 ) {
                     (picState as? UiState.Success)?.data?.groupId?.let { gid ->
-                        val groupName = groupState?.groupName ?: "套图详情"
+                        val groupName = groupState?.groupName ?: stringResource(R.string.group_detail_fallback)
                         FilledTonalButton(
                             onClick = { onGroupClick(gid, groupName) },
                             colors = ButtonDefaults.filledTonalButtonColors(
@@ -136,20 +138,20 @@ fun RandomPicScreen(
                                 contentColor = Color.White
                             ),
                             shape = RoundedCornerShape(24.dp)
-                        ) { Text("查看套图", fontWeight = FontWeight.Medium) }
+                        ) { Text(stringResource(R.string.pic_view_group), fontWeight = FontWeight.Medium) }
                     }
                     FloatingActionButton(
                         onClick = {
                             if (imageUrl.isNotBlank()) {
                                 Downloader.enqueue(context, imageUrl, MediaKind.IMAGE)
-                                Messenger.show("已加入下载队列")
+                                Messenger.show(context.getString(R.string.pic_download_queued))
                             }
                         },
                         containerColor = XhsRed,
                         contentColor = NeutralWhite,
                         modifier = Modifier.size(48.dp)
                     ) {
-                        Icon(Icons.Filled.Download, contentDescription = "下载", modifier = Modifier.size(22.dp))
+                        Icon(Icons.Filled.Download, contentDescription = stringResource(R.string.common_download), modifier = Modifier.size(22.dp))
                     }
                 }
             }
@@ -165,7 +167,7 @@ fun RandomPicScreen(
                         .background(Color.Black.copy(alpha = 0.3f))
                         .padding(horizontal = Spacing.md, vertical = Spacing.xs)
                 ) {
-                    Text("双击换一张", style = MaterialTheme.typography.labelSmall, color = Color.White.copy(alpha = 0.7f))
+                    Text(stringResource(R.string.pic_double_tap_hint), style = MaterialTheme.typography.labelSmall, color = Color.White.copy(alpha = 0.7f))
                 }
             }
         }

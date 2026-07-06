@@ -16,8 +16,11 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import com.example.randomgallery.android.R
 import com.example.randomgallery.android.ui.common.*
 import com.example.randomgallery.android.ui.theme.*
 
@@ -34,6 +37,7 @@ fun HomeScreen(
     onNavigateToGroupList: () -> Unit,
     onNavigateToDownloadList: () -> Unit
 ) {
+    val context = LocalContext.current
     val envInfo by viewModel.envInfo.collectAsStateWithLifecycle()
     val privacy by viewModel.privacy.collectAsStateWithLifecycle()
     val localEnv by viewModel.localEnv.collectAsStateWithLifecycle()
@@ -53,7 +57,7 @@ fun HomeScreen(
     LaunchedEffect(Unit) {
         viewModel.randomGroupEvents.collect { result ->
             result.onSuccess { group ->
-                group.groupId?.let { onNavigateToPicList(it, group.groupName ?: "套图详情") }
+                group.groupId?.let { onNavigateToPicList(it, group.groupName ?: context.getString(R.string.group_detail_fallback)) }
             }
         }
     }
@@ -67,11 +71,11 @@ fun HomeScreen(
         topBar = {
             TopAppBar(
                 title = {
-                    Text("随机图库", fontWeight = FontWeight.SemiBold)
+                    Text(stringResource(R.string.home_title), fontWeight = FontWeight.SemiBold)
                 },
                 actions = {
                     IconButton(onClick = { showSettings = true }) {
-                        Icon(Icons.Filled.Settings, contentDescription = "设置")
+                        Icon(Icons.Filled.Settings, contentDescription = stringResource(R.string.common_settings))
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
@@ -109,7 +113,7 @@ fun HomeScreen(
                             tint = MaterialTheme.colorScheme.primary,
                             modifier = Modifier.size(22.dp)
                         )
-                        Text("本地图库", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+                        Text(stringResource(R.string.home_section_local), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
                     }
                     // 加载中用骨架，有数据就显示
                     if (envInfo is UiState.Loading) {
@@ -119,8 +123,8 @@ fun HomeScreen(
                             horizontalArrangement = Arrangement.spacedBy(Spacing.md),
                             verticalAlignment = Alignment.CenterVertically
                         ) {
-                            StatChip(label = "分组", value = groupCount.toString())
-                            StatChip(label = "图片", value = picCount.toString())
+                            StatChip(label = stringResource(R.string.home_stat_group), value = groupCount.toString())
+                            StatChip(label = stringResource(R.string.home_stat_pic), value = picCount.toString())
                         }
                     }
                 }
@@ -132,7 +136,7 @@ fun HomeScreen(
                     Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(Spacing.md)) {
                         FuncCard(
                             icon = Icons.Filled.Shuffle,
-                            label = "随机图片",
+                            label = stringResource(R.string.home_random_pic),
                             tint = MaterialTheme.xhs.accentIndigo,
                             bg = MaterialTheme.xhs.accentIndigoSoft,
                             modifier = Modifier.weight(1f),
@@ -140,7 +144,7 @@ fun HomeScreen(
                         )
                         FuncCard(
                             icon = Icons.Filled.GridView,
-                            label = "随机画廊",
+                            label = stringResource(R.string.home_random_gallery_label),
                             tint = MaterialTheme.colorScheme.primary,
                             bg = MaterialTheme.colorScheme.primaryContainer,
                             modifier = Modifier.weight(1f),
@@ -150,7 +154,7 @@ fun HomeScreen(
                     Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(Spacing.md)) {
                         FuncCard(
                             icon = Icons.Filled.Collections,
-                            label = "随机套图",
+                            label = stringResource(R.string.home_random_group),
                             tint = MaterialTheme.xhs.accentCoral,
                             bg = MaterialTheme.xhs.accentCoralSoft,
                             modifier = Modifier.weight(1f),
@@ -158,7 +162,7 @@ fun HomeScreen(
                         )
                         FuncCard(
                             icon = Icons.Filled.FormatListBulleted,
-                            label = "分组列表",
+                            label = stringResource(R.string.home_group_list_label),
                             tint = MaterialTheme.colorScheme.secondary,
                             bg = MaterialTheme.xhs.accentGreySoft,
                             modifier = Modifier.weight(1f),
@@ -181,7 +185,7 @@ fun HomeScreen(
                         tint = MaterialTheme.xhs.accentBlue,
                         modifier = Modifier.size(22.dp)
                     )
-                    Text("精选收藏", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+                    Text(stringResource(R.string.home_section_favorites), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
                 }
 
                 Spacer(Modifier.height(Spacing.md))
@@ -189,7 +193,7 @@ fun HomeScreen(
                 Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(Spacing.md)) {
                     FuncCard(
                         icon = Icons.Filled.Animation,
-                        label = "随机动图",
+                        label = stringResource(R.string.home_random_gif),
                         tint = MaterialTheme.xhs.accentGreen,
                         bg = MaterialTheme.xhs.accentGreenSoft,
                         modifier = Modifier.weight(1f),
@@ -197,7 +201,7 @@ fun HomeScreen(
                     )
                     FuncCard(
                         icon = Icons.Filled.PhotoAlbum,
-                        label = "下载浏览",
+                        label = stringResource(R.string.home_download_browse),
                         tint = MaterialTheme.xhs.accentBlue,
                         bg = MaterialTheme.xhs.accentBlueSoft,
                         modifier = Modifier.weight(1f),
@@ -210,7 +214,7 @@ fun HomeScreen(
                 // 全宽——下载管理
                 FuncCardWide(
                     icon = Icons.Filled.Download,
-                    label = "图片下载管理",
+                    label = stringResource(R.string.home_download_manage),
                     tint = MaterialTheme.xhs.accentOrange,
                     bg = MaterialTheme.xhs.accentOrangeSoft,
                     onClick = onNavigateToDownloadManage
@@ -369,19 +373,19 @@ private fun SettingsDialog(
 
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text("设置", fontWeight = FontWeight.SemiBold, style = MaterialTheme.typography.titleMedium) },
+        title = { Text(stringResource(R.string.common_settings), fontWeight = FontWeight.SemiBold, style = MaterialTheme.typography.titleMedium) },
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(0.dp)) {
 
                 // ── 服务器地址 ─────────────────────────────────────
-                SettingsRow(label = "服务器") {
+                SettingsRow(label = stringResource(R.string.settings_server)) {
                     // 下拉选择已保存的地址
                     ExposedDropdownMenuBox(
                         expanded = dropdownExpanded,
                         onExpandedChange = { if (urlList.isNotEmpty()) dropdownExpanded = it }
                     ) {
                         OutlinedTextField(
-                            value = currentUrl.ifBlank { "未设置" },
+                            value = currentUrl.ifBlank { stringResource(R.string.settings_url_unset) },
                             onValueChange = {},
                             readOnly = true,
                             singleLine = true,
@@ -424,7 +428,7 @@ private fun SettingsDialog(
                                         IconButton(
                                             onClick = { onRemoveUrl(url) }
                                         ) {
-                                            Icon(Icons.Filled.Close, "删除", tint = MaterialTheme.xhs.textTertiary, modifier = Modifier.size(14.dp))
+                                            Icon(Icons.Filled.Close, stringResource(R.string.common_delete), tint = MaterialTheme.xhs.textTertiary, modifier = Modifier.size(14.dp))
                                         }
                                     },
                                     onClick = {
@@ -447,7 +451,7 @@ private fun SettingsDialog(
                         OutlinedTextField(
                             value = newUrlInput,
                             onValueChange = { newUrlInput = it },
-                            placeholder = { Text("添加新地址…", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant) },
+                            placeholder = { Text(stringResource(R.string.settings_add_url_hint), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant) },
                             singleLine = true,
                             textStyle = MaterialTheme.typography.bodySmall,
                             modifier = Modifier.weight(1f).height(46.dp),
@@ -467,7 +471,7 @@ private fun SettingsDialog(
                             },
                             colors = IconButtonDefaults.iconButtonColors(containerColor = MaterialTheme.colorScheme.primary)
                         ) {
-                            Icon(Icons.Filled.Add, "添加", tint = MaterialTheme.colorScheme.onPrimary, modifier = Modifier.size(18.dp))
+                            Icon(Icons.Filled.Add, stringResource(R.string.settings_add), tint = MaterialTheme.colorScheme.onPrimary, modifier = Modifier.size(18.dp))
                         }
                     }
                 }
@@ -475,7 +479,7 @@ private fun SettingsDialog(
                 XhsDivider()
 
                 // ── 环境选择 ───────────────────────────────────────
-                SettingsRow(label = "环境") {
+                SettingsRow(label = stringResource(R.string.settings_env)) {
                     SingleChoiceSegmentedButtonRow(modifier = Modifier.fillMaxWidth()) {
                         envOptions.forEachIndexed { index, env ->
                             SegmentedButton(
@@ -504,7 +508,7 @@ private fun SettingsDialog(
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Text("隐私模式", style = MaterialTheme.typography.bodyMedium)
+                    Text(stringResource(R.string.settings_privacy), style = MaterialTheme.typography.bodyMedium)
                     Switch(
                         checked = privacyEnabled,
                         onCheckedChange = onPrivacyToggle,
@@ -515,7 +519,7 @@ private fun SettingsDialog(
         },
         confirmButton = {
             TextButton(onClick = onDismiss) {
-                Text("关闭", color = MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.bodyMedium)
+                Text(stringResource(R.string.common_close), color = MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.bodyMedium)
             }
         }
     )

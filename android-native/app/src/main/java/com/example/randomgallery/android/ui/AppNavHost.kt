@@ -105,7 +105,7 @@ fun AppNavHost() {
             activity?.finish()
         } else {
             backPressedAt = now
-            Messenger.show("再按一次返回键退出")
+            Messenger.show(context.getString(R.string.exit_confirm_hint))
         }
     }
 
@@ -162,7 +162,7 @@ fun AppNavHost() {
                     val vm: RandomGalleryViewModel = viewModel { RandomGalleryViewModel(AppContainer.repository(context)) }
                     RandomGalleryScreen(
                         viewModel = vm,
-                        onGroupClick = { group -> navController.toPicList(group.groupId ?: 0L, group.groupName ?: "套图详情") },
+                        onGroupClick = { group -> navController.toPicList(group.groupId ?: 0L, group.groupName ?: context.getString(R.string.group_detail_fallback)) },
                         onBack = { navController.navigateUp() }
                     )
                 }
@@ -171,7 +171,7 @@ fun AppNavHost() {
                     val vm: GroupListViewModel = viewModel { GroupListViewModel(AppContainer.repository(context)) }
                     GroupListScreen(
                         viewModel = vm,
-                        onGroupClick = { group -> navController.toPicList(group.groupId ?: 0L, group.groupName ?: "套图详情") },
+                        onGroupClick = { group -> navController.toPicList(group.groupId ?: 0L, group.groupName ?: context.getString(R.string.group_detail_fallback)) },
                         onBack = { navController.navigateUp() }
                     )
                 }
@@ -206,7 +206,7 @@ fun AppNavHost() {
                     }
                     PicListScreen(
                         viewModel = vm,
-                        groupName = entry.arguments?.getString("groupName") ?: "套图详情",
+                        groupName = entry.arguments?.getString("groupName") ?: context.getString(R.string.group_detail_fallback),
                         onBack = { navController.navigateUp() }
                     )
                 }
@@ -269,7 +269,7 @@ private fun NavHostController.switchTab(route: String) {
 }
 
 private fun NavHostController.toPicList(groupId: Long, groupName: String) {
-    val name = Uri.encode(groupName.ifBlank { "套图详情" })
+    val name = Uri.encode(groupName.ifBlank { "套图详情" }) // not a Composable: fallback hardcoded intentionally as URL path
     navigate("${Routes.PIC_LIST}/$groupId/$name")
 }
 

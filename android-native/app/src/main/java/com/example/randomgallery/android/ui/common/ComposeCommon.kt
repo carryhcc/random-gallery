@@ -7,8 +7,10 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import com.example.randomgallery.android.R
 import com.example.randomgallery.android.ui.theme.Spacing
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -23,7 +25,7 @@ fun XhsTopBar(
         navigationIcon = {
             if (onBack != null) {
                 IconButton(onClick = onBack) {
-                    Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "返回")
+                    Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(R.string.common_back))
                 }
             }
         },
@@ -54,7 +56,7 @@ fun XhsEmptyState(
         )
         if (onRetry != null) {
             Spacer(Modifier.height(Spacing.lg))
-            Button(onClick = onRetry) { Text("重新加载") }
+            Button(onClick = onRetry) { Text(stringResource(R.string.common_retry)) }
         }
     }
 }

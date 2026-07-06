@@ -27,11 +27,13 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
+import com.example.randomgallery.android.R
 import com.example.randomgallery.android.data.model.GroupVO
 import com.example.randomgallery.android.ui.common.*
 import com.example.randomgallery.android.ui.theme.*
@@ -58,7 +60,7 @@ fun GroupListScreen(
     Scaffold(
         containerColor = MaterialTheme.colorScheme.background,
         contentWindowInsets = WindowInsets(0, 0, 0, 0),
-        topBar = { XhsTopBar(title = "套图列表", onBack = onBack) }
+        topBar = { XhsTopBar(title = stringResource(R.string.group_title), onBack = onBack) }
     ) { padding ->
         Column(
             Modifier
@@ -84,7 +86,7 @@ fun GroupListScreen(
                         OutlinedTextField(
                             value = keyword,
                             onValueChange = { keyword = it },
-                            placeholder = { Text("搜索套图名称", color = MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.bodySmall) },
+                            placeholder = { Text(stringResource(R.string.group_search_hint), color = MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.bodySmall) },
                             singleLine = true,
                             textStyle = MaterialTheme.typography.bodySmall,
                             modifier = Modifier.weight(1f).height(46.dp),
@@ -98,7 +100,7 @@ fun GroupListScreen(
                             onClick = { viewModel.query(keyword.trim().ifBlank { null }) },
                             colors = IconButtonDefaults.iconButtonColors(containerColor = MaterialTheme.colorScheme.primary)
                         ) {
-                            Icon(Icons.Filled.Search, contentDescription = "搜索", tint = MaterialTheme.colorScheme.onPrimary, modifier = Modifier.size(18.dp))
+                            Icon(Icons.Filled.Search, contentDescription = stringResource(R.string.common_search), tint = MaterialTheme.colorScheme.onPrimary, modifier = Modifier.size(18.dp))
                         }
                     }
                     XhsDivider()
@@ -147,14 +149,14 @@ fun GroupListScreen(
                         onClick = { viewModel.prevPage() },
                         colors = IconButtonDefaults.iconButtonColors(containerColor = MaterialTheme.colorScheme.primaryContainer)
                     ) {
-                        Icon(Icons.Filled.ChevronLeft, "上一页", tint = MaterialTheme.colorScheme.primary)
+                        Icon(Icons.Filled.ChevronLeft, stringResource(R.string.group_prev_page), tint = MaterialTheme.colorScheme.primary)
                     }
                     Text(pageInfo, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant, fontWeight = FontWeight.Medium)
                     IconButton(
                         onClick = { viewModel.nextPage() },
                         colors = IconButtonDefaults.iconButtonColors(containerColor = MaterialTheme.colorScheme.primaryContainer)
                     ) {
-                        Icon(Icons.Filled.ChevronRight, "下一页", tint = MaterialTheme.colorScheme.primary)
+                        Icon(Icons.Filled.ChevronRight, stringResource(R.string.group_next_page), tint = MaterialTheme.colorScheme.primary)
                     }
                 }
             }
@@ -203,7 +205,7 @@ private fun GroupCard(group: GroupVO, onClick: () -> Unit) {
                     horizontalArrangement = Arrangement.spacedBy(Spacing.xs)
                 ) {
                     Text(
-                        text = group.groupName ?: "未命名套图",
+                        text = group.groupName ?: stringResource(R.string.group_unnamed),
                         style = MaterialTheme.typography.bodySmall,
                         fontWeight = FontWeight.SemiBold,
                         color = Color.White,

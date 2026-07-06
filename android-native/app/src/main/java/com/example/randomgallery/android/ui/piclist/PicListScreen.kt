@@ -16,9 +16,11 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
 import coil.request.ImageRequest
+import com.example.randomgallery.android.R
 import com.example.randomgallery.android.ui.common.*
 import com.example.randomgallery.android.ui.theme.*
 import com.example.randomgallery.android.util.ImageUrlResolver
@@ -50,7 +52,7 @@ fun PicListScreen(
     Scaffold(
         containerColor = MaterialTheme.colorScheme.background,
         contentWindowInsets = WindowInsets(0, 0, 0, 0),
-        topBar = { XhsTopBar(title = groupName.ifBlank { "套图详情" }, onBack = onBack) }
+        topBar = { XhsTopBar(title = groupName.ifBlank { stringResource(R.string.group_detail_fallback) }, onBack = onBack) }
     ) { padding ->
         Box(
             Modifier
@@ -61,7 +63,7 @@ fun PicListScreen(
             when {
                 items.isEmpty() && loading -> XhsLoadingBox(Modifier.fillMaxSize())
                 items.isEmpty() && !loading ->
-                    XhsEmptyState(error ?: "暂无图片", onRetry = { viewModel.refresh() }, modifier = Modifier.fillMaxSize())
+                    XhsEmptyState(error ?: stringResource(R.string.piclist_empty), onRetry = { viewModel.refresh() }, modifier = Modifier.fillMaxSize())
                 else -> {
                     LazyVerticalStaggeredGrid(
                         state = gridState,
@@ -96,7 +98,7 @@ fun PicListScreen(
                                         onClick = {
                                             if (!url.isNullOrBlank()) {
                                                 Downloader.enqueue(context, url, MediaKind.IMAGE)
-                                                Messenger.show("图片正在下载…")
+                                                Messenger.show(context.getString(R.string.piclist_downloading))
                                             }
                                         },
                                         modifier = Modifier.align(Alignment.BottomEnd)
@@ -110,7 +112,7 @@ fun PicListScreen(
                                         ) {
                                             Icon(
                                                 Icons.Filled.FileDownload,
-                                                contentDescription = "下载",
+                                                contentDescription = stringResource(R.string.common_download),
                                                 tint = Color.White,
                                                 modifier = Modifier.size(16.dp)
                                             )
