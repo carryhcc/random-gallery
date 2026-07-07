@@ -147,8 +147,8 @@ fun RandomPicScreen(
                                 Messenger.show(context.getString(R.string.pic_download_queued))
                             }
                         },
-                        containerColor = XhsRed,
-                        contentColor = NeutralWhite,
+                        containerColor = MaterialTheme.colorScheme.primary,
+                        contentColor = MaterialTheme.colorScheme.onPrimary,
                         modifier = Modifier.size(48.dp)
                     ) {
                         Icon(Icons.Filled.Download, contentDescription = stringResource(R.string.common_download), modifier = Modifier.size(22.dp))

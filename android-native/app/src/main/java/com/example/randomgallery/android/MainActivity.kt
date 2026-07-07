@@ -56,7 +56,8 @@ class MainActivity : AppCompatActivity() {
                 val isNetworkError = err is java.net.UnknownHostException
                     || err is java.net.ConnectException
                     || err is java.net.SocketTimeoutException
-                if (isNetworkError) "提交失败：网络连接错误" else "提交失败：${err?.message ?: "未知错误"}"
+                if (isNetworkError) getString(R.string.submit_failed_network)
+                else "提交失败：${err?.message ?: getString(R.string.submit_failed_unknown)}"
             }
             Messenger.show(msg, isError = result.isFailure)
         }

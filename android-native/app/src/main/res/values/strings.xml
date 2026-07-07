@@ -45,6 +45,8 @@
     <string name="pic_view_group">查看套图</string>
     <string name="pic_download_queued">已加入下载队列</string>
     <string name="download_task_queued_check">✓ 已加入下载队列</string>
+    <string name="submit_failed_network">提交失败：网络连接错误</string>
+    <string name="submit_failed_unknown">未知错误</string>
     <!-- 套图 -->
     <string name="group_title">套图列表</string>
     <string name="group_search_hint">搜索套图名称</string>
