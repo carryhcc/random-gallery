@@ -12,7 +12,11 @@ import androidx.compose.material.icons.filled.ContentPaste
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.lifecycle.repeatOnLifecycle
+import kotlinx.coroutines.delay
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
@@ -82,6 +86,18 @@ fun DownloadManageScreen(
         viewModel.historyEvents.collect { result ->
             val msg = result.exceptionOrNull()?.message ?: result.getOrDefault("操作成功")
             Messenger.show(msg, isError = result.isFailure)
+        }
+    }
+
+    // 页面处于 STARTED 状态时才轮询刷新下载进度：离开页面/App 退后台即自动停止；
+    // pollHistory 内部会在有在途请求时跳过，避免每 3s 取消上一个请求造成饥饿。
+    val lifecycleOwner = LocalLifecycleOwner.current
+    LaunchedEffect(lifecycleOwner) {
+        lifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
+            while (true) {
+                viewModel.pollHistory()
+                delay(3000)
+            }
         }
     }
 

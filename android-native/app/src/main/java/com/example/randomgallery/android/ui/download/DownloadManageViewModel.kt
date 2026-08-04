@@ -1,12 +1,12 @@
 package com.example.randomgallery.android.ui.download
 
+import android.content.Context
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.example.randomgallery.android.AppContainer
 import com.example.randomgallery.android.data.model.XhsDownloadTaskVO
 import com.example.randomgallery.android.data.repository.GalleryRepository
-import kotlinx.coroutines.Job
 import kotlinx.coroutines.channels.Channel
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -16,8 +16,10 @@ import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.launch
 
 class DownloadManageViewModel(
-    private val repository: GalleryRepository
+    private val appContext: Context
 ) : ViewModel() {
+
+    private fun repository(): GalleryRepository = AppContainer.repository(appContext)
 
     private val _submitEvents = Channel<Result<String>>(Channel.BUFFERED)
     val submitEvents: Flow<Result<String>> = _submitEvents.receiveAsFlow()
@@ -56,14 +58,7 @@ class DownloadManageViewModel(
 
     init {
         viewModelScope.launch {
-            repository.autoReadClipboardFlow.collectLatest { _autoReadClipboard.value = it }
-        }
-        // 首次加载历史 + 每 3 秒轮询刷新进度（VM 随返回栈销毁，页面退出即停止）
-        viewModelScope.launch {
-            while (true) {
-                loadHistory(showLoading = false)
-                delay(3000)
-            }
+            repository().autoReadClipboardFlow.collectLatest { _autoReadClipboard.value = it }
         }
     }
 
@@ -78,7 +73,7 @@ class DownloadManageViewModel(
         _lastResolvedUrl.value = resolvedUrl
         viewModelScope.launch {
             try {
-                val result = repository.addDownloadTask(resolvedUrl)
+                val result = repository().addDownloadTask(resolvedUrl)
                 _submitEvents.trySend(result)
                 if (result.isSuccess) {
                     // 添加成功后回到第一页查看最新记录
@@ -93,36 +88,48 @@ class DownloadManageViewModel(
 
     fun setAutoReadClipboard(enabled: Boolean) {
         _autoReadClipboard.value = enabled
-        viewModelScope.launch { repository.saveAutoReadClipboard(enabled) }
+        viewModelScope.launch { repository().saveAutoReadClipboard(enabled) }
     }
 
     // ── 历史操作 ──
 
-    // 避免轮询与用户翻页并发加载互相覆盖：新请求会取消上一次进行中的请求
-    private var historyJob: Job? = null
+    // 版本号防乱序：并发请求中只采纳最新的结果，避免旧响应覆盖新响应；
+    // 不再取消在途请求，消除「轮询每 3s 取消上一个未完成请求」造成的饥饿与耗电。
+    private var historyVersion = 0
 
-    fun loadHistory(showLoading: Boolean = true) {
-        historyJob?.cancel()
+    // 是否有请求在途：轮询时若上一请求未完成则跳过本 tick，避免并发堆积
+    private var historyRequesting = false
+
+    fun loadHistory(showLoading: Boolean = true, allowWhileBusy: Boolean = true) {
+        if (historyRequesting && !allowWhileBusy) return
+        historyRequesting = true
+        val version = ++historyVersion
         if (showLoading) _historyLoading.value = true
-        historyJob = viewModelScope.launch {
+        viewModelScope.launch {
             try {
                 val page = _historyPage.value
-                val result = repository.getDownloadHistory(page, HISTORY_PAGE_SIZE)
-                if (result.isSuccess) {
-                    val data = result.getOrNull()
-                    if (data != null) {
-                        _history.value = data.list
-                        _historyTotalPages.value = data.pages
-                        _historyError.value = null
+                val result = repository().getDownloadHistory(page, HISTORY_PAGE_SIZE)
+                if (version == historyVersion) {
+                    if (result.isSuccess) {
+                        val data = result.getOrNull()
+                        if (data != null) {
+                            _history.value = data.list
+                            _historyTotalPages.value = data.pages
+                            _historyError.value = null
+                        }
+                    } else {
+                        _historyError.value = result.exceptionOrNull()?.message
                     }
-                } else {
-                    _historyError.value = result.exceptionOrNull()?.message
                 }
             } finally {
-                _historyLoading.value = false
+                historyRequesting = false
+                if (showLoading) _historyLoading.value = false
             }
         }
     }
+
+    /** 由页面生命周期驱动（页面可见时才轮询）：每 tick 仅当没有在途请求时刷新 */
+    fun pollHistory() = loadHistory(showLoading = false, allowWhileBusy = false)
 
     fun refreshHistory() {
         _historyPage.value = 1
@@ -143,7 +150,7 @@ class DownloadManageViewModel(
 
     fun retryTask(id: Long) {
         viewModelScope.launch {
-            val result = repository.retryDownloadTask(id)
+            val result = repository().retryDownloadTask(id)
             _historyEvents.trySend(result)
             if (result.isSuccess) {
                 loadHistory(showLoading = false)

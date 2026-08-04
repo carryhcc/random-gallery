@@ -35,8 +35,11 @@ class HeifSystemFirstDecoder(
 ) : Decoder {
 
     override suspend fun decode(): DecodeResult? = runInterruptible {
-        // 一次性读出数据，系统解码与软解兜底都基于该字节数组，避免源被重复消费
-        val bytes = source.source.source().readByteArray()
+        // 限定单次读入大小：超限直接拒绝，避免整文件读入内存造成 OOM
+        val bytes = source.source.source().readByteArray(MAX_HEIC_BYTES + 1)
+        if (bytes.size.toLong() > MAX_HEIC_BYTES) {
+            throw IllegalStateException("HEIC source too large: ${bytes.size} bytes")
+        }
 
         // 1) 系统硬解优先
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
@@ -100,6 +103,10 @@ class HeifSystemFirstDecoder(
             BitmapDrawable(options.context.resources, bitmap),
             isSampled = target != Size.ORIGINAL
         )
+    }
+
+    private companion object {
+        const val MAX_HEIC_BYTES = 50L * 1024 * 1024
     }
 
     class Factory : Decoder.Factory {

@@ -12,6 +12,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.compose.ui.Alignment
+import kotlinx.coroutines.launch
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
@@ -41,6 +42,7 @@ fun RandomPicScreen(
     val context = LocalContext.current
     val picState by viewModel.picState.collectAsStateWithLifecycle()
     val groupState by viewModel.groupState.collectAsStateWithLifecycle()
+    val scope = rememberCoroutineScope()
 
     var imageUrl by remember { mutableStateOf("") }
 
@@ -130,9 +132,14 @@ fun RandomPicScreen(
                     horizontalArrangement = Arrangement.spacedBy(Spacing.md)
                 ) {
                     (picState as? UiState.Success)?.data?.groupId?.let { gid ->
-                        val groupName = groupState?.groupName ?: stringResource(R.string.group_detail_fallback)
+                        val fallbackName = stringResource(R.string.group_detail_fallback)
                         FilledTonalButton(
-                            onClick = { onGroupClick(gid, groupName) },
+                            onClick = {
+                                scope.launch {
+                                    val name = viewModel.resolveGroupName()
+                                    onGroupClick(gid, name ?: fallbackName)
+                                }
+                            },
                             colors = ButtonDefaults.filledTonalButtonColors(
                                 containerColor = Color.White.copy(alpha = 0.2f),
                                 contentColor = Color.White

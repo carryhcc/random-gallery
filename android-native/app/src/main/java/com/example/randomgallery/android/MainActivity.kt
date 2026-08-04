@@ -12,7 +12,6 @@ import com.example.randomgallery.android.ui.AppNavHost
 import com.example.randomgallery.android.ui.common.Messenger
 import com.example.randomgallery.android.ui.download.DownloadManageViewModel
 import com.example.randomgallery.android.ui.theme.RandomGalleryTheme
-import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 
 /**
@@ -23,6 +22,11 @@ class MainActivity : AppCompatActivity() {
 
     private var lastAutoSubmittedUrl: String? = null
 
+    // 内存缓存标志位：DataStore 只在 onCreate 订阅一次（变化时更新），
+    // 窗口聚焦回调不再每次读 DataStore
+    @Volatile
+    private var autoReadClipboard = false
+
     override fun onCreate(savedInstanceState: Bundle?) {
         enableEdgeToEdge()   // Android 15+ 强制全面屏，提前主动适配
         super.onCreate(savedInstanceState)
@@ -31,13 +35,16 @@ class MainActivity : AppCompatActivity() {
                 AppNavHost()
             }
         }
+        lifecycleScope.launch {
+            AppPrefs(this@MainActivity).autoReadClipboardFlow.collect { autoReadClipboard = it }
+        }
     }
 
     override fun onWindowFocusChanged(hasFocus: Boolean) {
         super.onWindowFocusChanged(hasFocus)
         if (!hasFocus) return
         lifecycleScope.launch {
-            if (!AppPrefs(this@MainActivity).autoReadClipboardFlow.first()) return@launch
+            if (!autoReadClipboard) return@launch
 
             val cm = getSystemService(Context.CLIPBOARD_SERVICE) as? ClipboardManager
             val text = cm?.primaryClip?.getItemAt(0)?.text?.toString()

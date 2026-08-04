@@ -8,21 +8,25 @@ import com.example.randomgallery.android.data.network.NetworkModule
 import com.example.randomgallery.android.data.repository.GalleryRepository
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.SupervisorJob
-import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.launch
 
 object AppContainer {
-
-    private val appScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
 
     @Volatile private var repository: GalleryRepository? = null
     @Volatile private var repositoryBaseUrl: String? = null
 
     fun initialize(context: Context) {
         val appContext = context.applicationContext
-        // Application.onCreate() 本身在 Main 线程，UI 尚未渲染，短暂阻塞读取 DataStore 是安全的
-        val savedBaseUrl = runBlocking(Dispatchers.IO) { AppPrefs(appContext).getBaseUrl() }
-        BaseUrlConfig.update(BaseUrlConfig.resolve(savedBaseUrl, BuildConfig.DEFAULT_BASE_URL))
+        // 先用默认 baseUrl 立即返回（不阻塞 Main 线程），随后异步读 DataStore 再切换
+        BaseUrlConfig.update(BaseUrlConfig.resolve(null, BuildConfig.DEFAULT_BASE_URL))
+        CoroutineScope(Dispatchers.IO).launch {
+            val savedBaseUrl = AppPrefs(appContext).getBaseUrl()
+            val resolved = BaseUrlConfig.resolve(savedBaseUrl, BuildConfig.DEFAULT_BASE_URL)
+            if (resolved != BaseUrlConfig.current()) {
+                BaseUrlConfig.update(resolved)
+                clearRepository()
+            }
+        }
     }
 
     fun currentBaseUrl(): String = BaseUrlConfig.current()
@@ -56,7 +60,7 @@ object AppContainer {
             } else {
                 GalleryRepository(
                     api = NetworkModule.createApiService(
-                        cacheDir = appContext.cacheDir,
+                        context = appContext,
                         baseUrl = baseUrl,
                         enableHttpLogging = BuildConfig.ENABLE_HTTP_LOGGING
                     ),

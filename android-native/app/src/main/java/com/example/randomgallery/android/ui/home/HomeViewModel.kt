@@ -61,11 +61,14 @@ class HomeViewModel(
         viewModelScope.launch {
             repository().urlListFlow.collectLatest { _urlList.value = it }
         }
+        // 只加载一次（仓库层有 TTL），避免每次切回首页都重复请求
+        loadEnvInfo()
+        loadPrivacy()
     }
 
-    fun loadEnvInfo() {
+    fun loadEnvInfo(force: Boolean = false) {
         viewModelScope.launch {
-            val result = repository().getCurrentEnvInfo()
+            val result = repository().getCurrentEnvInfo(force)
             _envInfo.value = result.fold(
                 onSuccess = { UiState.Success(it) },
                 onFailure = { UiState.Error(it.message ?: "加载失败") }
@@ -78,9 +81,9 @@ class HomeViewModel(
         }
     }
 
-    fun loadPrivacy() {
+    fun loadPrivacy(force: Boolean = false) {
         viewModelScope.launch {
-            repository().getPrivacyMode().onSuccess { _privacy.value = it }
+            repository().getPrivacyMode(force).onSuccess { _privacy.value = it }
         }
     }
 
@@ -105,7 +108,7 @@ class HomeViewModel(
                 if (result.isSuccess) "已切换到 $env 环境"
                 else "切换失败：${result.exceptionOrNull()?.message ?: "未知错误"}"
             )
-            loadEnvInfo()
+            loadEnvInfo(force = true)
         }
     }
 
@@ -123,7 +126,7 @@ class HomeViewModel(
             AppContainer.updateBaseUrl(appContext, url)
             _baseUrl.value = AppContainer.currentBaseUrl()
             _messages.trySend("已切换到 $url")
-            loadEnvInfo()
+            loadEnvInfo(force = true)
         }
     }
 
@@ -143,7 +146,7 @@ class HomeViewModel(
             AppContainer.updateBaseUrl(appContext, sanitized)
             _baseUrl.value = AppContainer.currentBaseUrl()
             _messages.trySend("服务地址已更新，正在连接...")
-            loadEnvInfo()
+            loadEnvInfo(force = true)
         }
     }
 

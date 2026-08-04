@@ -1,8 +1,10 @@
 package com.example.randomgallery.android.ui.piclist
 
+import android.content.Context
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.example.randomgallery.android.AppContainer
 import com.example.randomgallery.android.data.model.PicVO
 import com.example.randomgallery.android.data.repository.GalleryRepository
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -11,9 +13,11 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 
 class PicListViewModel(
-    private val repository: GalleryRepository,
+    private val appContext: Context,
     savedStateHandle: SavedStateHandle
 ) : ViewModel() {
+
+    private fun repository(): GalleryRepository = AppContainer.repository(appContext)
 
     private val _items = MutableStateFlow<List<PicVO>>(emptyList())
     val items: StateFlow<List<PicVO>> = _items.asStateFlow()
@@ -41,7 +45,7 @@ class PicListViewModel(
         if (_loading.value || !hasMore || groupId == 0L) return
         _loading.value = true
         viewModelScope.launch {
-            repository.getPicList(groupId = groupId, page = currentPage, size = 10)
+            repository().getPicList(groupId = groupId, page = currentPage, size = 10)
                 .onSuccess {
                     val merged = _items.value + it
                     _items.value = merged

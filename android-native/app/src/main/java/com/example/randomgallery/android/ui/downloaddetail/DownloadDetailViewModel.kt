@@ -1,7 +1,9 @@
 package com.example.randomgallery.android.ui.downloaddetail
 
+import android.content.Context
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.example.randomgallery.android.AppContainer
 import com.example.randomgallery.android.data.model.XhsWorkDetailVO
 import com.example.randomgallery.android.data.repository.GalleryRepository
 import com.example.randomgallery.android.ui.common.UiState
@@ -14,8 +16,10 @@ import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.launch
 
 class DownloadDetailViewModel(
-    private val repository: GalleryRepository
+    private val appContext: Context
 ) : ViewModel() {
+
+    private fun repository(): GalleryRepository = AppContainer.repository(appContext)
 
     private val _detail = MutableStateFlow<UiState<XhsWorkDetailVO>>(UiState.Loading)
     val detail: StateFlow<UiState<XhsWorkDetailVO>> = _detail.asStateFlow()
@@ -28,7 +32,7 @@ class DownloadDetailViewModel(
 
     fun load(workId: String) {
         viewModelScope.launch {
-            val result = repository.getWorkDetail(workId)
+            val result = repository().getWorkDetail(workId)
             _detail.value = result.fold(
                 onSuccess = { UiState.Success(it) },
                 onFailure = { UiState.Error(it.message ?: "加载失败") }
@@ -38,16 +42,16 @@ class DownloadDetailViewModel(
 
     fun deleteWork(workId: String) {
         viewModelScope.launch {
-            _deleteWorkEvents.trySend(repository.deleteWork(workId))
+            _deleteWorkEvents.trySend(repository().deleteWork(workId))
         }
     }
 
     fun deleteMedia(mediaId: Long, workId: String) {
         viewModelScope.launch {
-            val result = repository.deleteMedia(mediaId)
+            val result = repository().deleteMedia(mediaId)
             _deleteMediaEvents.trySend(result)
             if (result.isSuccess) {
-                val detailResult = repository.getWorkDetail(workId)
+                val detailResult = repository().getWorkDetail(workId)
                 _detail.value = detailResult.fold(
                     onSuccess = { UiState.Success(it) },
                     onFailure = { UiState.Error(it.message ?: "加载失败") }

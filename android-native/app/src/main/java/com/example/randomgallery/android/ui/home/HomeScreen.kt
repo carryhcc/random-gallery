@@ -7,6 +7,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.*
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -47,8 +48,6 @@ fun HomeScreen(
     var showSettings by remember { mutableStateOf(false) }
 
     LaunchedEffect(Unit) {
-        viewModel.loadEnvInfo()
-        viewModel.loadPrivacy()
         viewModel.messages.collect { msg ->
             Messenger.show(msg, isError = msg.contains("失败"))
         }
@@ -161,7 +160,7 @@ fun HomeScreen(
                             onClick = { viewModel.randomGroup() }
                         )
                         FuncCard(
-                            icon = Icons.Filled.FormatListBulleted,
+                            icon = Icons.AutoMirrored.Filled.FormatListBulleted,
                             label = stringResource(R.string.home_group_list_label),
                             tint = MaterialTheme.colorScheme.secondary,
                             bg = MaterialTheme.xhs.accentGreySoft,

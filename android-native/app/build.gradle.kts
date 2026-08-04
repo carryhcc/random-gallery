@@ -104,7 +104,6 @@ dependencies {
     implementation("androidx.lifecycle:lifecycle-livedata-ktx:2.9.1")
     implementation("androidx.lifecycle:lifecycle-runtime-ktx:2.9.1")
     implementation("androidx.datastore:datastore-preferences:1.1.4")
-    implementation("androidx.work:work-runtime-ktx:2.10.1")
 
     implementation("com.squareup.retrofit2:retrofit:2.11.0")
     implementation("com.squareup.retrofit2:converter-moshi:2.11.0")

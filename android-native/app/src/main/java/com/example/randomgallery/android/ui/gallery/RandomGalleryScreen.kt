@@ -18,7 +18,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.staggeredgrid.LazyVerticalStaggeredGrid
 import androidx.compose.foundation.lazy.staggeredgrid.StaggeredGridCells
-import androidx.compose.foundation.lazy.staggeredgrid.items
+import androidx.compose.foundation.lazy.staggeredgrid.itemsIndexed
 import androidx.compose.foundation.lazy.staggeredgrid.rememberLazyStaggeredGridState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -39,6 +39,7 @@ import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.snapshots.SnapshotStateMap
 import androidx.compose.runtime.mutableStateMapOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.snapshotFlow
@@ -145,7 +146,10 @@ fun RandomGalleryScreen(
                         horizontalArrangement = Arrangement.spacedBy(Spacing.md),
                         modifier = Modifier.fillMaxSize()
                     ) {
-                        items(items = groups) { group ->
+                        itemsIndexed(
+                            items = groups,
+                            key = { index, item -> item.groupId ?: -index.toLong() }
+                        ) { _, group ->
                             FeedCard(group = group, ratioCache = ratioCache, onClick = { onGroupClick(group) })
                         }
                     }
@@ -158,7 +162,7 @@ fun RandomGalleryScreen(
 @Composable
 private fun FeedCard(
     group: GroupVO,
-    ratioCache: MutableMap<String, Float>,
+    ratioCache: SnapshotStateMap<String, Float>,
     onClick: () -> Unit
 ) {
     val context = LocalContext.current

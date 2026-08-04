@@ -1,8 +1,12 @@
 package com.example.randomgallery.android.ui.gif
 
+import android.content.Context
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.example.randomgallery.android.AppContainer
+import com.example.randomgallery.android.BuildConfig
 import com.example.randomgallery.android.data.model.RandomGifVO
+import com.example.randomgallery.android.data.network.NetworkModule
 import com.example.randomgallery.android.data.repository.GalleryRepository
 import com.example.randomgallery.android.util.ImageUrlResolver
 import kotlinx.coroutines.Dispatchers
@@ -11,13 +15,18 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
-import okhttp3.OkHttpClient
 import okhttp3.Request
-import java.util.concurrent.TimeUnit
 
 class RandomGifViewModel(
-    private val repository: GalleryRepository
+    private val appContext: Context
 ) : ViewModel() {
+
+    private fun repository(): GalleryRepository = AppContainer.repository(appContext)
+
+    // 复用全局单例 OkHttpClient（含连接池），不再为 HEAD 校验单独建客户端
+    private val checkClient by lazy {
+        NetworkModule.okHttpClient(appContext, BuildConfig.ENABLE_HTTP_LOGGING)
+    }
 
     private val _gifList = MutableStateFlow<List<RandomGifVO>>(emptyList())
     val gifList: StateFlow<List<RandomGifVO>> = _gifList.asStateFlow()
@@ -30,15 +39,9 @@ class RandomGifViewModel(
 
     private var isLoadingMore = false
 
-    // 轻量 OkHttp 客户端，仅用于 HEAD 校验，超时短
-    private val checkClient = OkHttpClient.Builder()
-        .connectTimeout(4, TimeUnit.SECONDS)
-        .readTimeout(4, TimeUnit.SECONDS)
-        .build()
-
     init {
+        // 首个 loadNext() 已同步置位 isLoadingMore，第二个调用必被拦截，删掉死代码
         loadNext()
-        loadNext() // 初始预加载两个
     }
 
     fun loadNext() {
@@ -49,20 +52,18 @@ class RandomGifViewModel(
         viewModelScope.launch {
             var attempts = 0
             var loaded = false
-            while (attempts < 5 && !loaded) {
+            while (attempts < MAX_ATTEMPTS && !loaded) {
                 attempts++
-                repository.getRandomGif()
+                repository().getRandomGif()
                     .onSuccess { gif ->
                         val url = gif.mediaUrl?.let { ImageUrlResolver.rawUrl(it) }
                         if (url != null && isUrlAlive(url)) {
                             val current = _gifList.value
-                            if (current.none { it.mediaUrl == gif.mediaUrl }) {
+                            if (current.none { it.mediaUrl == gif.mediaUrl } && current.size < MAX_GIFS) {
                                 _gifList.value = current + gif
-                                loaded = true
-                                _error.value = null
-                            } else {
-                                loaded = true // 重复也算结束，避免死循环
                             }
+                            loaded = true // 重复或已到上界也算结束，避免死循环
+                            _error.value = null
                         }
                         // url 失效则继续循环尝试下一个
                     }
@@ -88,8 +89,8 @@ class RandomGifViewModel(
         }
     }
 
-    override fun onCleared() {
-        super.onCleared()
-        checkClient.dispatcher.executorService.shutdown()
+    private companion object {
+        const val MAX_ATTEMPTS = 3
+        const val MAX_GIFS = 100
     }
 }

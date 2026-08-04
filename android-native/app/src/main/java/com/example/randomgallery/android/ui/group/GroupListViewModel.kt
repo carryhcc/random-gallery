@@ -1,17 +1,22 @@
 package com.example.randomgallery.android.ui.group
 
+import android.content.Context
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.example.randomgallery.android.AppContainer
 import com.example.randomgallery.android.data.model.GroupVO
 import com.example.randomgallery.android.data.repository.GalleryRepository
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
 
 class GroupListViewModel(
-    private val repository: GalleryRepository
+    private val appContext: Context
 ) : ViewModel() {
+
+    private fun repository(): GalleryRepository = AppContainer.repository(appContext)
 
     private val _groups = MutableStateFlow<List<GroupVO>>(emptyList())
     val groups: StateFlow<List<GroupVO>> = _groups.asStateFlow()
@@ -26,11 +31,15 @@ class GroupListViewModel(
     private var totalPages = 1
     private var currentKeyword: String? = null
 
+    // 取消上一次在途翻页请求，避免慢响应乱序覆盖新页面
+    private var queryJob: Job? = null
+
     fun query(keyword: String?, pageIndex: Int = 1) {
         page = pageIndex
         currentKeyword = keyword
-        viewModelScope.launch {
-            repository.getGroupList(keyword, page, 10)
+        queryJob?.cancel()
+        queryJob = viewModelScope.launch {
+            repository().getGroupList(keyword, page, 10)
                 .onSuccess {
                     _groups.value = it.list
                     totalPages = it.pages

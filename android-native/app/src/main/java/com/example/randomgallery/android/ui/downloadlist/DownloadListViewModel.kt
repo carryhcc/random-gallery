@@ -1,8 +1,10 @@
 package com.example.randomgallery.android.ui.downloadlist
 
+import android.content.Context
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.example.randomgallery.android.AppContainer
 import com.example.randomgallery.android.data.model.AuthorVO
 import com.example.randomgallery.android.data.model.TagVO
 import com.example.randomgallery.android.data.model.XhsWorkListVO
@@ -15,9 +17,11 @@ import kotlinx.coroutines.launch
 import kotlin.random.Random
 
 class DownloadListViewModel(
-    private val repository: GalleryRepository,
+    private val appContext: Context,
     savedStateHandle: SavedStateHandle
 ) : ViewModel() {
+
+    private fun repository(): GalleryRepository = AppContainer.repository(appContext)
 
     private val _works = MutableStateFlow<List<XhsWorkListVO>>(emptyList())
     val works: StateFlow<List<XhsWorkListVO>> = _works.asStateFlow()
@@ -55,15 +59,15 @@ class DownloadListViewModel(
 
     fun init() {
         viewModelScope.launch {
-            _viewMode.value = repository.viewModeFlow.first()
-            repository.getAuthors().onSuccess { _authors.value = it }
-            repository.getTags().onSuccess { _tags.value = it }
+            _viewMode.value = repository().viewModeFlow.first()
+            repository().getAuthors().onSuccess { _authors.value = it }
+            repository().getTags().onSuccess { _tags.value = it }
         }
     }
 
     fun changeViewMode(mode: String) {
         _viewMode.value = mode
-        viewModelScope.launch { repository.saveViewMode(mode) }
+        viewModelScope.launch { repository().saveViewMode(mode) }
     }
 
     fun resetFilters() {
@@ -88,14 +92,12 @@ class DownloadListViewModel(
         _loading.value = true
         viewModelScope.launch {
             val useSeed = if (authorId == null && tagId == null && keyword.isNullOrBlank()) seed else null
-            repository.getWorkList(page, 10, authorId, tagId, keyword, useSeed)
+            repository().getWorkList(page, 10, authorId, tagId, keyword, useSeed)
                 .onSuccess {
-                    if (page == 1) {
-                        _works.value = it.works
-                    } else {
-                        _works.value = _works.value + it.works
-                    }
-                    hasMore = it.hasMore
+                    val merged = if (page == 1) it.works else _works.value + it.works
+                    // 上界截断：长期会话不无界增长
+                    _works.value = merged.take(MAX_WORKS)
+                    hasMore = it.hasMore && merged.size < MAX_WORKS
                     page += 1
                     _error.value = null
                 }
@@ -105,5 +107,9 @@ class DownloadListViewModel(
             _loading.value = false
             isLoadingInFlight = false
         }
+    }
+
+    private companion object {
+        const val MAX_WORKS = 200
     }
 }

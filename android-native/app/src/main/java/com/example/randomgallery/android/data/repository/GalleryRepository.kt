@@ -20,6 +20,42 @@ class GalleryRepository(
 
     private val moshi = NetworkModule.moshi
 
+    companion object {
+        // 首页环境/隐私信息 TTL（毫秒）
+        private const val HOME_INFO_TTL_MS = 5 * 60 * 1000L
+        // 下载列表作者/标签元数据 TTL（毫秒）
+        private const val AUTHORS_TAGS_TTL_MS = 10 * 60 * 1000L
+        // 随机图/GIF 兜底缓存有效期：超过则视为过期，不返回陈旧随机内容
+        private const val RANDOM_CACHE_TTL_MS = 24 * 60 * 60 * 1000L
+    }
+
+    // 首页环境/隐私信息 TTL 缓存：进入首页不再每次发起网络请求，过期才刷新。
+    // 以当前 baseUrl 为 key，切换 baseUrl 时 AppContainer 会重建 repository（缓存自然失效）。
+    private class TtlEntry<T>(val value: T, val fetchedAt: Long)
+
+    private class TtlCache<T>(private val ttlMs: Long) {
+        @Volatile private var key: String? = null
+        @Volatile private var entry: TtlEntry<T>? = null
+
+        @Synchronized
+        fun get(key: String): T? {
+            val e = entry ?: return null
+            if (e.fetchedAt + ttlMs < System.currentTimeMillis()) return null
+            return if (this.key == key) e.value else null
+        }
+
+        @Synchronized
+        fun put(key: String, value: T) {
+            this.key = key
+            entry = TtlEntry(value, System.currentTimeMillis())
+        }
+    }
+
+    private val envInfoCache = TtlCache<PicCount>(HOME_INFO_TTL_MS)
+    private val privacyCache = TtlCache<Boolean>(HOME_INFO_TTL_MS)
+    private val authorsCache = TtlCache<List<AuthorVO>>(AUTHORS_TAGS_TTL_MS)
+    private val tagsCache = TtlCache<List<TagVO>>(AUTHORS_TAGS_TTL_MS)
+
     val envFlow: Flow<String> = prefs.envFlow
     val privacyFlow: Flow<Boolean> = prefs.privacyFlow
     val viewModeFlow: Flow<String> = prefs.viewModeFlow
@@ -41,8 +77,9 @@ class GalleryRepository(
     }
 
     private suspend fun loadRandomPicFromCache(): Result<PicVO>? {
-        val payload = cacheDao.findByKey("random_pic")?.payload ?: return null
-        val value = moshi.adapter(PicVO::class.java).fromJson(payload) ?: return null
+        val entry = cacheDao.findByKey("random_pic") ?: return null
+        if (entry.updatedAt + RANDOM_CACHE_TTL_MS < System.currentTimeMillis()) return null
+        val value = moshi.adapter(PicVO::class.java).fromJson(entry.payload) ?: return null
         return Result.success(value)
     }
 
@@ -119,16 +156,16 @@ class GalleryRepository(
     ): Result<XhsWorkPageVO> = try {
         val res = api.getXhsWorkList(page, size, authorId, tagId, keyword, seed)
         if (res.code == 200 && res.data != null) {
-            cacheWorkList(authorId, tagId, keyword, res.data.works)
+            cacheWorkList(page, authorId, tagId, keyword, res.data.works)
             Result.success(res.data)
         } else {
-            loadCachedWorkList(authorId, tagId, keyword)
+            loadCachedWorkList(page, authorId, tagId, keyword)
                 ?.let { Result.success(XhsWorkPageVO(works = it, hasMore = false)) }
                 ?: Result.failure(Exception(res.message ?: "加载失败"))
         }
     } catch (e: Exception) {
         if (e is CancellationException) throw e
-        loadCachedWorkList(authorId, tagId, keyword)
+        loadCachedWorkList(page, authorId, tagId, keyword)
             ?.let { Result.success(XhsWorkPageVO(works = it, hasMore = false)) }
             ?: Result.failure(e)
     }
@@ -160,22 +197,36 @@ class GalleryRepository(
         Result.failure(e)
     }
 
-    suspend fun getAuthors(): Result<List<AuthorVO>> = try {
-        val res = api.getAuthors()
-        if (res.code == 200) Result.success(res.data ?: emptyList())
-        else Result.failure(Exception(res.message ?: "加载失败"))
-    } catch (e: Exception) {
-        if (e is CancellationException) throw e
-        Result.failure(e)
+    suspend fun getAuthors(): Result<List<AuthorVO>> {
+        val key = BaseUrlConfig.current()
+        authorsCache.get(key)?.let { return Result.success(it) }
+        return try {
+            val res = api.getAuthors()
+            if (res.code == 200) {
+                val data = res.data ?: emptyList()
+                authorsCache.put(key, data)
+                Result.success(data)
+            } else Result.failure(Exception(res.message ?: "加载失败"))
+        } catch (e: Exception) {
+            if (e is CancellationException) throw e
+            Result.failure(e)
+        }
     }
 
-    suspend fun getTags(): Result<List<TagVO>> = try {
-        val res = api.getTags()
-        if (res.code == 200) Result.success(res.data ?: emptyList())
-        else Result.failure(Exception(res.message ?: "加载失败"))
-    } catch (e: Exception) {
-        if (e is CancellationException) throw e
-        Result.failure(e)
+    suspend fun getTags(): Result<List<TagVO>> {
+        val key = BaseUrlConfig.current()
+        tagsCache.get(key)?.let { return Result.success(it) }
+        return try {
+            val res = api.getTags()
+            if (res.code == 200) {
+                val data = res.data ?: emptyList()
+                tagsCache.put(key, data)
+                Result.success(data)
+            } else Result.failure(Exception(res.message ?: "加载失败"))
+        } catch (e: Exception) {
+            if (e is CancellationException) throw e
+            Result.failure(e)
+        }
     }
 
     suspend fun getRandomGif(): Result<RandomGifVO> = try {
@@ -192,22 +243,29 @@ class GalleryRepository(
     }
 
     private suspend fun loadRandomGifFromCache(): Result<RandomGifVO>? {
-        val payload = cacheDao.findByKey("random_gif")?.payload ?: return null
-        val value = moshi.adapter(RandomGifVO::class.java).fromJson(payload) ?: return null
+        val entry = cacheDao.findByKey("random_gif") ?: return null
+        if (entry.updatedAt + RANDOM_CACHE_TTL_MS < System.currentTimeMillis()) return null
+        val value = moshi.adapter(RandomGifVO::class.java).fromJson(entry.payload) ?: return null
         return Result.success(value)
     }
 
-    suspend fun getCurrentEnvInfo(): Result<PicCount> = try {
-        val env = api.getCurrentEnv()
-        val info = api.getCurrentEnvInfo()
-        if (env.code == 200 && env.data != null) {
-            prefs.saveEnv(env.data)
+    suspend fun getCurrentEnvInfo(force: Boolean = false): Result<PicCount> {
+        val key = BaseUrlConfig.current()
+        if (!force) envInfoCache.get(key)?.let { return Result.success(it) }
+        return try {
+            val env = api.getCurrentEnv()
+            val info = api.getCurrentEnvInfo()
+            if (env.code == 200 && env.data != null) {
+                prefs.saveEnv(env.data)
+            }
+            if (info.code == 200 && info.data != null) {
+                envInfoCache.put(key, info.data)
+                Result.success(info.data)
+            } else Result.failure(Exception(info.message ?: "加载失败"))
+        } catch (e: Exception) {
+            if (e is CancellationException) throw e
+            Result.failure(e)
         }
-        if (info.code == 200 && info.data != null) Result.success(info.data)
-        else Result.failure(Exception(info.message ?: "加载失败"))
-    } catch (e: Exception) {
-        if (e is CancellationException) throw e
-        Result.failure(e)
     }
 
     suspend fun switchEnv(env: String): Result<String> = try {
@@ -221,15 +279,20 @@ class GalleryRepository(
         Result.failure(e)
     }
 
-    suspend fun getPrivacyMode(): Result<Boolean> = try {
-        val res = api.getPrivacyMode()
-        if (res.code == 200 && res.data != null) {
-            prefs.savePrivacy(res.data)
-            Result.success(res.data)
-        } else Result.failure(Exception(res.message ?: "读取失败"))
-    } catch (e: Exception) {
-        if (e is CancellationException) throw e
-        Result.failure(e)
+    suspend fun getPrivacyMode(force: Boolean = false): Result<Boolean> {
+        val key = BaseUrlConfig.current()
+        if (!force) privacyCache.get(key)?.let { return Result.success(it) }
+        return try {
+            val res = api.getPrivacyMode()
+            if (res.code == 200 && res.data != null) {
+                prefs.savePrivacy(res.data)
+                privacyCache.put(key, res.data)
+                Result.success(res.data)
+            } else Result.failure(Exception(res.message ?: "读取失败"))
+        } catch (e: Exception) {
+            if (e is CancellationException) throw e
+            Result.failure(e)
+        }
     }
 
     suspend fun setPrivacyMode(enabled: Boolean): Result<Boolean> = try {
@@ -247,15 +310,15 @@ class GalleryRepository(
 
     suspend fun saveAutoReadClipboard(enabled: Boolean) = prefs.saveAutoReadClipboard(enabled)
 
-    private suspend fun cacheWorkList(authorId: String?, tagId: Long?, keyword: String?, data: List<XhsWorkListVO>) {
-        val key = "work_list_${authorId ?: "all"}_${tagId ?: "all"}_${keyword ?: "all"}"
+    private suspend fun cacheWorkList(page: Int, authorId: String?, tagId: Long?, keyword: String?, data: List<XhsWorkListVO>) {
+        val key = "work_list_${page}_${authorId ?: "all"}_${tagId ?: "all"}_${keyword ?: "all"}"
         val listType = Types.newParameterizedType(List::class.java, XhsWorkListVO::class.java)
         val payload = moshi.adapter<List<XhsWorkListVO>>(listType).toJson(data)
         cache(key, payload)
     }
 
-    private suspend fun loadCachedWorkList(authorId: String?, tagId: Long?, keyword: String?): List<XhsWorkListVO>? {
-        val key = "work_list_${authorId ?: "all"}_${tagId ?: "all"}_${keyword ?: "all"}"
+    private suspend fun loadCachedWorkList(page: Int, authorId: String?, tagId: Long?, keyword: String?): List<XhsWorkListVO>? {
+        val key = "work_list_${page}_${authorId ?: "all"}_${tagId ?: "all"}_${keyword ?: "all"}"
         val payload = cacheDao.findByKey(key)?.payload ?: return null
         val listType = Types.newParameterizedType(List::class.java, XhsWorkListVO::class.java)
         return moshi.adapter<List<XhsWorkListVO>>(listType).fromJson(payload)

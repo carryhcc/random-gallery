@@ -31,7 +31,6 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
-import com.example.randomgallery.android.AppContainer
 import com.example.randomgallery.android.R
 import com.example.randomgallery.android.ui.download.DownloadManageScreen
 import com.example.randomgallery.android.ui.download.DownloadManageViewModel
@@ -150,7 +149,7 @@ fun AppNavHost() {
                 }
 
                 composable(Routes.RANDOM_PIC) {
-                    val vm: RandomPicViewModel = viewModel { RandomPicViewModel(AppContainer.repository(context)) }
+                    val vm: RandomPicViewModel = viewModel { RandomPicViewModel(context.applicationContext) }
                     RandomPicScreen(
                         viewModel = vm,
                         onBack = { navController.navigateUp() },
@@ -159,7 +158,7 @@ fun AppNavHost() {
                 }
 
                 composable(Routes.RANDOM_GALLERY) {
-                    val vm: RandomGalleryViewModel = viewModel { RandomGalleryViewModel(AppContainer.repository(context)) }
+                    val vm: RandomGalleryViewModel = viewModel { RandomGalleryViewModel(context.applicationContext) }
                     RandomGalleryScreen(
                         viewModel = vm,
                         onGroupClick = { group -> navController.toPicList(group.groupId ?: 0L, group.groupName ?: context.getString(R.string.group_detail_fallback)) },
@@ -168,7 +167,7 @@ fun AppNavHost() {
                 }
 
                 composable(Routes.GROUP_LIST) {
-                    val vm: GroupListViewModel = viewModel { GroupListViewModel(AppContainer.repository(context)) }
+                    val vm: GroupListViewModel = viewModel { GroupListViewModel(context.applicationContext) }
                     GroupListScreen(
                         viewModel = vm,
                         onGroupClick = { group -> navController.toPicList(group.groupId ?: 0L, group.groupName ?: context.getString(R.string.group_detail_fallback)) },
@@ -177,7 +176,7 @@ fun AppNavHost() {
                 }
 
                 composable(Routes.RANDOM_GIF) {
-                    val vm: RandomGifViewModel = viewModel { RandomGifViewModel(AppContainer.repository(context)) }
+                    val vm: RandomGifViewModel = viewModel { RandomGifViewModel(context.applicationContext) }
                     RandomGifScreen(
                         onBack = { navController.navigateUp() },
                         onDetail = { workId -> navController.toDownloadDetail(workId) },
@@ -187,7 +186,7 @@ fun AppNavHost() {
                 }
 
                 composable(Routes.DOWNLOAD_MANAGE) {
-                    val vm: DownloadManageViewModel = viewModel { DownloadManageViewModel(AppContainer.repository(context)) }
+                    val vm: DownloadManageViewModel = viewModel { DownloadManageViewModel(context.applicationContext) }
                     DownloadManageScreen(
                         viewModel = vm,
                         onBack = { navController.navigateUp() },
@@ -203,7 +202,7 @@ fun AppNavHost() {
                     )
                 ) { entry ->
                     val vm: PicListViewModel = viewModel {
-                        PicListViewModel(AppContainer.repository(context), createSavedStateHandle())
+                        PicListViewModel(context.applicationContext, createSavedStateHandle())
                     }
                     PicListScreen(
                         viewModel = vm,
@@ -221,7 +220,7 @@ fun AppNavHost() {
                         }
                     )
                 ) { entry ->
-                    val vm: DownloadDetailViewModel = viewModel { DownloadDetailViewModel(AppContainer.repository(context)) }
+                    val vm: DownloadDetailViewModel = viewModel { DownloadDetailViewModel(context.applicationContext) }
                     DownloadDetailScreen(
                         viewModel = vm,
                         workId = entry.arguments?.getString("workId") ?: "",
@@ -244,7 +243,7 @@ fun AppNavHost() {
                     )
                 ) {
                     val vm: DownloadListViewModel = viewModel {
-                        DownloadListViewModel(AppContainer.repository(context), createSavedStateHandle())
+                        DownloadListViewModel(context.applicationContext, createSavedStateHandle())
                     }
                     DownloadListScreen(
                         viewModel = vm,
