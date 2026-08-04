@@ -82,8 +82,8 @@ public class XhsDataSaveService {
             collectMediaList(mediaList, workBaseId, workId, data.getGifUrls(), MediaTypeEnum.GIF);
 
             if (CollUtil.isNotEmpty(mediaList)) {
-                // 批量入库前过滤已存在的 URL (进一步防止重复)
-                filterAndBatchInsertMedia(workId, mediaList);
+                // 重新解析/更新作品时，清理旧媒体链接并写入最新解析出的媒体链接
+                updateOrInsertMedia(workId, mediaList);
             }
 
             // 注意：@CacheEvict注解会在方法成功执行完后自动清理缓存
@@ -143,24 +143,12 @@ public class XhsDataSaveService {
         }
     }
 
-    private void filterAndBatchInsertMedia(String workId, List<XhsWorkMediaDO> newList) {
-        // 1. 一次性查出该作品已有的所有媒体URL
-        List<XhsWorkMediaDO> existingMedia = workMediaMapper.selectList(Wrappers.<XhsWorkMediaDO>lambdaQuery()
-                .eq(XhsWorkMediaDO::getWorkId, workId));
-
-        Set<String> existUrls = existingMedia.stream()
-                .map(XhsWorkMediaDO::getMediaUrl)
-                .collect(Collectors.toSet());
-
-        // 2. 过滤掉已存在的
-        List<XhsWorkMediaDO> waitToInsert = newList.stream()
-                .filter(item -> !existUrls.contains(item.getMediaUrl()))
-                .collect(Collectors.toList());
-
-        // 3. 批量插入
-        if (CollUtil.isNotEmpty(waitToInsert)) {
-            workMediaMapper.insertBatch(waitToInsert);
-            log.info("作品 {} 批量插入媒体数据 {} 条", workId, waitToInsert.size());
+    private void updateOrInsertMedia(String workId, List<XhsWorkMediaDO> newList) {
+        // 重新解析/重复提交时，清理旧媒体链接，写入最新解析出的媒体链接
+        workMediaMapper.delete(Wrappers.<XhsWorkMediaDO>lambdaQuery().eq(XhsWorkMediaDO::getWorkId, workId));
+        if (CollUtil.isNotEmpty(newList)) {
+            workMediaMapper.insertBatch(newList);
+            log.info("作品 {} 刷新保存最新媒体数据 {} 条", workId, newList.size());
         }
     }
 

@@ -39,6 +39,9 @@ android {
         buildConfigField("String", "DEFAULT_BASE_URL", "\"https://example.invalid/\"")
         buildConfigField("boolean", "ENABLE_HTTP_LOGGING", "false")
         manifestPlaceholders["usesCleartextTraffic"] = "true"
+        ndk {
+            abiFilters.addAll(setOf("arm64-v8a", "armeabi-v7a"))
+        }
     }
 
     signingConfigs {

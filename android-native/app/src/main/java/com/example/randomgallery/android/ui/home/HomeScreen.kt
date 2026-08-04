@@ -453,7 +453,7 @@ private fun SettingsDialog(
                             placeholder = { Text(stringResource(R.string.settings_add_url_hint), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant) },
                             singleLine = true,
                             textStyle = MaterialTheme.typography.bodySmall,
-                            modifier = Modifier.weight(1f).height(46.dp),
+                            modifier = Modifier.weight(1f),
                             shape = RoundedCornerShape(10.dp),
                             colors = OutlinedTextFieldDefaults.colors(
                                 focusedBorderColor = MaterialTheme.colorScheme.primary,

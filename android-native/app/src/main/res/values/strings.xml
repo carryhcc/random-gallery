@@ -64,6 +64,8 @@
     <string name="dl_tag">标签</string>
     <string name="dl_reset">重置</string>
     <string name="dl_apply">应用</string>
+    <string name="dl_more_filters">更多筛选 (作者/标签)</string>
+    <string name="dl_hide_more_filters">收起更多筛选</string>
     <string name="dl_untitled">无标题</string>
     <!-- 下载管理 -->
     <string name="dm_title">下载管理</string>
@@ -84,6 +86,7 @@
     <string name="dm_view_detail">查看详情</string>
     <string name="dm_prev_page">上一页</string>
     <string name="dm_next_page">下一页</string>
+    <string name="dm_page_fmt">第 %1$d / %2$d 页</string>
     <!-- 下载详情 -->
     <string name="dd_tab_images">图片</string>
     <string name="dd_tab_lives">实况</string>
@@ -98,6 +101,9 @@
     <string name="dd_vid_expired">视频已过期</string>
     <string name="dd_live_badge">实况</string>
     <string name="dd_open_original">打开原网页</string>
+    <string name="dd_refetch">重新获取</string>
+    <string name="dd_refetch_title">重新获取最新链接</string>
+    <string name="dd_refetch_queued">已提交重新解析，正在更新链接…</string>
     <!-- 动图 -->
     <string name="gif_load_failed">加载失败或链接已失效</string>
     <string name="gif_retry">重试</string>

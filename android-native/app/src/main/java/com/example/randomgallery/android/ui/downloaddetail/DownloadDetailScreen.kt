@@ -116,6 +116,12 @@ fun DownloadDetailScreen(
             it.onFailure { e -> Messenger.show(e.message ?: "删除失败", isError = true) }
         }
     }
+    LaunchedEffect(Unit) {
+        viewModel.refetchEvents.collect { result ->
+            val msg = if (result.isSuccess) context.getString(R.string.dd_refetch_queued) else (result.exceptionOrNull()?.message ?: "重新获取失败")
+            Messenger.show(msg, isError = result.isFailure)
+        }
+    }
 
     val detail = (detailState as? UiState.Success)?.data
     val base = detail?.baseInfo
@@ -141,13 +147,20 @@ fun DownloadDetailScreen(
     val imgPagerState = rememberPagerState(pageCount = { imageMedia.size.coerceAtLeast(1) })
     val vidPagerState = rememberPagerState(pageCount = { videoMedia.size.coerceAtLeast(1) })
 
-    // ExoPlayer — 静音自动循环（实况图样式）
+    // ExoPlayer — 静音自动循环（实况图样式，配置 Referer 标头避开 XHS CDN 403 风控）
     val player = remember {
-        ExoPlayer.Builder(context).build().apply {
-            repeatMode = Player.REPEAT_MODE_ONE
-            playWhenReady = true
-            volume = 0f
-        }
+        val httpDataSourceFactory = androidx.media3.datasource.DefaultHttpDataSource.Factory()
+            .setUserAgent("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36")
+            .setDefaultRequestProperties(mapOf("Referer" to "https://www.xiaohongshu.com/"))
+        val mediaSourceFactory = androidx.media3.exoplayer.source.DefaultMediaSourceFactory(context)
+            .setDataSourceFactory(httpDataSourceFactory)
+        ExoPlayer.Builder(context)
+            .setMediaSourceFactory(mediaSourceFactory)
+            .build().apply {
+                repeatMode = Player.REPEAT_MODE_ONE
+                playWhenReady = true
+                volume = 0f
+            }
     }
     DisposableEffect(Unit) { onDispose { player.release() } }
 
@@ -172,6 +185,21 @@ fun DownloadDetailScreen(
         }
         player.addListener(listener)
         onDispose { player.removeListener(listener) }
+    }
+
+    val lifecycleOwner = androidx.lifecycle.compose.LocalLifecycleOwner.current
+    DisposableEffect(lifecycleOwner, player) {
+        val observer = androidx.lifecycle.LifecycleEventObserver { _, event ->
+            if (event == androidx.lifecycle.Lifecycle.Event.ON_PAUSE || event == androidx.lifecycle.Lifecycle.Event.ON_STOP) {
+                player.pause()
+            } else if (event == androidx.lifecycle.Lifecycle.Event.ON_RESUME) {
+                if (selectedTab == 1 || (!hasBothTabs && videoMedia.isNotEmpty())) {
+                    player.play()
+                }
+            }
+        }
+        lifecycleOwner.lifecycle.addObserver(observer)
+        onDispose { lifecycleOwner.lifecycle.removeObserver(observer) }
     }
 
     LaunchedEffect(selectedTab, vidCurrentPage, videoMedia) {
@@ -202,6 +230,9 @@ fun DownloadDetailScreen(
                 title = base?.workTitle?.takeIf { it.isNotBlank() } ?: "",
                 onBack = onBack,
                 actions = {
+                    IconButton(onClick = { viewModel.refetchWork(workId, base?.workUrl) }) {
+                        Icon(Icons.Filled.Refresh, contentDescription = stringResource(R.string.dd_refetch_title), tint = MaterialTheme.colorScheme.primary)
+                    }
                     base?.workUrl?.takeIf { it.isNotBlank() }?.let { url ->
                         IconButton(onClick = { openInBrowser(context, url) }) {
                             Icon(Icons.AutoMirrored.Filled.OpenInNew, contentDescription = stringResource(R.string.dd_open_original))
@@ -245,11 +276,12 @@ fun DownloadDetailScreen(
                                     onDelete = { deleteTargetId = it },
                                     onDownload = { url ->
                                         Downloader.enqueue(context, url, MediaKind.IMAGE)
-                                        Messenger.show(context.getString(R.string.dd_img_downloading))
+                                            .onSuccess { Messenger.show(context.getString(R.string.dd_img_downloading)) }
+                                            .onFailure { e -> Messenger.show(e.message ?: "下载失败", isError = true) }
                                     },
                                     onImageClick = { url -> fullScreenUrl = url }
                                 ) { media, _ ->
-                                    ImagePage(url = media.url, fullSizePx = pagerFullSizePx)
+                                    ImagePage(url = media.url, fullSizePx = pagerFullSizePx, onRefetch = { viewModel.refetchWork(workId, base?.workUrl) })
                                 }
                             }
 
@@ -260,7 +292,8 @@ fun DownloadDetailScreen(
                                     onDelete = { deleteTargetId = it },
                                     onDownload = { url ->
                                         Downloader.enqueue(context, url, MediaKind.VIDEO)
-                                        Messenger.show(context.getString(R.string.dd_vid_downloading))
+                                            .onSuccess { Messenger.show(context.getString(R.string.dd_vid_downloading)) }
+                                            .onFailure { e -> Messenger.show(e.message ?: "下载失败", isError = true) }
                                     },
                                     onImageClick = null
                                 ) { _, page ->
@@ -269,7 +302,8 @@ fun DownloadDetailScreen(
                                         isCurrentPage = page == vidCurrentPage,
                                         isBuffering = videoBuffering && page == vidCurrentPage,
                                         hasError = videoError && page == vidCurrentPage,
-                                        aspectRatio = if (page == vidCurrentPage) videoAspectRatio else null
+                                        aspectRatio = if (page == vidCurrentPage) videoAspectRatio else null,
+                                        onRefetch = { viewModel.refetchWork(workId, base?.workUrl) }
                                     )
                                 }
                             }
@@ -526,7 +560,7 @@ private sealed interface ImageLoadState {
 }
 
 @Composable
-private fun BoxScope.ImagePage(url: String, fullSizePx: Int) {
+private fun BoxScope.ImagePage(url: String, fullSizePx: Int, onRefetch: (() -> Unit)? = null) {
     val bgColor = MaterialTheme.colorScheme.surfaceVariant
     var loadState by remember(url) { mutableStateOf<ImageLoadState>(ImageLoadState.Loading) }
     // 缩略图解码后立即上报真实比例，占位过渡到图片真实比例（不再等原图）
@@ -547,7 +581,7 @@ private fun BoxScope.ImagePage(url: String, fullSizePx: Int) {
         when (loadState) {
             ImageLoadState.Loading -> MediaShimmer(dark = false)
             ImageLoadState.Loaded -> {}
-            ImageLoadState.Error -> BrokenPlaceholder(isVideo = false)
+            ImageLoadState.Error -> BrokenPlaceholder(isVideo = false, onRefetch = onRefetch)
         }
 
         // 两阶段加载：缩略图（秒出、定比例）→ 有界清晰图（淡入）
@@ -572,7 +606,8 @@ private fun BoxScope.LivePhotoPage(
     isCurrentPage: Boolean,
     isBuffering: Boolean = false,
     hasError: Boolean = false,
-    aspectRatio: Float? = null
+    aspectRatio: Float? = null,
+    onRefetch: (() -> Unit)? = null
 ) {
     val bgColor = MaterialTheme.colorScheme.surfaceVariant
     // 加载前用 9:16 占位，视频尺寸上报后过渡到真实比例
@@ -587,7 +622,7 @@ private fun BoxScope.LivePhotoPage(
         .background(bgColor)
 
     when {
-        hasError -> Box(sizeMod) { BrokenPlaceholder(isVideo = true) }
+        hasError -> Box(sizeMod) { BrokenPlaceholder(isVideo = true, onRefetch = onRefetch) }
 
         isCurrentPage -> Box(sizeMod) {
             // PlayerView 始终存在，Crossfade 控制 shimmer 叠层的淡出
@@ -654,7 +689,7 @@ private fun BoxScope.MediaShimmer(dark: Boolean) {
 // ── 失败占位 ──────────────────────────────────────────────────────────
 
 @Composable
-private fun BrokenPlaceholder(isVideo: Boolean) {
+private fun BrokenPlaceholder(isVideo: Boolean, onRefetch: (() -> Unit)? = null) {
     Box(
         Modifier.fillMaxSize().background(MaterialTheme.colorScheme.surfaceVariant),
         contentAlignment = Alignment.Center
@@ -665,6 +700,18 @@ private fun BrokenPlaceholder(isVideo: Boolean) {
                 null, tint = MaterialTheme.xhs.textTertiary, modifier = Modifier.size(44.dp)
             )
             Text(stringResource(if (isVideo) R.string.dd_vid_expired else R.string.dd_img_expired), style = MaterialTheme.typography.labelSmall, color = MaterialTheme.xhs.textTertiary)
+            if (onRefetch != null) {
+                Spacer(Modifier.height(Spacing.xs))
+                OutlinedButton(
+                    onClick = onRefetch,
+                    contentPadding = PaddingValues(horizontal = Spacing.md, vertical = Spacing.xs),
+                    shape = RoundedCornerShape(16.dp)
+                ) {
+                    Icon(Icons.Filled.Refresh, contentDescription = null, modifier = Modifier.size(14.dp))
+                    Spacer(Modifier.width(Spacing.xs))
+                    Text(stringResource(R.string.dd_refetch), style = MaterialTheme.typography.labelMedium)
+                }
+            }
         }
     }
 }

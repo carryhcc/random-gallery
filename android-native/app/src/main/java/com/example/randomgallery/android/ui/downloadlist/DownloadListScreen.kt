@@ -8,6 +8,8 @@ import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.ExpandLess
+import androidx.compose.material.icons.filled.ExpandMore
 import androidx.compose.material.icons.filled.FilterList
 import androidx.compose.material.icons.filled.Image
 import androidx.compose.material.icons.filled.VideoLibrary
@@ -222,6 +224,7 @@ private fun FilterPanel(
     var kw by remember { mutableStateOf(keyword) }
     var authorId by remember { mutableStateOf(selectedAuthorId) }
     var tagId by remember { mutableStateOf(selectedTagId) }
+    var showMoreFilters by remember { mutableStateOf(selectedAuthorId != null || selectedTagId != null) }
 
     // 随机推荐：每次展开面板（重新进入组合）打乱后取 8 个，而非固定前 8 个
     val recommendedAuthors = remember(authors) { authors.shuffled().take(8) }
@@ -243,42 +246,78 @@ private fun FilterPanel(
             colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = MaterialTheme.colorScheme.primary)
         )
 
-        if (authors.isNotEmpty()) {
-            Text(stringResource(R.string.dl_author), style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
-            FlowRow(horizontalArrangement = Arrangement.spacedBy(Spacing.sm)) {
-                recommendedAuthors.forEach { (name, id) ->
-                    FilterChip(
-                        selected = authorId == id,
-                        onClick = { authorId = if (authorId == id) null else id },
-                        label = { Text(name, maxLines = 1) },
-                        colors = FilterChipDefaults.filterChipColors(
-                            selectedContainerColor = MaterialTheme.colorScheme.primaryContainer,
-                            selectedLabelColor = MaterialTheme.colorScheme.primary
-                        )
-                    )
-                }
+        // 更多筛选（作者 / 标签）展开与收起
+        if (authors.isNotEmpty() || tags.isNotEmpty()) {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clip(RoundedCornerShape(8.dp))
+                    .clickable { showMoreFilters = !showMoreFilters }
+                    .padding(vertical = Spacing.xs, horizontal = Spacing.xs),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.SpaceBetween
+            ) {
+                Text(
+                    text = stringResource(if (showMoreFilters) R.string.dl_hide_more_filters else R.string.dl_more_filters),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.primary,
+                    fontWeight = FontWeight.Medium
+                )
+                Icon(
+                    imageVector = if (showMoreFilters) Icons.Filled.ExpandLess else Icons.Filled.ExpandMore,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.primary,
+                    modifier = Modifier.size(18.dp)
+                )
             }
         }
 
-        if (tags.isNotEmpty()) {
-            Text(stringResource(R.string.dl_tag), style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
-            FlowRow(horizontalArrangement = Arrangement.spacedBy(Spacing.sm)) {
-                recommendedTags.forEach { (name, id) ->
-                    FilterChip(
-                        selected = tagId == id,
-                        onClick = { tagId = if (tagId == id) null else id },
-                        label = { Text(name, maxLines = 1) },
-                        colors = FilterChipDefaults.filterChipColors(
-                            selectedContainerColor = MaterialTheme.colorScheme.primaryContainer,
-                            selectedLabelColor = MaterialTheme.colorScheme.primary
+        if (showMoreFilters) {
+            if (authors.isNotEmpty()) {
+                Text(stringResource(R.string.dl_author), style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                FlowRow(horizontalArrangement = Arrangement.spacedBy(Spacing.sm)) {
+                    recommendedAuthors.forEach { (name, id) ->
+                        FilterChip(
+                            selected = authorId == id,
+                            onClick = { authorId = if (authorId == id) null else id },
+                            label = { Text(name, maxLines = 1) },
+                            colors = FilterChipDefaults.filterChipColors(
+                                selectedContainerColor = MaterialTheme.colorScheme.primaryContainer,
+                                selectedLabelColor = MaterialTheme.colorScheme.primary
+                            )
                         )
-                    )
+                    }
+                }
+            }
+
+            if (tags.isNotEmpty()) {
+                Text(stringResource(R.string.dl_tag), style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                FlowRow(horizontalArrangement = Arrangement.spacedBy(Spacing.sm)) {
+                    recommendedTags.forEach { (name, id) ->
+                        FilterChip(
+                            selected = tagId == id,
+                            onClick = { tagId = if (tagId == id) null else id },
+                            label = { Text(name, maxLines = 1) },
+                            colors = FilterChipDefaults.filterChipColors(
+                                selectedContainerColor = MaterialTheme.colorScheme.primaryContainer,
+                                selectedLabelColor = MaterialTheme.colorScheme.primary
+                            )
+                        )
+                    }
                 }
             }
         }
 
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(Spacing.md)) {
-            OutlinedButton(onClick = onReset, modifier = Modifier.weight(1f)) { Text(stringResource(R.string.dl_reset)) }
+            OutlinedButton(
+                onClick = {
+                    authorId = null
+                    tagId = null
+                    kw = ""
+                    onReset()
+                },
+                modifier = Modifier.weight(1f)
+            ) { Text(stringResource(R.string.dl_reset)) }
             Button(
                 onClick = { onApply(authorId, tagId, kw) },
                 modifier = Modifier.weight(1f),

@@ -324,6 +324,10 @@ class GalleryRepository(
         return moshi.adapter<List<XhsWorkListVO>>(listType).fromJson(payload)
     }
 
+    suspend fun clearCache() {
+        cacheDao.clearAll()
+    }
+
     private suspend fun cache(key: String, payload: String) {
         cacheDao.upsert(CachedPayload(key = key, payload = payload, updatedAt = System.currentTimeMillis()))
     }

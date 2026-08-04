@@ -55,10 +55,12 @@ fun PicListScreen(
         }
     }
 
+    val decodedGroupName = remember(groupName) { android.net.Uri.decode(groupName) }
+
     Scaffold(
         containerColor = MaterialTheme.colorScheme.background,
         contentWindowInsets = WindowInsets(0, 0, 0, 0),
-        topBar = { XhsTopBar(title = groupName.ifBlank { stringResource(R.string.group_detail_fallback) }, onBack = onBack) }
+        topBar = { XhsTopBar(title = decodedGroupName.ifBlank { stringResource(R.string.group_detail_fallback) }, onBack = onBack) }
     ) { padding ->
         Box(
             Modifier
@@ -103,7 +105,8 @@ fun PicListScreen(
                                         onClick = {
                                             if (!url.isNullOrBlank()) {
                                                 Downloader.enqueue(context, url, MediaKind.IMAGE)
-                                                Messenger.show(context.getString(R.string.piclist_downloading))
+                                                    .onSuccess { Messenger.show(context.getString(R.string.piclist_downloading)) }
+                                                    .onFailure { e -> Messenger.show(e.message ?: "下载失败", isError = true) }
                                             }
                                         },
                                         modifier = Modifier.align(Alignment.BottomEnd)

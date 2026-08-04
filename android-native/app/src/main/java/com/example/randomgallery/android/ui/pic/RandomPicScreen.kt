@@ -151,7 +151,8 @@ fun RandomPicScreen(
                         onClick = {
                             if (imageUrl.isNotBlank()) {
                                 Downloader.enqueue(context, imageUrl, MediaKind.IMAGE)
-                                Messenger.show(context.getString(R.string.pic_download_queued))
+                                    .onSuccess { Messenger.show(context.getString(R.string.pic_download_queued)) }
+                                    .onFailure { e -> Messenger.show(e.message ?: "下载失败", isError = true) }
                             }
                         },
                         containerColor = MaterialTheme.colorScheme.primary,

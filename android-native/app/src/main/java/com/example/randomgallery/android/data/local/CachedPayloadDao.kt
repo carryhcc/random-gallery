@@ -12,4 +12,7 @@ interface CachedPayloadDao {
 
     @Query("SELECT * FROM cached_payload WHERE `key` = :key LIMIT 1")
     suspend fun findByKey(key: String): CachedPayload?
+
+    @Query("DELETE FROM cached_payload")
+    suspend fun clearAll()
 }

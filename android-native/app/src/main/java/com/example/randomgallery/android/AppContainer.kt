@@ -36,6 +36,8 @@ object AppContainer {
         val resolved = BaseUrlConfig.resolve(baseUrl, BuildConfig.DEFAULT_BASE_URL)
         AppPrefs(appContext).saveBaseUrl(resolved)
         BaseUrlConfig.update(resolved)
+        NetworkModule.clearHttpCache()
+        repository?.clearCache()
         clearRepository()
     }
 

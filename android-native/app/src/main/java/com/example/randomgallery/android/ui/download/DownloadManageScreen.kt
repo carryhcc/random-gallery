@@ -241,7 +241,7 @@ fun DownloadManageScreen(
                                 Text(stringResource(R.string.dm_prev_page))
                             }
                             Text(
-                                "第 $historyPage / $historyTotalPages 页",
+                                stringResource(R.string.dm_page_fmt, historyPage, historyTotalPages),
                                 style = MaterialTheme.typography.bodySmall,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                                 modifier = Modifier.padding(horizontal = Spacing.md)

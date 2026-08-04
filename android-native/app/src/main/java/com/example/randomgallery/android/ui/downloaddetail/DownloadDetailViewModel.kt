@@ -30,6 +30,24 @@ class DownloadDetailViewModel(
     private val _deleteMediaEvents = Channel<Result<String>>(Channel.BUFFERED)
     val deleteMediaEvents: Flow<Result<String>> = _deleteMediaEvents.receiveAsFlow()
 
+    private val _refetchEvents = Channel<Result<String>>(Channel.BUFFERED)
+    val refetchEvents: Flow<Result<String>> = _refetchEvents.receiveAsFlow()
+
+    fun refetchWork(workId: String, workUrl: String?) {
+        viewModelScope.launch {
+            val urlToSubmit = workUrl?.takeIf { it.isNotBlank() } ?: "https://www.xiaohongshu.com/explore/$workId"
+            val result = repository().addDownloadTask(urlToSubmit)
+            _refetchEvents.trySend(result)
+            if (result.isSuccess) {
+                val detailResult = repository().getWorkDetail(workId)
+                _detail.value = detailResult.fold(
+                    onSuccess = { UiState.Success(it) },
+                    onFailure = { UiState.Error(it.message ?: "加载失败") }
+                )
+            }
+        }
+    }
+
     fun load(workId: String) {
         viewModelScope.launch {
             val result = repository().getWorkDetail(workId)

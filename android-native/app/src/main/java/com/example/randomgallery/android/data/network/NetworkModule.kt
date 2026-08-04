@@ -29,6 +29,10 @@ object NetworkModule {
         }
     }
 
+    fun clearHttpCache() {
+        runCatching { okHttpClient?.cache?.evictAll() }
+    }
+
     private fun createOkHttp(cacheDir: File, enableHttpLogging: Boolean): OkHttpClient {
         val logging = HttpLoggingInterceptor().apply {
             level = if (enableHttpLogging) {

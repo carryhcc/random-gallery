@@ -64,12 +64,19 @@ fun RandomGifScreen(
     // 两个 ExoPlayer 轮换：page 偶数用 players[0]，奇数用 players[1]
     // 这个映射是固定的，与任何 Compose 状态无关，不存在时序 gap
     val players = remember {
+        val httpDataSourceFactory = androidx.media3.datasource.DefaultHttpDataSource.Factory()
+            .setUserAgent("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36")
+            .setDefaultRequestProperties(mapOf("Referer" to "https://www.xiaohongshu.com/"))
+        val mediaSourceFactory = androidx.media3.exoplayer.source.DefaultMediaSourceFactory(context)
+            .setDataSourceFactory(httpDataSourceFactory)
         Array(2) {
-            ExoPlayer.Builder(context).build().apply {
-                repeatMode = Player.REPEAT_MODE_ONE
-                playWhenReady = false
-                volume = 0f
-            }
+            ExoPlayer.Builder(context)
+                .setMediaSourceFactory(mediaSourceFactory)
+                .build().apply {
+                    repeatMode = Player.REPEAT_MODE_ONE
+                    playWhenReady = false
+                    volume = 0f
+                }
         }
     }
     val playerUrls = remember { Array(2) { "" } }
@@ -137,6 +144,22 @@ fun RandomGifScreen(
             players[curIdx].removeListener(curListener)
             players[preIdx].removeListener(preListener)
         }
+    }
+
+    val lifecycleOwner = androidx.lifecycle.compose.LocalLifecycleOwner.current
+    DisposableEffect(lifecycleOwner) {
+        val observer = androidx.lifecycle.LifecycleEventObserver { _, event ->
+            val curIdx = settledPage % 2
+            if (event == androidx.lifecycle.Lifecycle.Event.ON_PAUSE || event == androidx.lifecycle.Lifecycle.Event.ON_STOP) {
+                players.forEach { it.pause() }
+            } else if (event == androidx.lifecycle.Lifecycle.Event.ON_RESUME) {
+                if (gifList.isNotEmpty()) {
+                    players[curIdx].play()
+                }
+            }
+        }
+        lifecycleOwner.lifecycle.addObserver(observer)
+        onDispose { lifecycleOwner.lifecycle.removeObserver(observer) }
     }
 
     // 页面稳定后加载 & 预加载
