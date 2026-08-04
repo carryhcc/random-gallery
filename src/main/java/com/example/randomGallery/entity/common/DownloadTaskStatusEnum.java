@@ -20,6 +20,11 @@ public enum DownloadTaskStatusEnum {
     COMPLETED(1, "已完成"),
 
     /**
+     * 已更新（该作品已存在，本次为重复下载，已走更新流程）
+     */
+    UPDATED(3, "已更新"),
+
+    /**
      * 失败
      */
     FAILED(2, "失败");

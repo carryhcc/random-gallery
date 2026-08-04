@@ -95,6 +95,17 @@ public class XhsDataSaveService {
         }
     }
 
+    /**
+     * 判断作品是否已存在（按平台 work_id）
+     */
+    public boolean existsByWorkId(String workId) {
+        if (StrUtil.isBlank(workId)) {
+            return false;
+        }
+        return workBaseMapper.selectCount(Wrappers.<XhsWorkBaseDO>lambdaQuery()
+                .eq(XhsWorkBaseDO::getWorkId, workId)) > 0;
+    }
+
     private Long saveOrUpdateWorkBase(DownLoadInfo info) {
         DownLoadInfo.Data data = info.getData();
         XhsWorkBaseDO existDO = workBaseMapper.selectOne(Wrappers.<XhsWorkBaseDO>lambdaQuery()

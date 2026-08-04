@@ -86,9 +86,20 @@ public class DownloadTaskServiceImpl implements DownloadTaskService {
     @Override
     @Transactional(rollbackFor = Exception.class)
     public void markCompleted(Long id, String workId, String workTitle, String workUrl) {
+        markFinished(id, DownloadTaskStatusEnum.COMPLETED, workId, workTitle, workUrl);
+    }
+
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public void markUpdated(Long id, String workId, String workTitle, String workUrl) {
+        markFinished(id, DownloadTaskStatusEnum.UPDATED, workId, workTitle, workUrl);
+    }
+
+    private void markFinished(Long id, DownloadTaskStatusEnum status,
+            String workId, String workTitle, String workUrl) {
         XhsDownloadTaskDO task = new XhsDownloadTaskDO();
         task.setId(id);
-        task.setStatus(DownloadTaskStatusEnum.COMPLETED);
+        task.setStatus(status);
         task.setWorkId(workId);
         task.setWorkTitle(workTitle);
         task.setWorkUrl(workUrl);

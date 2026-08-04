@@ -153,6 +153,11 @@
             background: color-mix(in srgb, var(--color-success) 14%, transparent);
         }
 
+        .history-status.status-updated {
+            color: var(--color-info);
+            background: color-mix(in srgb, var(--color-info) 14%, transparent);
+        }
+
         .history-status.status-failed {
             color: var(--color-error);
             background: color-mix(in srgb, var(--color-error) 14%, transparent);
@@ -476,7 +481,8 @@
     const STATUS_MAP = {
         0: { name: '等待中', cls: 'status-waiting' },
         1: { name: '已完成', cls: 'status-completed' },
-        2: { name: '失败', cls: 'status-failed' }
+        2: { name: '失败', cls: 'status-failed' },
+        3: { name: '已更新', cls: 'status-updated' }
     };
 
     async function loadHistory() {
@@ -506,7 +512,7 @@
                 if (item.status === 2) {
                     actions.push('<button class="btn btn-danger btn-sm" onclick="retryHistory(' + item.id + ')"><i class="fas fa-redo-alt"></i> 重试</button>');
                 }
-                if (item.status === 1 && item.workId) {
+                if ((item.status === 1 || item.status === 3) && item.workId) {
                     actions.push('<button class="btn btn-primary btn-sm" onclick="viewHistoryDetail(\'' + escHtml(item.workId) + '\')"><i class="fas fa-eye"></i> 查看详情</button>');
                 }
                 return '<div class="history-item">' +

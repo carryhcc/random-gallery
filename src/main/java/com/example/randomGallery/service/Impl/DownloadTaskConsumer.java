@@ -120,7 +120,6 @@ public class DownloadTaskConsumer {
                     .timeout(REQUEST_TIMEOUT_MS)
                     .execute()
                     .body();
-            xhsDataSaveService.saveXhsData(result);
 
             String workId = null;
             String workTitle = null;
@@ -136,8 +135,19 @@ public class DownloadTaskConsumer {
                 log.warn("解析下载结果作品信息失败, taskId: {}", task.getId(), e);
             }
 
-            downloadTaskService.markCompleted(task.getId(), workId, workTitle, workUrl);
-            log.info("下载任务处理完成, id: {}, workId: {}", task.getId(), workId);
+            // 判定是否为重复下载（该 work_id 已存在）。单线程消费，判重+入库无并发竞态。
+            boolean duplicated = workId != null && xhsDataSaveService.existsByWorkId(workId);
+
+            // 无论是否重复都走完整入库更新（saveXhsData 内部按 work_id updateById，幂等）
+            xhsDataSaveService.saveXhsData(result);
+
+            if (duplicated) {
+                downloadTaskService.markUpdated(task.getId(), workId, workTitle, workUrl);
+                log.info("下载任务处理完成(已更新), id: {}, workId: {}", task.getId(), workId);
+            } else {
+                downloadTaskService.markCompleted(task.getId(), workId, workTitle, workUrl);
+                log.info("下载任务处理完成, id: {}, workId: {}", task.getId(), workId);
+            }
         } catch (Exception e) {
             log.error("下载任务处理失败, id: {}, url: {}", task.getId(), task.getUrl(), e);
             downloadTaskService.markFailed(task.getId(), StrUtil.brief(e.getMessage(), 1000));

@@ -259,12 +259,25 @@ private fun HistoryItem(
         verticalAlignment = Alignment.CenterVertically
     ) {
         Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+            val hasTitle = !task.workTitle.isNullOrBlank()
+            // 主行：已完成任务优先展示作品标题，否则展示链接
             Text(
-                task.url ?: "",
-                style = MaterialTheme.typography.bodySmall,
+                if (hasTitle) task.workTitle else task.url ?: "",
+                style = if (hasTitle) MaterialTheme.typography.bodyMedium else MaterialTheme.typography.bodySmall,
+                fontWeight = if (hasTitle) FontWeight.Medium else FontWeight.Normal,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis
             )
+            // 副行：有标题时展示原始链接，避免丢失来源信息
+            if (hasTitle && task.url != null && task.url != task.workTitle) {
+                Text(
+                    task.url,
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
+                )
+            }
             Row(verticalAlignment = Alignment.CenterVertically) {
                 StatusBadge(task)
                 Spacer(Modifier.width(Spacing.sm))
@@ -289,7 +302,7 @@ private fun HistoryItem(
                 Text(stringResource(R.string.dm_retry), color = MaterialTheme.colorScheme.error)
             }
         }
-        if (task.status == 1 && !task.workId.isNullOrBlank()) {
+        if ((task.status == 1 || task.status == 3) && !task.workId.isNullOrBlank()) {
             TextButton(
                 onClick = { onViewDetail(task.workId!!) },
                 contentPadding = PaddingValues(horizontal = Spacing.sm)
@@ -305,6 +318,7 @@ private fun StatusBadge(task: XhsDownloadTaskVO) {
     val (text, color) = when (task.status) {
         0 -> stringResource(R.string.dm_status_waiting) to MaterialTheme.colorScheme.primary
         1 -> stringResource(R.string.dm_status_completed) to AccentGreen
+        3 -> stringResource(R.string.dm_status_updated) to MaterialTheme.colorScheme.tertiary
         else -> stringResource(R.string.dm_status_failed) to MaterialTheme.colorScheme.error
     }
     Text(

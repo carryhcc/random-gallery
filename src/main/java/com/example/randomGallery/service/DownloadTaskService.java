@@ -41,6 +41,11 @@ public interface DownloadTaskService {
     void markCompleted(Long id, String workId, String workTitle, String workUrl);
 
     /**
+     * 标记任务为已更新（该作品已存在，本次重复下载走了更新流程）并回填作品信息
+     */
+    void markUpdated(Long id, String workId, String workTitle, String workUrl);
+
+    /**
      * 标记任务为失败并记录原因
      */
     void markFailed(Long id, String errorMessage);
