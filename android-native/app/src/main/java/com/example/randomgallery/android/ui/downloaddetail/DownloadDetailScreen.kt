@@ -30,7 +30,9 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
@@ -47,10 +49,7 @@ import androidx.media3.exoplayer.ExoPlayer
 import androidx.media3.ui.AspectRatioFrameLayout
 import androidx.media3.ui.PlayerView
 import coil.compose.AsyncImage
-import coil.compose.SubcomposeAsyncImage
-import kotlinx.coroutines.launch
 import coil.request.ImageRequest
-import coil.size.Size
 import com.example.randomgallery.android.R
 import com.example.randomgallery.android.data.model.XhsWorkMedia
 import com.example.randomgallery.android.ui.common.*
@@ -80,6 +79,11 @@ fun DownloadDetailScreen(
 ) {
     val context = LocalContext.current
     val detailState by viewModel.detail.collectAsStateWithLifecycle()
+
+    // 翻页清晰图目标尺寸：2 倍屏幕宽（有界，避免按原图下载）
+    val pagerFullSizePx = with(LocalDensity.current) {
+        (LocalConfiguration.current.screenWidthDp * density * 2).toInt()
+    }
 
     var showDeleteWorkDialog by remember { mutableStateOf(false) }
     var deleteTargetId by remember { mutableStateOf<Long?>(null) }
@@ -224,12 +228,8 @@ fun DownloadDetailScreen(
                                         Messenger.show(context.getString(R.string.dd_img_downloading))
                                     },
                                     onImageClick = { url -> fullScreenUrl = url }
-                                ) { media, page ->
-                                    val isCoverPage = page == 0 && coverImageUrl.isNotBlank() && media.url == coverImageUrl
-                                    ImagePage(
-                                        url = media.url,
-                                        placeholderCacheKey = if (isCoverPage) coverImageUrl else null
-                                    )
+                                ) { media, _ ->
+                                    ImagePage(url = media.url, fullSizePx = pagerFullSizePx)
                                 }
                             }
 
@@ -438,7 +438,7 @@ private fun MediaPagerBox(
             state = pagerState,
             contentPadding = PaddingValues(horizontal = 20.dp),
             pageSpacing = 12.dp,
-            beyondViewportPageCount = 0,
+            beyondViewportPageCount = 1,
             modifier = Modifier.fillMaxWidth().wrapContentHeight()
         ) { page ->
             val media = mediaList[page]
@@ -498,26 +498,18 @@ private fun MediaOverlayButton(icon: ImageVector, desc: String, onClick: () -> U
 
 // ── 图片页 ────────────────────────────────────────────────────────────
 
-// 图片加载状态：Loading / Success(painter) / Error
+// 图片加载状态：Loading(占位 shimmer) / Loaded(已出图) / Error
 private sealed interface ImageLoadState {
     data object Loading : ImageLoadState
-    data class Success(val painter: androidx.compose.ui.graphics.painter.Painter) : ImageLoadState
+    data object Loaded : ImageLoadState
     data object Error : ImageLoadState
 }
 
 @Composable
-private fun BoxScope.ImagePage(url: String, placeholderCacheKey: String? = null) {
-    val context = LocalContext.current
-    val request = remember(url, placeholderCacheKey) {
-        ImageRequest.Builder(context).data(url)
-            .size(Size.ORIGINAL)
-            .apply { if (placeholderCacheKey != null) placeholderMemoryCacheKey(placeholderCacheKey) }
-            .build()
-    }
-
+private fun BoxScope.ImagePage(url: String, fullSizePx: Int) {
     val bgColor = MaterialTheme.colorScheme.surfaceVariant
     var loadState by remember(url) { mutableStateOf<ImageLoadState>(ImageLoadState.Loading) }
-    // 加载前用 3:4 占位，加载完成后过渡到图片真实比例
+    // 缩略图解码后立即上报真实比例，占位过渡到图片真实比例（不再等原图）
     var targetRatio by remember(url) { mutableStateOf(3f / 4f) }
     val animatedRatio by animateFloatAsState(
         targetValue = targetRatio,
@@ -531,35 +523,22 @@ private fun BoxScope.ImagePage(url: String, placeholderCacheKey: String? = null)
             .aspectRatio(animatedRatio)
             .background(bgColor)
     ) {
-        Crossfade(
-            targetState = loadState,
-            animationSpec = tween(durationMillis = 300),
-            label = "img_crossfade"
-        ) { state ->
-            when (state) {
-                ImageLoadState.Loading -> MediaShimmer(dark = false)
-                ImageLoadState.Error   -> BrokenPlaceholder(isVideo = false)
-                is ImageLoadState.Success -> androidx.compose.foundation.Image(
-                    painter = state.painter,
-                    contentDescription = null,
-                    contentScale = ContentScale.Fit,
-                    modifier = Modifier.fillMaxSize()
-                )
-            }
+        // 占位层：缩略图未出前显示 shimmer，彻底失败显示损坏占位
+        when (loadState) {
+            ImageLoadState.Loading -> MediaShimmer(dark = false)
+            ImageLoadState.Loaded -> {}
+            ImageLoadState.Error -> BrokenPlaceholder(isVideo = false)
         }
 
-        SubcomposeAsyncImage(
-            model = request,
-            contentDescription = null,
-            modifier = Modifier.size(1.dp),
-            onSuccess = {
-                val w = it.painter.intrinsicSize.width
-                val h = it.painter.intrinsicSize.height
-                if (w > 0 && h > 0 && !w.isNaN() && !h.isNaN()) targetRatio = w / h
-                loadState = ImageLoadState.Success(it.painter)
-            },
-            onError   = { loadState = ImageLoadState.Error },
-            onLoading = { if (loadState !is ImageLoadState.Success) loadState = ImageLoadState.Loading }
+        // 两阶段加载：缩略图（秒出、定比例）→ 有界清晰图（淡入）
+        SmartImage(
+            url = url,
+            modifier = Modifier.fillMaxSize(),
+            contentScale = ContentScale.Fit,
+            fullSize = fullSizePx,
+            onRatioKnown = { r -> targetRatio = r },
+            onFullLoaded = { loadState = ImageLoadState.Loaded },
+            onError = { loadState = ImageLoadState.Error }
         )
     }
 }

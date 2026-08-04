@@ -118,6 +118,9 @@ dependencies {
     implementation("io.coil-kt:coil-compose:2.7.0")
     implementation("io.coil-kt:coil-gif:2.7.0")
 
+    // libheif 软解兜底（系统 HEIC 解码失败时使用），见 HeifSystemFirstDecoder
+    implementation("io.github.awxkee:avif-coder:2.2.0")
+
     // ExoPlayer via Media3 — 用于播放随机动图（实为视频文件）
     implementation("androidx.media3:media3-exoplayer:1.6.0")
     implementation("androidx.media3:media3-ui:1.6.0")

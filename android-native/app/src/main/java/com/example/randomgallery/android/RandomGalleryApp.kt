@@ -6,6 +6,7 @@ import coil.ImageLoaderFactory
 import coil.decode.SvgDecoder
 import coil.decode.VideoFrameDecoder
 import coil.memory.MemoryCache
+import com.example.randomgallery.android.util.HeifSystemFirstDecoder
 import okhttp3.Interceptor
 import okhttp3.OkHttpClient
 import okhttp3.Response
@@ -39,6 +40,8 @@ class RandomGalleryApp : Application(), ImageLoaderFactory {
             .components {
                 add(SvgDecoder.Factory())
                 add(VideoFrameDecoder.Factory())
+                // HEIC/HEIF/AVIF：优先系统解码，失败自动降级 libheif 软解（见 HeifSystemFirstDecoder）
+                add(HeifSystemFirstDecoder.Factory())
             }
             .build()
     }

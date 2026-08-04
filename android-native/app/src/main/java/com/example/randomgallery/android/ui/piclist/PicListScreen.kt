@@ -15,11 +15,11 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
-import coil.compose.AsyncImage
-import coil.request.ImageRequest
 import com.example.randomgallery.android.R
 import com.example.randomgallery.android.ui.common.*
 import com.example.randomgallery.android.ui.theme.*
@@ -38,6 +38,12 @@ fun PicListScreen(
     val loading by viewModel.loading.collectAsStateWithLifecycle()
     val error by viewModel.error.collectAsStateWithLifecycle()
     val gridState = rememberLazyStaggeredGridState()
+
+    // 网格清晰图目标尺寸：单格宽度 * 2（有界，避免按原图下载）
+    val gridFullSizePx = with(LocalDensity.current) {
+        val cellDp = (LocalConfiguration.current.screenWidthDp - Spacing.sm.value * 3) / 2
+        (cellDp * density * 2).toInt()
+    }
 
     // 距底部 4 条时触发加载下一页
     LaunchedEffect(gridState) {
@@ -79,18 +85,17 @@ fun PicListScreen(
                             Box(
                                 modifier = Modifier
                                     .fillMaxWidth()
+                                    .aspectRatio(3f / 4f)
                                     .clip(RoundedCornerShape(10.dp))
                                     .background(MaterialTheme.colorScheme.surfaceVariant)
                             ) {
-                                AsyncImage(
-                                    model = ImageRequest.Builder(context)
-                                        .data(url)
-                                        .crossfade(true)
-                                        .build(),
-                                    contentDescription = pic.picName,
-                                    contentScale = ContentScale.FillWidth,
-                                    onSuccess = { imageLoaded = true },
-                                    modifier = Modifier.fillMaxWidth()
+                                SmartImage(
+                                    url = url,
+                                    modifier = Modifier.fillMaxSize(),
+                                    contentScale = ContentScale.Crop,
+                                    fullSize = gridFullSizePx,
+                                    onFullLoaded = { imageLoaded = true },
+                                    contentDescription = pic.picName
                                 )
                                 // 图片加载完成后才显示下载按钮
                                 if (imageLoaded) {
