@@ -77,17 +77,22 @@ object NetworkModule {
 }
 
 /**
- * 响应缓存头注入：GET 响应没有 Cache-Control 时补上短 TTL，
- * 让 20MB 磁盘缓存真正生效（列表等只读接口可复用/离线读取）。
+ * 可缓存接口判定（白名单）：仅静态元数据接口可被 HTTP 磁盘缓存，
+ * 其余动态接口一律不缓存、不参与离线兜底，保证数据实时。
+ */
+private fun isCacheablePath(path: String): Boolean =
+    path.contains("xhsWork/authors", ignoreCase = true) ||
+        path.contains("xhsWork/tags", ignoreCase = true)
+
+/**
+ * 响应缓存头注入：对白名单接口的 GET 响应补上短 TTL，
+ * 让 20MB 磁盘缓存生效（作者/标签等静态元数据可复用/离线读取）。
  */
 private class CacheControlInterceptor : Interceptor {
     override fun intercept(chain: Interceptor.Chain): Response {
         val response = chain.proceed(chain.request())
         val request = chain.request()
-        // 随机图/GIF 接口不注入缓存头：随机内容不应被 HTTP 磁盘缓存复用，
-        // 过期/离线兜底统一交给仓库层 24h TTL 缓存判断
-        val isRandomEndpoint = request.url.encodedPath.contains("random", ignoreCase = true)
-        if (request.method == "GET" && !isRandomEndpoint && response.header("Cache-Control") == null) {
+        if (request.method == "GET" && isCacheablePath(request.url.encodedPath) && response.header("Cache-Control") == null) {
             return response.newBuilder()
                 .header("Cache-Control", "public, max-age=${CACHE_MAX_AGE_SECONDS}")
                 .build()
@@ -102,11 +107,12 @@ private class CacheControlInterceptor : Interceptor {
 
 /**
  * 离线兜底：首次请求因无网络抛 IOException 时，用 only-if-cached + max-stale 重放，
- * 命中磁盘缓存即返回陈旧数据；否则保持原异常抛出。
+ * 命中磁盘缓存即返回陈旧数据；否则保持原异常抛出。仅对白名单接口生效。
  */
 private class OfflineFallbackInterceptor : Interceptor {
     override fun intercept(chain: Interceptor.Chain): Response {
         val request = chain.request()
+        if (!isCacheablePath(request.url.encodedPath)) return chain.proceed(request)
         try {
             return chain.proceed(request)
         } catch (e: IOException) {

@@ -97,6 +97,7 @@
     <string name="dd_img_expired">图片已过期</string>
     <string name="dd_vid_expired">视频已过期</string>
     <string name="dd_live_badge">实况</string>
+    <string name="dd_open_original">打开原网页</string>
     <!-- 动图 -->
     <string name="gif_load_failed">加载失败或链接已失效</string>
     <string name="gif_retry">重试</string>

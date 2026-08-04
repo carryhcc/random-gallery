@@ -9,6 +9,7 @@ import com.example.randomgallery.android.data.model.AuthorVO
 import com.example.randomgallery.android.data.model.TagVO
 import com.example.randomgallery.android.data.model.XhsWorkListVO
 import com.example.randomgallery.android.data.repository.GalleryRepository
+import kotlinx.coroutines.async
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -37,6 +38,9 @@ class DownloadListViewModel(
 
     private val _loading = MutableStateFlow(false)
     val loading: StateFlow<Boolean> = _loading.asStateFlow()
+
+    private val _refreshing = MutableStateFlow(false)
+    val refreshing: StateFlow<Boolean> = _refreshing.asStateFlow()
 
     private val _error = MutableStateFlow<String?>(null)
     val error: StateFlow<String?> = _error.asStateFlow()
@@ -84,6 +88,35 @@ class DownloadListViewModel(
         seed = Random.nextInt(1, 999999)
         _loading.value = false
         loadMore()
+    }
+
+    /** 下拉刷新：重置列表并同时刷新作者/标签筛选数据 */
+    fun refreshAll() {
+        if (_refreshing.value) return
+        _refreshing.value = true
+        page = 1
+        hasMore = true
+        seed = Random.nextInt(1, 999999)
+        isLoadingInFlight = true
+        viewModelScope.launch {
+            val worksDeferred = async {
+                repository().getWorkList(1, 10, authorId, tagId, keyword, seed)
+            }
+            val authorsDeferred = async { repository().getAuthors() }
+            val tagsDeferred = async { repository().getTags() }
+            worksDeferred.await()
+                .onSuccess {
+                    _works.value = it.works.take(MAX_WORKS)
+                    hasMore = it.hasMore && it.works.size < MAX_WORKS
+                    page = 2
+                    _error.value = null
+                }
+                .onFailure { _error.value = it.message ?: "加载失败" }
+            authorsDeferred.await().onSuccess { _authors.value = it }
+            tagsDeferred.await().onSuccess { _tags.value = it }
+            _refreshing.value = false
+            isLoadingInFlight = false
+        }
     }
 
     fun loadMore() {

@@ -1,6 +1,10 @@
 package com.example.randomgallery.android.ui.downloaddetail
 
+import android.content.Context
+import android.content.Intent
+import android.net.Uri
 import android.view.ViewGroup
+import android.widget.Toast
 import androidx.annotation.OptIn
 import androidx.compose.animation.Crossfade
 import androidx.compose.animation.animateColorAsState
@@ -17,6 +21,7 @@ import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.OpenInNew
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -66,6 +71,16 @@ private data class MediaItem2(
     val sortIndex: Int,
     val rawMedia: XhsWorkMedia
 )
+
+/** 用系统浏览器打开原始网页；无可用浏览器时用 Toast 提示 */
+private fun openInBrowser(context: Context, url: String) {
+    val intent = Intent(Intent.ACTION_VIEW, Uri.parse(url))
+    runCatching {
+        context.startActivity(intent)
+    }.onFailure {
+        Toast.makeText(context, "无法打开链接：${it.message}", Toast.LENGTH_SHORT).show()
+    }
+}
 
 @OptIn(UnstableApi::class, ExperimentalMaterial3Api::class)
 @Composable
@@ -187,6 +202,11 @@ fun DownloadDetailScreen(
                 title = base?.workTitle?.takeIf { it.isNotBlank() } ?: "",
                 onBack = onBack,
                 actions = {
+                    base?.workUrl?.takeIf { it.isNotBlank() }?.let { url ->
+                        IconButton(onClick = { openInBrowser(context, url) }) {
+                            Icon(Icons.AutoMirrored.Filled.OpenInNew, contentDescription = stringResource(R.string.dd_open_original))
+                        }
+                    }
                     IconButton(onClick = { showDeleteWorkDialog = true }) {
                         Icon(Icons.Filled.Delete, contentDescription = stringResource(R.string.dd_delete_work), tint = MaterialTheme.colorScheme.primary)
                     }

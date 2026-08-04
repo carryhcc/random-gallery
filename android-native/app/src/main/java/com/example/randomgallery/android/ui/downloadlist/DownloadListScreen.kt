@@ -12,6 +12,7 @@ import androidx.compose.material.icons.filled.FilterList
 import androidx.compose.material.icons.filled.Image
 import androidx.compose.material.icons.filled.VideoLibrary
 import androidx.compose.material3.*
+import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.runtime.*
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.compose.ui.Alignment
@@ -29,6 +30,7 @@ import com.example.randomgallery.android.ui.common.*
 import com.example.randomgallery.android.ui.theme.*
 import com.example.randomgallery.android.util.ImageUrlResolver
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun DownloadListScreen(
     viewModel: DownloadListViewModel,
@@ -39,6 +41,7 @@ fun DownloadListScreen(
     val authors by viewModel.authors.collectAsStateWithLifecycle()
     val tags by viewModel.tags.collectAsStateWithLifecycle()
     val loading by viewModel.loading.collectAsStateWithLifecycle()
+    val refreshing by viewModel.refreshing.collectAsStateWithLifecycle()
     val error by viewModel.error.collectAsStateWithLifecycle()
 
     var showFilter by remember { mutableStateOf(false) }
@@ -103,11 +106,16 @@ fun DownloadListScreen(
                     works.isEmpty() && !loading ->
                         XhsEmptyState(
                             error ?: stringResource(R.string.common_empty),
-                            onRetry = { viewModel.refresh() },
+                            onRetry = { viewModel.refreshAll() },
                             modifier = Modifier.fillMaxSize()
                         )
                     else -> {
-                        LazyVerticalStaggeredGrid(
+                        PullToRefreshBox(
+                            isRefreshing = refreshing,
+                            onRefresh = { viewModel.refreshAll() },
+                            modifier = Modifier.fillMaxSize()
+                        ) {
+                            LazyVerticalStaggeredGrid(
                             state = gridState,
                             columns = StaggeredGridCells.Fixed(2),
                             contentPadding = PaddingValues(Spacing.md),
@@ -128,6 +136,7 @@ fun DownloadListScreen(
                                     XhsLoadingBox(Modifier.fillMaxWidth().height(48.dp))
                                 }
                             }
+                        }
                         }
                     }
                 }
@@ -214,6 +223,10 @@ private fun FilterPanel(
     var authorId by remember { mutableStateOf(selectedAuthorId) }
     var tagId by remember { mutableStateOf(selectedTagId) }
 
+    // 随机推荐：每次展开面板（重新进入组合）打乱后取 8 个，而非固定前 8 个
+    val recommendedAuthors = remember(authors) { authors.shuffled().take(8) }
+    val recommendedTags = remember(tags) { tags.shuffled().take(8) }
+
     Column(
         Modifier
             .fillMaxWidth()
@@ -233,7 +246,7 @@ private fun FilterPanel(
         if (authors.isNotEmpty()) {
             Text(stringResource(R.string.dl_author), style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
             FlowRow(horizontalArrangement = Arrangement.spacedBy(Spacing.sm)) {
-                authors.take(8).forEach { (name, id) ->
+                recommendedAuthors.forEach { (name, id) ->
                     FilterChip(
                         selected = authorId == id,
                         onClick = { authorId = if (authorId == id) null else id },
@@ -250,7 +263,7 @@ private fun FilterPanel(
         if (tags.isNotEmpty()) {
             Text(stringResource(R.string.dl_tag), style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
             FlowRow(horizontalArrangement = Arrangement.spacedBy(Spacing.sm)) {
-                tags.take(8).forEach { (name, id) ->
+                recommendedTags.forEach { (name, id) ->
                     FilterChip(
                         selected = tagId == id,
                         onClick = { tagId = if (tagId == id) null else id },
