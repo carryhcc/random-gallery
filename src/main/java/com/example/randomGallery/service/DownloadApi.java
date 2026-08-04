@@ -2,14 +2,12 @@ package com.example.randomGallery.service;
 
 import com.example.randomGallery.entity.QO.DownLoadQry;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 
 @Service
 public interface DownloadApi {
 
     /**
-     * 添加下载任务
+     * 添加下载任务（落库历史记录并投递到消费队列）
      */
-    @Transactional(rollbackFor = Exception.class)
     void addDownloadTask(DownLoadQry qry);
 }

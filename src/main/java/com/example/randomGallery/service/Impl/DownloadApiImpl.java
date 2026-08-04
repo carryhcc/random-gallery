@@ -1,41 +1,26 @@
 package com.example.randomGallery.service.Impl;
 
-import cn.hutool.http.HttpUtil;
-import cn.hutool.json.JSONUtil;
 import com.example.randomGallery.entity.QO.DownLoadQry;
 import com.example.randomGallery.service.DownloadApi;
+import com.example.randomGallery.service.DownloadTaskService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Qualifier;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
-
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.Executor;
 
 @Slf4j
 @Service
 @RequiredArgsConstructor
 public class DownloadApiImpl implements DownloadApi {
 
-    private final XhsDataSaveService xhsDataSaveService;
-
-    @Value("${other.downloader.url}")
-    private String xhsDetailUrl;
-
-    @Qualifier("taskExecutor")
-    private final Executor taskExecutor;
+    private final DownloadTaskService downloadTaskService;
+    private final DownloadTaskConsumer downloadTaskConsumer;
 
     @Override
     public void addDownloadTask(DownLoadQry qry) {
-        CompletableFuture.runAsync(() -> {
-            try {
-                log.info("开始下载任务，参数: {}", qry);
-                String result = HttpUtil.post(xhsDetailUrl, JSONUtil.toJsonStr(qry));
-                xhsDataSaveService.saveXhsData(result);
-            } catch (Exception e) {
-                log.error("下载任务异步处理异常: {}", qry.getUrl(), e);
-            }
-        }, taskExecutor);
+        // 1. 落库历史记录（状态=等待中）
+        Long taskId = downloadTaskService.addTask(qry);
+        // 2. 投递到单线程消费队列（消费时串行执行并加入 3~5s 随机延迟）
+        downloadTaskConsumer.submit(taskId);
+        log.info("下载任务已提交消费队列, taskId: {}, url: {}", taskId, qry.getUrl());
     }
 }

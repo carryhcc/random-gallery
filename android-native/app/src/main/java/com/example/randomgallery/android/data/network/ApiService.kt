@@ -39,6 +39,15 @@ interface ApiService {
     @POST("api/xhsWork/download")
     suspend fun addDownloadTask(@Body qry: DownLoadQry): ApiResponse<String>
 
+    @GET("api/xhsWork/download/history")
+    suspend fun getDownloadHistory(
+        @Query("page") page: Int,
+        @Query("size") size: Int
+    ): ApiResponse<PageResult<XhsDownloadTaskVO>>
+
+    @POST("api/xhsWork/download/retry/{id}")
+    suspend fun retryDownloadTask(@Path("id") id: Long): ApiResponse<String>
+
     @GET("api/xhsWork/list")
     suspend fun getXhsWorkList(
         @Query("page") page: Int,

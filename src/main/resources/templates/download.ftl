@@ -80,6 +80,112 @@
             outline: 2px solid var(--color-border-focus);
             outline-offset: 2px;
         }
+
+        /* 下载历史 */
+        .history-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 16px;
+        }
+
+        .history-list {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .history-empty {
+            text-align: center;
+            color: var(--color-text-muted);
+            padding: 24px 0;
+            font-size: var(--font-size-sm);
+        }
+
+        .history-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+            padding: 12px 14px;
+            border-radius: var(--radius-sm);
+            background: var(--color-bg-card-strong);
+            border: 1px solid var(--color-border);
+        }
+
+        .history-item-main {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .history-item-url {
+            font-size: var(--font-size-sm);
+            color: var(--color-text-primary);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            word-break: break-all;
+        }
+
+        .history-item-meta {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-top: 6px;
+            flex-wrap: wrap;
+        }
+
+        .history-status {
+            font-size: var(--font-size-xs);
+            padding: 2px 10px;
+            border-radius: var(--radius-full);
+            font-weight: 600;
+            white-space: nowrap;
+        }
+
+        .history-status.status-waiting {
+            color: var(--color-primary);
+            background: var(--color-primary-soft);
+        }
+
+        .history-status.status-completed {
+            color: var(--color-success);
+            background: color-mix(in srgb, var(--color-success) 14%, transparent);
+        }
+
+        .history-status.status-failed {
+            color: var(--color-error);
+            background: color-mix(in srgb, var(--color-error) 14%, transparent);
+        }
+
+        .history-time, .history-error {
+            font-size: var(--font-size-xs);
+            color: var(--color-text-muted);
+        }
+
+        .history-error {
+            color: var(--color-error);
+        }
+
+        .history-item-actions {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            flex-shrink: 0;
+        }
+
+        .history-pagination {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 12px;
+            margin-top: 16px;
+        }
+
+        .history-page-info {
+            font-size: var(--font-size-sm);
+            color: var(--color-text-secondary);
+        }
     </style>
 </head>
 <body>
@@ -178,6 +284,36 @@
             </a>
         </div>
     </div>
+
+    <!-- 下载历史 -->
+    <div class="download-card animate-fade-in" style="margin-top: 24px;">
+        <div class="history-header">
+            <h2 class="download-title">
+                <i class="fas fa-history"></i>
+                下载历史
+            </h2>
+            <button id="historyRefreshBtn" class="btn btn-secondary btn-sm">
+                <i class="fas fa-sync-alt"></i>
+                <span>刷新</span>
+            </button>
+        </div>
+
+        <div id="historyList" class="history-list">
+            <div class="history-empty">加载中...</div>
+        </div>
+
+        <div id="historyPagination" class="history-pagination" style="display: none;">
+            <button id="historyPrevBtn" class="btn btn-secondary btn-sm">
+                <i class="fas fa-chevron-left"></i>
+                <span>上一页</span>
+            </button>
+            <span id="historyPageInfo" class="history-page-info"></span>
+            <button id="historyNextBtn" class="btn btn-secondary btn-sm">
+                <span>下一页</span>
+                <i class="fas fa-chevron-right"></i>
+            </button>
+        </div>
+    </div>
 </main>
 
 <script>
@@ -187,6 +323,12 @@
     const autoReadToggle = document.getElementById('autoReadClipboard');
     const STORAGE_KEY = 'autoReadClipboard';
     let toastTimer;
+
+    function escHtml(s) {
+        return String(s == null ? '' : s)
+            .replace(/&/g, '&amp;').replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+    }
 
     function showToast(message, type = 'success') {
         clearTimeout(toastTimer);
@@ -298,6 +440,7 @@
             if (result.code === 200) {
                 showToast('解析任务已添加，请稍后前往"下载浏览"页面查看', 'success');
                 urlInput.value = '';
+                loadHistory();
 
             } else {
                 showToast(result.message || '解析失败', 'error');
@@ -318,6 +461,109 @@
         }
     });
 
+    // ==================== 下载历史 ====================
+    const historyListEl = document.getElementById('historyList');
+    const historyPaginationEl = document.getElementById('historyPagination');
+    const historyPageInfoEl = document.getElementById('historyPageInfo');
+    const historyRefreshBtn = document.getElementById('historyRefreshBtn');
+    const historyPrevBtn = document.getElementById('historyPrevBtn');
+    const historyNextBtn = document.getElementById('historyNextBtn');
+
+    const HISTORY_PAGE_SIZE = 10;
+    let historyPage = 1;
+    let historyTotalPages = 0;
+
+    const STATUS_MAP = {
+        0: { name: '等待中', cls: 'status-waiting' },
+        1: { name: '已完成', cls: 'status-completed' },
+        2: { name: '失败', cls: 'status-failed' }
+    };
+
+    async function loadHistory() {
+        try {
+            const res = await fetch('/api/xhsWork/download/history?page=' + historyPage + '&size=' + HISTORY_PAGE_SIZE).then(r => r.json());
+            if (res.code === 200 && res.data) {
+                renderHistory(res.data);
+            }
+        } catch (e) {
+            console.error('加载下载历史失败:', e);
+        }
+    }
+
+    function renderHistory(data) {
+        const list = data.list || [];
+        historyTotalPages = data.pages || 0;
+
+        if (list.length === 0) {
+            historyListEl.innerHTML = '<div class="history-empty">暂无下载记录</div>';
+        } else {
+            historyListEl.innerHTML = list.map(item => {
+                const st = STATUS_MAP[item.status] || { name: '未知', cls: '' };
+                const url = escHtml(item.url || '');
+                const time = escHtml(item.createTime || '');
+                const error = item.status === 2 ? escHtml(item.errorMessage || '') : '';
+                const actions = [];
+                if (item.status === 2) {
+                    actions.push('<button class="btn btn-danger btn-sm" onclick="retryHistory(' + item.id + ')"><i class="fas fa-redo-alt"></i> 重试</button>');
+                }
+                if (item.status === 1 && item.workId) {
+                    actions.push('<button class="btn btn-primary btn-sm" onclick="viewHistoryDetail(\'' + escHtml(item.workId) + '\')"><i class="fas fa-eye"></i> 查看详情</button>');
+                }
+                return '<div class="history-item">' +
+                    '<div class="history-item-main">' +
+                    '  <div class="history-item-url" title="' + url + '">' + url + '</div>' +
+                    '  <div class="history-item-meta">' +
+                    '    <span class="history-status ' + st.cls + '">' + st.name + '</span>' +
+                    '    <span class="history-time"><i class="fas fa-clock"></i> ' + time + '</span>' +
+                    (error ? '  <span class="history-error" title="' + error + '">' + error + '</span>' : '') +
+                    '  </div>' +
+                    '</div>' +
+                    '<div class="history-item-actions">' + actions.join('') + '</div>' +
+                    '</div>';
+            }).join('');
+        }
+
+        // 分页
+        if (historyTotalPages > 1) {
+            historyPaginationEl.style.display = 'flex';
+            historyPageInfoEl.textContent = '第 ' + historyPage + ' / ' + historyTotalPages + ' 页';
+            historyPrevBtn.disabled = historyPage <= 1;
+            historyNextBtn.disabled = historyPage >= historyTotalPages;
+        } else {
+            historyPaginationEl.style.display = 'none';
+        }
+    }
+
+    window.retryHistory = async function(id) {
+        try {
+            const res = await fetch('/api/xhsWork/download/retry/' + id, { method: 'POST' }).then(r => r.json());
+            if (res.code === 200) {
+                showToast('重试任务已提交', 'success');
+                loadHistory();
+            } else {
+                showToast(res.message || '重试失败', 'error');
+            }
+        } catch (e) {
+            console.error('重试失败:', e);
+            showToast('网络请求失败', 'error');
+        }
+    };
+
+    window.viewHistoryDetail = function(workId) {
+        window.location.href = '/downloadDetail?workId=' + encodeURIComponent(workId);
+    };
+
+    if (historyRefreshBtn) historyRefreshBtn.addEventListener('click', loadHistory);
+    if (historyPrevBtn) historyPrevBtn.addEventListener('click', () => {
+        if (historyPage > 1) { historyPage--; loadHistory(); }
+    });
+    if (historyNextBtn) historyNextBtn.addEventListener('click', () => {
+        if (historyPage < historyTotalPages) { historyPage++; loadHistory(); }
+    });
+
+    // 首次加载 + 每 3 秒轮询刷新进度
+    loadHistory();
+    setInterval(loadHistory, 3000);
 </script>
 </body>
 </html>

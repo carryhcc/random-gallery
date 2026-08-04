@@ -149,6 +149,21 @@ data class RandomGifVO(
 )
 
 @JsonClass(generateAdapter = true)
+data class XhsDownloadTaskVO(
+    val id: Long? = null,
+    val url: String? = null,
+    val status: Int? = null,
+    val statusName: String? = null,
+    val workId: String? = null,
+    val workTitle: String? = null,
+    val workUrl: String? = null,
+    val errorMessage: String? = null,
+    val retryCount: Int? = null,
+    val createTime: String? = null,
+    val finishTime: String? = null
+)
+
+@JsonClass(generateAdapter = true)
 data class PicCount(
     val env: String? = null,
     val picCount: Long? = null,

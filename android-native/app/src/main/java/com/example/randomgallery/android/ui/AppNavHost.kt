@@ -190,7 +190,8 @@ fun AppNavHost() {
                     val vm: DownloadManageViewModel = viewModel { DownloadManageViewModel(AppContainer.repository(context)) }
                     DownloadManageScreen(
                         viewModel = vm,
-                        onBack = { navController.navigateUp() }
+                        onBack = { navController.navigateUp() },
+                        onViewDetail = { workId -> navController.toDownloadDetail(workId) }
                     )
                 }
 

@@ -6,8 +6,11 @@ import com.example.randomGallery.entity.QO.DownLoadQry;
 import com.example.randomGallery.entity.VO.AuthorVO;
 import com.example.randomGallery.entity.VO.RandomGifVO;
 import com.example.randomGallery.entity.VO.TagVO;
+import com.example.randomGallery.entity.VO.XhsDownloadTaskVO;
 import com.example.randomGallery.entity.VO.XhsWorkDetailVO;
 import com.example.randomGallery.entity.VO.XhsWorkPageVO;
+import com.example.randomGallery.entity.common.PageResult;
+import com.example.randomGallery.service.Impl.DownloadTaskConsumer;
 import com.example.randomGallery.service.*;
 import com.example.randomGallery.exception.NotFoundException;
 import com.example.randomGallery.utils.UserAgentUtils;
@@ -31,6 +34,8 @@ public class XhsWorkApiController {
     private final TagService tagService;
     private final DataMigrationService dataMigrationService;
     private final DownloadApi downloadApi;
+    private final DownloadTaskService downloadTaskService;
+    private final DownloadTaskConsumer downloadTaskConsumer;
 
     /**
      * 下载图片
@@ -39,6 +44,27 @@ public class XhsWorkApiController {
     public Result<String> download(@RequestBody DownLoadQry qry) {
         downloadApi.addDownloadTask(qry);
         return Result.success("下载任务添加成功");
+    }
+
+    /**
+     * 分页查询下载任务历史记录（按添加时间倒序）
+     */
+    @GetMapping("/download/history")
+    public Result<PageResult<XhsDownloadTaskVO>> downloadHistory(
+            @RequestParam(defaultValue = "1") int page,
+            @RequestParam(defaultValue = "10") int size) {
+        PageResult<XhsDownloadTaskVO> result = downloadTaskService.pageHistory(page, size);
+        return Result.success(result);
+    }
+
+    /**
+     * 重试失败的下载任务
+     */
+    @PostMapping("/download/retry/{id}")
+    public Result<String> retryDownload(@PathVariable Long id) {
+        downloadTaskService.retryTask(id);
+        downloadTaskConsumer.submit(id);
+        return Result.success("重试任务已提交");
     }
 
     /**

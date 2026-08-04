@@ -157,7 +157,9 @@ docker run -p 8086:8086 ghcr.io/<your-github-owner>/random-gallery:main
 
 ### 7.2 XHS作品
 
-- `POST /api/xhsWork/download`：新增下载任务
+- `POST /api/xhsWork/download`：新增下载任务（落库历史记录，串行消费，任务间随机延迟 3~5 秒）
+- `GET /api/xhsWork/download/history?page=1&size=10`：分页查询下载历史（按添加时间倒序，含状态：等待中/已完成/失败）
+- `POST /api/xhsWork/download/retry/{id}`：重试失败的下载任务
 - `GET /api/xhsWork/list`：作品分页/筛选
 - `GET /api/xhsWork/detail/{workId}`：作品详情
 - `DELETE /api/xhsWork/{workId}`：删除作品（软删）

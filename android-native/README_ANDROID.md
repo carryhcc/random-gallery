@@ -50,7 +50,7 @@ android-native
 - 已覆盖 Web 端核心接口：
   - 图片：`/api/pic/random/one`、`/api/pic/list`
   - 分组：`/api/group/randomGroupInfo`、`/api/group/list`、`/api/group/loadMore`
-  - 下载作品：`/api/xhsWork/download`、`/api/xhsWork/list`、`/api/xhsWork/detail/{workId}`、删除接口
+  - 下载作品：`/api/xhsWork/download`、`/api/xhsWork/download/history`、`/api/xhsWork/download/retry/{id}`、`/api/xhsWork/list`、`/api/xhsWork/detail/{workId}`、删除接口
   - GIF：`/api/xhsWork/randomGif`
   - 系统：`/api/system/privacy-mode`、`/api/system/env/*`
 
@@ -60,7 +60,7 @@ android-native
 - 套图页：分页加载、下拉刷新
 - 分组页：关键字查询、翻页、点卡片进套图
 - 随机画廊：瀑布流式网格 + 下拉刷新 + 滚动加载
-- 下载管理：提交链接下载任务
+- 下载管理：提交链接下载任务、下载历史（等待中/已完成/失败、失败重试、查看详情、分页、3秒轮询刷新进度）
 - 下载浏览：搜索、作者筛选、标签筛选、单双列切换、无限滚动
 - 下载详情：作品信息、图片/动图分区、删除作品/媒体、预览、下载
 - 随机动图：上下切换历史、循环播放、下载
