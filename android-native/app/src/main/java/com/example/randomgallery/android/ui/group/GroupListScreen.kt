@@ -59,7 +59,6 @@ fun GroupListScreen(
 
     Scaffold(
         containerColor = MaterialTheme.colorScheme.background,
-        contentWindowInsets = WindowInsets(0, 0, 0, 0),
         topBar = { XhsTopBar(title = stringResource(R.string.group_title), onBack = onBack) }
     ) { padding ->
         Column(

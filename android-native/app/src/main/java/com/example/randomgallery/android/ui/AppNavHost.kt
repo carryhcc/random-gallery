@@ -3,12 +3,19 @@ package com.example.randomgallery.android.ui
 import android.app.Activity
 import android.net.Uri
 import androidx.activity.compose.BackHandler
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.slideInHorizontally
+import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Icon
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
+import androidx.compose.material3.NavigationRail
+import androidx.compose.material3.NavigationRailItem
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -18,6 +25,7 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
@@ -90,6 +98,8 @@ private fun routeBase(route: String?): String? =
 fun AppNavHost() {
     val navController = rememberNavController()
     val context = LocalContext.current
+    val configuration = LocalConfiguration.current
+    val isWideScreen = configuration.screenWidthDp >= 600
 
     val backStackEntry by navController.currentBackStackEntryAsState()
     val currentBase = routeBase(backStackEntry?.destination?.route)
@@ -108,29 +118,49 @@ fun AppNavHost() {
         }
     }
 
-    Box {
-        Scaffold(
-            contentWindowInsets = WindowInsets(0, 0, 0, 0),
-            bottomBar = {
-                if (showBottomBar) {
-                    NavigationBar {
-                        bottomTabs.forEach { tab ->
-                            NavigationBarItem(
-                                selected = currentBase == tab.route,
-                                onClick = { navController.switchTab(tab.route) },
-                                icon = { Icon(painterResource(tab.iconRes), contentDescription = null) },
-                                label = { Text(stringResource(tab.labelRes)) }
-                            )
-                        }
+    Box(modifier = Modifier.fillMaxSize()) {
+        Row(modifier = Modifier.fillMaxSize()) {
+            // 宽屏模式下展示侧边 NavigationRail
+            if (isWideScreen && showBottomBar) {
+                NavigationRail {
+                    bottomTabs.forEach { tab ->
+                        NavigationRailItem(
+                            selected = currentBase == tab.route,
+                            onClick = { navController.switchTab(tab.route) },
+                            icon = { Icon(painterResource(tab.iconRes), contentDescription = null) },
+                            label = { Text(stringResource(tab.labelRes)) }
+                        )
                     }
                 }
             }
-        ) { innerPadding ->
-            NavHost(
-                navController = navController,
-                startDestination = Routes.HOME,
-                modifier = Modifier.padding(innerPadding)
-            ) {
+
+            Scaffold(
+                modifier = Modifier.weight(1f),
+                bottomBar = {
+                    // 窄屏模式下展示底部 NavigationBar
+                    if (!isWideScreen && showBottomBar) {
+                        NavigationBar {
+                            bottomTabs.forEach { tab ->
+                                NavigationBarItem(
+                                    selected = currentBase == tab.route,
+                                    onClick = { navController.switchTab(tab.route) },
+                                    icon = { Icon(painterResource(tab.iconRes), contentDescription = null) },
+                                    label = { Text(stringResource(tab.labelRes)) }
+                                )
+                            }
+                        }
+                    }
+                }
+            ) { innerPadding ->
+                NavHost(
+                    navController = navController,
+                    startDestination = Routes.HOME,
+                    modifier = Modifier.padding(innerPadding),
+                    enterTransition = { slideInHorizontally(initialOffsetX = { it }) + fadeIn() },
+                    exitTransition = { slideOutHorizontally(targetOffsetX = { -it / 3 }) + fadeOut() },
+                    popEnterTransition = { slideInHorizontally(initialOffsetX = { -it / 3 }) + fadeIn() },
+                    popExitTransition = { slideOutHorizontally(targetOffsetX = { it }) + fadeOut() }
+                ) {
                 composable(Routes.HOME) {
                     val vm: HomeViewModel = viewModel { HomeViewModel(context.applicationContext) }
                     HomeScreen(
@@ -253,8 +283,9 @@ fun AppNavHost() {
                 }
             }
         }
-        TopMessageHost(Modifier.align(Alignment.TopCenter))
     }
+    TopMessageHost(Modifier.align(Alignment.TopCenter))
+}
 }
 
 // ── 导航辅助 ──────────────────────────────────────────────────────────

@@ -32,6 +32,9 @@ import com.example.randomgallery.android.ui.theme.*
 import com.example.randomgallery.android.util.ImageUrlResolver
 import com.example.randomgallery.android.util.Downloader
 import com.example.randomgallery.android.util.MediaKind
+import androidx.compose.foundation.gestures.detectTransformGestures
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.graphicsLayer
 
 @Composable
 fun RandomPicScreen(
@@ -45,12 +48,18 @@ fun RandomPicScreen(
     val scope = rememberCoroutineScope()
 
     var imageUrl by remember { mutableStateOf("") }
+    var scale by remember { mutableFloatStateOf(1f) }
+    var offset by remember { mutableStateOf(Offset.Zero) }
 
     LaunchedEffect(Unit) { viewModel.loadRandomPic() }
 
     LaunchedEffect(picState) {
         when (val state = picState) {
-            is UiState.Success -> imageUrl = ImageUrlResolver.displayUrl(state.data.picUrl) ?: ""
+            is UiState.Success -> {
+                imageUrl = ImageUrlResolver.displayUrl(state.data.picUrl) ?: ""
+                scale = 1f
+                offset = Offset.Zero
+            }
             is UiState.Error -> Messenger.show(state.message, isError = true)
             else -> Unit
         }
@@ -61,7 +70,26 @@ fun RandomPicScreen(
             .fillMaxSize()
             .background(Color.Black)
             .pointerInput(Unit) {
-                detectTapGestures(onDoubleTap = { viewModel.loadRandomPic() })
+                detectTransformGestures { _, pan, zoom, _ ->
+                    scale = (scale * zoom).coerceIn(1f, 4f)
+                    if (scale > 1f) {
+                        offset = Offset(offset.x + pan.x, offset.y + pan.y)
+                    } else {
+                        offset = Offset.Zero
+                    }
+                }
+            }
+            .pointerInput(Unit) {
+                detectTapGestures(
+                    onDoubleTap = {
+                        if (scale > 1f) {
+                            scale = 1f
+                            offset = Offset.Zero
+                        } else {
+                            scale = 2.5f
+                        }
+                    }
+                )
             }
     ) {
             when {
@@ -78,9 +106,16 @@ fun RandomPicScreen(
                             .data(imageUrl)
                             .crossfade(true)
                             .build(),
-                        contentDescription = null,
+                        contentDescription = groupState?.groupName ?: stringResource(R.string.pic_title_fallback),
                         contentScale = ContentScale.Fit,
-                        modifier = Modifier.fillMaxSize()
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .graphicsLayer(
+                                scaleX = scale,
+                                scaleY = scale,
+                                translationX = offset.x,
+                                translationY = offset.y
+                            )
                     )
                 }
             }

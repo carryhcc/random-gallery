@@ -59,7 +59,6 @@ fun PicListScreen(
 
     Scaffold(
         containerColor = MaterialTheme.colorScheme.background,
-        contentWindowInsets = WindowInsets(0, 0, 0, 0),
         topBar = { XhsTopBar(title = decodedGroupName.ifBlank { stringResource(R.string.group_detail_fallback) }, onBack = onBack) }
     ) { padding ->
         Box(

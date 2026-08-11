@@ -99,9 +99,11 @@ class DownloadManageViewModel(
 
     // 是否有请求在途：轮询时若上一请求未完成则跳过本 tick，避免并发堆积
     private var historyRequesting = false
+    private var pollConsecutiveErrors = 0
 
     fun loadHistory(showLoading: Boolean = true, allowWhileBusy: Boolean = true) {
         if (historyRequesting && !allowWhileBusy) return
+        if (!allowWhileBusy && pollConsecutiveErrors >= 5) return  // 连续失败 5 次熔断，避免死循环轮询
         historyRequesting = true
         val version = ++historyVersion
         if (showLoading) _historyLoading.value = true
@@ -116,8 +118,10 @@ class DownloadManageViewModel(
                             _history.value = data.list
                             _historyTotalPages.value = data.pages
                             _historyError.value = null
+                            pollConsecutiveErrors = 0
                         }
                     } else {
+                        pollConsecutiveErrors++
                         _historyError.value = result.exceptionOrNull()?.message
                     }
                 }

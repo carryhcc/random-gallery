@@ -3,8 +3,10 @@ package com.example.randomgallery.android.ui.common
 import androidx.compose.animation.Crossfade
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -107,7 +109,7 @@ fun SmartImage(
         label = "smart_image"
     ) { state ->
         when (state) {
-            SmartImageDisplay.None -> Box(modifier)
+            SmartImageDisplay.None -> Box(modifier.background(MaterialTheme.colorScheme.surfaceVariant))
             is SmartImageDisplay.Thumb -> Image(
                 bitmap = state.bitmap,
                 contentDescription = contentDescription,

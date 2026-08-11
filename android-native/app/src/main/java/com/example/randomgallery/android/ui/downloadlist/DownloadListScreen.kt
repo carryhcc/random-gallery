@@ -61,7 +61,6 @@ fun DownloadListScreen(
 
     Scaffold(
         containerColor = MaterialTheme.colorScheme.background,
-        contentWindowInsets = WindowInsets(0, 0, 0, 0),
         topBar = {
             XhsTopBar(
                 title = stringResource(R.string.dl_title),
@@ -119,7 +118,7 @@ fun DownloadListScreen(
                         ) {
                             LazyVerticalStaggeredGrid(
                             state = gridState,
-                            columns = StaggeredGridCells.Fixed(2),
+                            columns = StaggeredGridCells.Adaptive(minSize = 160.dp),
                             contentPadding = PaddingValues(Spacing.md),
                             verticalItemSpacing = Spacing.md,
                             horizontalArrangement = Arrangement.spacedBy(Spacing.md),

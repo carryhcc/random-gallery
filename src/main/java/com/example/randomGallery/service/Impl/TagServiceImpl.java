@@ -8,7 +8,9 @@ import com.example.randomGallery.service.TagService;
 import com.example.randomGallery.service.mapper.TagMapper;
 import com.example.randomGallery.service.mapper.TagWorkMapper;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.cache.annotation.Cacheable;
+import org.springframework.dao.DuplicateKeyException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -24,6 +26,7 @@ import java.util.stream.Collectors;
 /**
  * 标签服务实现类
  */
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class TagServiceImpl implements TagService {
@@ -57,12 +60,18 @@ public class TagServiceImpl implements TagService {
         if (existingTag != null) {
             return existingTag.getId();
         } else {
-            // 创建新标签
-            TagDO tagDO = new TagDO();
-            tagDO.setTagName(tagName);
-            tagDO.setCreateTime(LocalDateTime.now());
-            tagMapper.insert(tagDO);
-            return tagDO.getId();
+            // 创建新标签（并发场景下可能重复插入，捕获DuplicateKeyException）
+            try {
+                TagDO tagDO = new TagDO();
+                tagDO.setTagName(tagName);
+                tagDO.setCreateTime(LocalDateTime.now());
+                tagMapper.insert(tagDO);
+                return tagDO.getId();
+            } catch (DuplicateKeyException e) {
+                log.debug("标签 {} 已存在（并发插入），重新查询", tagName);
+                existingTag = tagMapper.selectOne(queryWrapper);
+                return existingTag != null ? existingTag.getId() : null;
+            }
         }
     }
 
@@ -147,11 +156,15 @@ public class TagServiceImpl implements TagService {
         // Insert only missing relations
         for (Long tagId : allTagIds) {
             if (!existingTagIds.contains(tagId)) {
-                TagWorkDO rel = new TagWorkDO();
-                rel.setTagId(tagId);
-                rel.setWorkId(workId);
-                rel.setCreateTime(LocalDateTime.now());
-                tagWorkMapper.insert(rel);
+                try {
+                    TagWorkDO rel = new TagWorkDO();
+                    rel.setTagId(tagId);
+                    rel.setWorkId(workId);
+                    rel.setCreateTime(LocalDateTime.now());
+                    tagWorkMapper.insert(rel);
+                } catch (DuplicateKeyException e) {
+                    log.debug("标签作品关联 tagId={}, workId={} 已存在（并发插入），跳过", tagId, workId);
+                }
             }
         }
     }

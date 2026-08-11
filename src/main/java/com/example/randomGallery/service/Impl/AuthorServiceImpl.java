@@ -8,7 +8,9 @@ import com.example.randomGallery.service.AuthorService;
 import com.example.randomGallery.service.mapper.AuthorMapper;
 import com.example.randomGallery.service.mapper.AuthorWorkMapper;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.cache.annotation.Cacheable;
+import org.springframework.dao.DuplicateKeyException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -18,6 +20,7 @@ import java.util.List;
 /**
  * 作者服务实现类
  */
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class AuthorServiceImpl implements AuthorService {
@@ -52,14 +55,18 @@ public class AuthorServiceImpl implements AuthorService {
             existingAuthor.setUpdateTime(LocalDateTime.now());
             authorMapper.updateById(existingAuthor);
         } else {
-            // 新增作者
-            AuthorDO authorDO = new AuthorDO();
-            authorDO.setAuthorId(authorId);
-            authorDO.setAuthorNickname(authorNickname);
-            authorDO.setAuthorUrl(authorUrl);
-            authorDO.setCreateTime(LocalDateTime.now());
-            authorDO.setUpdateTime(LocalDateTime.now());
-            authorMapper.insert(authorDO);
+            // 新增作者（并发场景下可能重复插入，捕获DuplicateKeyException）
+            try {
+                AuthorDO authorDO = new AuthorDO();
+                authorDO.setAuthorId(authorId);
+                authorDO.setAuthorNickname(authorNickname);
+                authorDO.setAuthorUrl(authorUrl);
+                authorDO.setCreateTime(LocalDateTime.now());
+                authorDO.setUpdateTime(LocalDateTime.now());
+                authorMapper.insert(authorDO);
+            } catch (DuplicateKeyException e) {
+                log.debug("作者 {} 已存在（并发插入），跳过", authorId);
+            }
         }
     }
 
@@ -77,12 +84,16 @@ public class AuthorServiceImpl implements AuthorService {
         Long count = authorWorkMapper.selectCount(queryWrapper);
 
         if (count == 0) {
-            // 创建新的关联关系
-            AuthorWorkDO authorWorkDO = new AuthorWorkDO();
-            authorWorkDO.setAuthorId(authorId);
-            authorWorkDO.setWorkId(workId);
-            authorWorkDO.setCreateTime(LocalDateTime.now());
-            authorWorkMapper.insert(authorWorkDO);
+            // 创建新的关联关系（并发场景下可能重复插入，捕获DuplicateKeyException）
+            try {
+                AuthorWorkDO authorWorkDO = new AuthorWorkDO();
+                authorWorkDO.setAuthorId(authorId);
+                authorWorkDO.setWorkId(workId);
+                authorWorkDO.setCreateTime(LocalDateTime.now());
+                authorWorkMapper.insert(authorWorkDO);
+            } catch (DuplicateKeyException e) {
+                log.debug("作者作品关联 authorId={}, workId={} 已存在（并发插入），跳过", authorId, workId);
+            }
         }
     }
 }

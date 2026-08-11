@@ -57,6 +57,8 @@ fun HomeScreen(
         viewModel.randomGroupEvents.collect { result ->
             result.onSuccess { group ->
                 group.groupId?.let { onNavigateToPicList(it, group.groupName ?: context.getString(R.string.group_detail_fallback)) }
+            }.onFailure { err ->
+                Messenger.show(err.message ?: context.getString(R.string.submit_failed_unknown), isError = true)
             }
         }
     }
@@ -66,7 +68,6 @@ fun HomeScreen(
 
     Scaffold(
         containerColor = MaterialTheme.colorScheme.background,
-        contentWindowInsets = WindowInsets(0, 0, 0, 0),
         topBar = {
             TopAppBar(
                 title = {
@@ -243,8 +244,8 @@ fun HomeScreen(
 @Composable
 private fun SectionCard(content: @Composable ColumnScope.() -> Unit) {
     Surface(
-        shape = RoundedCornerShape(18.dp),
-        color = MaterialTheme.colorScheme.surface,
+        shape = RoundedCornerShape(16.dp),
+        color = MaterialTheme.colorScheme.surfaceContainerLow,
         modifier = Modifier.fillMaxWidth()
     ) {
         Column(modifier = Modifier.padding(Spacing.lg), content = content)
@@ -374,7 +375,10 @@ private fun SettingsDialog(
         onDismissRequest = onDismiss,
         title = { Text(stringResource(R.string.common_settings), fontWeight = FontWeight.SemiBold, style = MaterialTheme.typography.titleMedium) },
         text = {
-            Column(verticalArrangement = Arrangement.spacedBy(0.dp)) {
+            Column(
+                modifier = Modifier.verticalScroll(rememberScrollState()),
+                verticalArrangement = Arrangement.spacedBy(0.dp)
+            ) {
 
                 // ── 服务器地址 ─────────────────────────────────────
                 SettingsRow(label = stringResource(R.string.settings_server)) {
@@ -425,7 +429,8 @@ private fun SettingsDialog(
                                     },
                                     trailingIcon = {
                                         IconButton(
-                                            onClick = { onRemoveUrl(url) }
+                                            onClick = { onRemoveUrl(url) },
+                                            modifier = Modifier.minimumInteractiveComponentSize()
                                         ) {
                                             Icon(Icons.Filled.Close, stringResource(R.string.common_delete), tint = MaterialTheme.xhs.textTertiary, modifier = Modifier.size(14.dp))
                                         }

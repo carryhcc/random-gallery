@@ -5,6 +5,7 @@ import androidx.annotation.OptIn
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.pager.HorizontalPager
@@ -332,9 +333,7 @@ fun RandomGifScreen(
                                         overflow = TextOverflow.Ellipsis,
                                         modifier = Modifier
                                             .clip(RoundedCornerShape(4.dp))
-                                            .pointerInput(gif.workId) {
-                                                detectTapGestures { gif.workId?.let { onDetail(it) } }
-                                            }
+                                            .clickable { gif.workId?.let { onDetail(it) } }
                                     )
                                 }
                                 gif.authorNickname?.let { nickname ->
@@ -345,9 +344,7 @@ fun RandomGifScreen(
                                         textDecoration = TextDecoration.Underline,
                                         modifier = Modifier
                                             .clip(RoundedCornerShape(4.dp))
-                                            .pointerInput(gif.authorId) {
-                                                detectTapGestures { gif.authorId?.let { onAuthor(it) } }
-                                            }
+                                            .clickable { gif.authorId?.let { onAuthor(it) } }
                                     )
                                 }
                             }

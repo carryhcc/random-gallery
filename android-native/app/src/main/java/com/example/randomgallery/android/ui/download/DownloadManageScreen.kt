@@ -25,6 +25,9 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.compose.foundation.text.KeyboardActions
+import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.ui.text.input.ImeAction
 import android.view.ViewTreeObserver
 import com.example.randomgallery.android.R
 import com.example.randomgallery.android.data.model.XhsDownloadTaskVO
@@ -103,7 +106,6 @@ fun DownloadManageScreen(
 
     Scaffold(
         containerColor = MaterialTheme.colorScheme.background,
-        contentWindowInsets = WindowInsets(0, 0, 0, 0),
         topBar = { XhsTopBar(title = stringResource(R.string.dm_title), onBack = onBack) }
     ) { padding ->
         Column(
@@ -122,12 +124,15 @@ fun DownloadManageScreen(
             ) {
                 Column(Modifier.padding(Spacing.xl), verticalArrangement = Arrangement.spacedBy(Spacing.md)) {
                     Text(stringResource(R.string.dm_add_link), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
+
                     OutlinedTextField(
                         value = urlInput,
                         onValueChange = { urlInput = it },
                         label = { Text(stringResource(R.string.dm_link_label)) },
                         placeholder = { Text(stringResource(R.string.dm_link_hint), color = MaterialTheme.colorScheme.onSurfaceVariant) },
                         minLines = 3,
+                        keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
+                        keyboardActions = KeyboardActions(onDone = { if (urlInput.isNotBlank() && !loading) viewModel.submit(urlInput) }),
                         modifier = Modifier.fillMaxWidth(),
                         colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = MaterialTheme.colorScheme.primary),
                         trailingIcon = {
