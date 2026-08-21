@@ -55,6 +55,7 @@ import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
 import coil.request.ImageRequest
 import com.example.randomgallery.android.data.model.GroupVO
+import com.example.randomgallery.android.ui.common.GlassCard
 import com.example.randomgallery.android.ui.common.XhsFloatingPill
 import com.example.randomgallery.android.ui.common.bouncyClickable
 import com.example.randomgallery.android.ui.theme.RandomGalleryTheme
@@ -178,12 +179,12 @@ private fun FeedCard(
     // 动态真实比例（支持高长图与方图错落分布，限制在 0.65f ~ 1.4f 之间形成发现节奏感）
     val ratio = if (url.isBlank()) 0.85f else ratioCache[url] ?: 0.85f
 
-    Surface(
-        shape = RoundedCornerShape(16.dp),
-        color = MaterialTheme.colorScheme.surface,
+    GlassCard(
+        shape = RoundedCornerShape(24.dp),
+        elevation = 8.dp,
+        containerColor = MaterialTheme.colorScheme.surfaceContainerHigh.copy(alpha = 0.88f),
         modifier = Modifier
             .fillMaxWidth()
-            .clip(RoundedCornerShape(16.dp))
             .bouncyClickable(onClick = onClick)
     ) {
         Column {
@@ -204,10 +205,11 @@ private fun FeedCard(
                     modifier = Modifier
                         .fillMaxWidth()
                         .aspectRatio(ratio)
+                        .clip(RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp))
                         .background(MaterialTheme.colorScheme.surfaceVariant)
                 )
 
-                // 潮流悬浮胶囊图层：置于图片右上角
+                // 悬浮胶囊图层：置于图片右上角
                 val count = group.groupCount ?: 0
                 if (count > 0) {
                     XhsFloatingPill(
@@ -220,10 +222,11 @@ private fun FeedCard(
                 }
             }
 
-            // 紧错精致标题行
+            // 标题行
             Text(
                 text = group.groupName ?: stringResource(R.string.group_unnamed),
                 style = MaterialTheme.typography.titleSmall,
+                fontWeight = FontWeight.Bold,
                 color = MaterialTheme.colorScheme.onSurface,
                 maxLines = 2,
                 overflow = TextOverflow.Ellipsis,

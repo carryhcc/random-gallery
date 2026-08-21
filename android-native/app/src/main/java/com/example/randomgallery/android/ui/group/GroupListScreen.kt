@@ -12,6 +12,7 @@ import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.lazy.grid.itemsIndexed
 import androidx.compose.foundation.lazy.grid.rememberLazyGridState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardActions
@@ -187,27 +188,31 @@ fun GroupListScreen(
             }
 
             // ── 分页栏 ────────────────────────────────────────────────
-            Surface(
-                color = MaterialTheme.colorScheme.surface,
-                shadowElevation = 4.dp
+            GlassSurface(
+                shape = CircleShape,
+                elevation = 6.dp,
+                containerColor = MaterialTheme.colorScheme.surfaceContainerHigh.copy(alpha = 0.90f),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = Spacing.lg, vertical = Spacing.xs)
             ) {
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(horizontal = Spacing.md, vertical = Spacing.sm),
+                        .padding(horizontal = Spacing.md, vertical = Spacing.xs),
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     IconButton(
                         onClick = { viewModel.prevPage() },
-                        colors = IconButtonDefaults.iconButtonColors(containerColor = MaterialTheme.colorScheme.primaryContainer)
+                        modifier = Modifier.bouncyClickable { viewModel.prevPage() }
                     ) {
                         Icon(Icons.Filled.ChevronLeft, stringResource(R.string.group_prev_page), tint = MaterialTheme.colorScheme.primary)
                     }
-                    Text(pageInfo, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant, fontWeight = FontWeight.Medium)
+                    Text(pageInfo, style = MaterialTheme.typography.bodySmall.tabularNumbers, color = MaterialTheme.colorScheme.onSurface, fontWeight = FontWeight.Bold)
                     IconButton(
                         onClick = { viewModel.nextPage() },
-                        colors = IconButtonDefaults.iconButtonColors(containerColor = MaterialTheme.colorScheme.primaryContainer)
+                        modifier = Modifier.bouncyClickable { viewModel.nextPage() }
                     ) {
                         Icon(Icons.Filled.ChevronRight, stringResource(R.string.group_next_page), tint = MaterialTheme.colorScheme.primary)
                     }
@@ -222,12 +227,12 @@ private fun GroupCard(group: GroupVO, onClick: () -> Unit) {
     val coverUrl = ImageUrlResolver.displayUrl(group.groupUrl)
     val count = group.groupCount ?: 0
 
-    Surface(
-        shape = RoundedCornerShape(16.dp),
-        color = MaterialTheme.colorScheme.surface,
+    GlassCard(
+        shape = RoundedCornerShape(24.dp),
+        elevation = 8.dp,
+        containerColor = MaterialTheme.colorScheme.surfaceContainerHigh.copy(alpha = 0.88f),
         modifier = Modifier
             .fillMaxWidth()
-            .clip(RoundedCornerShape(16.dp))
             .bouncyClickable(onClick = onClick)
     ) {
         Box {
@@ -239,10 +244,25 @@ private fun GroupCard(group: GroupVO, onClick: () -> Unit) {
                 modifier = Modifier
                     .fillMaxWidth()
                     .aspectRatio(3f / 4f)
+                    .clip(RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp))
                     .background(MaterialTheme.colorScheme.surfaceVariant)
             )
 
-            // 潮流悬浮胶囊：图片张数置于右上角
+            // 弥散渐变阴影遮罩
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .aspectRatio(3f / 4f)
+                    .clip(RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp))
+                    .background(
+                        Brush.verticalGradient(
+                            colors = listOf(Color.Transparent, Color.Black.copy(alpha = 0.65f)),
+                            startY = 200f
+                        )
+                    )
+            )
+
+            // 悬浮胶囊：图片张数
             if (count > 0) {
                 XhsFloatingPill(
                     text = "$count",
@@ -253,27 +273,18 @@ private fun GroupCard(group: GroupVO, onClick: () -> Unit) {
                 )
             }
 
-            // 底部渐变蒙层 + 文字
-            Box(
+            // 底部悬浮图层文字
+            Text(
+                text = group.groupName ?: stringResource(R.string.group_unnamed),
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.Bold,
+                color = Color.White,
+                maxLines = 2,
+                overflow = TextOverflow.Ellipsis,
                 modifier = Modifier
-                    .fillMaxWidth()
-                    .align(Alignment.BottomCenter)
-                    .background(
-                        Brush.verticalGradient(
-                            colors = listOf(Color.Transparent, Color.Black.copy(alpha = 0.70f))
-                        )
-                    )
-                    .padding(horizontal = Spacing.md, vertical = Spacing.md)
-            ) {
-                Text(
-                    text = group.groupName ?: stringResource(R.string.group_unnamed),
-                    style = MaterialTheme.typography.titleSmall,
-                    fontWeight = FontWeight.SemiBold,
-                    color = Color.White,
-                    maxLines = 2,
-                    overflow = TextOverflow.Ellipsis
-                )
-            }
+                    .align(Alignment.BottomStart)
+                    .padding(Spacing.md)
+            )
         }
     }
 }

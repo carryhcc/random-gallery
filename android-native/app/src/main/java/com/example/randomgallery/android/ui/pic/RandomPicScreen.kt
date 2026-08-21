@@ -11,6 +11,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.FormatListBulleted
 import androidx.compose.material.icons.filled.Download
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material3.*
@@ -220,44 +221,81 @@ fun RandomPicScreen(
                         modifier = Modifier
                             .fillMaxWidth()
                             .align(Alignment.BottomCenter)
-                            .padding(Spacing.lg)
+                            .padding(horizontal = Spacing.lg, vertical = Spacing.xl)
                     ) {
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.SpaceBetween
+                        GlassSurface(
+                            shape = CircleShape,
+                            elevation = 10.dp,
+                            containerColor = MaterialTheme.colorScheme.surfaceContainerHigh.copy(alpha = 0.92f),
+                            modifier = Modifier.fillMaxWidth()
                         ) {
-                            if (currentPic?.groupId != null) {
-                                val gid = currentPic.groupId
-                                val fallbackName = stringResource(R.string.group_detail_fallback)
-                                FilledTonalButton(
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(horizontal = Spacing.md, vertical = Spacing.xs),
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.SpaceBetween
+                            ) {
+                                if (currentPic?.groupId != null) {
+                                    val gid = currentPic.groupId
+                                    val fallbackName = stringResource(R.string.group_detail_fallback)
+                                    TextButton(
+                                        onClick = {
+                                            scope.launch {
+                                                val name = viewModel.resolveGroupName(gid)
+                                                onGroupClick(gid, name ?: fallbackName)
+                                            }
+                                        },
+                                        modifier = Modifier.bouncyClickable {
+                                            scope.launch {
+                                                val name = viewModel.resolveGroupName(gid)
+                                                onGroupClick(gid, name ?: fallbackName)
+                                            }
+                                        }
+                                    ) {
+                                        Icon(
+                                            Icons.AutoMirrored.Filled.FormatListBulleted,
+                                            contentDescription = null,
+                                            tint = MaterialTheme.colorScheme.primary,
+                                            modifier = Modifier.size(18.dp)
+                                        )
+                                        Spacer(Modifier.width(6.dp))
+                                        Text(
+                                            stringResource(R.string.pic_view_group),
+                                            style = MaterialTheme.typography.labelLarge,
+                                            fontWeight = FontWeight.Bold,
+                                            color = MaterialTheme.colorScheme.primary
+                                        )
+                                    }
+                                } else {
+                                    Spacer(Modifier.width(1.dp))
+                                }
+
+                                IconButton(
                                     onClick = {
-                                        scope.launch {
-                                            val name = viewModel.resolveGroupName(gid)
-                                            onGroupClick(gid, name ?: fallbackName)
+                                        if (currentUrl.isNotBlank()) {
+                                            Downloader.enqueue(context, currentUrl, MediaKind.IMAGE)
+                                                .onSuccess { Messenger.show(context.getString(R.string.pic_download_queued)) }
+                                                .onFailure { e -> Messenger.show(e.message ?: "下载失败", isError = true) }
                                         }
                                     },
-                                    shape = RoundedCornerShape(24.dp)
+                                    modifier = Modifier
+                                        .size(44.dp)
+                                        .bouncyClickable {
+                                            if (currentUrl.isNotBlank()) {
+                                                Downloader.enqueue(context, currentUrl, MediaKind.IMAGE)
+                                                    .onSuccess { Messenger.show(context.getString(R.string.pic_download_queued)) }
+                                                    .onFailure { e -> Messenger.show(e.message ?: "下载失败", isError = true) }
+                                            }
+                                        }
                                 ) {
-                                    Text(stringResource(R.string.pic_view_group), fontWeight = FontWeight.Medium)
+                                    Icon(
+                                        Icons.Filled.Download,
+                                        contentDescription = stringResource(R.string.common_download),
+                                        tint = MaterialTheme.colorScheme.primary,
+                                        modifier = Modifier.size(24.dp)
+                                    )
                                 }
-                            } else {
-                                Spacer(Modifier.width(1.dp))
-                            }
-
-                            FloatingActionButton(
-                                onClick = {
-                                    if (currentUrl.isNotBlank()) {
-                                        Downloader.enqueue(context, currentUrl, MediaKind.IMAGE)
-                                            .onSuccess { Messenger.show(context.getString(R.string.pic_download_queued)) }
-                                            .onFailure { e -> Messenger.show(e.message ?: "下载失败", isError = true) }
-                                    }
-                                },
-                                containerColor = MaterialTheme.colorScheme.primary,
-                                contentColor = MaterialTheme.colorScheme.onPrimary,
-                                modifier = Modifier.size(48.dp)
-                            ) {
-                                Icon(Icons.Filled.Download, contentDescription = stringResource(R.string.common_download), modifier = Modifier.size(22.dp))
                             }
                         }
                     }

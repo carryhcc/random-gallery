@@ -152,12 +152,12 @@ private fun WorkCard(work: XhsWorkListVO, onClick: () -> Unit) {
     val imgCount = work.imageCount ?: 0
     val vidCount = work.gifCount ?: 0
 
-    Surface(
-        shape = RoundedCornerShape(16.dp),
-        color = MaterialTheme.colorScheme.surface,
+    GlassCard(
+        shape = RoundedCornerShape(24.dp),
+        elevation = 8.dp,
+        containerColor = MaterialTheme.colorScheme.surfaceContainerHigh.copy(alpha = 0.88f),
         modifier = Modifier
             .fillMaxWidth()
-            .clip(RoundedCornerShape(16.dp))
             .bouncyClickable(onClick = onClick)
     ) {
         Column {
@@ -169,10 +169,11 @@ private fun WorkCard(work: XhsWorkListVO, onClick: () -> Unit) {
                     modifier = Modifier
                         .fillMaxWidth()
                         .aspectRatio(ratio)
+                        .clip(RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp))
                         .background(MaterialTheme.colorScheme.surfaceVariant)
                 )
 
-                // 潮流悬浮胶囊图层：根据媒体类型展示
+                // 悬浮胶囊图层：根据媒体类型展示
                 Row(
                     modifier = Modifier
                         .align(Alignment.TopEnd)
@@ -192,7 +193,7 @@ private fun WorkCard(work: XhsWorkListVO, onClick: () -> Unit) {
                 Text(
                     text = work.workTitle ?: stringResource(R.string.dl_untitled),
                     style = MaterialTheme.typography.titleSmall,
-                    fontWeight = FontWeight.SemiBold,
+                    fontWeight = FontWeight.Bold,
                     maxLines = 2,
                     overflow = TextOverflow.Ellipsis
                 )

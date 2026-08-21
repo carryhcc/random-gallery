@@ -4,9 +4,13 @@ import android.app.Activity
 import android.net.Uri
 import androidx.activity.compose.BackHandler
 import androidx.compose.animation.animateColorAsState
+import androidx.compose.animation.core.Spring
+import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
+import androidx.compose.animation.scaleIn
+import androidx.compose.animation.scaleOut
 import androidx.compose.animation.slideInHorizontally
 import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.foundation.BorderStroke
@@ -173,10 +177,10 @@ fun AppNavHost() {
                     navController = navController,
                     startDestination = Routes.HOME,
                     modifier = Modifier.padding(innerPadding),
-                    enterTransition = { slideInHorizontally(initialOffsetX = { it }) + fadeIn() },
-                    exitTransition = { slideOutHorizontally(targetOffsetX = { -it / 3 }) + fadeOut() },
-                    popEnterTransition = { slideInHorizontally(initialOffsetX = { -it / 3 }) + fadeIn() },
-                    popExitTransition = { slideOutHorizontally(targetOffsetX = { it }) + fadeOut() }
+                    enterTransition = { slideInHorizontally(initialOffsetX = { it / 4 }, animationSpec = spring(stiffness = Spring.StiffnessMediumLow)) + fadeIn(tween(280)) + scaleIn(initialScale = 0.95f) },
+                    exitTransition = { slideOutHorizontally(targetOffsetX = { -it / 6 }, animationSpec = spring(stiffness = Spring.StiffnessMediumLow)) + fadeOut(tween(220)) + scaleOut(targetScale = 0.96f) },
+                    popEnterTransition = { slideInHorizontally(initialOffsetX = { -it / 6 }, animationSpec = spring(stiffness = Spring.StiffnessMediumLow)) + fadeIn(tween(280)) + scaleIn(initialScale = 0.96f) },
+                    popExitTransition = { slideOutHorizontally(targetOffsetX = { it / 4 }, animationSpec = spring(stiffness = Spring.StiffnessMediumLow)) + fadeOut(tween(220)) + scaleOut(targetScale = 0.95f) }
                 ) {
                 composable(Routes.HOME) {
                     val vm: HomeViewModel = viewModel { HomeViewModel(context.applicationContext) }
