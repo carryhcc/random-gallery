@@ -3,21 +3,36 @@ package com.example.randomgallery.android.ui
 import android.app.Activity
 import android.net.Uri
 import androidx.activity.compose.BackHandler
+import androidx.compose.animation.animateColorAsState
+import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.slideInHorizontally
 import androidx.compose.animation.slideOutHorizontally
+import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.NavigationRail
 import androidx.compose.material3.NavigationRailItem
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -26,6 +41,11 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.dp
+import com.example.randomgallery.android.ui.common.bouncyClickable
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
@@ -139,18 +159,13 @@ fun AppNavHost() {
                 modifier = Modifier.weight(1f),
                 contentWindowInsets = WindowInsets(0, 0, 0, 0),
                 bottomBar = {
-                    // 窄屏模式下展示底部 NavigationBar
+                    // 窄屏模式下展示底部 macOS / iOS 悬浮长条胶囊 NavigationBar
                     if (!isWideScreen && showBottomBar) {
-                        NavigationBar {
-                            bottomTabs.forEach { tab ->
-                                NavigationBarItem(
-                                    selected = currentBase == tab.route,
-                                    onClick = { navController.switchTab(tab.route) },
-                                    icon = { Icon(painterResource(tab.iconRes), contentDescription = null) },
-                                    label = { Text(stringResource(tab.labelRes)) }
-                                )
-                            }
-                        }
+                        FloatingCapsuleNavigationBar(
+                            tabs = bottomTabs,
+                            currentRoute = currentBase,
+                            onTabSelected = { route -> navController.switchTab(route) }
+                        )
                     }
                 }
             ) { innerPadding ->
@@ -317,4 +332,102 @@ private fun NavHostController.toDownloadList(authorId: String? = null, keyword: 
     }
     val suffix = if (params.isEmpty()) "" else "?" + params.joinToString("&")
     navigate("${Routes.DOWNLOAD_LIST}$suffix")
+}
+
+/**
+ * iOS / macOS 26 风格悬浮胶囊底栏 (Floating Capsule Navigation Bar)
+ * 悬浮长条、两端半圆 (CircleShape)、高质感阴影与动态淡入高亮
+ */
+@Composable
+private fun FloatingCapsuleNavigationBar(
+    tabs: List<BottomTab>,
+    currentRoute: String?,
+    onTabSelected: (String) -> Unit,
+    modifier: Modifier = Modifier
+) {
+    Box(
+        modifier = modifier
+            .fillMaxWidth()
+            .navigationBarsPadding()
+            .padding(horizontal = 20.dp, vertical = 8.dp),
+        contentAlignment = Alignment.Center
+    ) {
+        Surface(
+            shape = CircleShape,
+            color = MaterialTheme.colorScheme.surfaceContainerHigh.copy(alpha = 0.94f),
+            contentColor = MaterialTheme.colorScheme.onSurface,
+            tonalElevation = 6.dp,
+            shadowElevation = 12.dp,
+            border = BorderStroke(
+                width = 1.dp,
+                color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.35f)
+            ),
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(62.dp)
+        ) {
+            Row(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(horizontal = 8.dp, vertical = 4.dp),
+                horizontalArrangement = Arrangement.SpaceEvenly,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                tabs.forEach { tab ->
+                    val selected = currentRoute == tab.route
+
+                    val activeBgColor by animateColorAsState(
+                        targetValue = if (selected) {
+                            MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.9f)
+                        } else {
+                            Color.Transparent
+                        },
+                        animationSpec = tween(durationMillis = 220),
+                        label = "capsuleTabBg"
+                    )
+
+                    val activeContentColor by animateColorAsState(
+                        targetValue = if (selected) {
+                            MaterialTheme.colorScheme.onPrimaryContainer
+                        } else {
+                            MaterialTheme.colorScheme.onSurfaceVariant
+                        },
+                        animationSpec = tween(durationMillis = 220),
+                        label = "capsuleTabContent"
+                    )
+
+                    Box(
+                        modifier = Modifier
+                            .weight(1f)
+                            .fillMaxHeight()
+                            .padding(horizontal = 3.dp, vertical = 2.dp)
+                            .clip(CircleShape)
+                            .background(activeBgColor)
+                            .bouncyClickable { onTabSelected(tab.route) },
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Column(
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                            verticalArrangement = Arrangement.Center
+                        ) {
+                            Icon(
+                                painter = painterResource(tab.iconRes),
+                                contentDescription = stringResource(tab.labelRes),
+                                tint = activeContentColor,
+                                modifier = Modifier.size(20.dp)
+                            )
+                            Spacer(modifier = Modifier.height(2.dp))
+                            Text(
+                                text = stringResource(tab.labelRes),
+                                style = MaterialTheme.typography.labelSmall,
+                                fontWeight = if (selected) FontWeight.Bold else FontWeight.Medium,
+                                color = activeContentColor,
+                                maxLines = 1
+                            )
+                        }
+                    }
+                }
+            }
+        }
+    }
 }
