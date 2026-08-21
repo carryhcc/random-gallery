@@ -82,56 +82,21 @@ fun GroupListScreen(
                 exit = shrinkVertically()
             ) {
                 Column {
-                    Box(
+                    Row(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .background(MaterialTheme.colorScheme.surface)
-                            .padding(horizontal = Spacing.md, vertical = Spacing.sm)
+                            .padding(horizontal = Spacing.md, vertical = Spacing.xs),
+                        verticalAlignment = Alignment.CenterVertically
                     ) {
-                        Surface(
-                            shape = RoundedCornerShape(24.dp),
-                            color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.55f),
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .height(40.dp)
-                        ) {
-                            Row(
-                                modifier = Modifier
-                                    .fillMaxSize()
-                                    .padding(horizontal = Spacing.md),
-                                verticalAlignment = Alignment.CenterVertically,
-                                horizontalArrangement = Arrangement.spacedBy(Spacing.xs)
-                            ) {
-                                Icon(
-                                    imageVector = Icons.Filled.Search,
-                                    contentDescription = stringResource(R.string.common_search),
-                                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                                    modifier = Modifier.size(18.dp)
-                                )
-                                BasicTextField(
-                                    value = keyword,
-                                    onValueChange = {
-                                        keyword = it
-                                        if (it.isBlank()) viewModel.query(null)
-                                    },
-                                    singleLine = true,
-                                    textStyle = MaterialTheme.typography.bodyMedium.copy(color = MaterialTheme.colorScheme.onSurface),
-                                    keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
-                                    keyboardActions = KeyboardActions(onSearch = { viewModel.query(keyword.trim().ifBlank { null }) }),
-                                    modifier = Modifier.weight(1f),
-                                    decorationBox = { innerTextField ->
-                                        Box(contentAlignment = Alignment.CenterStart) {
-                                            if (keyword.isBlank()) {
-                                                Text(
-                                                    text = stringResource(R.string.group_search_hint),
-                                                    style = MaterialTheme.typography.bodySmall,
-                                                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                                                )
-                                            }
-                                            innerTextField()
-                                        }
-                                    }
-                                )
+                        LiquidGlassInput(
+                            value = keyword,
+                            onValueChange = {
+                                keyword = it
+                                if (it.isBlank()) viewModel.query(null)
+                            },
+                            placeholder = stringResource(R.string.group_search_hint),
+                            leadingIcon = Icons.Filled.Search,
+                            trailingIcon = {
                                 if (keyword.isNotBlank()) {
                                     IconButton(
                                         onClick = {
@@ -148,8 +113,10 @@ fun GroupListScreen(
                                         )
                                     }
                                 }
-                            }
-                        }
+                            },
+                            onSearch = { viewModel.query(keyword.trim().ifBlank { null }) },
+                            modifier = Modifier.fillMaxWidth()
+                        )
                     }
                     XhsDivider()
                 }
@@ -176,8 +143,10 @@ fun GroupListScreen(
                                 horizontalArrangement = Arrangement.spacedBy(Spacing.md),
                                 modifier = Modifier.fillMaxSize()
                             ) {
-                                itemsIndexed(items = groups, key = { index, group -> group.groupId ?: "idx_$index" }) { _, group ->
-                                    GroupCard(group = group, onClick = { onGroupClick(group) })
+                                itemsIndexed(items = groups, key = { index, group -> group.groupId ?: "idx_$index" }) { index, group ->
+                                    StaggeredItemEntrance(index = index) {
+                                        GroupCard(group = group, onClick = { onGroupClick(group) })
+                                    }
                                 }
                                 item(span = { GridItemSpan(2) }) {
                                     Spacer(Modifier.height(Spacing.md))

@@ -124,13 +124,15 @@ fun DownloadListScreen(
                             horizontalArrangement = Arrangement.spacedBy(Spacing.md),
                             modifier = Modifier.fillMaxSize()
                         ) {
-                            itemsIndexed(items = works, key = { index, work -> work.workId ?: work.id ?: "idx_$index" }) { _, work ->
-                                WorkCard(work = work, onClick = {
-                                    onWorkClick(
-                                        work.workId ?: "",
-                                        ImageUrlResolver.displayUrl(work.coverImageUrl)
-                                    )
-                                })
+                            itemsIndexed(items = works, key = { index, work -> work.workId ?: work.id ?: "idx_$index" }) { index, work ->
+                                com.example.randomgallery.android.ui.common.StaggeredItemEntrance(index = index) {
+                                    WorkCard(work = work, onClick = {
+                                        onWorkClick(
+                                            work.workId ?: "",
+                                            ImageUrlResolver.displayUrl(work.coverImageUrl)
+                                        )
+                                    })
+                                }
                             }
                             if (loading) {
                                 item(span = StaggeredGridItemSpan.FullLine) {

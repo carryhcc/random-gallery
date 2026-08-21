@@ -261,3 +261,150 @@ fun XhsFloatingPill(
     }
 }
 
+/**
+ * iOS 26 胶囊圆角液态玻璃按钮 (LiquidGlassButton)
+ * 具备菲涅尔边框高光、胶囊 Shape (CircleShape)、弹性微按压与通透色调
+ */
+@Composable
+fun LiquidGlassButton(
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+    enabled: Boolean = true,
+    isPrimary: Boolean = true,
+    content: @Composable RowScope.() -> Unit
+) {
+    val containerColor = if (isPrimary) {
+        MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.92f)
+    } else {
+        MaterialTheme.colorScheme.surfaceContainerHigh.copy(alpha = 0.80f)
+    }
+
+    val contentColor = if (isPrimary) {
+        MaterialTheme.colorScheme.onPrimaryContainer
+    } else {
+        MaterialTheme.colorScheme.onSurface
+    }
+
+    Surface(
+        shape = CircleShape,
+        color = containerColor,
+        contentColor = contentColor,
+        shadowElevation = if (isPrimary) 6.dp else 3.dp,
+        border = BorderStroke(1.dp, fresnelBorderBrush()),
+        modifier = modifier.bouncyClickable(enabled = enabled, onClick = onClick)
+    ) {
+        Row(
+            modifier = Modifier.padding(horizontal = 18.dp, vertical = 10.dp),
+            horizontalArrangement = Arrangement.Center,
+            verticalAlignment = Alignment.CenterVertically,
+            content = content
+        )
+    }
+}
+
+/**
+ * iOS 26 胶囊圆角液态玻璃输入框 (LiquidGlassInput)
+ */
+@Composable
+fun LiquidGlassInput(
+    value: String,
+    onValueChange: (String) -> Unit,
+    placeholder: String,
+    modifier: Modifier = Modifier,
+    leadingIcon: androidx.compose.ui.graphics.vector.ImageVector? = null,
+    trailingIcon: @Composable (() -> Unit)? = null,
+    onSearch: (() -> Unit)? = null
+) {
+    Surface(
+        shape = CircleShape,
+        color = MaterialTheme.colorScheme.surfaceContainerHigh.copy(alpha = 0.85f),
+        contentColor = MaterialTheme.colorScheme.onSurface,
+        border = BorderStroke(1.dp, fresnelBorderBrush()),
+        shadowElevation = 4.dp,
+        modifier = modifier
+    ) {
+        Row(
+            modifier = Modifier.padding(horizontal = 14.dp, vertical = 8.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            if (leadingIcon != null) {
+                Icon(
+                    imageVector = leadingIcon,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.size(20.dp)
+                )
+            }
+            androidx.compose.foundation.text.BasicTextField(
+                value = value,
+                onValueChange = onValueChange,
+                singleLine = true,
+                textStyle = MaterialTheme.typography.bodyMedium.copy(color = MaterialTheme.colorScheme.onSurface, fontWeight = FontWeight.Medium),
+                keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(imeAction = androidx.compose.ui.text.input.ImeAction.Search),
+                keyboardActions = androidx.compose.foundation.text.KeyboardActions(onSearch = { onSearch?.invoke() }),
+                modifier = Modifier.weight(1f),
+                decorationBox = { innerTextField ->
+                    Box(contentAlignment = Alignment.CenterStart) {
+                        if (value.isBlank()) {
+                            Text(
+                                text = placeholder,
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)
+                            )
+                        }
+                        innerTextField()
+                    }
+                }
+            )
+            if (trailingIcon != null) {
+                trailingIcon()
+            }
+        }
+    }
+}
+
+/**
+ * iOS 26 列表/网格条目滑入渐显入场动画 (Staggered Entrance Animation)
+ */
+@Composable
+fun StaggeredItemEntrance(
+    index: Int,
+    modifier: Modifier = Modifier,
+    content: @Composable () -> Unit
+) {
+    var visible by remember { mutableStateOf(false) }
+    LaunchedEffect(Unit) {
+        kotlinx.coroutines.delay((index.coerceAtMost(8) * 40).toLong())
+        visible = true
+    }
+
+    val alpha by animateFloatAsState(
+        targetValue = if (visible) 1f else 0f,
+        animationSpec = tween(durationMillis = 320, easing = EaseOutCubic),
+        label = "itemAlpha"
+    )
+    val translateY by animateFloatAsState(
+        targetValue = if (visible) 0f else 36f,
+        animationSpec = spring(stiffness = Spring.StiffnessMediumLow, dampingRatio = Spring.DampingRatioLowBouncy),
+        label = "itemTranslateY"
+    )
+    val scale by animateFloatAsState(
+        targetValue = if (visible) 1f else 0.93f,
+        animationSpec = tween(durationMillis = 320, easing = EaseOutCubic),
+        label = "itemScale"
+    )
+
+    Box(
+        modifier = modifier
+            .graphicsLayer(
+                alpha = alpha,
+                translationY = translateY,
+                scaleX = scale,
+                scaleY = scale
+            )
+    ) {
+        content()
+    }
+}
+

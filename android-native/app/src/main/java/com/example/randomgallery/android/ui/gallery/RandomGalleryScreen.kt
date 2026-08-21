@@ -157,8 +157,10 @@ fun RandomGalleryScreen(
                             itemsIndexed(
                                 items = groups,
                                 key = { index, item -> item.groupId ?: -index.toLong() }
-                            ) { _, group ->
-                                FeedCard(group = group, ratioCache = ratioCache, onClick = { onGroupClick(group) })
+                            ) { index, group ->
+                                com.example.randomgallery.android.ui.common.StaggeredItemEntrance(index = index) {
+                                    FeedCard(group = group, ratioCache = ratioCache, onClick = { onGroupClick(group) })
+                                }
                             }
                         }
                     }
