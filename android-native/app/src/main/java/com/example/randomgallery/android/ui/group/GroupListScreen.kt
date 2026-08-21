@@ -13,11 +13,16 @@ import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.lazy.grid.itemsIndexed
 import androidx.compose.foundation.lazy.grid.rememberLazyGridState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.BasicTextField
+import androidx.compose.foundation.text.KeyboardActions
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ChevronLeft
 import androidx.compose.material.icons.filled.ChevronRight
+import androidx.compose.material.icons.filled.Clear
 import androidx.compose.material.icons.filled.Image
 import androidx.compose.material.icons.filled.Search
+import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -39,6 +44,7 @@ import com.example.randomgallery.android.ui.common.*
 import com.example.randomgallery.android.ui.theme.*
 import com.example.randomgallery.android.util.ImageUrlResolver
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun GroupListScreen(
     viewModel: GroupListViewModel,
@@ -47,6 +53,7 @@ fun GroupListScreen(
 ) {
     val groups by viewModel.groups.collectAsStateWithLifecycle()
     val pageInfo by viewModel.pageInfo.collectAsStateWithLifecycle()
+    val loading by viewModel.loading.collectAsStateWithLifecycle()
     val error by viewModel.error.collectAsStateWithLifecycle()
 
     var keyword by remember { mutableStateOf("") }
@@ -74,32 +81,73 @@ fun GroupListScreen(
                 exit = shrinkVertically()
             ) {
                 Column {
-                    Row(
+                    Box(
                         modifier = Modifier
                             .fillMaxWidth()
                             .background(MaterialTheme.colorScheme.surface)
-                            .padding(horizontal = Spacing.lg, vertical = Spacing.xs),
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(Spacing.sm)
+                            .padding(horizontal = Spacing.md, vertical = Spacing.sm)
                     ) {
-                        OutlinedTextField(
-                            value = keyword,
-                            onValueChange = { keyword = it },
-                            placeholder = { Text(stringResource(R.string.group_search_hint), color = MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.bodySmall) },
-                            singleLine = true,
-                            textStyle = MaterialTheme.typography.bodySmall,
-                            modifier = Modifier.weight(1f),
+                        Surface(
                             shape = RoundedCornerShape(24.dp),
-                            colors = OutlinedTextFieldDefaults.colors(
-                                focusedBorderColor = MaterialTheme.colorScheme.primary,
-                                unfocusedBorderColor = MaterialTheme.colorScheme.outline
-                            )
-                        )
-                        IconButton(
-                            onClick = { viewModel.query(keyword.trim().ifBlank { null }) },
-                            colors = IconButtonDefaults.iconButtonColors(containerColor = MaterialTheme.colorScheme.primary)
+                            color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.55f),
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(40.dp)
                         ) {
-                            Icon(Icons.Filled.Search, contentDescription = stringResource(R.string.common_search), tint = MaterialTheme.colorScheme.onPrimary, modifier = Modifier.size(18.dp))
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxSize()
+                                    .padding(horizontal = Spacing.md),
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(Spacing.xs)
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Filled.Search,
+                                    contentDescription = stringResource(R.string.common_search),
+                                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    modifier = Modifier.size(18.dp)
+                                )
+                                BasicTextField(
+                                    value = keyword,
+                                    onValueChange = {
+                                        keyword = it
+                                        if (it.isBlank()) viewModel.query(null)
+                                    },
+                                    singleLine = true,
+                                    textStyle = MaterialTheme.typography.bodyMedium.copy(color = MaterialTheme.colorScheme.onSurface),
+                                    keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
+                                    keyboardActions = KeyboardActions(onSearch = { viewModel.query(keyword.trim().ifBlank { null }) }),
+                                    modifier = Modifier.weight(1f),
+                                    decorationBox = { innerTextField ->
+                                        Box(contentAlignment = Alignment.CenterStart) {
+                                            if (keyword.isBlank()) {
+                                                Text(
+                                                    text = stringResource(R.string.group_search_hint),
+                                                    style = MaterialTheme.typography.bodySmall,
+                                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                                )
+                                            }
+                                            innerTextField()
+                                        }
+                                    }
+                                )
+                                if (keyword.isNotBlank()) {
+                                    IconButton(
+                                        onClick = {
+                                            keyword = ""
+                                            viewModel.query(null)
+                                        },
+                                        modifier = Modifier.size(24.dp)
+                                    ) {
+                                        Icon(
+                                            imageVector = Icons.Filled.Clear,
+                                            contentDescription = null,
+                                            tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                                            modifier = Modifier.size(16.dp)
+                                        )
+                                    }
+                                }
+                            }
                         }
                     }
                     XhsDivider()
@@ -111,22 +159,28 @@ fun GroupListScreen(
                 when {
                     groups.isEmpty() && error != null ->
                         XhsEmptyState(error!!, onRetry = { viewModel.query(null) }, modifier = Modifier.fillMaxSize())
-                    groups.isEmpty() ->
+                    groups.isEmpty() && loading ->
                         XhsLoadingBox(Modifier.fillMaxSize())
                     else ->
-                        LazyVerticalGrid(
-                            state = gridState,
-                            columns = GridCells.Fixed(2),
-                            contentPadding = PaddingValues(Spacing.md),
-                            verticalArrangement = Arrangement.spacedBy(Spacing.md),
-                            horizontalArrangement = Arrangement.spacedBy(Spacing.md),
+                        androidx.compose.material3.pulltorefresh.PullToRefreshBox(
+                            isRefreshing = loading && groups.isNotEmpty(),
+                            onRefresh = { viewModel.query(keyword.trim().ifBlank { null }, pageIndex = 1) },
                             modifier = Modifier.fillMaxSize()
                         ) {
-                            itemsIndexed(items = groups, key = { index, group -> group.groupId ?: "idx_$index" }) { _, group ->
-                                GroupCard(group = group, onClick = { onGroupClick(group) })
-                            }
-                            item(span = { GridItemSpan(2) }) {
-                                Spacer(Modifier.height(Spacing.md))
+                            LazyVerticalGrid(
+                                state = gridState,
+                                columns = GridCells.Fixed(2),
+                                contentPadding = PaddingValues(Spacing.md),
+                                verticalArrangement = Arrangement.spacedBy(Spacing.md),
+                                horizontalArrangement = Arrangement.spacedBy(Spacing.md),
+                                modifier = Modifier.fillMaxSize()
+                            ) {
+                                itemsIndexed(items = groups, key = { index, group -> group.groupId ?: "idx_$index" }) { _, group ->
+                                    GroupCard(group = group, onClick = { onGroupClick(group) })
+                                }
+                                item(span = { GridItemSpan(2) }) {
+                                    Spacer(Modifier.height(Spacing.md))
+                                }
                             }
                         }
                 }
@@ -166,14 +220,15 @@ fun GroupListScreen(
 @Composable
 private fun GroupCard(group: GroupVO, onClick: () -> Unit) {
     val coverUrl = ImageUrlResolver.displayUrl(group.groupUrl)
+    val count = group.groupCount ?: 0
 
     Surface(
-        shape = RoundedCornerShape(14.dp),
+        shape = RoundedCornerShape(16.dp),
         color = MaterialTheme.colorScheme.surface,
         modifier = Modifier
             .fillMaxWidth()
-            .clip(RoundedCornerShape(14.dp))
-            .clickable(onClick = onClick)
+            .clip(RoundedCornerShape(16.dp))
+            .bouncyClickable(onClick = onClick)
     ) {
         Box {
             // 封面图
@@ -187,6 +242,17 @@ private fun GroupCard(group: GroupVO, onClick: () -> Unit) {
                     .background(MaterialTheme.colorScheme.surfaceVariant)
             )
 
+            // 潮流悬浮胶囊：图片张数置于右上角
+            if (count > 0) {
+                XhsFloatingPill(
+                    text = "$count",
+                    icon = Icons.Filled.Image,
+                    modifier = Modifier
+                        .align(Alignment.TopEnd)
+                        .padding(Spacing.sm)
+                )
+            }
+
             // 底部渐变蒙层 + 文字
             Box(
                 modifier = Modifier
@@ -194,42 +260,19 @@ private fun GroupCard(group: GroupVO, onClick: () -> Unit) {
                     .align(Alignment.BottomCenter)
                     .background(
                         Brush.verticalGradient(
-                            colors = listOf(Color.Transparent, Color.Black.copy(alpha = 0.72f))
+                            colors = listOf(Color.Transparent, Color.Black.copy(alpha = 0.70f))
                         )
                     )
-                    .padding(horizontal = Spacing.sm, vertical = Spacing.md)
+                    .padding(horizontal = Spacing.md, vertical = Spacing.md)
             ) {
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(Spacing.xs)
-                ) {
-                    Text(
-                        text = group.groupName ?: stringResource(R.string.group_unnamed),
-                        style = MaterialTheme.typography.bodySmall,
-                        fontWeight = FontWeight.SemiBold,
-                        color = Color.White,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis,
-                        modifier = Modifier.weight(1f)
-                    )
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(2.dp)
-                    ) {
-                        Icon(
-                            Icons.Filled.Image,
-                            contentDescription = null,
-                            tint = Color.White.copy(alpha = 0.85f),
-                            modifier = Modifier.size(11.dp)
-                        )
-                        Text(
-                            text = "${group.groupCount ?: 0}",
-                            style = MaterialTheme.typography.labelSmall,
-                            fontSize = 11.sp,
-                            color = Color.White.copy(alpha = 0.85f)
-                        )
-                    }
-                }
+                Text(
+                    text = group.groupName ?: stringResource(R.string.group_unnamed),
+                    style = MaterialTheme.typography.titleSmall,
+                    fontWeight = FontWeight.SemiBold,
+                    color = Color.White,
+                    maxLines = 2,
+                    overflow = TextOverflow.Ellipsis
+                )
             }
         }
     }

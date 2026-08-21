@@ -102,7 +102,7 @@ fun DownloadDetailScreen(
 
     var showDeleteWorkDialog by remember { mutableStateOf(false) }
     var deleteTargetId by remember { mutableStateOf<Long?>(null) }
-    var fullScreenUrl by remember { mutableStateOf<String?>(null) }
+    var fullScreenInitialPage by remember { mutableIntStateOf(-1) }
 
     LaunchedEffect(workId) { viewModel.load(workId) }
     LaunchedEffect(Unit) {
@@ -278,7 +278,7 @@ fun DownloadDetailScreen(
                                             .onSuccess { Messenger.show(context.getString(R.string.dd_img_downloading)) }
                                             .onFailure { e -> Messenger.show(e.message ?: "下载失败", isError = true) }
                                     },
-                                    onImageClick = { url -> fullScreenUrl = url }
+                                    onImageClick = { page -> fullScreenInitialPage = page }
                                 ) { media, _ ->
                                     ImagePage(url = media.url, fullSizePx = pagerFullSizePx, onRefetch = { viewModel.refetchWork(workId, base?.workUrl) })
                                 }
@@ -409,35 +409,105 @@ fun DownloadDetailScreen(
         }
     }
 
-    // ── 全屏大图查看 ──────────────────────────────────────────────────
-    fullScreenUrl?.let { url ->
-        Dialog(
-            onDismissRequest = { fullScreenUrl = null },
-            properties = DialogProperties(usePlatformDefaultWidth = false)
-        ) {
-            Box(
-                Modifier
-                    .fillMaxSize()
-                    .background(Color.Black)
-                    .clickable { fullScreenUrl = null }
+    // ── 全屏大图查看（支持左右滑动切换所有图片）────────────────────────────────
+    if (fullScreenInitialPage >= 0 && imageMedia.isNotEmpty()) {
+        key(fullScreenInitialPage) {
+            val fullScreenPagerState = rememberPagerState(
+                initialPage = fullScreenInitialPage.coerceIn(0, imageMedia.size - 1),
+                pageCount = { imageMedia.size }
+            )
+            Dialog(
+                onDismissRequest = { fullScreenInitialPage = -1 },
+                properties = DialogProperties(usePlatformDefaultWidth = false)
             ) {
-                AsyncImage(
-                    model = ImageRequest.Builder(context).data(url).crossfade(true).build(),
-                    contentDescription = null,
-                    contentScale = ContentScale.Fit,
-                    modifier = Modifier.fillMaxSize()
-                )
-                // 关闭提示
                 Box(
                     Modifier
-                        .align(Alignment.TopEnd)
-                        .padding(Spacing.lg)
-                        .size(36.dp)
-                        .clip(CircleShape)
-                        .background(Color.Black.copy(alpha = 0.5f)),
-                    contentAlignment = Alignment.Center
+                        .fillMaxSize()
+                        .background(Color.Black)
                 ) {
-                    Icon(Icons.Filled.Close, null, tint = Color.White, modifier = Modifier.size(20.dp))
+                    HorizontalPager(
+                        state = fullScreenPagerState,
+                        modifier = Modifier.fillMaxSize(),
+                        pageSpacing = 12.dp
+                    ) { page ->
+                        val media = imageMedia.getOrNull(page)
+                        if (media != null) {
+                            Box(
+                                modifier = Modifier
+                                    .fillMaxSize()
+                                    .clickable { fullScreenInitialPage = -1 },
+                                contentAlignment = Alignment.Center
+                            ) {
+                                AsyncImage(
+                                    model = ImageRequest.Builder(context)
+                                        .data(media.url)
+                                        .crossfade(true)
+                                        .build(),
+                                    contentDescription = null,
+                                    contentScale = ContentScale.Fit,
+                                    modifier = Modifier.fillMaxSize()
+                                )
+                            }
+                        }
+                    }
+
+                    // 顶部页码指示器 + 关闭按钮
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .align(Alignment.TopCenter)
+                            .statusBarsPadding()
+                            .padding(horizontal = Spacing.lg, vertical = Spacing.md),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Surface(
+                            shape = CircleShape,
+                            color = Color.Black.copy(alpha = 0.5f)
+                        ) {
+                            Text(
+                                text = "${fullScreenPagerState.currentPage + 1} / ${imageMedia.size}",
+                                style = MaterialTheme.typography.labelMedium,
+                                color = Color.White,
+                                modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp)
+                            )
+                        }
+
+                        IconButton(
+                            onClick = { fullScreenInitialPage = -1 }
+                        ) {
+                            Box(
+                                Modifier
+                                    .size(36.dp)
+                                    .clip(CircleShape)
+                                    .background(Color.Black.copy(alpha = 0.5f)),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Icon(Icons.Filled.Close, contentDescription = null, tint = Color.White, modifier = Modifier.size(20.dp))
+                            }
+                        }
+                    }
+
+                    // 底部下载按钮
+                    val currentMedia = imageMedia.getOrNull(fullScreenPagerState.currentPage)
+                    if (currentMedia != null) {
+                        FloatingActionButton(
+                            onClick = {
+                                Downloader.enqueue(context, currentMedia.url, MediaKind.IMAGE)
+                                    .onSuccess { Messenger.show(context.getString(R.string.dd_img_downloading)) }
+                                    .onFailure { e -> Messenger.show(e.message ?: "下载失败", isError = true) }
+                            },
+                            containerColor = MaterialTheme.colorScheme.primary,
+                            contentColor = MaterialTheme.colorScheme.onPrimary,
+                            modifier = Modifier
+                                .align(Alignment.BottomEnd)
+                                .navigationBarsPadding()
+                                .padding(Spacing.lg)
+                                .size(48.dp)
+                        ) {
+                            Icon(Icons.Filled.FileDownload, contentDescription = stringResource(R.string.common_download), modifier = Modifier.size(22.dp))
+                        }
+                    }
                 }
             }
         }
@@ -478,7 +548,7 @@ private fun MediaPagerBox(
     pagerState: PagerState,
     onDelete: (Long) -> Unit,
     onDownload: (String) -> Unit,
-    onImageClick: ((String) -> Unit)?,
+    onImageClick: ((Int) -> Unit)?,
     pageContent: @Composable BoxScope.(media: MediaItem2, page: Int) -> Unit
 ) {
     Box(
@@ -502,7 +572,7 @@ private fun MediaPagerBox(
                     .clip(RoundedCornerShape(16.dp))
                     .background(MaterialTheme.colorScheme.surface)
                     .then(
-                        if (onImageClick != null) Modifier.clickable { onImageClick(media.url) }
+                        if (onImageClick != null) Modifier.clickable { onImageClick(page) }
                         else Modifier
                     )
             ) {
@@ -676,8 +746,9 @@ private fun BoxScope.MediaShimmer(dark: Boolean) {
         animationSpec = infiniteRepeatable(tween(1000, easing = LinearEasing), RepeatMode.Restart),
         label = "shimmer_x"
     )
-    val colors = if (dark) listOf(Color(0xFF1C1C1C), Color(0xFF2E2E2E), Color(0xFF3A3A3A), Color(0xFF2E2E2E), Color(0xFF1C1C1C))
-    else listOf(Color(0xFFF0F0F0), Color(0xFFE4E4E4), Color(0xFFD8D8D8), Color(0xFFE4E4E4), Color(0xFFF0F0F0))
+    val base = MaterialTheme.colorScheme.surfaceVariant
+    val highlight = MaterialTheme.colorScheme.surfaceContainerHigh
+    val colors = listOf(base, highlight, base)
     Box(
         Modifier.fillMaxSize().background(
             Brush.linearGradient(colors, start = Offset(offset * 800f, 0f), end = Offset((offset + 1f) * 800f, 400f))

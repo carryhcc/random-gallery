@@ -9,6 +9,7 @@ import androidx.compose.animation.slideInHorizontally
 import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Icon
@@ -136,6 +137,7 @@ fun AppNavHost() {
 
             Scaffold(
                 modifier = Modifier.weight(1f),
+                contentWindowInsets = WindowInsets(0, 0, 0, 0),
                 bottomBar = {
                     // 窄屏模式下展示底部 NavigationBar
                     if (!isWideScreen && showBottomBar) {

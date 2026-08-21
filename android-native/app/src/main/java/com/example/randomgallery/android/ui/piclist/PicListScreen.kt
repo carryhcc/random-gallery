@@ -1,6 +1,7 @@
 package com.example.randomgallery.android.ui.piclist
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.staggeredgrid.*
 import androidx.compose.foundation.shape.CircleShape
@@ -57,6 +58,8 @@ fun PicListScreen(
 
     val decodedGroupName = remember(groupName) { android.net.Uri.decode(groupName) }
 
+    var previewUrl by remember { mutableStateOf<String?>(null) }
+
     Scaffold(
         containerColor = MaterialTheme.colorScheme.background,
         topBar = { XhsTopBar(title = decodedGroupName.ifBlank { stringResource(R.string.group_detail_fallback) }, onBack = onBack) }
@@ -87,8 +90,9 @@ fun PicListScreen(
                                 modifier = Modifier
                                     .fillMaxWidth()
                                     .aspectRatio(3f / 4f)
-                                    .clip(RoundedCornerShape(10.dp))
+                                    .clip(RoundedCornerShape(12.dp))
                                     .background(MaterialTheme.colorScheme.surfaceVariant)
+                                    .bouncyClickable(onClick = { if (!url.isNullOrBlank()) previewUrl = url })
                             ) {
                                 SmartImage(
                                     url = url,
@@ -136,6 +140,28 @@ fun PicListScreen(
                         }
                     }
                 }
+            }
+        }
+    }
+
+    // 浮窗大图快速预览 (Quick Preview Dialog)
+    if (!previewUrl.isNullOrBlank()) {
+        androidx.compose.ui.window.Dialog(onDismissRequest = { previewUrl = null }) {
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth(0.92f)
+                    .aspectRatio(3f / 4f)
+                    .clip(RoundedCornerShape(20.dp))
+                    .background(Color.Black.copy(alpha = 0.90f))
+                    .clickable { previewUrl = null },
+                contentAlignment = Alignment.Center
+            ) {
+                coil.compose.AsyncImage(
+                    model = previewUrl,
+                    contentDescription = null,
+                    contentScale = ContentScale.Fit,
+                    modifier = Modifier.fillMaxSize()
+                )
             }
         }
     }

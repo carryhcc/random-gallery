@@ -1,8 +1,13 @@
 package com.example.randomgallery.android.ui.pic
 
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
-import androidx.compose.foundation.gestures.detectTapGestures
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.pager.HorizontalPager
+import androidx.compose.foundation.pager.rememberPagerState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
@@ -12,12 +17,10 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.compose.ui.Alignment
-import kotlinx.coroutines.launch
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
@@ -29,13 +32,13 @@ import coil.request.ImageRequest
 import com.example.randomgallery.android.R
 import com.example.randomgallery.android.ui.common.*
 import com.example.randomgallery.android.ui.theme.*
-import com.example.randomgallery.android.util.ImageUrlResolver
 import com.example.randomgallery.android.util.Downloader
+import com.example.randomgallery.android.util.ImageUrlResolver
 import com.example.randomgallery.android.util.MediaKind
-import androidx.compose.foundation.gestures.detectTransformGestures
-import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.graphics.graphicsLayer
+import kotlinx.coroutines.launch
 
+/** 随机一图：对齐随机动图 UI 架构，主题清爽背景，居中圆角卡片，流畅左右滑动切图 */
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun RandomPicScreen(
     viewModel: RandomPicViewModel,
@@ -43,175 +46,242 @@ fun RandomPicScreen(
     onGroupClick: (groupId: Long, groupName: String) -> Unit = { _, _ -> }
 ) {
     val context = LocalContext.current
-    val picState by viewModel.picState.collectAsStateWithLifecycle()
-    val groupState by viewModel.groupState.collectAsStateWithLifecycle()
+    val picList by viewModel.picList.collectAsStateWithLifecycle()
+    val loading by viewModel.loading.collectAsStateWithLifecycle()
+    val error by viewModel.error.collectAsStateWithLifecycle()
     val scope = rememberCoroutineScope()
 
-    var imageUrl by remember { mutableStateOf("") }
-    var scale by remember { mutableFloatStateOf(1f) }
-    var offset by remember { mutableStateOf(Offset.Zero) }
+    val ratioCache = remember { mutableStateMapOf<String, Float>() }
 
-    LaunchedEffect(Unit) { viewModel.loadRandomPic() }
+    val pagerState = rememberPagerState(pageCount = { picList.size.coerceAtLeast(1) })
+    val settledPage = pagerState.settledPage
 
-    LaunchedEffect(picState) {
-        when (val state = picState) {
-            is UiState.Success -> {
-                imageUrl = ImageUrlResolver.displayUrl(state.data.picUrl) ?: ""
-                scale = 1f
-                offset = Offset.Zero
-            }
-            is UiState.Error -> Messenger.show(state.message, isError = true)
-            else -> Unit
+    // 浮窗大图预览 URL
+    var previewUrl by remember { mutableStateOf<String?>(null) }
+
+    LaunchedEffect(Unit) {
+        if (picList.isEmpty()) viewModel.loadRandomPic()
+    }
+
+    // 滑动到倒数第2页时自动预加载下一张随机图
+    LaunchedEffect(settledPage, picList.size) {
+        if (picList.isNotEmpty() && settledPage >= picList.size - 2) {
+            viewModel.loadNext()
         }
     }
 
-    Box(
-        Modifier
-            .fillMaxSize()
-            .background(Color.Black)
-            .pointerInput(Unit) {
-                detectTransformGestures { _, pan, zoom, _ ->
-                    scale = (scale * zoom).coerceIn(1f, 4f)
-                    if (scale > 1f) {
-                        offset = Offset(offset.x + pan.x, offset.y + pan.y)
-                    } else {
-                        offset = Offset.Zero
+    Scaffold(
+        containerColor = MaterialTheme.colorScheme.background,
+        topBar = {
+            TopAppBar(
+                title = { Text(stringResource(R.string.home_random_pic), fontWeight = FontWeight.SemiBold) },
+                navigationIcon = {
+                    IconButton(onClick = onBack) {
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(R.string.common_back))
                     }
-                }
-            }
-            .pointerInput(Unit) {
-                detectTapGestures(
-                    onDoubleTap = {
-                        if (scale > 1f) {
-                            scale = 1f
-                            offset = Offset.Zero
-                        } else {
-                            scale = 2.5f
-                        }
+                },
+                actions = {
+                    IconButton(onClick = { viewModel.loadNext() }) {
+                        Icon(Icons.Filled.Refresh, contentDescription = stringResource(R.string.pic_change))
                     }
+                },
+                colors = TopAppBarDefaults.topAppBarColors(
+                    containerColor = MaterialTheme.colorScheme.surface,
+                    titleContentColor = MaterialTheme.colorScheme.onSurface,
+                    actionIconContentColor = MaterialTheme.colorScheme.onSurfaceVariant
                 )
-            }
-    ) {
+            )
+        }
+    ) { innerPadding ->
+        Box(
+            Modifier
+                .fillMaxSize()
+                .padding(innerPadding)
+                .background(MaterialTheme.colorScheme.background)
+        ) {
             when {
-                picState is UiState.Loading -> XhsLoadingBox(Modifier.fillMaxSize())
-                picState is UiState.Error && imageUrl.isBlank() ->
+                loading && picList.isEmpty() -> XhsLoadingBox(Modifier.fillMaxSize())
+                error != null && picList.isEmpty() ->
                     XhsEmptyState(
-                        (picState as UiState.Error).message,
+                        error ?: stringResource(R.string.common_load_failed),
                         onRetry = { viewModel.loadRandomPic() },
                         modifier = Modifier.fillMaxSize()
                     )
                 else -> {
-                    AsyncImage(
-                        model = ImageRequest.Builder(context)
-                            .data(imageUrl)
-                            .crossfade(true)
-                            .build(),
-                        contentDescription = groupState?.groupName ?: stringResource(R.string.pic_title_fallback),
-                        contentScale = ContentScale.Fit,
-                        modifier = Modifier
-                            .fillMaxSize()
-                            .graphicsLayer(
-                                scaleX = scale,
-                                scaleY = scale,
-                                translationX = offset.x,
-                                translationY = offset.y
-                            )
-                    )
-                }
-            }
+                    // 1. 左右滑动切图主视图 (HorizontalPager)
+                    HorizontalPager(
+                        state = pagerState,
+                        modifier = Modifier.fillMaxSize(),
+                        pageSpacing = 12.dp,
+                        beyondViewportPageCount = 1
+                    ) { page ->
+                        val pic = picList.getOrNull(page)
+                        val url = pic?.picUrl?.let { ImageUrlResolver.displayUrl(it) } ?: ""
+                        val rawRatio = if (url.isBlank()) 0.75f else ratioCache[url] ?: 0.75f
+                        val animatedRatio by animateFloatAsState(rawRatio, tween(250), label = "ratio$page")
 
-            // 顶部沉浸式操作条：黑色渐变上覆盖白色图标/标题
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .align(Alignment.TopCenter)
-                    .background(
-                        Brush.verticalGradient(listOf(Color.Black.copy(alpha = 0.55f), Color.Transparent))
-                    )
-                    .statusBarsPadding()
-                    .padding(horizontal = Spacing.xs, vertical = Spacing.xs),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                IconButton(onClick = onBack) {
-                    Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(R.string.common_back), tint = Color.White)
-                }
-                Text(
-                    text = groupState?.groupName ?: stringResource(R.string.pic_title_fallback),
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.SemiBold,
-                    color = Color.White,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis,
-                    modifier = Modifier.weight(1f)
-                )
-                IconButton(onClick = { viewModel.loadRandomPic() }) {
-                    Icon(Icons.Filled.Refresh, contentDescription = stringResource(R.string.pic_change), tint = Color.White)
-                }
-            }
-
-            // 底部渐变 + 操作按钮（避开手势导航条）
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(140.dp)
-                    .align(Alignment.BottomCenter)
-                    .background(
-                        Brush.verticalGradient(listOf(Color.Transparent, Color.Black.copy(alpha = 0.6f)))
-                    ),
-                contentAlignment = Alignment.BottomEnd
-            ) {
-                Row(
-                    modifier = Modifier
-                        .navigationBarsPadding()
-                        .padding(Spacing.lg),
-                    horizontalArrangement = Arrangement.spacedBy(Spacing.md)
-                ) {
-                    (picState as? UiState.Success)?.data?.groupId?.let { gid ->
-                        val fallbackName = stringResource(R.string.group_detail_fallback)
-                        FilledTonalButton(
-                            onClick = {
-                                scope.launch {
-                                    val name = viewModel.resolveGroupName()
-                                    onGroupClick(gid, name ?: fallbackName)
+                        Column(
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .background(MaterialTheme.colorScheme.background)
+                                .background(
+                                    Brush.verticalGradient(
+                                        listOf(MaterialTheme.colorScheme.primary.copy(alpha = 0.08f), Color.Transparent),
+                                        endY = 500f
+                                    )
+                                )
+                                .padding(horizontal = Spacing.md),
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                            verticalArrangement = Arrangement.Center
+                        ) {
+                            // 居中 20.dp 圆角图片卡片（点击放大浮窗预览，完全不阻碍左右滑动手势）
+                            Box(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .aspectRatio(animatedRatio)
+                                    .clip(RoundedCornerShape(20.dp))
+                                    .background(MaterialTheme.colorScheme.surfaceVariant)
+                                    .bouncyClickable(onClick = { if (url.isNotBlank()) previewUrl = url })
+                            ) {
+                                if (url.isNotBlank()) {
+                                    AsyncImage(
+                                        model = ImageRequest.Builder(context)
+                                            .data(url)
+                                            .crossfade(true)
+                                            .build(),
+                                        contentDescription = pic?.picName ?: stringResource(R.string.pic_title_fallback),
+                                        contentScale = ContentScale.Crop,
+                                        onSuccess = { state ->
+                                            val size = state.painter.intrinsicSize
+                                            if (url.isNotBlank() && size.width > 0f && size.height > 0f) {
+                                                ratioCache[url] = (size.width / size.height).coerceIn(0.55f, 1.4f)
+                                            }
+                                        },
+                                        modifier = Modifier.fillMaxSize()
+                                    )
+                                } else {
+                                    XhsLoadingBox(Modifier.fillMaxSize())
                                 }
-                            },
-                            colors = ButtonDefaults.filledTonalButtonColors(
-                                containerColor = Color.White.copy(alpha = 0.2f),
-                                contentColor = Color.White
-                            ),
-                            shape = RoundedCornerShape(24.dp)
-                        ) { Text(stringResource(R.string.pic_view_group), fontWeight = FontWeight.Medium) }
-                    }
-                    FloatingActionButton(
-                        onClick = {
-                            if (imageUrl.isNotBlank()) {
-                                Downloader.enqueue(context, imageUrl, MediaKind.IMAGE)
-                                    .onSuccess { Messenger.show(context.getString(R.string.pic_download_queued)) }
-                                    .onFailure { e -> Messenger.show(e.message ?: "下载失败", isError = true) }
                             }
-                        },
-                        containerColor = MaterialTheme.colorScheme.primary,
-                        contentColor = MaterialTheme.colorScheme.onPrimary,
-                        modifier = Modifier.size(48.dp)
-                    ) {
-                        Icon(Icons.Filled.Download, contentDescription = stringResource(R.string.common_download), modifier = Modifier.size(22.dp))
-                    }
-                }
-            }
 
-            // 提示标签（顶部操作条下方）
-            if (picState is UiState.Success) {
-                Box(
-                    Modifier
-                        .align(Alignment.TopCenter)
-                        .statusBarsPadding()
-                        .padding(top = 64.dp)
-                        .clip(RoundedCornerShape(20.dp))
-                        .background(Color.Black.copy(alpha = 0.3f))
-                        .padding(horizontal = Spacing.md, vertical = Spacing.xs)
-                ) {
-                    Text(stringResource(R.string.pic_double_tap_hint), style = MaterialTheme.typography.labelSmall, color = Color.White.copy(alpha = 0.7f))
+                            Spacer(Modifier.height(Spacing.md))
+
+                            // 图片名称与操作提示
+                            if (pic != null) {
+                                Column(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .padding(horizontal = Spacing.sm),
+                                    horizontalAlignment = Alignment.CenterHorizontally
+                                ) {
+                                    Text(
+                                        text = pic.picName ?: stringResource(R.string.pic_title_fallback),
+                                        style = MaterialTheme.typography.titleMedium,
+                                        fontWeight = FontWeight.SemiBold,
+                                        color = MaterialTheme.colorScheme.onSurface,
+                                        maxLines = 1,
+                                        overflow = TextOverflow.Ellipsis
+                                    )
+                                }
+                            }
+
+                            Spacer(Modifier.height(60.dp))
+                        }
+                    }
+
+                    // 2. 底部动态小圆点指示器（对齐随机动图）
+                    Row(
+                        Modifier
+                            .align(Alignment.BottomCenter)
+                            .padding(bottom = 80.dp),
+                        horizontalArrangement = Arrangement.spacedBy(6.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        val total = picList.size
+                        val current = pagerState.currentPage
+                        val start = (current - 3).coerceAtLeast(0)
+                        val end = (start + 7).coerceAtMost(total)
+                        repeat(end - start) { i ->
+                            val isActive = (start + i) == current
+                            Box(
+                                Modifier
+                                    .size(if (isActive) 8.dp else 5.dp)
+                                    .clip(CircleShape)
+                                    .background(if (isActive) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.primary.copy(alpha = 0.25f))
+                            )
+                        }
+                    }
+
+                    // 3. 底部悬浮操作栏（看同组套图胶囊 & 下载 FAB）
+                    val currentPic = picList.getOrNull(settledPage)
+                    val currentUrl = currentPic?.picUrl?.let { ImageUrlResolver.displayUrl(it) } ?: ""
+
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .align(Alignment.BottomCenter)
+                            .padding(Spacing.lg)
+                    ) {
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.SpaceBetween
+                        ) {
+                            if (currentPic?.groupId != null) {
+                                val gid = currentPic.groupId
+                                val fallbackName = stringResource(R.string.group_detail_fallback)
+                                FilledTonalButton(
+                                    onClick = {
+                                        scope.launch {
+                                            val name = viewModel.resolveGroupName(gid)
+                                            onGroupClick(gid, name ?: fallbackName)
+                                        }
+                                    },
+                                    shape = RoundedCornerShape(24.dp)
+                                ) {
+                                    Text(stringResource(R.string.pic_view_group), fontWeight = FontWeight.Medium)
+                                }
+                            } else {
+                                Spacer(Modifier.width(1.dp))
+                            }
+
+                            FloatingActionButton(
+                                onClick = {
+                                    if (currentUrl.isNotBlank()) {
+                                        Downloader.enqueue(context, currentUrl, MediaKind.IMAGE)
+                                            .onSuccess { Messenger.show(context.getString(R.string.pic_download_queued)) }
+                                            .onFailure { e -> Messenger.show(e.message ?: "下载失败", isError = true) }
+                                    }
+                                },
+                                containerColor = MaterialTheme.colorScheme.primary,
+                                contentColor = MaterialTheme.colorScheme.onPrimary,
+                                modifier = Modifier.size(48.dp)
+                            ) {
+                                Icon(Icons.Filled.Download, contentDescription = stringResource(R.string.common_download), modifier = Modifier.size(22.dp))
+                            }
+                        }
+                    }
                 }
             }
         }
+    }
+
+    // 点击大图弹窗全屏预览 (Full Preview Dialog)
+    if (!previewUrl.isNullOrBlank()) {
+        androidx.compose.ui.window.Dialog(onDismissRequest = { previewUrl = null }) {
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .clickable { previewUrl = null },
+                contentAlignment = Alignment.Center
+            ) {
+                AsyncImage(
+                    model = previewUrl,
+                    contentDescription = null,
+                    contentScale = ContentScale.Fit,
+                    modifier = Modifier.fillMaxSize()
+                )
+            }
+        }
+    }
 }

@@ -90,9 +90,8 @@ fun HomeScreen(
                 .fillMaxSize()
                 .padding(padding)
                 .background(MaterialTheme.colorScheme.background)
-                .verticalScroll(rememberScrollState())
-                .padding(Spacing.lg),
-            verticalArrangement = Arrangement.spacedBy(Spacing.lg)
+                .padding(horizontal = Spacing.lg, vertical = Spacing.md),
+            verticalArrangement = Arrangement.spacedBy(Spacing.md)
         ) {
 
             // ── 第一区：本地图库 ──────────────────────────────────
@@ -248,7 +247,7 @@ private fun SectionCard(content: @Composable ColumnScope.() -> Unit) {
         color = MaterialTheme.colorScheme.surfaceContainerLow,
         modifier = Modifier.fillMaxWidth()
     ) {
-        Column(modifier = Modifier.padding(Spacing.lg), content = content)
+        Column(modifier = Modifier.padding(Spacing.md), content = content)
     }
 }
 
@@ -267,7 +266,7 @@ private fun StatChip(label: String, value: String) {
         )
         Text(
             value,
-            style = MaterialTheme.typography.bodySmall,
+            style = MaterialTheme.typography.bodySmall.tabularNumbers,
             fontWeight = FontWeight.SemiBold,
             color = MaterialTheme.colorScheme.onSurface
         )
@@ -287,21 +286,21 @@ private fun FuncCard(
 ) {
     Column(
         modifier = modifier
-            .clip(RoundedCornerShape(14.dp))
+            .clip(RoundedCornerShape(16.dp))
             .background(MaterialTheme.colorScheme.background)
             .clickable(onClick = onClick)
-            .padding(vertical = Spacing.xl, horizontal = Spacing.lg),
+            .padding(vertical = Spacing.md, horizontal = Spacing.sm),
         horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.spacedBy(Spacing.md)
+        verticalArrangement = Arrangement.spacedBy(Spacing.sm)
     ) {
         Box(
             modifier = Modifier
-                .size(52.dp)
-                .clip(RoundedCornerShape(14.dp))
+                .size(44.dp)
+                .clip(RoundedCornerShape(12.dp))
                 .background(bg),
             contentAlignment = Alignment.Center
         ) {
-            Icon(icon, contentDescription = null, tint = tint, modifier = Modifier.size(26.dp))
+            Icon(icon, contentDescription = null, tint = tint, modifier = Modifier.size(22.dp))
         }
         Text(
             label,
@@ -325,21 +324,21 @@ private fun FuncCardWide(
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .clip(RoundedCornerShape(14.dp))
+            .clip(RoundedCornerShape(16.dp))
             .background(MaterialTheme.colorScheme.background)
             .clickable(onClick = onClick)
-            .padding(horizontal = Spacing.xl, vertical = Spacing.lg),
+            .padding(horizontal = Spacing.lg, vertical = Spacing.md),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.Center
     ) {
         Box(
             modifier = Modifier
-                .size(44.dp)
+                .size(40.dp)
                 .clip(RoundedCornerShape(12.dp))
                 .background(bg),
             contentAlignment = Alignment.Center
         ) {
-            Icon(icon, contentDescription = null, tint = tint, modifier = Modifier.size(22.dp))
+            Icon(icon, contentDescription = null, tint = tint, modifier = Modifier.size(20.dp))
         }
         Spacer(Modifier.width(Spacing.md))
         Text(

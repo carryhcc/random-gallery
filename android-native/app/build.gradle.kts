@@ -26,7 +26,7 @@ android {
     compileSdk = 36
 
     defaultConfig {
-        applicationId = "com.example.randomgallery.android"
+        applicationId = "io.github.randomgallery.app"
         minSdk = 28
         targetSdk = 36
         versionCode = 2

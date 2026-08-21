@@ -24,6 +24,9 @@ class GroupListViewModel(
     private val _pageInfo = MutableStateFlow("第 1 页")
     val pageInfo: StateFlow<String> = _pageInfo.asStateFlow()
 
+    private val _loading = MutableStateFlow(false)
+    val loading: StateFlow<Boolean> = _loading.asStateFlow()
+
     private val _error = MutableStateFlow<String?>(null)
     val error: StateFlow<String?> = _error.asStateFlow()
 
@@ -38,6 +41,7 @@ class GroupListViewModel(
         page = pageIndex
         currentKeyword = keyword
         queryJob?.cancel()
+        _loading.value = true
         queryJob = viewModelScope.launch {
             repository().getGroupList(keyword, page, 10)
                 .onSuccess {
@@ -48,6 +52,7 @@ class GroupListViewModel(
                     _error.value = null
                 }
                 .onFailure { _error.value = it.message ?: "查询失败" }
+            _loading.value = false
         }
     }
 

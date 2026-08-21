@@ -7,13 +7,55 @@ set -euo pipefail
 
 cd "$(dirname "$0")"
 
-# 让 gradle 找到 Android SDK（如已配 ANDROID_HOME 可忽略）
-if [ ! -f local.properties ]; then
-  echo "sdk.dir=$HOME/Library/Android/sdk" > local.properties
-  echo "已生成 local.properties -> $HOME/Library/Android/sdk"
+# 让 gradle 找到 Android SDK（检测常见 macOS 路径）
+SDK_PATH=""
+if [ -n "${ANDROID_HOME:-}" ] && [ -d "$ANDROID_HOME" ]; then
+  SDK_PATH="$ANDROID_HOME"
+elif [ -n "${ANDROID_SDK_ROOT:-}" ] && [ -d "$ANDROID_SDK_ROOT" ]; then
+  SDK_PATH="$ANDROID_SDK_ROOT"
+else
+  POSSIBLE_PATHS=(
+    "$HOME/Library/Android/sdk"
+    "/opt/homebrew/share/android-commandlinetools"
+    "/opt/homebrew/share/android-sdk"
+    "/usr/local/share/android-sdk"
+  )
+  for p in "${POSSIBLE_PATHS[@]}"; do
+    if [ -d "$p" ]; then
+      SDK_PATH="$p"
+      break
+    fi
+  done
 fi
 
-ADB="${ANDROID_HOME:-$HOME/Library/Android/sdk}/platform-tools/adb"
+if [ -n "$SDK_PATH" ]; then
+  echo "sdk.dir=$SDK_PATH" > local.properties
+  echo "==> 自动识别并配置 Android SDK 路径：$SDK_PATH"
+elif [ -f local.properties ]; then
+  EXISTING_DIR="$(grep '^sdk.dir=' local.properties | cut -d'=' -f2- || true)"
+  if [ -n "$EXISTING_DIR" ] && [ -d "$EXISTING_DIR" ]; then
+    SDK_PATH="$EXISTING_DIR"
+  fi
+fi
+
+if [ -z "$SDK_PATH" ] || [ ! -d "$SDK_PATH" ]; then
+  echo "❌ 构建失败：未在你的 Mac 本地上检测到 Android SDK 路径。" >&2
+  echo "原因是系统尚未安装 Android SDK，或者 SDK 目录不存在。" >&2
+  echo "" >&2
+  echo "💡 解决方法（请任选一种）：" >&2
+  echo "  方式 1（推荐）：下载并安装 Android Studio" >&2
+  echo "     官网下载：https://developer.android.com/studio" >&2
+  echo "     或使用终端命令：brew install --cask android-studio" >&2
+  echo "     安装后打开 Android Studio 完成初始化 SDK 组件下载即可。" >&2
+  echo "" >&2
+  echo "  方式 2：使用 Homebrew 直接安装 Command Line Tools" >&2
+  echo "     终端执行：brew install --cask android-commandlinetools" >&2
+  echo "" >&2
+  echo "安装完成之后，重新运行本脚本即可自动识别并完成构建！" >&2
+  exit 1
+fi
+
+ADB="$SDK_PATH/platform-tools/adb"
 [ -x "$ADB" ] || ADB="$(command -v adb || true)"
 
 echo "==> 构建 debug APK（首次会下载依赖，请耐心等待）"

@@ -55,8 +55,11 @@ import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
 import coil.request.ImageRequest
 import com.example.randomgallery.android.data.model.GroupVO
+import com.example.randomgallery.android.ui.common.XhsFloatingPill
+import com.example.randomgallery.android.ui.common.bouncyClickable
 import com.example.randomgallery.android.ui.theme.RandomGalleryTheme
 import com.example.randomgallery.android.ui.theme.Spacing
+import com.example.randomgallery.android.ui.theme.tabularNumbers
 import com.example.randomgallery.android.util.ImageUrlResolver
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
@@ -137,19 +140,25 @@ fun RandomGalleryScreen(
                     )
                 }
                 else -> {
-                    LazyVerticalStaggeredGrid(
-                        state = gridState,
-                        columns = StaggeredGridCells.Adaptive(minSize = 160.dp),
-                        contentPadding = PaddingValues(Spacing.md),
-                        verticalItemSpacing = Spacing.md,
-                        horizontalArrangement = Arrangement.spacedBy(Spacing.md),
+                    androidx.compose.material3.pulltorefresh.PullToRefreshBox(
+                        isRefreshing = loading && groups.isNotEmpty(),
+                        onRefresh = { viewModel.refresh() },
                         modifier = Modifier.fillMaxSize()
                     ) {
-                        itemsIndexed(
-                            items = groups,
-                            key = { index, item -> item.groupId ?: -index.toLong() }
-                        ) { _, group ->
-                            FeedCard(group = group, ratioCache = ratioCache, onClick = { onGroupClick(group) })
+                        LazyVerticalStaggeredGrid(
+                            state = gridState,
+                            columns = StaggeredGridCells.Adaptive(minSize = 160.dp),
+                            contentPadding = PaddingValues(Spacing.md),
+                            verticalItemSpacing = Spacing.md,
+                            horizontalArrangement = Arrangement.spacedBy(Spacing.md),
+                            modifier = Modifier.fillMaxSize()
+                        ) {
+                            itemsIndexed(
+                                items = groups,
+                                key = { index, item -> item.groupId ?: -index.toLong() }
+                            ) { _, group ->
+                                FeedCard(group = group, ratioCache = ratioCache, onClick = { onGroupClick(group) })
+                            }
                         }
                     }
                 }
@@ -166,62 +175,60 @@ private fun FeedCard(
 ) {
     val context = LocalContext.current
     val url = ImageUrlResolver.displayUrl(group.groupUrl) ?: ""
-    // 未知尺寸时先用 1:1 占位，加载成功后过渡到真实比例（限制在 3:4 ~ 4:3 之间）
-    val ratio = if (url.isBlank()) 1f else ratioCache[url] ?: 1f
+    // 动态真实比例（支持高长图与方图错落分布，限制在 0.65f ~ 1.4f 之间形成发现节奏感）
+    val ratio = if (url.isBlank()) 0.85f else ratioCache[url] ?: 0.85f
 
     Surface(
-        shape = RoundedCornerShape(14.dp),
+        shape = RoundedCornerShape(16.dp),
         color = MaterialTheme.colorScheme.surface,
         modifier = Modifier
             .fillMaxWidth()
-            .clip(RoundedCornerShape(14.dp))
-            .clickable(onClick = onClick)
+            .clip(RoundedCornerShape(16.dp))
+            .bouncyClickable(onClick = onClick)
     ) {
         Column {
-            AsyncImage(
-                model = ImageRequest.Builder(context)
-                    .data(url)
-                    .crossfade(true)
-                    .build(),
-                contentDescription = group.groupName,
-                contentScale = ContentScale.Crop,
-                onSuccess = { state ->
-                    val size = state.painter.intrinsicSize
-                    if (url.isNotBlank() && size.width > 0f && size.height > 0f) {
-                        ratioCache[url] = (size.width / size.height).coerceIn(0.75f, 1.33f)
-                    }
-                },
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .aspectRatio(ratio)
-                    .background(MaterialTheme.colorScheme.surfaceVariant)
-            )
-            Row(
-                modifier = Modifier.padding(Spacing.md),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Text(
-                    text = group.groupName ?: stringResource(R.string.group_unnamed),
-                    style = MaterialTheme.typography.titleSmall,
-                    color = MaterialTheme.colorScheme.onSurface,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis,
-                    modifier = Modifier.weight(1f)
+            Box {
+                AsyncImage(
+                    model = ImageRequest.Builder(context)
+                        .data(url)
+                        .crossfade(true)
+                        .build(),
+                    contentDescription = group.groupName,
+                    contentScale = ContentScale.Crop,
+                    onSuccess = { state ->
+                        val size = state.painter.intrinsicSize
+                        if (url.isNotBlank() && size.width > 0f && size.height > 0f) {
+                            ratioCache[url] = (size.width / size.height).coerceIn(0.65f, 1.4f)
+                        }
+                    },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .aspectRatio(ratio)
+                        .background(MaterialTheme.colorScheme.surfaceVariant)
                 )
-                Spacer(Modifier.width(Spacing.xs))
-                Icon(
-                    imageVector = Icons.Filled.Image,
-                    contentDescription = null,
-                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier.size(13.dp)
-                )
-                Spacer(Modifier.width(2.dp))
-                Text(
-                    text = "${group.groupCount ?: 0}",
-                    style = MaterialTheme.typography.labelSmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
+
+                // 潮流悬浮胶囊图层：置于图片右上角
+                val count = group.groupCount ?: 0
+                if (count > 0) {
+                    XhsFloatingPill(
+                        text = "$count",
+                        icon = Icons.Filled.Image,
+                        modifier = Modifier
+                            .align(Alignment.TopEnd)
+                            .padding(Spacing.sm)
+                    )
+                }
             }
+
+            // 紧错精致标题行
+            Text(
+                text = group.groupName ?: stringResource(R.string.group_unnamed),
+                style = MaterialTheme.typography.titleSmall,
+                color = MaterialTheme.colorScheme.onSurface,
+                maxLines = 2,
+                overflow = TextOverflow.Ellipsis,
+                modifier = Modifier.padding(horizontal = Spacing.md, vertical = Spacing.sm)
+            )
         }
     }
 }

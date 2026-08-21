@@ -63,13 +63,13 @@ fun TopMessageHost(modifier: Modifier = Modifier) {
                 Text(
                     text = msg.text,
                     style = MaterialTheme.typography.bodyMedium,
-                    color = Color.White,
+                    color = if (msg.isError) MaterialTheme.colorScheme.onError else MaterialTheme.colorScheme.inverseOnSurface,
                     maxLines = 2,
                     modifier = Modifier
                         .padding(top = 12.dp)
                         .fillMaxWidth(0.8f)
                         .clip(RoundedCornerShape(24.dp))
-                        .background(if (msg.isError) Color(0xF01A1A1A) else XhsRed)
+                        .background(if (msg.isError) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.inverseSurface)
                         .padding(horizontal = 20.dp, vertical = 11.dp)
                 )
             }

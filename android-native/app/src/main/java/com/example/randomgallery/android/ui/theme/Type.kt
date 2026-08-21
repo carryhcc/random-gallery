@@ -17,3 +17,8 @@ val AppTypography = Typography(
     labelMedium = TextStyle(fontSize = 12.sp, lineHeight = 16.sp, fontWeight = FontWeight.Medium),
     labelSmall = TextStyle(fontSize = 11.sp, lineHeight = 14.sp, fontWeight = FontWeight.Medium)
 )
+
+/** 等宽数字（用于计数、指标、统计数据等，防止文本宽度抖动） */
+val TextStyle.tabularNumbers: TextStyle
+    get() = this.copy(fontFeatureSettings = "tnum")
+

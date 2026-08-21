@@ -247,7 +247,7 @@ fun DownloadManageScreen(
                             }
                             Text(
                                 stringResource(R.string.dm_page_fmt, historyPage, historyTotalPages),
-                                style = MaterialTheme.typography.bodySmall,
+                                style = MaterialTheme.typography.bodySmall.tabularNumbers,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                                 modifier = Modifier.padding(horizontal = Spacing.md)
                             )
@@ -304,7 +304,7 @@ private fun HistoryItem(
                 Spacer(Modifier.width(Spacing.sm))
                 Text(
                     task.createTime ?: "",
-                    style = MaterialTheme.typography.labelSmall,
+                    style = MaterialTheme.typography.labelSmall.tabularNumbers,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
             }

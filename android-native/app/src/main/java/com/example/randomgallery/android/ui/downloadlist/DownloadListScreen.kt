@@ -148,61 +148,63 @@ fun DownloadListScreen(
 
 @Composable
 private fun WorkCard(work: XhsWorkListVO, onClick: () -> Unit) {
-    val ratio = 3f / 4f   // 固定竖版比例，避免 Crop 裁切随机性
+    val ratio = 3f / 4f   // 默认竖版比例
+    val imgCount = work.imageCount ?: 0
+    val vidCount = work.gifCount ?: 0
 
     Surface(
-        shape = RoundedCornerShape(14.dp),
+        shape = RoundedCornerShape(16.dp),
         color = MaterialTheme.colorScheme.surface,
         modifier = Modifier
             .fillMaxWidth()
-            .clip(RoundedCornerShape(14.dp))
-            .clickable(onClick = onClick)
+            .clip(RoundedCornerShape(16.dp))
+            .bouncyClickable(onClick = onClick)
     ) {
         Column {
-            AsyncImage(
-                model = ImageUrlResolver.displayUrl(work.coverImageUrl),
-                contentDescription = work.workTitle,
-                contentScale = ContentScale.Crop,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .aspectRatio(ratio)
-                    .background(MaterialTheme.colorScheme.surfaceVariant)
-            )
-            Column(Modifier.padding(Spacing.md)) {
+            Box {
+                AsyncImage(
+                    model = ImageUrlResolver.displayUrl(work.coverImageUrl),
+                    contentDescription = work.workTitle,
+                    contentScale = ContentScale.Crop,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .aspectRatio(ratio)
+                        .background(MaterialTheme.colorScheme.surfaceVariant)
+                )
+
+                // 潮流悬浮胶囊图层：根据媒体类型展示
+                Row(
+                    modifier = Modifier
+                        .align(Alignment.TopEnd)
+                        .padding(Spacing.sm),
+                    horizontalArrangement = Arrangement.spacedBy(4.dp)
+                ) {
+                    if (vidCount > 0) {
+                        XhsFloatingPill(text = "$vidCount", icon = Icons.Filled.VideoLibrary)
+                    }
+                    if (imgCount > 0) {
+                        XhsFloatingPill(text = "$imgCount", icon = Icons.Filled.Image)
+                    }
+                }
+            }
+
+            Column(Modifier.padding(horizontal = Spacing.md, vertical = Spacing.sm)) {
                 Text(
                     text = work.workTitle ?: stringResource(R.string.dl_untitled),
                     style = MaterialTheme.typography.titleSmall,
+                    fontWeight = FontWeight.SemiBold,
                     maxLines = 2,
                     overflow = TextOverflow.Ellipsis
                 )
-                Spacer(Modifier.height(Spacing.xs))
-                Row(
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    modifier = Modifier.fillMaxWidth()
-                ) {
+                if (!work.authorNickname.isNullOrBlank()) {
+                    Spacer(Modifier.height(2.dp))
                     Text(
-                        text = work.authorNickname ?: "",
+                        text = "@${work.authorNickname}",
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                         maxLines = 1,
-                        overflow = TextOverflow.Ellipsis,
-                        modifier = Modifier.weight(1f)
+                        overflow = TextOverflow.Ellipsis
                     )
-                    val imgCount = work.imageCount ?: 0
-                    val vidCount = work.gifCount ?: 0
-                    Row(
-                        horizontalArrangement = Arrangement.spacedBy(6.dp),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        if (imgCount > 0) {
-                            Icon(Icons.Filled.Image, null, tint = MaterialTheme.xhs.textTertiary, modifier = Modifier.size(11.dp))
-                            Text("$imgCount", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.xhs.textTertiary)
-                        }
-                        if (vidCount > 0) {
-                            Icon(Icons.Filled.VideoLibrary, null, tint = MaterialTheme.xhs.accentBlue, modifier = Modifier.size(11.dp))
-                            Text("$vidCount", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.xhs.textTertiary)
-                        }
-                    }
                 }
             }
         }
