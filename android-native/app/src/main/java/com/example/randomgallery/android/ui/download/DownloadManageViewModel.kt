@@ -71,16 +71,18 @@ class DownloadManageViewModel(
 
     fun submit(url: String) {
         if (_loading.value) return          // 防止重复提交
-        val resolvedUrl = extractHttpUrl(url) ?: url.trim()
-        if (resolvedUrl.isBlank()) {
+        val trimmedInput = url.trim()
+        if (trimmedInput.isBlank()) {
             _submitEvents.trySend(Result.failure(Exception("请输入链接")))
             return
         }
+        val resolvedUrl = extractHttpUrl(trimmedInput) ?: trimmedInput
         _loading.value = true
         _lastResolvedUrl.value = resolvedUrl
         viewModelScope.launch {
             try {
-                val result = repository().addDownloadTask(resolvedUrl)
+                // 提交用户输入的原始完整文本（保留中文分享语与链接），后端负责提取并留存原始 params_url
+                val result = repository().addDownloadTask(trimmedInput)
                 _submitEvents.trySend(result)
                 if (result.isSuccess) {
                     // 添加成功后回到第一页查看最新记录

@@ -80,10 +80,13 @@ fun DownloadManageScreen(
             if (hasFocus && autoReadClipboard) {
                 val cm = context.getSystemService(Context.CLIPBOARD_SERVICE) as? ClipboardManager
                 val text = cm?.primaryClip?.getItemAt(0)?.text?.toString()
-                val extracted = DownloadManageViewModel.extractHttpUrl(text)
-                if (!extracted.isNullOrBlank()) {
-                    urlInput = extracted
-                    isInputExpanded = true
+                if (!text.isNullOrBlank()) {
+                    val extracted = DownloadManageViewModel.extractHttpUrl(text)
+                    if (!extracted.isNullOrBlank()) {
+                        // 保留用户复制的完整原始文本，不提前截断
+                        urlInput = text
+                        isInputExpanded = true
+                    }
                 }
             }
         }
@@ -195,11 +198,8 @@ fun DownloadManageScreen(
                 onPasteClipboard = {
                     val cm = context.getSystemService(Context.CLIPBOARD_SERVICE) as? ClipboardManager
                     val text = cm?.primaryClip?.getItemAt(0)?.text?.toString()
-                    val extracted = DownloadManageViewModel.extractHttpUrl(text)
-                    if (!extracted.isNullOrBlank()) {
-                        urlInput = extracted
-                        isInputExpanded = true
-                    } else if (!text.isNullOrBlank()) {
+                    if (!text.isNullOrBlank()) {
+                        // 保留剪贴板中的完整原始分享文本
                         urlInput = text
                         isInputExpanded = true
                     }
@@ -779,8 +779,11 @@ private fun CompactTaskHistoryCard(
                     modifier = Modifier.weight(1f),
                     verticalArrangement = Arrangement.spacedBy(1.dp)
                 ) {
+                    val displayUrl = remember(task.url) {
+                        DownloadManageViewModel.extractHttpUrl(task.url) ?: task.url ?: "无链接"
+                    }
                     Text(
-                        text = if (hasTitle) task.workTitle!! else task.url ?: "无链接",
+                        text = if (hasTitle) task.workTitle!! else displayUrl,
                         style = MaterialTheme.typography.bodySmall,
                         fontWeight = if (hasTitle) FontWeight.SemiBold else FontWeight.Normal,
                         color = MaterialTheme.colorScheme.onSurface,

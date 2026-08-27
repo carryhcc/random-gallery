@@ -3,6 +3,8 @@ package com.example.randomgallery.android.ui.gif
 import android.content.Context
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import coil.imageLoader
+import coil.request.ImageRequest
 import com.example.randomgallery.android.AppContainer
 import com.example.randomgallery.android.BuildConfig
 import com.example.randomgallery.android.data.model.RandomGifVO
@@ -14,8 +16,14 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlinx.coroutines.withContext
+import okhttp3.Call
+import okhttp3.Callback
 import okhttp3.Request
+import okhttp3.Response
+import java.io.IOException
+import kotlin.coroutines.resume
 
 class RandomGifViewModel(
     private val appContext: Context
@@ -28,12 +36,16 @@ class RandomGifViewModel(
         NetworkModule.okHttpClient(appContext, BuildConfig.ENABLE_HTTP_LOGGING)
     }
 
-    // 播放模式："single" (单张随机) vs "group" (套图随机)
+    // 播放模式："single" (单张随机) vs "group" (扑克堆叠套图)
     private val _playMode = MutableStateFlow("single")
     val playMode: StateFlow<String> = _playMode.asStateFlow()
 
     private val _gifList = MutableStateFlow<List<RandomGifVO>>(emptyList())
     val gifList: StateFlow<List<RandomGifVO>> = _gifList.asStateFlow()
+
+    // 套图卡牌栈列表（当前正在展示的一套扑克堆叠动图）
+    private val _currentGroupGifs = MutableStateFlow<List<RandomGifVO>>(emptyList())
+    val currentGroupGifs: StateFlow<List<RandomGifVO>> = _currentGroupGifs.asStateFlow()
 
     private val _loading = MutableStateFlow(false)
     val loading: StateFlow<Boolean> = _loading.asStateFlow()
@@ -51,57 +63,85 @@ class RandomGifViewModel(
         if (_playMode.value == mode) return
         _playMode.value = mode
         _gifList.value = emptyList()
+        _currentGroupGifs.value = emptyList()
         _error.value = null
         isLoadingMore = false
         loadNext()
     }
 
+    /** 抽取并加载下一组全新套图，并按顺序提前预热所有海报 */
+    fun loadNextGroup() {
+        if (isLoadingMore) return
+        isLoadingMore = true
+        _loading.value = true
+        _error.value = null
+        viewModelScope.launch {
+            repository().getRandomGifGroup()
+                .onSuccess { groupGifs ->
+                    if (groupGifs.isNotEmpty()) {
+                        _currentGroupGifs.value = groupGifs
+                        _error.value = null
+                        // 顺序后台预载该套图所有海报缓存
+                        preloadGroupCovers(groupGifs)
+                    } else {
+                        _error.value = "未找到可用套图动图"
+                    }
+                }
+                .onFailure {
+                    _error.value = it.message ?: "加载套图失败"
+                }
+            _loading.value = false
+            isLoadingMore = false
+        }
+    }
+
+    private fun preloadGroupCovers(gifs: List<RandomGifVO>) {
+        val loader = appContext.imageLoader
+        gifs.forEach { gif ->
+            gif.mediaUrl?.let { url ->
+                val displayUrl = ImageUrlResolver.displayUrl(url)
+                if (!displayUrl.isNullOrBlank()) {
+                    val request = ImageRequest.Builder(appContext)
+                        .data(displayUrl)
+                        .build()
+                    loader.enqueue(request)
+                }
+            }
+        }
+    }
+
     fun loadNext() {
+        if (_playMode.value == "group") {
+            loadNextGroup()
+            return
+        }
+
         if (isLoadingMore) return
         isLoadingMore = true
         val isFirst = _gifList.value.isEmpty()
         if (isFirst) _loading.value = true
 
         viewModelScope.launch {
-            if (_playMode.value == "group") {
-                // 套图模式：随机拉取同一作品下的一整组动图
-                repository().getRandomGifGroup()
-                    .onSuccess { groupGifs ->
-                        if (groupGifs.isNotEmpty()) {
+            var attempts = 0
+            var loaded = false
+            while (attempts < MAX_ATTEMPTS && !loaded) {
+                attempts++
+                repository().getRandomGif()
+                    .onSuccess { gif ->
+                        val url = gif.mediaUrl?.let { ImageUrlResolver.rawUrl(it) }
+                        if (url != null && isUrlAlive(url)) {
                             val current = _gifList.value
-                            val filtered = groupGifs.filter { g -> current.none { it.id == g.id } }
-                            _gifList.value = (current + filtered).take(MAX_GIFS)
+                            if (current.none { it.mediaUrl == gif.mediaUrl } && current.size < MAX_GIFS) {
+                                _gifList.value = current + gif
+                            }
+                            loaded = true
                             _error.value = null
-                        } else {
-                            if (isFirst) _error.value = "未找到可用套图动图"
                         }
                     }
                     .onFailure {
                         if (isFirst) _error.value = it.message ?: "加载失败"
+                        loaded = true
                     }
-            } else {
-                // 单张随机模式
-                var attempts = 0
-                var loaded = false
-                while (attempts < MAX_ATTEMPTS && !loaded) {
-                    attempts++
-                    repository().getRandomGif()
-                        .onSuccess { gif ->
-                            val url = gif.mediaUrl?.let { ImageUrlResolver.rawUrl(it) }
-                            if (url != null && isUrlAlive(url)) {
-                                val current = _gifList.value
-                                if (current.none { it.mediaUrl == gif.mediaUrl } && current.size < MAX_GIFS) {
-                                    _gifList.value = current + gif
-                                }
-                                loaded = true
-                                _error.value = null
-                            }
-                        }
-                        .onFailure {
-                            if (isFirst) _error.value = it.message ?: "加载失败"
-                            loaded = true
-                        }
-                }
             }
             if (isFirst) _loading.value = false
             isLoadingMore = false
@@ -109,14 +149,20 @@ class RandomGifViewModel(
     }
 
     private suspend fun isUrlAlive(url: String): Boolean = withContext(Dispatchers.IO) {
-        try {
+        suspendCancellableCoroutine { continuation ->
             val req = Request.Builder().url(url).head().build()
-            val resp = checkClient.newCall(req).execute()
-            val code = resp.code
-            resp.close()
-            code in 200..399
-        } catch (_: Exception) {
-            false
+            val call = checkClient.newCall(req)
+            continuation.invokeOnCancellation { call.cancel() }
+            call.enqueue(object : Callback {
+                override fun onFailure(call: Call, e: IOException) {
+                    if (continuation.isActive) continuation.resume(false)
+                }
+                override fun onResponse(call: Call, response: Response) {
+                    val isOk = response.isSuccessful
+                    response.close()
+                    if (continuation.isActive) continuation.resume(isOk)
+                }
+            })
         }
     }
 

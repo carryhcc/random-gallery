@@ -38,6 +38,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import coil.compose.AsyncImage
+import coil.request.CachePolicy
+import coil.size.Scale
 import coil.request.ImageRequest
 import com.example.randomgallery.android.R
 import com.example.randomgallery.android.data.model.XhsWorkListVO
@@ -170,6 +172,7 @@ fun DownloadListScreen(
                             modifier = Modifier.fillMaxSize()
                         )
                     else -> {
+                        val isScrolling = gridState.isScrollInProgress
                         PullToRefreshBox(
                             isRefreshing = refreshing,
                             onRefresh = { viewModel.refreshAll() },
@@ -191,6 +194,7 @@ fun DownloadListScreen(
                                         DownloadWorkGridCard(
                                             work = work,
                                             ratioCache = ratioCache,
+                                            isScrolling = isScrolling,
                                             onClick = {
                                                 work.workId?.let { wid ->
                                                     onWorkClick(wid, work.coverImageUrl ?: "")
@@ -378,6 +382,7 @@ private fun ActiveFilterTag(
 private fun DownloadWorkGridCard(
     work: XhsWorkListVO,
     ratioCache: SnapshotStateMap<String, Float>,
+    isScrolling: Boolean = false,
     onClick: () -> Unit
 ) {
     val context = LocalContext.current
@@ -399,6 +404,11 @@ private fun DownloadWorkGridCard(
                     model = ImageRequest.Builder(context)
                         .data(url)
                         .crossfade(true)
+                        // 三级缓存策略：强制读写磁盘与内存缓存
+                        .diskCachePolicy(CachePolicy.ENABLED)
+                        .memoryCachePolicy(CachePolicy.ENABLED)
+                        .networkCachePolicy(if (isScrolling) CachePolicy.READ_ONLY else CachePolicy.ENABLED)
+                        .scale(Scale.FIT)
                         .build(),
                     contentDescription = work.workTitle,
                     contentScale = ContentScale.Crop,

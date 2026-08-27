@@ -1287,7 +1287,8 @@ private fun SettingsBottomSheet(
     ModalBottomSheet(
         onDismissRequest = onDismiss,
         sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
-        containerColor = MaterialTheme.colorScheme.surfaceContainerLow,
+        containerColor = MaterialTheme.colorScheme.surface,
+        contentColor = MaterialTheme.colorScheme.onSurface,
         dragHandle = {
             BottomSheetDefaults.DragHandle(
                 color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.4f)
@@ -1302,9 +1303,9 @@ private fun SettingsBottomSheet(
                 .padding(horizontal = Spacing.lg)
                 .padding(bottom = Spacing.xl)
                 .verticalScroll(rememberScrollState()),
-            verticalArrangement = Arrangement.spacedBy(Spacing.lg)
+            verticalArrangement = Arrangement.spacedBy(Spacing.md)
         ) {
-            // 标题
+            // 标题栏
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
@@ -1353,10 +1354,10 @@ private fun SettingsBottomSheet(
             }
 
             // ── 模块 1：通用外观设置 ──────────────────────────────────
-            M3GlassCard(
-                shape = RoundedCornerShape(20.dp),
-                containerColor = MaterialTheme.colorScheme.surfaceContainerHigh.copy(alpha = 0.8f),
-                borderColor = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.2f),
+            Surface(
+                shape = RoundedCornerShape(18.dp),
+                color = MaterialTheme.colorScheme.surfaceContainerHigh,
+                border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.35f)),
                 modifier = Modifier.fillMaxWidth()
             ) {
                 Column(
@@ -1376,7 +1377,8 @@ private fun SettingsBottomSheet(
                         Text(
                             text = "主题外观",
                             style = MaterialTheme.typography.titleSmall,
-                            fontWeight = FontWeight.Bold
+                            fontWeight = FontWeight.Bold,
+                            color = MaterialTheme.colorScheme.onSurface
                         )
                     }
 
@@ -1403,11 +1405,11 @@ private fun SettingsBottomSheet(
                 }
             }
 
-            // ── 模块 2：应用内独立代理设置 (针对 VPN 自动分流绕过场景) ──────
-            M3GlassCard(
-                shape = RoundedCornerShape(20.dp),
-                containerColor = MaterialTheme.colorScheme.surfaceContainerHigh.copy(alpha = 0.8f),
-                borderColor = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.2f),
+            // ── 模块 2：应用内独立代理设置 ────────────────────────────
+            Surface(
+                shape = RoundedCornerShape(18.dp),
+                color = MaterialTheme.colorScheme.surfaceContainerHigh,
+                border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.35f)),
                 modifier = Modifier.fillMaxWidth()
             ) {
                 Column(
@@ -1430,19 +1432,21 @@ private fun SettingsBottomSheet(
                                 tint = MaterialTheme.colorScheme.primary,
                                 modifier = Modifier.size(18.dp)
                             )
-                            Column {
+                            Column(modifier = Modifier.weight(1f, fill = false)) {
                                 Text(
                                     text = "自定义网络代理",
                                     style = MaterialTheme.typography.titleSmall,
-                                    fontWeight = FontWeight.Bold
+                                    fontWeight = FontWeight.Bold,
+                                    color = MaterialTheme.colorScheme.onSurface
                                 )
                                 Text(
                                     text = "VPN 自动绕过此 App 时，可手动设置代理端口",
                                     style = MaterialTheme.typography.bodySmall,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.8f)
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
                                 )
                             }
                         }
+                        Spacer(Modifier.width(8.dp))
                         Switch(
                             checked = localProxyEnabled,
                             onCheckedChange = {
@@ -1461,7 +1465,11 @@ private fun SettingsBottomSheet(
                             verticalAlignment = Alignment.CenterVertically,
                             horizontalArrangement = Arrangement.spacedBy(Spacing.xs)
                         ) {
-                            Text("协议：", style = MaterialTheme.typography.labelMedium)
+                            Text(
+                                "协议：",
+                                style = MaterialTheme.typography.labelMedium,
+                                color = MaterialTheme.colorScheme.onSurface
+                            )
                             listOf("HTTP", "SOCKS").forEach { type ->
                                 val selected = localProxyType.equals(type, ignoreCase = true)
                                 FilterChip(
@@ -1488,7 +1496,11 @@ private fun SettingsBottomSheet(
                                 label = { Text("主机 (如 127.0.0.1)") },
                                 singleLine = true,
                                 modifier = Modifier.weight(2f),
-                                shape = RoundedCornerShape(12.dp)
+                                shape = RoundedCornerShape(12.dp),
+                                colors = OutlinedTextFieldDefaults.colors(
+                                    focusedContainerColor = MaterialTheme.colorScheme.surface,
+                                    unfocusedContainerColor = MaterialTheme.colorScheme.surface
+                                )
                             )
                             OutlinedTextField(
                                 value = localProxyPort,
@@ -1496,7 +1508,11 @@ private fun SettingsBottomSheet(
                                 label = { Text("端口") },
                                 singleLine = true,
                                 modifier = Modifier.weight(1f),
-                                shape = RoundedCornerShape(12.dp)
+                                shape = RoundedCornerShape(12.dp),
+                                colors = OutlinedTextFieldDefaults.colors(
+                                    focusedContainerColor = MaterialTheme.colorScheme.surface,
+                                    unfocusedContainerColor = MaterialTheme.colorScheme.surface
+                                )
                             )
                         }
 
@@ -1515,10 +1531,10 @@ private fun SettingsBottomSheet(
             }
 
             // ── 模块 3：小红书精选专属设置 ───────────────────────────
-            M3GlassCard(
-                shape = RoundedCornerShape(20.dp),
-                containerColor = MaterialTheme.colorScheme.surfaceContainerHigh.copy(alpha = 0.8f),
-                borderColor = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.2f),
+            Surface(
+                shape = RoundedCornerShape(18.dp),
+                color = MaterialTheme.colorScheme.surfaceContainerHigh,
+                border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.35f)),
                 modifier = Modifier.fillMaxWidth()
             ) {
                 Column(
@@ -1541,7 +1557,7 @@ private fun SettingsBottomSheet(
                                 tint = Color(0xFFFF5E62),
                                 modifier = Modifier.size(18.dp)
                             )
-                            Column {
+                            Column(modifier = Modifier.weight(1f, fill = false)) {
                                 Row(
                                     verticalAlignment = Alignment.CenterVertically,
                                     horizontalArrangement = Arrangement.spacedBy(6.dp)
@@ -1549,7 +1565,8 @@ private fun SettingsBottomSheet(
                                     Text(
                                         text = "探索内容隐私过滤",
                                         style = MaterialTheme.typography.titleSmall,
-                                        fontWeight = FontWeight.Bold
+                                        fontWeight = FontWeight.Bold,
+                                        color = MaterialTheme.colorScheme.onSurface
                                     )
                                     Surface(
                                         shape = RoundedCornerShape(4.dp),
@@ -1567,10 +1584,11 @@ private fun SettingsBottomSheet(
                                 Text(
                                     text = "开启后自动过滤小红书解析内容中的敏感/私密作品",
                                     style = MaterialTheme.typography.bodySmall,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.8f)
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
                                 )
                             }
                         }
+                        Spacer(Modifier.width(8.dp))
                         Switch(
                             checked = privacyEnabled,
                             onCheckedChange = onPrivacyToggle
@@ -1580,10 +1598,10 @@ private fun SettingsBottomSheet(
             }
 
             // ── 模块 4：通用服务端地址配置 ───────────────────────────
-            M3GlassCard(
-                shape = RoundedCornerShape(20.dp),
-                containerColor = MaterialTheme.colorScheme.surfaceContainerHigh.copy(alpha = 0.8f),
-                borderColor = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.2f),
+            Surface(
+                shape = RoundedCornerShape(18.dp),
+                color = MaterialTheme.colorScheme.surfaceContainerHigh,
+                border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.35f)),
                 modifier = Modifier.fillMaxWidth()
             ) {
                 Column(
@@ -1604,7 +1622,8 @@ private fun SettingsBottomSheet(
                             Text(
                                 text = "服务端 API 节点",
                                 style = MaterialTheme.typography.titleSmall,
-                                fontWeight = FontWeight.Bold
+                                fontWeight = FontWeight.Bold,
+                                color = MaterialTheme.colorScheme.onSurface
                             )
                             Text(
                                 text = "双空间通用网络后端",
@@ -1618,8 +1637,8 @@ private fun SettingsBottomSheet(
                         val selected = url == currentUrl
                         Surface(
                             shape = RoundedCornerShape(12.dp),
-                            color = if (selected) MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.6f)
-                                    else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.35f),
+                            color = if (selected) MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.7f)
+                                    else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.45f),
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .bouncyClickable { onSelectUrl(url) }
@@ -1638,6 +1657,7 @@ private fun SettingsBottomSheet(
                                     Text(
                                         url,
                                         style = MaterialTheme.typography.bodyMedium,
+                                        color = MaterialTheme.colorScheme.onSurface,
                                         maxLines = 1,
                                         overflow = TextOverflow.Ellipsis
                                     )
@@ -1677,7 +1697,11 @@ private fun SettingsBottomSheet(
                                 label = { Text("http://ip:port") },
                                 modifier = Modifier.weight(1f),
                                 singleLine = true,
-                                shape = RoundedCornerShape(12.dp)
+                                shape = RoundedCornerShape(12.dp),
+                                colors = OutlinedTextFieldDefaults.colors(
+                                    focusedContainerColor = MaterialTheme.colorScheme.surface,
+                                    unfocusedContainerColor = MaterialTheme.colorScheme.surface
+                                )
                             )
                             Button(
                                 onClick = {

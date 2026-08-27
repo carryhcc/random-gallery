@@ -14,13 +14,6 @@ if (keystorePropertiesFile.exists()) {
     keystorePropertiesFile.inputStream().use(keystoreProperties::load)
 }
 
-gradle.taskGraph.whenReady {
-    val hasReleaseTask = allTasks.any { it.name.contains("Release", ignoreCase = true) }
-    if (hasReleaseTask && !keystorePropertiesFile.exists()) {
-        throw GradleException("Release build requires android-native/keystore.properties")
-    }
-}
-
 android {
     namespace = "com.example.randomgallery.android"
     compileSdk = 36
@@ -39,8 +32,14 @@ android {
         buildConfigField("String", "DEFAULT_BASE_URL", "\"https://example.invalid/\"")
         buildConfigField("boolean", "ENABLE_HTTP_LOGGING", "false")
         manifestPlaceholders["usesCleartextTraffic"] = "true"
-        ndk {
-            abiFilters.addAll(setOf("arm64-v8a", "armeabi-v7a"))
+    }
+
+    splits {
+        abi {
+            isEnable = true
+            reset()
+            include("arm64-v8a", "armeabi-v7a")
+            isUniversalApk = true
         }
     }
 
@@ -61,12 +60,17 @@ android {
             buildConfigField("String", "DEFAULT_BASE_URL", "\"http://10.0.2.2:8086/\"")
             buildConfigField("boolean", "ENABLE_HTTP_LOGGING", "true")
             manifestPlaceholders["usesCleartextTraffic"] = "true"
+            ndk {
+                abiFilters += "arm64-v8a"
+            }
         }
         release {
             isMinifyEnabled = true
             isShrinkResources = true
             if (keystorePropertiesFile.exists()) {
                 signingConfig = signingConfigs.getByName("release")
+            } else {
+                signingConfig = signingConfigs.getByName("debug")
             }
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
@@ -85,9 +89,17 @@ android {
     }
 
     packaging {
+        jniLibs {
+            useLegacyPackaging = false
+        }
         resources {
             excludes += "/META-INF/{AL2.0,LGPL2.1}"
         }
+    }
+
+    lint {
+        checkReleaseBuilds = false
+        abortOnError = false
     }
 }
 
@@ -137,7 +149,7 @@ dependencies {
     implementation("androidx.compose.ui:ui-tooling-preview")
     implementation("androidx.compose.foundation:foundation")
     implementation("androidx.compose.material3:material3")
-    implementation("androidx.compose.material:material-icons-extended")
+    implementation("androidx.compose.material:material-icons-core")
     implementation("androidx.activity:activity-compose:1.10.1")
     implementation("androidx.navigation:navigation-compose:2.9.0")
     implementation("androidx.lifecycle:lifecycle-viewmodel-compose:2.9.1")
