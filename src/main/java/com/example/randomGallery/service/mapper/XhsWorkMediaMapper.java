@@ -26,6 +26,11 @@ public interface XhsWorkMediaMapper extends BaseMapper<XhsWorkMediaDO> {
     RandomGifVO getGifById(@Param("id") Long id);
 
     /**
+     * 随机获取同一作品下的一整组GIF
+     */
+    List<RandomGifVO> getRandomGifGroup();
+
+    /**
      * 批量插入媒体记录
      */
     void insertBatch(@Param("list") List<XhsWorkMediaDO> list);

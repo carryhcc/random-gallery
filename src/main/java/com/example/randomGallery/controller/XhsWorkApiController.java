@@ -186,6 +186,19 @@ public class XhsWorkApiController {
     }
 
     /**
+     * 随机获取同一作品的一整组套图GIF
+     */
+    @GetMapping("/randomGifGroup")
+    public Result<List<RandomGifVO>> getRandomGifGroup() {
+        log.info("获取随机套图GIF");
+        List<RandomGifVO> list = xhsWorkService.getRandomGifGroup();
+        if (list == null || list.isEmpty()) {
+            return Result.error("暂无可用的套图GIF");
+        }
+        return Result.success(list);
+    }
+
+    /**
      * 获取所有GIF的ID列表
      */
     @GetMapping("/allGifIds")

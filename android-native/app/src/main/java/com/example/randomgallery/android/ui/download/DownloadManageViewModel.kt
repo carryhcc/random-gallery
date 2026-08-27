@@ -112,7 +112,8 @@ class DownloadManageViewModel(
         if (_statusFilter.value == status) return
         _statusFilter.value = status
         _historyPage.value = 1
-        loadHistory(showLoading = true)
+        _history.value = emptyList() // 立即清空旧数据，瞬间触发加载动画/骨架状态
+        loadHistory(showLoading = true, allowWhileBusy = true)
     }
 
     fun loadStats() {

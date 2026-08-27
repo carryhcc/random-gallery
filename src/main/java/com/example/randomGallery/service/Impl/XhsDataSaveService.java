@@ -51,6 +51,11 @@ public class XhsDataSaveService {
 
             DownLoadInfo.Data data = downLoadInfo.getData();
             String workId = data.getWorkId();
+            if (StrUtil.isBlank(workId)) {
+                String msg = StrUtil.isNotBlank(downLoadInfo.getMessage()) ? downLoadInfo.getMessage() : "未提取到有效作品ID(work_id)";
+                log.error("作品解析失败或未提取到work_id，上游响应信息: {}", msg);
+                throw new IllegalArgumentException("作品ID(work_id)为空，无法入库。响应信息: " + msg);
+            }
 
             // 1. 处理基础信息（利用 MyBatis Plus 的唯一索引冲突处理或先查后改）
             Long workBaseId = saveOrUpdateWorkBase(downLoadInfo);
@@ -154,11 +159,26 @@ public class XhsDataSaveService {
 
     private XhsWorkBaseDO convertToWorkBaseDO(DownLoadInfo info) {
         XhsWorkBaseDO res = new XhsWorkBaseDO();
-        BeanUtil.copyProperties(info.getData(), res);
-        BeanUtil.copyProperties(info.getParams(), res, "url"); // 排除重名但逻辑不同的字段
+        DownLoadInfo.Data data = info.getData();
+        DownLoadInfo.Params params = info.getParams();
+
+        if (data != null) {
+            BeanUtil.copyProperties(data, res);
+            if (data.getTimestamp() != 0) {
+                res.setTimestamp(BigDecimal.valueOf(data.getTimestamp()));
+            }
+        }
+
+        if (params != null) {
+            res.setParamsUrl(params.getUrl());
+            res.setParamsDownload(params.isDownload());
+            res.setParamsIndex(params.getIndex());
+            res.setParamsCookie(params.getCookie());
+            res.setParamsProxy(params.getProxy());
+            res.setParamsSkip(params.isSkip());
+        }
+
         res.setMessage(info.getMessage());
-        res.setParamsUrl(info.getParams().getUrl());
-        res.setTimestamp(BigDecimal.valueOf(info.getData().getTimestamp()));
         res.setCreateTime(LocalDateTime.now());
         return res;
     }

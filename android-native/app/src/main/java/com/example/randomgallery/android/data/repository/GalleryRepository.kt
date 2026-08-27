@@ -260,6 +260,18 @@ class GalleryRepository(
         loadRandomGifFromCache() ?: Result.failure(e)
     }
 
+    suspend fun getRandomGifGroup(): Result<List<RandomGifVO>> = try {
+        val res = api.getRandomGifGroup()
+        if (res.code == 200 && res.data != null) {
+            Result.success(res.data)
+        } else {
+            Result.failure(Exception(res.message ?: "加载套图失败"))
+        }
+    } catch (e: Exception) {
+        if (e is CancellationException) throw e
+        Result.failure(e)
+    }
+
     private suspend fun loadRandomGifFromCache(): Result<RandomGifVO>? {
         val entry = cacheDao.findByKey("random_gif") ?: return null
         if (entry.updatedAt + RANDOM_CACHE_TTL_MS < System.currentTimeMillis()) return null

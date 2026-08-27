@@ -258,6 +258,11 @@ public class XhsWorkServiceImpl implements XhsWorkService {
         return workMediaMapper.getGifById(id);
     }
 
+    @Override
+    public List<RandomGifVO> getRandomGifGroup() {
+        return workMediaMapper.getRandomGifGroup();
+    }
+
     /**
      * 获取安全的图片 URL
      * 如果是隐私模式，返回占位符；否则检测 HEIC 并返回转换后的 URL

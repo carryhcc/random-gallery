@@ -23,10 +23,14 @@ class RandomGifViewModel(
 
     private fun repository(): GalleryRepository = AppContainer.repository(appContext)
 
-    // 复用全局单例 OkHttpClient（含连接池），不再为 HEAD 校验单独建客户端
+    // 复用全局单例 OkHttpClient
     private val checkClient by lazy {
         NetworkModule.okHttpClient(appContext, BuildConfig.ENABLE_HTTP_LOGGING)
     }
+
+    // 播放模式："single" (单张随机) vs "group" (套图随机)
+    private val _playMode = MutableStateFlow("single")
+    val playMode: StateFlow<String> = _playMode.asStateFlow()
 
     private val _gifList = MutableStateFlow<List<RandomGifVO>>(emptyList())
     val gifList: StateFlow<List<RandomGifVO>> = _gifList.asStateFlow()
@@ -40,7 +44,15 @@ class RandomGifViewModel(
     private var isLoadingMore = false
 
     init {
-        // 首个 loadNext() 已同步置位 isLoadingMore，第二个调用必被拦截，删掉死代码
+        loadNext()
+    }
+
+    fun switchMode(mode: String) {
+        if (_playMode.value == mode) return
+        _playMode.value = mode
+        _gifList.value = emptyList()
+        _error.value = null
+        isLoadingMore = false
         loadNext()
     }
 
@@ -49,28 +61,47 @@ class RandomGifViewModel(
         isLoadingMore = true
         val isFirst = _gifList.value.isEmpty()
         if (isFirst) _loading.value = true
+
         viewModelScope.launch {
-            var attempts = 0
-            var loaded = false
-            while (attempts < MAX_ATTEMPTS && !loaded) {
-                attempts++
-                repository().getRandomGif()
-                    .onSuccess { gif ->
-                        val url = gif.mediaUrl?.let { ImageUrlResolver.rawUrl(it) }
-                        if (url != null && isUrlAlive(url)) {
+            if (_playMode.value == "group") {
+                // 套图模式：随机拉取同一作品下的一整组动图
+                repository().getRandomGifGroup()
+                    .onSuccess { groupGifs ->
+                        if (groupGifs.isNotEmpty()) {
                             val current = _gifList.value
-                            if (current.none { it.mediaUrl == gif.mediaUrl } && current.size < MAX_GIFS) {
-                                _gifList.value = current + gif
-                            }
-                            loaded = true // 重复或已到上界也算结束，避免死循环
+                            val filtered = groupGifs.filter { g -> current.none { it.id == g.id } }
+                            _gifList.value = (current + filtered).take(MAX_GIFS)
                             _error.value = null
+                        } else {
+                            if (isFirst) _error.value = "未找到可用套图动图"
                         }
-                        // url 失效则继续循环尝试下一个
                     }
                     .onFailure {
                         if (isFirst) _error.value = it.message ?: "加载失败"
-                        loaded = true // 网络错误就停止重试
                     }
+            } else {
+                // 单张随机模式
+                var attempts = 0
+                var loaded = false
+                while (attempts < MAX_ATTEMPTS && !loaded) {
+                    attempts++
+                    repository().getRandomGif()
+                        .onSuccess { gif ->
+                            val url = gif.mediaUrl?.let { ImageUrlResolver.rawUrl(it) }
+                            if (url != null && isUrlAlive(url)) {
+                                val current = _gifList.value
+                                if (current.none { it.mediaUrl == gif.mediaUrl } && current.size < MAX_GIFS) {
+                                    _gifList.value = current + gif
+                                }
+                                loaded = true
+                                _error.value = null
+                            }
+                        }
+                        .onFailure {
+                            if (isFirst) _error.value = it.message ?: "加载失败"
+                            loaded = true
+                        }
+                }
             }
             if (isFirst) _loading.value = false
             isLoadingMore = false
@@ -91,6 +122,6 @@ class RandomGifViewModel(
 
     private companion object {
         const val MAX_ATTEMPTS = 3
-        const val MAX_GIFS = 100
+        const val MAX_GIFS = 120
     }
 }

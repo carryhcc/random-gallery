@@ -83,6 +83,9 @@ interface ApiService {
     @GET("api/xhsWork/randomGif")
     suspend fun getRandomGif(): ApiResponse<RandomGifVO>
 
+    @GET("api/xhsWork/randomGifGroup")
+    suspend fun getRandomGifGroup(): ApiResponse<List<RandomGifVO>>
+
     @GET("api/system/privacy-mode")
     suspend fun getPrivacyMode(): ApiResponse<Boolean>
 

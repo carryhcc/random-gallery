@@ -52,6 +52,13 @@ public interface XhsWorkService {
     RandomGifVO getRandomGif();
 
     /**
+     * 随机获取同一作品的一整组套图GIF
+     * 
+     * @return 同一作品下的一组GIF列表
+     */
+    java.util.List<RandomGifVO> getRandomGifGroup();
+
+    /**
      * 获取所有GIF的ID列表
      * 
      * @return 所有可用GIF的ID列表
