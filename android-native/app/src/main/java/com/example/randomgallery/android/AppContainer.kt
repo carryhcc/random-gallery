@@ -41,11 +41,12 @@ object AppContainer {
         clearRepository()
     }
 
-    private fun clearRepository() {
+    fun clearRepository() {
         synchronized(this) {
             repository = null
             repositoryBaseUrl = null
         }
+        NetworkModule.resetOkHttpClient()
     }
 
     fun repository(context: Context): GalleryRepository {

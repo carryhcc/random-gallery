@@ -164,6 +164,14 @@ data class XhsDownloadTaskVO(
 )
 
 @JsonClass(generateAdapter = true)
+data class DownloadTaskStatsVO(
+    val total: Long = 0,
+    val waitingCount: Long = 0,
+    val completedCount: Long = 0,
+    val failedCount: Long = 0
+)
+
+@JsonClass(generateAdapter = true)
 data class PicCount(
     val env: String? = null,
     val picCount: Long? = null,

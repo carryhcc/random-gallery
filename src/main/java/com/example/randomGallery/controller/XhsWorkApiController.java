@@ -47,14 +47,32 @@ public class XhsWorkApiController {
     }
 
     /**
-     * 分页查询下载任务历史记录（按添加时间倒序）
+     * 分页查询下载任务历史记录（按添加时间倒序，支持状态筛选）
      */
     @GetMapping("/download/history")
     public Result<PageResult<XhsDownloadTaskVO>> downloadHistory(
             @RequestParam(defaultValue = "1") int page,
-            @RequestParam(defaultValue = "10") int size) {
-        PageResult<XhsDownloadTaskVO> result = downloadTaskService.pageHistory(page, size);
+            @RequestParam(defaultValue = "10") int size,
+            @RequestParam(required = false) Integer status) {
+        PageResult<XhsDownloadTaskVO> result = downloadTaskService.pageHistory(page, size, status);
         return Result.success(result);
+    }
+
+    /**
+     * 获取下载任务统计（进行中/等待中、已完成、失败数量）
+     */
+    @GetMapping("/download/stats")
+    public Result<com.example.randomGallery.entity.VO.DownloadTaskStatsVO> downloadStats() {
+        return Result.success(downloadTaskService.getStats());
+    }
+
+    /**
+     * 删除指定的下载任务记录
+     */
+    @DeleteMapping("/download/task/{id}")
+    public Result<String> deleteDownloadTask(@PathVariable Long id) {
+        downloadTaskService.deleteTask(id);
+        return Result.success("删除成功");
     }
 
     /**

@@ -51,18 +51,53 @@ public class DownloadTaskServiceImpl implements DownloadTaskService {
     }
 
     @Override
-    public PageResult<XhsDownloadTaskVO> pageHistory(int page, int size) {
+    public PageResult<XhsDownloadTaskVO> pageHistory(int page, int size, Integer status) {
         int currentPage = Math.max(page, 1);
         int pageSize = Math.max(size, 1);
         Page<XhsDownloadTaskDO> p = new Page<>(currentPage, pageSize);
-        Page<XhsDownloadTaskDO> result = downloadTaskMapper.selectPage(p,
-                Wrappers.<XhsDownloadTaskDO>lambdaQuery()
-                        .orderByDesc(XhsDownloadTaskDO::getCreateTime)
-                        .orderByDesc(XhsDownloadTaskDO::getId));
+        
+        var query = Wrappers.<XhsDownloadTaskDO>lambdaQuery();
+        if (status != null) {
+            DownloadTaskStatusEnum statusEnum = DownloadTaskStatusEnum.fromValue(status);
+            if (statusEnum != null) {
+                if (statusEnum == DownloadTaskStatusEnum.COMPLETED) {
+                    // 已完成包含 COMPLETED 与 UPDATED
+                    query.in(XhsDownloadTaskDO::getStatus, DownloadTaskStatusEnum.COMPLETED, DownloadTaskStatusEnum.UPDATED);
+                } else {
+                    query.eq(XhsDownloadTaskDO::getStatus, statusEnum);
+                }
+            }
+        }
+        query.orderByDesc(XhsDownloadTaskDO::getCreateTime)
+             .orderByDesc(XhsDownloadTaskDO::getId);
+
+        Page<XhsDownloadTaskDO> result = downloadTaskMapper.selectPage(p, query);
         List<XhsDownloadTaskVO> list = result.getRecords().stream()
                 .map(this::convertToVO)
                 .collect(Collectors.toList());
         return new PageResult<>(list, result.getTotal(), result.getCurrent(), result.getSize());
+    }
+
+    @Override
+    public com.example.randomGallery.entity.VO.DownloadTaskStatsVO getStats() {
+        long waiting = downloadTaskMapper.selectCount(Wrappers.<XhsDownloadTaskDO>lambdaQuery().eq(XhsDownloadTaskDO::getStatus, DownloadTaskStatusEnum.WAITING));
+        long completed = downloadTaskMapper.selectCount(Wrappers.<XhsDownloadTaskDO>lambdaQuery().in(XhsDownloadTaskDO::getStatus, DownloadTaskStatusEnum.COMPLETED, DownloadTaskStatusEnum.UPDATED));
+        long failed = downloadTaskMapper.selectCount(Wrappers.<XhsDownloadTaskDO>lambdaQuery().eq(XhsDownloadTaskDO::getStatus, DownloadTaskStatusEnum.FAILED));
+        long total = waiting + completed + failed;
+        return com.example.randomGallery.entity.VO.DownloadTaskStatsVO.builder()
+                .total(total)
+                .waitingCount(waiting)
+                .completedCount(completed)
+                .failedCount(failed)
+                .build();
+    }
+
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public void deleteTask(Long id) {
+        if (id == null) return;
+        downloadTaskMapper.deleteById(id);
+        log.info("已删除下载任务记录, id: {}", id);
     }
 
     @Override

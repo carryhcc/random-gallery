@@ -14,6 +14,9 @@ import com.example.randomgallery.android.ui.download.DownloadManageViewModel
 import com.example.randomgallery.android.ui.theme.RandomGalleryTheme
 import kotlinx.coroutines.launch
 
+import androidx.compose.runtime.getValue
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+
 /**
  * 单 Activity 宿主。整个 App 的页面切换由 Compose Navigation（[AppNavHost]）驱动，
  * 不再使用 Fragment / nav_graph.xml / BottomNavigationView。
@@ -30,8 +33,10 @@ class MainActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         enableEdgeToEdge()   // Android 15+ 强制全面屏，提前主动适配
         super.onCreate(savedInstanceState)
+        val appPrefs = AppPrefs(this)
         setContent {
-            RandomGalleryTheme {
+            val darkMode by appPrefs.darkModeFlow.collectAsStateWithLifecycle(initialValue = "system")
+            RandomGalleryTheme(darkMode = darkMode) {
                 AppNavHost()
             }
         }

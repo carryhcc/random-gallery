@@ -42,8 +42,15 @@ interface ApiService {
     @GET("api/xhsWork/download/history")
     suspend fun getDownloadHistory(
         @Query("page") page: Int,
-        @Query("size") size: Int
+        @Query("size") size: Int,
+        @Query("status") status: Int? = null
     ): ApiResponse<PageResult<XhsDownloadTaskVO>>
+
+    @GET("api/xhsWork/download/stats")
+    suspend fun getDownloadStats(): ApiResponse<DownloadTaskStatsVO>
+
+    @DELETE("api/xhsWork/download/task/{id}")
+    suspend fun deleteDownloadTask(@Path("id") id: Long): ApiResponse<String>
 
     @POST("api/xhsWork/download/retry/{id}")
     suspend fun retryDownloadTask(@Path("id") id: Long): ApiResponse<String>
@@ -88,6 +95,6 @@ interface ApiService {
     @GET("api/system/env/currentInfo")
     suspend fun getCurrentEnvInfo(): ApiResponse<PicCount>
 
-    @GET("api/system/env/{env}")
-    suspend fun switchEnv(@Path("env") env: String): ApiResponse<String>
+    @GET("api/system/env/switch")
+    suspend fun switchEnv(@Query("env") env: String): ApiResponse<String>
 }

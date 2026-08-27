@@ -20,12 +20,15 @@ class RandomGalleryApp : Application(), ImageLoaderFactory {
     }
 
     override fun newImageLoader(): ImageLoader {
-        val okHttpClient = OkHttpClient.Builder()
+        val okHttpClientBuilder = OkHttpClient.Builder()
             .addInterceptor(CoilNetworkInterceptor())
-            .build()
+
+        com.example.randomgallery.android.data.network.NetworkModule.buildCustomProxy(this)?.let { proxy ->
+            okHttpClientBuilder.proxy(proxy)
+        }
 
         return ImageLoader.Builder(this)
-            .okHttpClient(okHttpClient)
+            .okHttpClient(okHttpClientBuilder.build())
             .memoryCache {
                 MemoryCache.Builder(this)
                     .maxSizePercent(0.25)

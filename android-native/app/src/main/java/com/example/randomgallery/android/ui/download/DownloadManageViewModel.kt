@@ -41,6 +41,13 @@ class DownloadManageViewModel(
     // ── 下载历史 ──
     private val HISTORY_PAGE_SIZE = 10
 
+    // 状态筛选：null-全部, 0-等待/进行中, 1-已完成, 2-失败
+    private val _statusFilter = MutableStateFlow<Int?>(null)
+    val statusFilter: StateFlow<Int?> = _statusFilter.asStateFlow()
+
+    private val _stats = MutableStateFlow(com.example.randomgallery.android.data.model.DownloadTaskStatsVO())
+    val stats: StateFlow<com.example.randomgallery.android.data.model.DownloadTaskStatsVO> = _stats.asStateFlow()
+
     private val _history = MutableStateFlow<List<XhsDownloadTaskVO>>(emptyList())
     val history: StateFlow<List<XhsDownloadTaskVO>> = _history.asStateFlow()
 
@@ -101,16 +108,44 @@ class DownloadManageViewModel(
     private var historyRequesting = false
     private var pollConsecutiveErrors = 0
 
+    fun setStatusFilter(status: Int?) {
+        if (_statusFilter.value == status) return
+        _statusFilter.value = status
+        _historyPage.value = 1
+        loadHistory(showLoading = true)
+    }
+
+    fun loadStats() {
+        viewModelScope.launch {
+            repository().getDownloadStats().onSuccess {
+                _stats.value = it
+            }
+        }
+    }
+
+    fun deleteTask(id: Long) {
+        viewModelScope.launch {
+            val result = repository().deleteDownloadTask(id)
+            _historyEvents.trySend(result)
+            if (result.isSuccess) {
+                loadHistory(showLoading = false)
+                loadStats()
+            }
+        }
+    }
+
     fun loadHistory(showLoading: Boolean = true, allowWhileBusy: Boolean = true) {
         if (historyRequesting && !allowWhileBusy) return
         if (!allowWhileBusy && pollConsecutiveErrors >= 5) return  // 连续失败 5 次熔断，避免死循环轮询
         historyRequesting = true
+        loadStats()
         val version = ++historyVersion
         if (showLoading) _historyLoading.value = true
         viewModelScope.launch {
             try {
                 val page = _historyPage.value
-                val result = repository().getDownloadHistory(page, HISTORY_PAGE_SIZE)
+                val filter = _statusFilter.value
+                val result = repository().getDownloadHistory(page, HISTORY_PAGE_SIZE, filter)
                 if (version == historyVersion) {
                     if (result.isSuccess) {
                         val data = result.getOrNull()

@@ -39,8 +39,10 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableLongStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -104,16 +106,24 @@ object Routes {
 
 private data class BottomTab(val route: String, val labelRes: Int, val iconRes: Int)
 
-private val bottomTabs = listOf(
+// ── 双模态动态底栏配置 ──────────────────────────────────────────────
+private val exploreBottomTabs = listOf(
+    BottomTab(Routes.HOME, R.string.nav_explore, R.drawable.ic_nav_home),
+    BottomTab(Routes.RANDOM_GIF, R.string.home_random_gif, R.drawable.ic_nav_stack),
+    BottomTab(Routes.DOWNLOAD_LIST, R.string.nav_download, R.drawable.ic_nav_download),
+    BottomTab(Routes.DOWNLOAD_MANAGE, R.string.home_download_manage_short, R.drawable.ic_nav_group)
+)
+
+private val galleryBottomTabs = listOf(
     BottomTab(Routes.HOME, R.string.nav_home, R.drawable.ic_nav_home),
     BottomTab(Routes.RANDOM_GALLERY, R.string.home_random_gallery, R.drawable.ic_nav_stack),
     BottomTab(Routes.GROUP_LIST, R.string.nav_group, R.drawable.ic_nav_group),
-    BottomTab(Routes.DOWNLOAD_LIST, R.string.nav_download, R.drawable.ic_nav_download)
+    BottomTab(Routes.RANDOM_PIC, R.string.home_random_pic, R.drawable.ic_nav_download)
 )
 
-// 底栏可见的路由（4 个 tab + 套图列表二级页），与旧 navVisibleIds 一致
+// 顶级 Tab 显示底部导航栏
 private val bottomBarBases = setOf(
-    Routes.HOME, Routes.RANDOM_GALLERY, Routes.GROUP_LIST, Routes.DOWNLOAD_LIST, Routes.PIC_LIST
+    Routes.HOME, Routes.RANDOM_GALLERY, Routes.GROUP_LIST, Routes.DOWNLOAD_LIST, Routes.RANDOM_GIF, Routes.DOWNLOAD_MANAGE, Routes.RANDOM_PIC
 )
 
 private fun routeBase(route: String?): String? =
@@ -125,6 +135,10 @@ fun AppNavHost() {
     val context = LocalContext.current
     val configuration = LocalConfiguration.current
     val isWideScreen = configuration.screenWidthDp >= 600
+
+    val appPrefs = remember { com.example.randomgallery.android.data.local.AppPrefs(context.applicationContext) }
+    val spaceMode by appPrefs.spaceModeFlow.collectAsState(initial = "explore")
+    val currentTabs = if (spaceMode == "gallery") galleryBottomTabs else exploreBottomTabs
 
     val backStackEntry by navController.currentBackStackEntryAsState()
     val currentBase = routeBase(backStackEntry?.destination?.route)
@@ -148,7 +162,7 @@ fun AppNavHost() {
             // 宽屏模式下展示侧边 NavigationRail
             if (isWideScreen && showBottomBar) {
                 NavigationRail {
-                    bottomTabs.forEach { tab ->
+                    currentTabs.forEach { tab ->
                         NavigationRailItem(
                             selected = currentBase == tab.route,
                             onClick = { navController.switchTab(tab.route) },
@@ -166,7 +180,7 @@ fun AppNavHost() {
                     // 窄屏模式下展示底部 macOS / iOS 悬浮长条胶囊 NavigationBar
                     if (!isWideScreen && showBottomBar) {
                         FloatingCapsuleNavigationBar(
-                            tabs = bottomTabs,
+                            tabs = currentTabs,
                             currentRoute = currentBase,
                             onTabSelected = { route -> navController.switchTab(route) }
                         )
@@ -186,9 +200,13 @@ fun AppNavHost() {
                     val vm: HomeViewModel = viewModel { HomeViewModel(context.applicationContext) }
                     HomeScreen(
                         viewModel = vm,
-                        onGroupClick = { _ -> },
-                        onNavigateToPicList = { groupId, groupName ->
-                            if (groupId > 0L) navController.toPicList(groupId, groupName)
+                        onWorkClick = { work ->
+                            work.workId?.let { workId ->
+                                navController.toDownloadDetail(workId, work.coverImageUrl ?: "")
+                            }
+                        },
+                        onNavigateToDownloadDetail = { workId, coverUrl ->
+                            navController.toDownloadDetail(workId, coverUrl)
                         },
                         onNavigateToRandomPic = { navController.navigate(Routes.RANDOM_PIC) },
                         onNavigateToRandomGif = { navController.navigate(Routes.RANDOM_GIF) },
@@ -311,12 +329,26 @@ fun AppNavHost() {
 
 // ── 导航辅助 ──────────────────────────────────────────────────────────
 
-/** 切换底部 tab：保存/恢复返回栈状态，单实例 */
+/** 切换底部 tab：支持从任意深层页面（如详情页、作者筛选页等）平滑切换至任何顶级 Tab，彻底消除多层栈卡死问题 */
 private fun NavHostController.switchTab(route: String) {
-    navigate(route) {
-        popUpTo(graph.findStartDestination().id) { saveState = true }
-        launchSingleTop = true
-        restoreState = true
+    if (route == Routes.HOME) {
+        // 点击主页：直接回退栈顶到根页面
+        popBackStack(Routes.HOME, inclusive = false)
+    } else {
+        val currentRoute = currentBackStackEntry?.destination?.route?.substringBefore("?")?.substringBefore("/")
+        if (currentRoute == route) {
+            // 如果已经在该 Tab（比如在带参数的作者列表页，再次点击底栏【作品】时），清空参数重置为纯净根列表
+            popBackStack(route, inclusive = false)
+        } else {
+            navigate(route) {
+                // 清理到根导航节点，不保留深层残留页面阻碍切换
+                popUpTo(graph.findStartDestination().id) {
+                    saveState = false
+                }
+                launchSingleTop = true
+                restoreState = false
+            }
+        }
     }
 }
 

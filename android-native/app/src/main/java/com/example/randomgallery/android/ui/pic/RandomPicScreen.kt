@@ -245,12 +245,6 @@ fun RandomPicScreen(
                                                 val name = viewModel.resolveGroupName(gid)
                                                 onGroupClick(gid, name ?: fallbackName)
                                             }
-                                        },
-                                        modifier = Modifier.bouncyClickable {
-                                            scope.launch {
-                                                val name = viewModel.resolveGroupName(gid)
-                                                onGroupClick(gid, name ?: fallbackName)
-                                            }
                                         }
                                     ) {
                                         Icon(
@@ -279,15 +273,7 @@ fun RandomPicScreen(
                                                 .onFailure { e -> Messenger.show(e.message ?: "下载失败", isError = true) }
                                         }
                                     },
-                                    modifier = Modifier
-                                        .size(44.dp)
-                                        .bouncyClickable {
-                                            if (currentUrl.isNotBlank()) {
-                                                Downloader.enqueue(context, currentUrl, MediaKind.IMAGE)
-                                                    .onSuccess { Messenger.show(context.getString(R.string.pic_download_queued)) }
-                                                    .onFailure { e -> Messenger.show(e.message ?: "下载失败", isError = true) }
-                                            }
-                                        }
+                                    modifier = Modifier.size(44.dp)
                                 ) {
                                     Icon(
                                         Icons.Filled.Download,
@@ -304,21 +290,47 @@ fun RandomPicScreen(
         }
     }
 
-    // 点击大图弹窗全屏预览 (Full Preview Dialog)
+    // 点击大图弹窗全屏预览 (Full Preview Dialog with Gestures)
     if (!previewUrl.isNullOrBlank()) {
-        androidx.compose.ui.window.Dialog(onDismissRequest = { previewUrl = null }) {
+        androidx.compose.ui.window.Dialog(
+            onDismissRequest = { previewUrl = null },
+            properties = androidx.compose.ui.window.DialogProperties(usePlatformDefaultWidth = false)
+        ) {
             Box(
                 modifier = Modifier
                     .fillMaxSize()
-                    .clickable { previewUrl = null },
-                contentAlignment = Alignment.Center
+                    .background(Color.Black.copy(alpha = 0.95f))
             ) {
-                AsyncImage(
-                    model = previewUrl,
-                    contentDescription = null,
-                    contentScale = ContentScale.Fit,
-                    modifier = Modifier.fillMaxSize()
-                )
+                ZoomableBox(
+                    modifier = Modifier.fillMaxSize(),
+                    onSingleTap = { previewUrl = null }
+                ) {
+                    AsyncImage(
+                        model = previewUrl,
+                        contentDescription = null,
+                        contentScale = ContentScale.Fit,
+                        modifier = Modifier.fillMaxSize()
+                    )
+                }
+
+                // 顶部浮动关闭按钮
+                IconButton(
+                    onClick = { previewUrl = null },
+                    modifier = Modifier
+                        .align(Alignment.TopEnd)
+                        .statusBarsPadding()
+                        .padding(Spacing.md),
+                    colors = IconButtonDefaults.iconButtonColors(
+                        containerColor = Color.Black.copy(alpha = 0.5f),
+                        contentColor = Color.White
+                    )
+                ) {
+                    Icon(
+                        Icons.AutoMirrored.Filled.ArrowBack,
+                        contentDescription = stringResource(R.string.common_back),
+                        tint = Color.White
+                    )
+                }
             }
         }
     }

@@ -173,15 +173,13 @@ fun GroupListScreen(
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     IconButton(
-                        onClick = { viewModel.prevPage() },
-                        modifier = Modifier.bouncyClickable { viewModel.prevPage() }
+                        onClick = { viewModel.prevPage() }
                     ) {
                         Icon(Icons.Filled.ChevronLeft, stringResource(R.string.group_prev_page), tint = MaterialTheme.colorScheme.primary)
                     }
                     Text(pageInfo, style = MaterialTheme.typography.bodySmall.tabularNumbers, color = MaterialTheme.colorScheme.onSurface, fontWeight = FontWeight.Bold)
                     IconButton(
-                        onClick = { viewModel.nextPage() },
-                        modifier = Modifier.bouncyClickable { viewModel.nextPage() }
+                        onClick = { viewModel.nextPage() }
                     ) {
                         Icon(Icons.Filled.ChevronRight, stringResource(R.string.group_next_page), tint = MaterialTheme.colorScheme.primary)
                     }

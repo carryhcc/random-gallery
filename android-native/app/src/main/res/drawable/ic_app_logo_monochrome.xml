@@ -1,22 +1,33 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- 单色（themed icon）剪影：照片叠层 + 洗牌箭头，由系统统一着色。 -->
+<!--
+  iOS Squircle 风格单色图标前景
+-->
 <vector xmlns:android="http://schemas.android.com/apk/res/android"
     android:width="108dp"
     android:height="108dp"
     android:viewportWidth="108"
     android:viewportHeight="108">
 
-    <!-- 后卡 -->
-    <path android:fillColor="#FFFFFF"
-        android:pathData="M36,20 h30 a6,6 0 0 1 6,6 v24 a6,6 0 0 1 -6,6 h-30 a6,6 0 0 1 -6,-6 v-24 a6,6 0 0 1 6,-6 z" />
+    <!-- 1. iOS 风格主圆角方块 (48x48，居中于 54,54) -->
+    <path
+        android:pathData="M30,30 h48 a12,12 0 0 1 12,12 v24 a12,12 0 0 1 -12,12 h-48 a12,12 0 0 1 -12,-12 v-24 a12,12 0 0 1 12,-12 z"
+        android:fillColor="#FFFFFF" />
 
-    <!-- 前卡 -->
-    <path android:fillColor="#FFFFFF"
-        android:pathData="M44,34 h32 a6,6 0 0 1 6,6 v26 a6,6 0 0 1 -6,6 h-32 a6,6 0 0 1 -6,-6 v-26 a6,6 0 0 1 6,-6 z" />
+    <!-- 2. 内部镂空画卷山峦与朝阳 -->
+    <path
+        android:pathData="M64,43 a4.5,4.5 0 1 1 0,-9 a4.5,4.5 0 1 1 0,9 z"
+        android:fillColor="#000000" />
 
-    <!-- 洗牌箭头 -->
-    <path android:fillColor="#FFFFFF" android:pathData="M34,75.5 h30 v3 h-30 z" />
-    <path android:fillColor="#FFFFFF" android:pathData="M61,73 L70,77 L61,81 Z" />
-    <path android:fillColor="#FFFFFF" android:pathData="M44,81.5 h30 v3 h-30 z" />
-    <path android:fillColor="#FFFFFF" android:pathData="M47,79 L38,83 L47,87 Z" />
+    <path
+        android:pathData="M49,75 L58,58 C59.5,55.5 62.5,55.5 64,58 L75,75 Z"
+        android:fillColor="#000000" />
+
+    <path
+        android:pathData="M33,75 L45,52 C46.5,49.5 49.5,49.5 51,52 L63,75 Z"
+        android:fillColor="#000000" />
+
+    <!-- 3. 右上角灵感十字星 -->
+    <path
+        android:pathData="M76,28 C76,25 79,22 79,22 C79,22 79,25 82,25 C79,25 79,28 79,28 C79,28 76,25 76,28 Z"
+        android:fillColor="#FFFFFF" />
 </vector>

@@ -50,5 +50,5 @@ window_dump.xml
 .DS_Store
 .agents/
 skills-lock.json
-
+.agent-teams
 

@@ -154,10 +154,11 @@ private fun WorkCard(work: XhsWorkListVO, onClick: () -> Unit) {
     val imgCount = work.imageCount ?: 0
     val vidCount = work.gifCount ?: 0
 
-    GlassCard(
-        shape = RoundedCornerShape(24.dp),
-        elevation = 8.dp,
-        containerColor = MaterialTheme.colorScheme.surfaceContainerHigh.copy(alpha = 0.88f),
+    M3GlassCard(
+        shape = RoundedCornerShape(16.dp),
+        elevation = 1.dp,
+        containerColor = MaterialTheme.colorScheme.surfaceContainerLow.copy(alpha = 0.95f),
+        borderColor = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.20f),
         modifier = Modifier
             .fillMaxWidth()
             .bouncyClickable(onClick = onClick)
@@ -171,7 +172,7 @@ private fun WorkCard(work: XhsWorkListVO, onClick: () -> Unit) {
                     modifier = Modifier
                         .fillMaxWidth()
                         .aspectRatio(ratio)
-                        .clip(RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp))
+                        .clip(RoundedCornerShape(topStart = 16.dp, topEnd = 16.dp))
                         .background(MaterialTheme.colorScheme.surfaceVariant)
                 )
 
@@ -179,28 +180,33 @@ private fun WorkCard(work: XhsWorkListVO, onClick: () -> Unit) {
                 Row(
                     modifier = Modifier
                         .align(Alignment.TopEnd)
-                        .padding(Spacing.sm),
+                        .padding(8.dp),
                     horizontalArrangement = Arrangement.spacedBy(4.dp)
                 ) {
                     if (vidCount > 0) {
-                        XhsFloatingPill(text = "$vidCount", icon = Icons.Filled.VideoLibrary)
+                        M3GlassChip(text = "$vidCount", icon = Icons.Filled.VideoLibrary)
                     }
                     if (imgCount > 0) {
-                        XhsFloatingPill(text = "$imgCount", icon = Icons.Filled.Image)
+                        M3GlassChip(text = "$imgCount", icon = Icons.Filled.Image)
                     }
                 }
             }
 
-            Column(Modifier.padding(horizontal = Spacing.md, vertical = Spacing.sm)) {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 12.dp, vertical = 10.dp)
+            ) {
                 Text(
                     text = work.workTitle ?: stringResource(R.string.dl_untitled),
                     style = MaterialTheme.typography.titleSmall,
                     fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.onSurface,
                     maxLines = 2,
                     overflow = TextOverflow.Ellipsis
                 )
                 if (!work.authorNickname.isNullOrBlank()) {
-                    Spacer(Modifier.height(2.dp))
+                    Spacer(Modifier.height(4.dp))
                     Text(
                         text = "@${work.authorNickname}",
                         style = MaterialTheme.typography.bodySmall,

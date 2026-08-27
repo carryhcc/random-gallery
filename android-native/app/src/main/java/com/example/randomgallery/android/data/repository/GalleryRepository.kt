@@ -128,10 +128,28 @@ class GalleryRepository(
         Result.failure(e)
     }
 
-    suspend fun getDownloadHistory(page: Int, size: Int): Result<PageResult<XhsDownloadTaskVO>> = try {
-        val res = api.getDownloadHistory(page, size)
+    suspend fun getDownloadHistory(page: Int, size: Int, status: Int? = null): Result<PageResult<XhsDownloadTaskVO>> = try {
+        val res = api.getDownloadHistory(page, size, status)
         if (res.code == 200 && res.data != null) Result.success(res.data)
         else Result.failure(Exception(res.message ?: "加载失败"))
+    } catch (e: Exception) {
+        if (e is CancellationException) throw e
+        Result.failure(e)
+    }
+
+    suspend fun getDownloadStats(): Result<DownloadTaskStatsVO> = try {
+        val res = api.getDownloadStats()
+        if (res.code == 200 && res.data != null) Result.success(res.data)
+        else Result.failure(Exception(res.message ?: "获取统计失败"))
+    } catch (e: Exception) {
+        if (e is CancellationException) throw e
+        Result.failure(e)
+    }
+
+    suspend fun deleteDownloadTask(id: Long): Result<String> = try {
+        val res = api.deleteDownloadTask(id)
+        if (res.code == 200) Result.success(res.message ?: "删除成功")
+        else Result.failure(Exception(res.message ?: "删除失败"))
     } catch (e: Exception) {
         if (e is CancellationException) throw e
         Result.failure(e)

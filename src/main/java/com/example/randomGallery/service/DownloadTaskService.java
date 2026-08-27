@@ -21,12 +21,25 @@ public interface DownloadTaskService {
     Long addTask(DownLoadQry qry);
 
     /**
-     * 分页查询下载历史（按添加时间倒序）
+     * 分页查询下载历史（支持按状态筛选，按添加时间倒序）
      *
      * @param page 页码（从1开始）
      * @param size 每页数量
+     * @param status 状态筛选 (null 查询全部)
      */
-    PageResult<XhsDownloadTaskVO> pageHistory(int page, int size);
+    PageResult<XhsDownloadTaskVO> pageHistory(int page, int size, Integer status);
+
+    /**
+     * 获取下载任务统计数据（等待中、已完成、失败数量）
+     */
+    com.example.randomGallery.entity.VO.DownloadTaskStatsVO getStats();
+
+    /**
+     * 删除指定的下载任务记录
+     *
+     * @param id 任务ID
+     */
+    void deleteTask(Long id);
 
     /**
      * 重试失败的任务（仅 status=失败 可重试，置回等待中并累加重试次数）

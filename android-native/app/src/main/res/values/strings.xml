@@ -3,8 +3,10 @@
     <string name="app_name">随机图库</string>
     <!-- 底部导航 -->
     <string name="nav_home">首页</string>
+    <string name="nav_explore">精选</string>
     <string name="nav_group">分组</string>
-    <string name="nav_download">下载</string>
+    <string name="nav_download">作品</string>
+    <string name="home_download_manage_short">任务</string>
     <!-- 通用 -->
     <string name="common_back">返回</string>
     <string name="common_retry">重新加载</string>
@@ -35,6 +37,10 @@
     <string name="settings_server">服务器</string>
     <string name="settings_env">环境</string>
     <string name="settings_privacy">隐私模式</string>
+    <string name="settings_dark_mode">深色模式</string>
+    <string name="dark_mode_system">跟随系统</string>
+    <string name="dark_mode_on">开启</string>
+    <string name="dark_mode_off">关闭</string>
     <string name="settings_add_url_hint">添加新地址…</string>
     <string name="settings_url_unset">未设置</string>
     <string name="settings_add">添加</string>

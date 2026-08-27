@@ -59,14 +59,23 @@ public class SystemController {
     }
 
     /**
-     * 切换环境
+     * 切换环境 (支持 /env/switch?env=dev 及兼容旧版 /env/{env})
      */
-    @GetMapping("/env/switch")
-    public Result<String> switchEnv(@RequestParam String env) {
-        log.info("切换环境到: {}", env);
+    @GetMapping({"/env/switch", "/env/{envPath}"})
+    public Result<String> switchEnv(@PathVariable(value = "envPath", required = false) String envPath,
+                                    @RequestParam(value = "env", required = false) String env) {
+        String targetEnv = (env != null && !env.isBlank()) ? env : envPath;
+        return doSwitchEnv(targetEnv);
+    }
+
+    private Result<String> doSwitchEnv(String targetEnv) {
+        if (targetEnv == null || targetEnv.isBlank()) {
+            return Result.error("环境参数不能为空");
+        }
+        log.info("切换环境到: {}", targetEnv);
         try {
-            cacheService.switchSqlName(env);
-            return Result.success("环境切换成功", "当前环境: " + env);
+            cacheService.switchSqlName(targetEnv);
+            return Result.success("环境切换成功", "当前环境: " + targetEnv);
         } catch (Exception e) {
             log.error("环境切换失败", e);
             return Result.error("环境切换失败: " + e.getMessage());
@@ -79,7 +88,7 @@ public class SystemController {
     @GetMapping("/env/dev")
     public Result<String> switchToDev() {
         log.info("切换到开发环境");
-        return switchEnv("dev");
+        return doSwitchEnv("dev");
     }
 
     /**
@@ -88,7 +97,7 @@ public class SystemController {
     @GetMapping("/env/test")
     public Result<String> switchToTest() {
         log.info("切换到测试环境");
-        return switchEnv("test");
+        return doSwitchEnv("test");
     }
 
     /**
@@ -97,7 +106,7 @@ public class SystemController {
     @GetMapping("/env/prod")
     public Result<String> switchToProd() {
         log.info("切换到生产环境");
-        return switchEnv("prod");
+        return doSwitchEnv("prod");
     }
 
     /**

@@ -55,9 +55,7 @@ import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
 import coil.request.ImageRequest
 import com.example.randomgallery.android.data.model.GroupVO
-import com.example.randomgallery.android.ui.common.GlassCard
-import com.example.randomgallery.android.ui.common.XhsFloatingPill
-import com.example.randomgallery.android.ui.common.bouncyClickable
+import com.example.randomgallery.android.ui.common.*
 import com.example.randomgallery.android.ui.theme.RandomGalleryTheme
 import com.example.randomgallery.android.ui.theme.Spacing
 import com.example.randomgallery.android.ui.theme.tabularNumbers
@@ -128,16 +126,13 @@ fun RandomGalleryScreen(
         ) {
             when {
                 groups.isEmpty() && loading -> {
-                    CircularProgressIndicator(
-                        color = MaterialTheme.colorScheme.primary,
-                        modifier = Modifier.align(Alignment.Center)
-                    )
+                    XhsLoadingBox(Modifier.fillMaxSize())
                 }
                 groups.isEmpty() && !loading -> {
-                    EmptyState(
+                    XhsEmptyState(
                         message = error ?: stringResource(R.string.common_empty),
                         onRetry = { viewModel.refresh() },
-                        modifier = Modifier.align(Alignment.Center)
+                        modifier = Modifier.fillMaxSize()
                     )
                 }
                 else -> {
@@ -178,13 +173,13 @@ private fun FeedCard(
 ) {
     val context = LocalContext.current
     val url = ImageUrlResolver.displayUrl(group.groupUrl) ?: ""
-    // 动态真实比例（支持高长图与方图错落分布，限制在 0.65f ~ 1.4f 之间形成发现节奏感）
     val ratio = if (url.isBlank()) 0.85f else ratioCache[url] ?: 0.85f
 
-    GlassCard(
-        shape = RoundedCornerShape(24.dp),
-        elevation = 8.dp,
-        containerColor = MaterialTheme.colorScheme.surfaceContainerHigh.copy(alpha = 0.88f),
+    M3GlassCard(
+        shape = RoundedCornerShape(16.dp),
+        elevation = 1.dp,
+        containerColor = MaterialTheme.colorScheme.surfaceContainerLow.copy(alpha = 0.95f),
+        borderColor = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.20f),
         modifier = Modifier
             .fillMaxWidth()
             .bouncyClickable(onClick = onClick)
@@ -207,24 +202,22 @@ private fun FeedCard(
                     modifier = Modifier
                         .fillMaxWidth()
                         .aspectRatio(ratio)
-                        .clip(RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp))
+                        .clip(RoundedCornerShape(topStart = 16.dp, topEnd = 16.dp))
                         .background(MaterialTheme.colorScheme.surfaceVariant)
                 )
 
-                // 悬浮胶囊图层：置于图片右上角
                 val count = group.groupCount ?: 0
                 if (count > 0) {
-                    XhsFloatingPill(
+                    M3GlassChip(
                         text = "$count",
                         icon = Icons.Filled.Image,
                         modifier = Modifier
                             .align(Alignment.TopEnd)
-                            .padding(Spacing.sm)
+                            .padding(8.dp)
                     )
                 }
             }
 
-            // 标题行
             Text(
                 text = group.groupName ?: stringResource(R.string.group_unnamed),
                 style = MaterialTheme.typography.titleSmall,

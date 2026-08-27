@@ -52,49 +52,88 @@ fun fresnelBorderBrush(isDark: Boolean = false): Brush = Brush.linearGradient(
 )
 
 /**
- * iOS 26 亚克力毛玻璃通透卡片 (GlassCard)
- * 拥有大圆角 (24.dp)、菲涅尔反光高光轮廓与柔和弥散阴影
+ * Android 14+ Material 3 轻量化磨砂玻璃表面 (M3GlassSurface)
  */
 @Composable
-fun GlassCard(
+fun M3GlassSurface(
     modifier: Modifier = Modifier,
-    shape: Shape = RoundedCornerShape(24.dp),
-    elevation: Dp = 8.dp,
-    containerColor: Color = MaterialTheme.colorScheme.surfaceContainerHigh.copy(alpha = 0.88f),
+    shape: Shape = RoundedCornerShape(16.dp),
+    elevation: Dp = 1.5.dp,
+    containerColor: Color = MaterialTheme.colorScheme.surfaceContainerLow.copy(alpha = 0.90f),
+    contentColor: Color = MaterialTheme.colorScheme.onSurface,
+    borderColor: Color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.20f),
+    content: @Composable () -> Unit
+) {
+    Surface(
+        shape = shape,
+        color = containerColor,
+        contentColor = contentColor,
+        shadowElevation = elevation,
+        tonalElevation = 0.dp,
+        border = BorderStroke(1.dp, borderColor),
+        modifier = modifier,
+        content = content
+    )
+}
+
+/** 兼容旧版调用的 GlassSurface 别名 */
+@Composable
+fun GlassSurface(
+    modifier: Modifier = Modifier,
+    shape: Shape = RoundedCornerShape(16.dp),
+    elevation: Dp = 1.5.dp,
+    containerColor: Color = MaterialTheme.colorScheme.surfaceContainerLow.copy(alpha = 0.90f),
+    content: @Composable () -> Unit
+) {
+    M3GlassSurface(
+        modifier = modifier,
+        shape = shape,
+        elevation = elevation,
+        containerColor = containerColor,
+        content = content
+    )
+}
+
+/**
+ * Android 14+ Material 3 轻量化磨砂卡片 (M3GlassCard)
+ */
+@Composable
+fun M3GlassCard(
+    modifier: Modifier = Modifier,
+    shape: Shape = RoundedCornerShape(20.dp),
+    elevation: Dp = 2.dp,
+    containerColor: Color = MaterialTheme.colorScheme.surfaceContainerLow.copy(alpha = 0.92f),
+    contentColor: Color = MaterialTheme.colorScheme.onSurface,
+    borderColor: Color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.20f),
     content: @Composable ColumnScope.() -> Unit
 ) {
     Surface(
         shape = shape,
         color = containerColor,
-        contentColor = MaterialTheme.colorScheme.onSurface,
+        contentColor = contentColor,
         shadowElevation = elevation,
-        tonalElevation = 4.dp,
-        border = BorderStroke(1.dp, fresnelBorderBrush()),
+        tonalElevation = 0.dp,
+        border = BorderStroke(1.dp, borderColor),
         modifier = modifier
     ) {
         Column(content = content)
     }
 }
 
-/**
- * iOS 26 亚克力毛玻璃表面 (GlassSurface)
- */
+/** 兼容旧版调用的 GlassCard 别名 */
 @Composable
-fun GlassSurface(
+fun GlassCard(
     modifier: Modifier = Modifier,
     shape: Shape = RoundedCornerShape(20.dp),
-    elevation: Dp = 6.dp,
-    containerColor: Color = MaterialTheme.colorScheme.surfaceContainer.copy(alpha = 0.90f),
-    content: @Composable () -> Unit
+    elevation: Dp = 2.dp,
+    containerColor: Color = MaterialTheme.colorScheme.surfaceContainerLow.copy(alpha = 0.92f),
+    content: @Composable ColumnScope.() -> Unit
 ) {
-    Surface(
-        shape = shape,
-        color = containerColor,
-        contentColor = MaterialTheme.colorScheme.onSurface,
-        shadowElevation = elevation,
-        tonalElevation = 2.dp,
-        border = BorderStroke(1.dp, fresnelBorderBrush()),
+    M3GlassCard(
         modifier = modifier,
+        shape = shape,
+        elevation = elevation,
+        containerColor = containerColor,
         content = content
     )
 }
@@ -110,7 +149,7 @@ fun XhsTopBar(
         title = { Text(title, fontWeight = FontWeight.Bold, style = MaterialTheme.typography.titleLarge) },
         navigationIcon = {
             if (onBack != null) {
-                IconButton(onClick = onBack, modifier = Modifier.bouncyClickable(onClick = onBack)) {
+                IconButton(onClick = onBack) {
                     Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(R.string.common_back))
                 }
             }
@@ -194,16 +233,19 @@ fun Modifier.singleClick(
 }
 
 /**
- * iOS 26 弹性缓动微交互手感点击修饰符 (Elastic Spring Micro-Interaction)
+ * Android 14+ 弹性微交互与防重击波纹点击修饰符
  */
 fun Modifier.bouncyClickable(
     enabled: Boolean = true,
+    debounceTime: Long = 400L,
     onClick: () -> Unit
 ): Modifier = composed {
     val interactionSource = remember { MutableInteractionSource() }
     val isPressed by interactionSource.collectIsPressedAsState()
+    var lastClickTime by remember { mutableStateOf(0L) }
+
     val scale by animateFloatAsState(
-        targetValue = if (isPressed) 0.94f else 1.0f,
+        targetValue = if (isPressed) 0.96f else 1.0f,
         animationSpec = spring(
             stiffness = Spring.StiffnessMediumLow,
             dampingRatio = Spring.DampingRatioMediumBouncy
@@ -215,17 +257,23 @@ fun Modifier.bouncyClickable(
         .graphicsLayer(scaleX = scale, scaleY = scale)
         .clickable(
             interactionSource = interactionSource,
-            indication = null,
+            indication = ripple(),
             enabled = enabled,
-            onClick = onClick
+            onClick = {
+                val now = System.currentTimeMillis()
+                if (now - lastClickTime >= debounceTime) {
+                    lastClickTime = now
+                    onClick()
+                }
+            }
         )
 }
 
 /**
- * 悬浮圆角胶囊标签（iOS 26 / VisionOS 亚克力高质感风）
+ * Material 3 轻量悬浮胶囊标签 (M3GlassChip)
  */
 @Composable
-fun XhsFloatingPill(
+fun M3GlassChip(
     text: String,
     icon: androidx.compose.ui.graphics.vector.ImageVector? = null,
     modifier: Modifier = Modifier
@@ -234,20 +282,20 @@ fun XhsFloatingPill(
         shape = CircleShape,
         color = Color.Black.copy(alpha = 0.55f),
         contentColor = Color.White,
-        border = BorderStroke(0.8.dp, Color.White.copy(alpha = 0.45f)),
-        shadowElevation = 6.dp,
+        border = BorderStroke(0.8.dp, Color.White.copy(alpha = 0.35f)),
+        shadowElevation = 2.dp,
         modifier = modifier
     ) {
         Row(
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(4.dp),
-            modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp)
+            modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp)
         ) {
             if (icon != null) {
                 Icon(
                     imageVector = icon,
                     contentDescription = null,
-                    tint = Color.White.copy(alpha = 0.95f),
+                    tint = Color.White,
                     modifier = Modifier.size(13.dp)
                 )
             }
@@ -255,11 +303,19 @@ fun XhsFloatingPill(
                 text = text,
                 style = MaterialTheme.typography.labelSmall,
                 fontWeight = FontWeight.SemiBold,
-                color = Color.White.copy(alpha = 0.95f)
+                color = Color.White
             )
         }
     }
 }
+
+/** 兼容旧版调用的 XhsFloatingPill 别名 */
+@Composable
+fun XhsFloatingPill(
+    text: String,
+    icon: androidx.compose.ui.graphics.vector.ImageVector? = null,
+    modifier: Modifier = Modifier
+) = M3GlassChip(text = text, icon = icon, modifier = modifier)
 
 /**
  * iOS 26 胶囊圆角液态玻璃按钮 (LiquidGlassButton)

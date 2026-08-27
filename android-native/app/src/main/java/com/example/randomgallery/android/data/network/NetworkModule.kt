@@ -1,8 +1,11 @@
 package com.example.randomgallery.android.data.network
 
 import android.content.Context
+import com.example.randomgallery.android.data.local.AppPrefs
 import com.squareup.moshi.Moshi
 import com.squareup.moshi.kotlin.reflect.KotlinJsonAdapterFactory
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.runBlocking
 import okhttp3.Cache
 import okhttp3.CacheControl
 import okhttp3.Interceptor
@@ -13,6 +16,8 @@ import retrofit2.Retrofit
 import retrofit2.converter.moshi.MoshiConverterFactory
 import java.io.File
 import java.io.IOException
+import java.net.InetSocketAddress
+import java.net.Proxy
 import java.util.concurrent.TimeUnit
 
 object NetworkModule {
@@ -25,7 +30,13 @@ object NetworkModule {
     fun okHttpClient(context: Context, enableHttpLogging: Boolean): OkHttpClient {
         okHttpClient?.let { return it }
         return synchronized(this) {
-            okHttpClient ?: createOkHttp(context.applicationContext.cacheDir, enableHttpLogging).also { okHttpClient = it }
+            okHttpClient ?: createOkHttp(context.applicationContext, enableHttpLogging).also { okHttpClient = it }
+        }
+    }
+
+    fun resetOkHttpClient() {
+        synchronized(this) {
+            okHttpClient = null
         }
     }
 
@@ -33,7 +44,26 @@ object NetworkModule {
         runCatching { okHttpClient?.cache?.evictAll() }
     }
 
-    private fun createOkHttp(cacheDir: File, enableHttpLogging: Boolean): OkHttpClient {
+    fun buildCustomProxy(context: Context): Proxy? {
+        val prefs = AppPrefs(context.applicationContext)
+        return runCatching {
+            runBlocking {
+                val enabled = prefs.proxyEnabledFlow.first()
+                if (enabled) {
+                    val host = prefs.proxyHostFlow.first()
+                    val port = prefs.proxyPortFlow.first()
+                    val typeStr = prefs.proxyTypeFlow.first()
+                    if (host.isNotBlank() && port in 1..65535) {
+                        val type = if (typeStr.equals("SOCKS", ignoreCase = true)) Proxy.Type.SOCKS else Proxy.Type.HTTP
+                        Proxy(type, InetSocketAddress(host, port))
+                    } else null
+                } else null
+            }
+        }.getOrNull()
+    }
+
+    private fun createOkHttp(context: Context, enableHttpLogging: Boolean): OkHttpClient {
+        val cacheDir = context.cacheDir
         val logging = HttpLoggingInterceptor().apply {
             level = if (enableHttpLogging) {
                 HttpLoggingInterceptor.Level.BODY
@@ -49,7 +79,7 @@ object NetworkModule {
             )
         }
 
-        return OkHttpClient.Builder()
+        val builder = OkHttpClient.Builder()
             .cache(Cache(File(cacheDir, "http_cache"), 20L * 1024L * 1024L))
             .connectTimeout(20, TimeUnit.SECONDS)
             .readTimeout(20, TimeUnit.SECONDS)
@@ -59,7 +89,12 @@ object NetworkModule {
             .addInterceptor(OfflineFallbackInterceptor())
             .addNetworkInterceptor(CacheControlInterceptor())
             .addInterceptor(logging)
-            .build()
+
+        buildCustomProxy(context)?.let { proxy ->
+            builder.proxy(proxy)
+        }
+
+        return builder.build()
     }
 
     val moshi: Moshi = Moshi.Builder()
@@ -82,54 +117,63 @@ object NetworkModule {
 
 /**
  * 可缓存接口判定（白名单）：仅静态元数据接口可被 HTTP 磁盘缓存，
- * 其余动态接口一律不缓存、不参与离线兜底，保证数据实时。
+ * 动态接口（随机图、随机套图、环境切换等）一律 no-cache。
  */
-private fun isCacheablePath(path: String): Boolean =
-    path.contains("xhsWork/authors", ignoreCase = true) ||
-        path.contains("xhsWork/tags", ignoreCase = true)
+private fun isCacheableUrl(url: String): Boolean {
+    // 静态元数据：作者列表、标签列表、下载作品详情
+    return url.contains("/api/xhs/work/authors") ||
+           url.contains("/api/xhs/work/tags") ||
+           url.contains("/api/xhs/work/detail")
+}
 
 /**
- * 响应缓存头注入：对白名单接口的 GET 响应补上短 TTL，
- * 让 20MB 磁盘缓存生效（作者/标签等静态元数据可复用/离线读取）。
+ * 网络拦截器：对白名单接口自动注入 Cache-Control: max-age=600（10 分钟），
+ * 其它接口强制 no-cache / no-store，避免动态接口返回陈旧数据。
  */
 private class CacheControlInterceptor : Interceptor {
+    @Throws(IOException::class)
     override fun intercept(chain: Interceptor.Chain): Response {
         val response = chain.proceed(chain.request())
-        val request = chain.request()
-        if (request.method == "GET" && isCacheablePath(request.url.encodedPath) && response.header("Cache-Control") == null) {
-            return response.newBuilder()
-                .header("Cache-Control", "public, max-age=${CACHE_MAX_AGE_SECONDS}")
+        val url = chain.request().url.toString()
+        return if (isCacheableUrl(url) && response.isSuccessful) {
+            response.newBuilder()
+                .removeHeader("Pragma")
+                .header("Cache-Control", "public, max-age=600")
+                .build()
+        } else {
+            response.newBuilder()
+                .header("Cache-Control", "no-cache, no-store, must-revalidate")
                 .build()
         }
-        return response
-    }
-
-    private companion object {
-        const val CACHE_MAX_AGE_SECONDS = 300L
     }
 }
 
 /**
- * 离线兜底：首次请求因无网络抛 IOException 时，用 only-if-cached + max-stale 重放，
- * 命中磁盘缓存即返回陈旧数据；否则保持原异常抛出。仅对白名单接口生效。
+ * 离线兜底拦截器：当网络请求失败（无网/超时/连接被拒绝）时，
+ * 自动使用 only-if-cached + max-stale 重试一次，命中磁盘缓存即返回陈旧数据。
  */
 private class OfflineFallbackInterceptor : Interceptor {
+    @Throws(IOException::class)
     override fun intercept(chain: Interceptor.Chain): Response {
         val request = chain.request()
-        if (!isCacheablePath(request.url.encodedPath)) return chain.proceed(request)
-        try {
-            return chain.proceed(request)
+        return try {
+            chain.proceed(request)
         } catch (e: IOException) {
-            if (request.method != "GET") throw e
-            val cachedRequest = request.newBuilder()
-                .cacheControl(
-                    CacheControl.Builder()
-                        .onlyIfCached()
-                        .maxStale(7, TimeUnit.DAYS)
-                        .build()
-                )
-                .build()
-            return chain.proceed(cachedRequest)
+            if (request.method == "GET" && isCacheableUrl(request.url.toString())) {
+                val fallbackRequest = request.newBuilder()
+                    .cacheControl(
+                        CacheControl.Builder()
+                            .onlyIfCached()
+                            .maxStale(7, TimeUnit.DAYS)
+                            .build()
+                    )
+                    .build()
+                runCatching { chain.proceed(fallbackRequest) }.getOrNull()
+                    ?.takeIf { it.isSuccessful }
+                    ?: throw e
+            } else {
+                throw e
+            }
         }
     }
 }
