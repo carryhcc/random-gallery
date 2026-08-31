@@ -14,6 +14,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.composed
@@ -237,6 +238,7 @@ fun Modifier.singleClick(
 fun Modifier.bouncyClickable(
     enabled: Boolean = true,
     debounceTime: Long = 400L,
+    onClickLabel: String? = null,
     onClick: () -> Unit
 ): Modifier = composed {
     val interactionSource = remember { MutableInteractionSource() }
@@ -258,6 +260,7 @@ fun Modifier.bouncyClickable(
             interactionSource = interactionSource,
             indication = ripple(),
             enabled = enabled,
+            onClickLabel = onClickLabel,
             onClick = {
                 val now = System.currentTimeMillis()
                 if (now - lastClickTime >= debounceTime) {
@@ -428,7 +431,7 @@ fun StaggeredItemEntrance(
     modifier: Modifier = Modifier,
     content: @Composable () -> Unit
 ) {
-    var visible by remember { mutableStateOf(false) }
+    var visible by rememberSaveable { mutableStateOf(false) }
     LaunchedEffect(Unit) {
         kotlinx.coroutines.delay((index.coerceAtMost(8) * 40).toLong())
         visible = true

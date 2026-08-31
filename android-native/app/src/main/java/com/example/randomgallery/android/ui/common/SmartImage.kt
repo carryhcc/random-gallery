@@ -62,45 +62,39 @@ fun SmartImage(
     LaunchedEffect(url, thumbSize, fullSize) {
         display = SmartImageDisplay.None
 
-        // 阶段 1：缩略图
-        var thumbBitmap: ImageBitmap? = null
-        runCatching {
-            imageLoader.execute(
-                ImageRequest.Builder(context)
-                    .data(url)
-                    .size(thumbSize, thumbSize)
-                    .build()
-            ).drawable
-        }.onSuccess { drawable ->
-            if (drawable != null) {
-                val bitmap = drawable.toBitmap().asImageBitmap()
-                thumbBitmap = bitmap
-                display = SmartImageDisplay.Thumb(bitmap)
-                val size = bitmap.width.toFloat() / bitmap.height.toFloat()
-                if (size > 0 && !size.isNaN()) {
-                    onRatioKnown(size)
-                }
-            }
-        }.onFailure {
-            // 缩略图失败不中断，继续尝试清晰图
+        // 阶段 2：有界清晰图（异步加载，不阻塞主线程）
+        fun enqueueFull() {
+            val fullRequest = ImageRequest.Builder(context)
+                .data(url)
+                .apply { if (fullSize > 0) size(fullSize, fullSize) else size(Size.ORIGINAL) }
+                .target(
+                    onSuccess = { fullDrawable ->
+                        display = SmartImageDisplay.Full(fullDrawable.toBitmap().asImageBitmap())
+                        onFullLoaded()
+                    },
+                    onError = { onError() }
+                )
+                .build()
+            imageLoader.enqueue(fullRequest)
         }
 
-        // 阶段 2：有界清晰图
-        val fullResult = runCatching {
-            imageLoader.execute(
-                ImageRequest.Builder(context)
-                    .data(url)
-                    .apply { if (fullSize > 0) size(fullSize, fullSize) else size(Size.ORIGINAL) }
-                    .build()
-            ).drawable
-        }.getOrNull()
-
-        if (fullResult != null) {
-            display = SmartImageDisplay.Full(fullResult.toBitmap().asImageBitmap())
-            onFullLoaded()
-        } else if (thumbBitmap == null) {
-            onError()
-        }
+        // 阶段 1：缩略图（异步加载，避免在主线程同步解码导致卡顿/ANR）
+        imageLoader.enqueue(
+            ImageRequest.Builder(context)
+                .data(url)
+                .size(thumbSize, thumbSize)
+                .target(
+                    onSuccess = { drawable ->
+                        val bitmap = drawable.toBitmap().asImageBitmap()
+                        display = SmartImageDisplay.Thumb(bitmap)
+                        val size = bitmap.width.toFloat() / bitmap.height.toFloat()
+                        if (size > 0 && !size.isNaN()) onRatioKnown(size)
+                        enqueueFull()
+                    },
+                    onError = { enqueueFull() }
+                )
+                .build()
+        )
     }
 
     Crossfade(

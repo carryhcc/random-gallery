@@ -4,8 +4,10 @@ import android.content.Context
 import com.example.randomgallery.android.data.local.AppPrefs
 import com.squareup.moshi.Moshi
 import com.squareup.moshi.kotlin.reflect.KotlinJsonAdapterFactory
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.first
-import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.launch
 import okhttp3.Cache
 import okhttp3.CacheControl
 import okhttp3.Interceptor
@@ -19,6 +21,7 @@ import java.io.IOException
 import java.net.InetSocketAddress
 import java.net.Proxy
 import java.util.concurrent.TimeUnit
+import java.util.concurrent.atomic.AtomicBoolean
 
 object NetworkModule {
 
@@ -27,10 +30,29 @@ object NetworkModule {
     @Volatile
     private var okHttpClient: OkHttpClient? = null
 
+    // 应用上下文（首次构建客户端时缓存），用于后台预读代理配置
+    @Volatile
+    private var appContext: Context? = null
+
+    // 自定义代理在 IO 线程预读并缓存，避免在主线程调用 buildCustomProxy 时阻塞
+    @Volatile
+    private var cachedProxy: Proxy? = null
+    private var proxyPrereadStarted = false
+
     fun okHttpClient(context: Context, enableHttpLogging: Boolean): OkHttpClient {
+        appContext = context.applicationContext
+        ensureProxyPreread()
         okHttpClient?.let { return it }
         return synchronized(this) {
             okHttpClient ?: createOkHttp(context.applicationContext, enableHttpLogging).also { okHttpClient = it }
+        }
+    }
+
+    private fun ensureProxyPreread() {
+        if (proxyPrereadStarted) return
+        proxyPrereadStarted = true
+        CoroutineScope(Dispatchers.IO).launch {
+            cachedProxy = computeProxy(appContext)
         }
     }
 
@@ -44,23 +66,27 @@ object NetworkModule {
         runCatching { okHttpClient?.cache?.evictAll() }
     }
 
-    fun buildCustomProxy(context: Context): Proxy? {
-        val prefs = AppPrefs(context.applicationContext)
-        return runCatching {
-            runBlocking {
-                val enabled = prefs.proxyEnabledFlow.first()
-                if (enabled) {
-                    val host = prefs.proxyHostFlow.first()
-                    val port = prefs.proxyPortFlow.first()
-                    val typeStr = prefs.proxyTypeFlow.first()
-                    if (host.isNotBlank() && port in 1..65535) {
-                        val type = if (typeStr.equals("SOCKS", ignoreCase = true)) Proxy.Type.SOCKS else Proxy.Type.HTTP
-                        Proxy(type, InetSocketAddress(host, port))
-                    } else null
-                } else null
-            }
-        }.getOrNull()
-    }
+    fun buildCustomProxy(context: Context): Proxy? = cachedProxy
+
+    /**
+     * 在 IO 线程读取自定义代理配置并缓存到 [cachedProxy]，避免在调用线程（可能为主线程）
+     * 通过 [buildCustomProxy] 同步阻塞。首次构建 OkHttpClient 时异步预读可能尚未完成
+     * （cachedProxy 为 null，等价于未启用代理）；当用户修改代理配置时
+     * [com.example.randomgallery.android.AppContainer.clearRepository] 会重建客户端并应用最新缓存。
+     */
+    private suspend fun computeProxy(context: Context?): Proxy? = runCatching {
+        val ctx = context ?: return@runCatching null
+        val prefs = AppPrefs(ctx)
+        val enabled = prefs.proxyEnabledFlow.first()
+        if (!enabled) return@runCatching null
+        val host = prefs.proxyHostFlow.first()
+        val port = prefs.proxyPortFlow.first()
+        val typeStr = prefs.proxyTypeFlow.first()
+        if (host.isNotBlank() && port in 1..65535) {
+            val type = if (typeStr.equals("SOCKS", ignoreCase = true)) Proxy.Type.SOCKS else Proxy.Type.HTTP
+            Proxy(type, InetSocketAddress(host, port))
+        } else null
+    }.getOrNull()
 
     private fun createOkHttp(context: Context, enableHttpLogging: Boolean): OkHttpClient {
         val cacheDir = context.cacheDir
@@ -121,9 +147,9 @@ object NetworkModule {
  */
 private fun isCacheableUrl(url: String): Boolean {
     // 静态元数据：作者列表、标签列表、下载作品详情
-    return url.contains("/api/xhs/work/authors") ||
-           url.contains("/api/xhs/work/tags") ||
-           url.contains("/api/xhs/work/detail")
+    return url.contains("/api/xhsWork/authors") ||
+           url.contains("/api/xhsWork/tags") ||
+           url.contains("/api/xhsWork/detail")
 }
 
 /**

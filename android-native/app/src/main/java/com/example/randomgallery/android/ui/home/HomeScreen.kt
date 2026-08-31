@@ -53,6 +53,8 @@ import com.example.randomgallery.android.ui.common.*
 import com.example.randomgallery.android.ui.theme.*
 import com.example.randomgallery.android.util.ImageUrlResolver
 
+private val BottomBarReserved = 80.dp
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun HomeScreen(
@@ -207,7 +209,7 @@ fun HomeScreen(
                 LazyVerticalStaggeredGrid(
                     state = gridState,
                     columns = StaggeredGridCells.Adaptive(minSize = 165.dp),
-                    contentPadding = PaddingValues(start = Spacing.md, end = Spacing.md, top = Spacing.sm, bottom = 80.dp),
+                    contentPadding = PaddingValues(start = Spacing.md, end = Spacing.md, top = Spacing.sm, bottom = BottomBarReserved),
                     verticalItemSpacing = Spacing.md,
                     horizontalArrangement = Arrangement.spacedBy(Spacing.md),
                     modifier = Modifier.fillMaxSize()
@@ -298,7 +300,7 @@ fun HomeScreen(
                 LazyVerticalStaggeredGrid(
                     state = gridState,
                     columns = StaggeredGridCells.Adaptive(minSize = 165.dp),
-                    contentPadding = PaddingValues(start = Spacing.md, end = Spacing.md, top = Spacing.sm, bottom = 80.dp),
+                    contentPadding = PaddingValues(start = Spacing.md, end = Spacing.md, top = Spacing.sm, bottom = BottomBarReserved),
                     verticalItemSpacing = Spacing.md,
                     horizontalArrangement = Arrangement.spacedBy(Spacing.md),
                     modifier = Modifier.fillMaxSize()
@@ -855,7 +857,7 @@ private fun GallerySpaceHeroDashboard(
                         Surface(
                             shape = CircleShape,
                             color = if (selected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surfaceVariant,
-                            modifier = Modifier.bouncyClickable { onSwitchEnv(envKey) }
+                            modifier = Modifier.bouncyClickable(onClickLabel = "切换到 ${envKey.uppercase()}", onClick = { onSwitchEnv(envKey) })
                         ) {
                             Text(
                                 text = envKey.uppercase(),
@@ -879,7 +881,7 @@ private fun GallerySpaceHeroDashboard(
                     color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
                     modifier = Modifier
                         .weight(1f)
-                        .bouncyClickable(onClick = onExploreGallery)
+                        .bouncyClickable(onClickLabel = "查看图库", onClick = onExploreGallery)
                 ) {
                     Row(
                         modifier = Modifier.padding(12.dp),
@@ -995,7 +997,7 @@ private fun HomeGalleryGroupCard(
         borderColor = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.20f),
         modifier = Modifier
             .fillMaxWidth()
-            .bouncyClickable(onClick = onClick)
+            .bouncyClickable(onClickLabel = group.groupName ?: "套图", onClick = onClick)
     ) {
         Column {
             Box {
@@ -1060,7 +1062,7 @@ private fun VisualFeatureHeroCard(
         modifier = modifier
             .height(96.dp)
             .clip(RoundedCornerShape(18.dp))
-            .bouncyClickable(onClick = onClick)
+            .bouncyClickable(onClickLabel = title, onClick = onClick)
     ) {
         Box(
             modifier = Modifier
@@ -1130,7 +1132,7 @@ private fun VisualFeatureCompactCard(
         elevation = 1.dp,
         modifier = modifier
             .height(84.dp)
-            .bouncyClickable(onClick = onClick)
+            .bouncyClickable(onClickLabel = title, onClick = onClick)
     ) {
         Column(
             modifier = Modifier

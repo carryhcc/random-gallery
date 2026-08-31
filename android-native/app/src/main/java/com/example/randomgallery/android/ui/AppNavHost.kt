@@ -47,6 +47,8 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.semantics.selected
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
@@ -439,6 +441,7 @@ private fun FloatingCapsuleNavigationBar(
                             .padding(horizontal = 3.dp, vertical = 2.dp)
                             .clip(CircleShape)
                             .background(activeBgColor)
+                            .semantics { this.selected = selected }
                             .bouncyClickable { onTabSelected(tab.route) },
                         contentAlignment = Alignment.Center
                     ) {
