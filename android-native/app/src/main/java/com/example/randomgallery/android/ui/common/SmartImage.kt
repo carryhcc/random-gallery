@@ -8,10 +8,10 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
@@ -24,6 +24,7 @@ import androidx.compose.ui.unit.dp
 import androidx.core.graphics.drawable.toBitmap
 import coil.imageLoader
 import coil.request.ImageRequest
+import coil.request.Disposable
 import coil.size.Size
 
 private sealed interface SmartImageDisplay {
@@ -59,32 +60,43 @@ fun SmartImage(
 
     var display by remember(url) { mutableStateOf<SmartImageDisplay>(SmartImageDisplay.None) }
 
-    LaunchedEffect(url, thumbSize, fullSize) {
+    DisposableEffect(url, thumbSize, fullSize) {
         display = SmartImageDisplay.None
 
-        // 阶段 2：有界清晰图（异步加载，不阻塞主线程）
+        // 跟踪所有在途请求：组件离场或 url 变化时统一取消，避免旧图回调覆盖新图（错图/闪烁），
+        // 同时释放底层 Bitmap，避免内存堆积。
+        val disposables = mutableListOf<Disposable>()
+        var disposed = false
+        fun safeEnqueue(request: ImageRequest) {
+            if (disposed) return
+            disposables += imageLoader.enqueue(request)
+        }
+
         fun enqueueFull() {
-            val fullRequest = ImageRequest.Builder(context)
-                .data(url)
-                .apply { if (fullSize > 0) size(fullSize, fullSize) else size(Size.ORIGINAL) }
-                .target(
-                    onSuccess = { fullDrawable ->
-                        display = SmartImageDisplay.Full(fullDrawable.toBitmap().asImageBitmap())
-                        onFullLoaded()
-                    },
-                    onError = { onError() }
-                )
-                .build()
-            imageLoader.enqueue(fullRequest)
+            safeEnqueue(
+                ImageRequest.Builder(context)
+                    .data(url)
+                    .apply { if (fullSize > 0) size(fullSize, fullSize) else size(Size.ORIGINAL) }
+                    .target(
+                        onSuccess = { fullDrawable ->
+                            if (disposed) return@target
+                            display = SmartImageDisplay.Full(fullDrawable.toBitmap().asImageBitmap())
+                            onFullLoaded()
+                        },
+                        onError = { if (!disposed) onError() }
+                    )
+                    .build()
+            )
         }
 
         // 阶段 1：缩略图（异步加载，避免在主线程同步解码导致卡顿/ANR）
-        imageLoader.enqueue(
+        safeEnqueue(
             ImageRequest.Builder(context)
                 .data(url)
                 .size(thumbSize, thumbSize)
                 .target(
                     onSuccess = { drawable ->
+                        if (disposed) return@target
                         val bitmap = drawable.toBitmap().asImageBitmap()
                         display = SmartImageDisplay.Thumb(bitmap)
                         val size = bitmap.width.toFloat() / bitmap.height.toFloat()
@@ -95,6 +107,11 @@ fun SmartImage(
                 )
                 .build()
         )
+
+        onDispose {
+            disposed = true
+            disposables.forEach { it.dispose() }
+        }
     }
 
     Crossfade(

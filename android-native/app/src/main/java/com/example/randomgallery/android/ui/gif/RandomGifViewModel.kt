@@ -155,12 +155,15 @@ class RandomGifViewModel(
             continuation.invokeOnCancellation { call.cancel() }
             call.enqueue(object : Callback {
                 override fun onFailure(call: Call, e: IOException) {
-                    if (continuation.isActive) continuation.resume(false)
+                    // 网络抖动或 CDN 不支持 HEAD：乐观认为可用，最终交由 Coil 判定
+                    if (continuation.isActive) continuation.resume(true)
                 }
                 override fun onResponse(call: Call, response: Response) {
-                    val isOk = response.isSuccessful
+                    val code = response.code
                     response.close()
-                    if (continuation.isActive) continuation.resume(isOk)
+                    // 仅 404/410 视为确实失效；403/405 等（CDN 拒绝 HEAD）按可用处理
+                    val alive = response.isSuccessful || (code != 404 && code != 410)
+                    if (continuation.isActive) continuation.resume(alive)
                 }
             })
         }

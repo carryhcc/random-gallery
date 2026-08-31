@@ -32,29 +32,40 @@ class RandomPicViewModel(
     val groupState: StateFlow<GroupVO?> = _groupState.asStateFlow()
 
     private var isLoadingNext = false
+    private var loadToken = 0
 
     fun loadRandomPic() {
         _picList.value = emptyList()
         _error.value = null
-        loadNext()
+        loadNext(force = true)
     }
 
     fun loadNext() {
-        if (isLoadingNext) return
+        loadNext(force = false)
+    }
+
+    private fun loadNext(force: Boolean) {
+        if (isLoadingNext && !force) return
+        // force（换一批）会作废在途的旧请求结果，避免清空列表后被旧请求覆盖导致"换批无效"
+        val token = ++loadToken
         isLoadingNext = true
         if (_picList.value.isEmpty()) _loading.value = true
         viewModelScope.launch {
             repository().getRandomPic().fold(
                 onSuccess = { pic ->
+                    if (token != loadToken) return@fold
                     _picList.value = _picList.value + pic
                     _error.value = null
                 },
                 onFailure = { err ->
+                    if (token != loadToken) return@fold
                     if (_picList.value.isEmpty()) _error.value = err.message ?: "加载失败"
                 }
             )
-            _loading.value = false
-            isLoadingNext = false
+            if (token == loadToken) {
+                _loading.value = false
+                isLoadingNext = false
+            }
         }
     }
 

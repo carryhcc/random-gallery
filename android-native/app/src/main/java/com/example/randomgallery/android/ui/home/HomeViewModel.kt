@@ -1,10 +1,12 @@
 package com.example.randomgallery.android.ui.home
 
 import android.content.Context
+import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.randomgallery.android.AppContainer
 import com.example.randomgallery.android.config.BaseUrlConfig
+import com.example.randomgallery.android.data.network.NetworkModule
 import com.example.randomgallery.android.data.local.AppPrefs
 import com.example.randomgallery.android.data.model.GroupVO
 import com.example.randomgallery.android.data.model.PicCount
@@ -156,7 +158,7 @@ class HomeViewModel(
                     galleryPage += 1
                 }
                 .onFailure {
-                    // 静默处理
+                    Log.e("HomeViewModel", "加载图库套图分组失败", it)
                 }
             _galleryLoading.value = false
         }
@@ -190,7 +192,7 @@ class HomeViewModel(
                     _heroWorks.value = page.works
                 }
             }.onFailure {
-                // 静默重试或保持现有数据
+                Log.e("HomeViewModel", "加载精选作品失败", it)
             }
             _heroLoading.value = false
         }
@@ -226,7 +228,7 @@ class HomeViewModel(
                 hasMoreFeed = res.hasMore && merged.size < MAX_FEED_WORKS
                 feedPage += 1
             }.onFailure {
-                // 静默处理或保留已有数据
+                Log.e("HomeViewModel", "加载探索列表失败", it)
             }
             _feedLoading.value = false
         }
@@ -260,8 +262,9 @@ class HomeViewModel(
     fun saveProxyConfig(enabled: Boolean, type: String, host: String, port: Int) {
         viewModelScope.launch {
             prefs.saveProxyConfig(enabled, type, host, port)
-            // 重建底层网络客户端与连接池
+            // 重建底层网络客户端与连接池，并应用最新代理配置（支持运行时切换）
             AppContainer.clearRepository()
+            NetworkModule.refreshProxy(appContext)
             _messages.trySend(if (enabled) "已启用自定义代理 $type://$host:$port" else "已关闭自定义网络代理")
         }
     }

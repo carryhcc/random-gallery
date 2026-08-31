@@ -35,9 +35,9 @@ class RandomGalleryApp : Application(), ImageLoaderFactory {
             .readTimeout(20, TimeUnit.SECONDS)
             .addInterceptor(CoilNetworkInterceptor())
 
-        com.example.randomgallery.android.data.network.NetworkModule.buildCustomProxy(this)?.let { proxy ->
-            okHttpClientBuilder.proxy(proxy)
-        }
+        okHttpClientBuilder.proxySelector(
+            com.example.randomgallery.android.data.network.NetworkModule.dynamicProxySelector()
+        )
 
         return ImageLoader.Builder(this)
             .okHttpClient(okHttpClientBuilder.build())

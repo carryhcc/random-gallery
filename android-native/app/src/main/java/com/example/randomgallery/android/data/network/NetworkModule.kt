@@ -20,8 +20,15 @@ import java.io.File
 import java.io.IOException
 import java.net.InetSocketAddress
 import java.net.Proxy
+import java.net.ProxySelector
+import java.net.SocketAddress
+import java.net.URI
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicBoolean
+
+// 自定义代理（模块级，供 NetworkModule 内部类与 Coil 图片加载器共享读取）
+@Volatile
+private var cachedProxy: Proxy? = null
 
 object NetworkModule {
 
@@ -34,10 +41,8 @@ object NetworkModule {
     @Volatile
     private var appContext: Context? = null
 
-    // 自定义代理在 IO 线程预读并缓存，避免在主线程调用 buildCustomProxy 时阻塞
-    @Volatile
-    private var cachedProxy: Proxy? = null
-    private var proxyPrereadStarted = false
+    // 自定义代理在 IO 线程预读并缓存，避免在主线程读取时阻塞
+    private val proxyPrereadStarted = AtomicBoolean(false)
 
     fun okHttpClient(context: Context, enableHttpLogging: Boolean): OkHttpClient {
         appContext = context.applicationContext
@@ -49,10 +54,10 @@ object NetworkModule {
     }
 
     private fun ensureProxyPreread() {
-        if (proxyPrereadStarted) return
-        proxyPrereadStarted = true
-        CoroutineScope(Dispatchers.IO).launch {
-            cachedProxy = computeProxy(appContext)
+        if (proxyPrereadStarted.compareAndSet(false, true)) {
+            CoroutineScope(Dispatchers.IO).launch {
+                cachedProxy = computeProxy(appContext)
+            }
         }
     }
 
@@ -66,13 +71,24 @@ object NetworkModule {
         runCatching { okHttpClient?.cache?.evictAll() }
     }
 
-    fun buildCustomProxy(context: Context): Proxy? = cachedProxy
+    /**
+     * 代理配置变更后重新读取并应用：更新 [cachedProxy] 后重建底层 OkHttpClient，
+     * 配合 [DynamicProxySelector] 使后续新建连接立即走新代理（无需重启进程）。
+     */
+    suspend fun refreshProxy(context: Context) {
+        cachedProxy = computeProxy(context.applicationContext)
+        resetOkHttpClient()
+    }
+
+    /** 动态代理选择器：每次建连时读取最新 [cachedProxy]，支持运行时切换代理。 */
+    fun dynamicProxySelector(): ProxySelector = DynamicProxySelector()
 
     /**
      * 在 IO 线程读取自定义代理配置并缓存到 [cachedProxy]，避免在调用线程（可能为主线程）
-     * 通过 [buildCustomProxy] 同步阻塞。首次构建 OkHttpClient 时异步预读可能尚未完成
-     * （cachedProxy 为 null，等价于未启用代理）；当用户修改代理配置时
-     * [com.example.randomgallery.android.AppContainer.clearRepository] 会重建客户端并应用最新缓存。
+     * 同步阻塞。首次构建 OkHttpClient 时异步预读可能尚未完成
+     * （cachedProxy 为 null，等价直连）；当用户修改代理配置时
+     * [com.example.randomgallery.android.AppContainer.clearRepository] 会重建客户端，
+     * 配合 [dynamicProxySelector] 与 [refreshProxy] 使新连接立即走新代理。
      */
     private suspend fun computeProxy(context: Context?): Proxy? = runCatching {
         val ctx = context ?: return@runCatching null
@@ -116,9 +132,7 @@ object NetworkModule {
             .addNetworkInterceptor(CacheControlInterceptor())
             .addInterceptor(logging)
 
-        buildCustomProxy(context)?.let { proxy ->
-            builder.proxy(proxy)
-        }
+        builder.proxySelector(dynamicProxySelector())
 
         return builder.build()
     }
@@ -201,5 +215,20 @@ private class OfflineFallbackInterceptor : Interceptor {
                 throw e
             }
         }
+    }
+}
+
+/**
+ * 动态代理选择器：每次新建连接时读取最新的 [cachedProxy]。
+ * 这样修改代理设置后无需重建 OkHttpClient 即可对新连接生效（API 与 Coil 图片加载均适用）。
+ */
+private class DynamicProxySelector : ProxySelector() {
+    override fun select(uri: URI?): List<Proxy> {
+        val proxy = cachedProxy
+        return if (proxy != null) listOf(proxy) else listOf(Proxy.NO_PROXY)
+    }
+
+    override fun connectFailed(uri: URI?, sa: SocketAddress?, ioe: IOException?) {
+        // 交由 OkHttp 默认行为处理，这里无需干预
     }
 }

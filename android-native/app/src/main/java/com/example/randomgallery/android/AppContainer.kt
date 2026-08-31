@@ -6,11 +6,18 @@ import com.example.randomgallery.android.data.local.AppPrefs
 import com.example.randomgallery.android.data.local.DatabaseModule
 import com.example.randomgallery.android.data.network.NetworkModule
 import com.example.randomgallery.android.data.repository.GalleryRepository
+import kotlinx.coroutines.CoroutineExceptionHandler
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.launch
 
 object AppContainer {
+
+    // 受 SupervisorJob 管控的初始化作用域：单异常不会取消整个作用域，也不会逃逸为未捕获崩溃。
+    private val initScope = CoroutineScope(
+        SupervisorJob() + Dispatchers.IO + CoroutineExceptionHandler { _, _ -> }
+    )
 
     @Volatile private var repository: GalleryRepository? = null
     @Volatile private var repositoryBaseUrl: String? = null
@@ -19,7 +26,7 @@ object AppContainer {
         val appContext = context.applicationContext
         // 先用默认 baseUrl 立即返回（不阻塞 Main 线程），随后异步读 DataStore 再切换
         BaseUrlConfig.update(BaseUrlConfig.resolve(null, BuildConfig.DEFAULT_BASE_URL))
-        CoroutineScope(Dispatchers.IO).launch {
+        initScope.launch {
             val savedBaseUrl = AppPrefs(appContext).getBaseUrl()
             val resolved = BaseUrlConfig.resolve(savedBaseUrl, BuildConfig.DEFAULT_BASE_URL)
             if (resolved != BaseUrlConfig.current()) {

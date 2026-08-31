@@ -9,6 +9,8 @@ import com.example.randomgallery.android.data.network.ApiService
 import com.example.randomgallery.android.data.network.NetworkModule
 import com.squareup.moshi.Types
 import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.async
+import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 
@@ -25,6 +27,8 @@ class GalleryRepository(
         private const val HOME_INFO_TTL_MS = 5 * 60 * 1000L
         // 下载列表作者/标签元数据 TTL（毫秒）
         private const val AUTHORS_TAGS_TTL_MS = 10 * 60 * 1000L
+        // 作品列表离线缓存有效期：仅作离线兜底，过期后不再返回陈旧列表，避免磁盘缓存无限增长
+        private const val WORK_LIST_TTL_MS = 24 * 60 * 60 * 1000L
         // 随机图/GIF 兜底缓存有效期：超过则视为过期，不返回陈旧随机内容
         private const val RANDOM_CACHE_TTL_MS = 24 * 60 * 60 * 1000L
     }
@@ -283,15 +287,21 @@ class GalleryRepository(
         val key = BaseUrlConfig.current()
         if (!force) envInfoCache.get(key)?.let { return Result.success(it) }
         return try {
-            val env = api.getCurrentEnv()
-            val info = api.getCurrentEnvInfo()
-            if (env.code == 200 && env.data != null) {
-                prefs.saveEnv(env.data)
+            coroutineScope {
+                val envDeferred = async { api.getCurrentEnv() }
+                val infoDeferred = async { api.getCurrentEnvInfo() }
+                val env = envDeferred.await()
+                val info = infoDeferred.await()
+                if (env.code == 200 && env.data != null) {
+                    prefs.saveEnv(env.data)
+                }
+                if (info.code == 200 && info.data != null) {
+                    envInfoCache.put(key, info.data)
+                    Result.success(info.data)
+                } else {
+                    Result.failure(Exception(info.message ?: "加载失败"))
+                }
             }
-            if (info.code == 200 && info.data != null) {
-                envInfoCache.put(key, info.data)
-                Result.success(info.data)
-            } else Result.failure(Exception(info.message ?: "加载失败"))
         } catch (e: Exception) {
             if (e is CancellationException) throw e
             Result.failure(e)
@@ -349,9 +359,10 @@ class GalleryRepository(
 
     private suspend fun loadCachedWorkList(page: Int, authorId: String?, tagId: Long?, keyword: String?): List<XhsWorkListVO>? {
         val key = "work_list_${page}_${authorId ?: "all"}_${tagId ?: "all"}_${keyword ?: "all"}"
-        val payload = cacheDao.findByKey(key)?.payload ?: return null
+        val entry = cacheDao.findByKey(key) ?: return null
+        if (entry.updatedAt + WORK_LIST_TTL_MS < System.currentTimeMillis()) return null
         val listType = Types.newParameterizedType(List::class.java, XhsWorkListVO::class.java)
-        return moshi.adapter<List<XhsWorkListVO>>(listType).fromJson(payload)
+        return moshi.adapter<List<XhsWorkListVO>>(listType).fromJson(entry.payload)
     }
 
     suspend fun clearCache() {
