@@ -89,6 +89,7 @@ fun DownloadDetailScreen(
     workId: String,
     coverImageUrl: String = "",
     onBack: () -> Unit,
+    onWorkDeleted: (workId: String) -> Unit = {},
     onAuthorClick: (authorId: String, authorName: String) -> Unit = { _, _ -> },
     onTagClick: (tag: String) -> Unit = {}
 ) {
@@ -102,18 +103,27 @@ fun DownloadDetailScreen(
 
     var showDeleteWorkDialog by remember { mutableStateOf(false) }
     var deleteTargetId by remember { mutableStateOf<Long?>(null) }
+    var showRefetchConfirmDialog by remember { mutableStateOf(false) }
     var fullScreenInitialPage by remember { mutableIntStateOf(-1) }
+
+    // 写操作（删除/重新解析）进行中：对话框确认按钮禁用，防连点重复提交
+    val writeBusy by viewModel.writeBusy.collectAsStateWithLifecycle()
 
     LaunchedEffect(workId) { viewModel.load(workId) }
     LaunchedEffect(Unit) {
         viewModel.deleteWorkEvents.collect {
-            it.onSuccess { onBack() }
-                .onFailure { e -> Messenger.show(e.message ?: "删除失败", isError = true) }
+            it.onSuccess {
+                Messenger.show(context.getString(R.string.common_delete_success))
+                onWorkDeleted(workId)
+                onBack()
+            }.onFailure { e -> Messenger.show(e.message ?: "删除失败", isError = true) }
         }
     }
     LaunchedEffect(Unit) {
         viewModel.deleteMediaEvents.collect {
-            it.onFailure { e -> Messenger.show(e.message ?: "删除失败", isError = true) }
+            it.onSuccess {
+                Messenger.show(context.getString(R.string.common_delete_success))
+            }.onFailure { e -> Messenger.show(e.message ?: "删除失败", isError = true) }
         }
     }
     LaunchedEffect(Unit) {
@@ -229,7 +239,7 @@ fun DownloadDetailScreen(
                 title = base?.workTitle?.takeIf { it.isNotBlank() } ?: "",
                 onBack = onBack,
                 actions = {
-                    IconButton(onClick = { viewModel.refetchWork(workId, base?.workUrl) }) {
+                    IconButton(onClick = { showRefetchConfirmDialog = true }) {
                         Icon(Icons.Filled.Refresh, contentDescription = stringResource(R.string.dd_refetch_title), tint = MaterialTheme.colorScheme.primary)
                     }
                     base?.workUrl?.takeIf { it.isNotBlank() }?.let { url ->
@@ -280,7 +290,7 @@ fun DownloadDetailScreen(
                                     },
                                     onImageClick = { page -> fullScreenInitialPage = page }
                                 ) { media, _ ->
-                                    ImagePage(url = media.url, fullSizePx = pagerFullSizePx, onRefetch = { viewModel.refetchWork(workId, base?.workUrl) })
+                                    ImagePage(url = media.url, fullSizePx = pagerFullSizePx, onRefetch = { showRefetchConfirmDialog = true })
                                 }
                             }
 
@@ -302,7 +312,7 @@ fun DownloadDetailScreen(
                                         isBuffering = videoBuffering && page == vidCurrentPage,
                                         hasError = videoError && page == vidCurrentPage,
                                         aspectRatio = if (page == vidCurrentPage) videoAspectRatio else null,
-                                        onRefetch = { viewModel.refetchWork(workId, base?.workUrl) }
+                                        onRefetch = { showRefetchConfirmDialog = true }
                                     )
                                 }
                             }
@@ -432,11 +442,9 @@ fun DownloadDetailScreen(
                     ) { page ->
                         val media = imageMedia.getOrNull(page)
                         if (media != null) {
-                            Box(
-                                modifier = Modifier
-                                    .fillMaxSize()
-                                    .clickable { fullScreenInitialPage = -1 },
-                                contentAlignment = Alignment.Center
+                            ZoomableBox(
+                                modifier = Modifier.fillMaxSize(),
+                                onSingleTap = { fullScreenInitialPage = -1 }
                             ) {
                                 AsyncImage(
                                     model = ImageRequest.Builder(context)
@@ -519,8 +527,11 @@ fun DownloadDetailScreen(
             title = { Text(stringResource(R.string.dd_delete_media)) },
             text = { Text(stringResource(R.string.dd_delete_media_confirm)) },
             confirmButton = {
-                TextButton(onClick = { viewModel.deleteMedia(mediaId, workId); deleteTargetId = null },
-                    colors = ButtonDefaults.textButtonColors(contentColor = MaterialTheme.colorScheme.primary)) { Text(stringResource(R.string.common_delete)) }
+                TextButton(
+                    onClick = { viewModel.deleteMedia(mediaId, workId); deleteTargetId = null },
+                    enabled = !writeBusy,
+                    colors = ButtonDefaults.textButtonColors(contentColor = MaterialTheme.colorScheme.primary)
+                ) { Text(stringResource(R.string.common_delete)) }
             },
             dismissButton = { TextButton(onClick = { deleteTargetId = null }) { Text(stringResource(R.string.common_cancel)) } }
         )
@@ -532,10 +543,38 @@ fun DownloadDetailScreen(
             title = { Text(stringResource(R.string.dd_delete_work)) },
             text = { Text(stringResource(R.string.dd_delete_work_confirm)) },
             confirmButton = {
-                TextButton(onClick = { viewModel.deleteWork(workId); showDeleteWorkDialog = false },
-                    colors = ButtonDefaults.textButtonColors(contentColor = MaterialTheme.colorScheme.primary)) { Text(stringResource(R.string.common_delete)) }
+                TextButton(
+                    onClick = { viewModel.deleteWork(workId); showDeleteWorkDialog = false },
+                    enabled = !writeBusy,
+                    colors = ButtonDefaults.textButtonColors(contentColor = MaterialTheme.colorScheme.primary)
+                ) { Text(stringResource(R.string.common_delete)) }
             },
             dismissButton = { TextButton(onClick = { showDeleteWorkDialog = false }) { Text(stringResource(R.string.common_cancel)) } }
+        )
+    }
+
+    if (showRefetchConfirmDialog) {
+        AlertDialog(
+            onDismissRequest = { showRefetchConfirmDialog = false },
+            title = { Text(stringResource(R.string.dd_refetch_confirm_title)) },
+            text = { Text(stringResource(R.string.dd_refetch_confirm_message)) },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        viewModel.refetchWork(workId, base?.workUrl)
+                        showRefetchConfirmDialog = false
+                    },
+                    enabled = !writeBusy,
+                    colors = ButtonDefaults.textButtonColors(contentColor = MaterialTheme.colorScheme.primary)
+                ) {
+                    Text(stringResource(R.string.common_confirm))
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showRefetchConfirmDialog = false }) {
+                    Text(stringResource(R.string.common_cancel))
+                }
+            }
         )
     }
 }
@@ -562,9 +601,10 @@ private fun MediaPagerBox(
             contentPadding = PaddingValues(horizontal = 20.dp),
             pageSpacing = 12.dp,
             beyondViewportPageCount = 1,
+            key = { page -> mediaList.getOrNull(page)?.id ?: page },
             modifier = Modifier.fillMaxWidth().wrapContentHeight()
         ) { page ->
-            val media = mediaList[page]
+            val media = mediaList.getOrNull(page) ?: return@HorizontalPager
             Box(
                 Modifier
                     .fillMaxSize()

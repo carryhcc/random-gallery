@@ -52,6 +52,8 @@ fun GroupListScreen(
 ) {
     val groups by viewModel.groups.collectAsStateWithLifecycle()
     val pageInfo by viewModel.pageInfo.collectAsStateWithLifecycle()
+    val currentPage by viewModel.currentPage.collectAsStateWithLifecycle()
+    val totalPages by viewModel.totalPagesState.collectAsStateWithLifecycle()
     val loading by viewModel.loading.collectAsStateWithLifecycle()
     val error by viewModel.error.collectAsStateWithLifecycle()
 
@@ -170,16 +172,28 @@ fun GroupListScreen(
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
+                    val canPrev = currentPage > 1
+                    val canNext = currentPage < totalPages
                     IconButton(
-                        onClick = { viewModel.prevPage() }
+                        onClick = { viewModel.prevPage() },
+                        enabled = canPrev
                     ) {
-                        Icon(Icons.Filled.ChevronLeft, stringResource(R.string.group_prev_page), tint = MaterialTheme.colorScheme.primary)
+                        Icon(
+                            Icons.Filled.ChevronLeft,
+                            contentDescription = stringResource(R.string.group_prev_page),
+                            tint = if (canPrev) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.38f)
+                        )
                     }
                     Text(pageInfo, style = MaterialTheme.typography.bodySmall.tabularNumbers, color = MaterialTheme.colorScheme.onSurface, fontWeight = FontWeight.Bold)
                     IconButton(
-                        onClick = { viewModel.nextPage() }
+                        onClick = { viewModel.nextPage() },
+                        enabled = canNext
                     ) {
-                        Icon(Icons.Filled.ChevronRight, stringResource(R.string.group_next_page), tint = MaterialTheme.colorScheme.primary)
+                        Icon(
+                            Icons.Filled.ChevronRight,
+                            contentDescription = stringResource(R.string.group_next_page),
+                            tint = if (canNext) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.38f)
+                        )
                     }
                 }
             }

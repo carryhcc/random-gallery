@@ -181,7 +181,7 @@ fun DownloadListScreen(
                             LazyVerticalStaggeredGrid(
                                 state = gridState,
                                 columns = StaggeredGridCells.Adaptive(minSize = 165.dp),
-                                contentPadding = PaddingValues(start = Spacing.md, end = Spacing.md, top = Spacing.xs, bottom = 80.dp),
+                                contentPadding = PaddingValues(start = Spacing.md, end = Spacing.md, top = Spacing.xs, bottom = Spacing.md),
                                 verticalItemSpacing = Spacing.md,
                                 horizontalArrangement = Arrangement.spacedBy(Spacing.md),
                                 modifier = Modifier.fillMaxSize()

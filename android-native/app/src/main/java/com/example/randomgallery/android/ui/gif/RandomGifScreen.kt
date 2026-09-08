@@ -131,10 +131,18 @@ private fun SingleCardDynamicGifViewer(
     val scope = rememberCoroutineScope()
 
     var activeIndex by remember { mutableIntStateOf(0) }
+    var pendingAdvance by remember { mutableStateOf(false) }
     var isVideoReady by remember(activeIndex) { mutableStateOf(false) }
     var isVideoFailed by remember(activeIndex) { mutableStateOf(false) }
     var isCoverFailed by remember(activeIndex) { mutableStateOf(false) }
     var videoRatio by remember(activeIndex) { mutableFloatStateOf(0.75f) }
+
+    LaunchedEffect(gifList.size) {
+        if (pendingAdvance && activeIndex + 1 < gifList.size) {
+            pendingAdvance = false
+            activeIndex += 1
+        }
+    }
 
     // 两个 ExoPlayer 轮换（当前 activeIndex 与 activeIndex + 1 预加载）
     val players = remember {
@@ -251,16 +259,19 @@ private fun SingleCardDynamicGifViewer(
             return@LaunchedEffect
         }
 
-        // 极限等待时间 2.0 秒
+        // 缓冲等待时间放宽至 8.0 秒，保障弱网与移动 CDN 首帧体验
         if (!isVideoReady && !isVideoFailed && gifList.isNotEmpty()) {
-            delay(2000)
+            delay(8000)
             if (!isVideoReady && activeIndex == targetIndexForCheck) {
                 isVideoFailed = true
                 Messenger.show("缓冲超时，自动跳过...", isError = true)
                 delay(600)
                 if (activeIndex == targetIndexForCheck) {
                     if (activeIndex + 1 < gifList.size) activeIndex += 1
-                    else onLoadNext()
+                    else {
+                        pendingAdvance = true
+                        onLoadNext()
+                    }
                 }
             }
         }
@@ -536,7 +547,10 @@ private fun SingleCardDynamicGifViewer(
                         FilledTonalButton(
                             onClick = {
                                 if (activeIndex + 1 < gifList.size) activeIndex += 1
-                                else onLoadNext()
+                                else {
+                                    pendingAdvance = true
+                                    onLoadNext()
+                                }
                             },
                             shape = RoundedCornerShape(10.dp),
                             contentPadding = PaddingValues(horizontal = 10.dp, vertical = 4.dp),
@@ -568,7 +582,10 @@ private fun SingleCardDynamicGifViewer(
             onSwitchMode = onSwitchMode,
             onShuffleClick = {
                 if (activeIndex + 1 < gifList.size) activeIndex += 1
-                else onLoadNext()
+                else {
+                    pendingAdvance = true
+                    onLoadNext()
+                }
             },
             shuffleLabel = "换一个"
         )
@@ -704,7 +721,7 @@ private fun CardStackDeckViewer(
         }
 
         if (!isVideoReady && !isVideoFailed && groupGifs.isNotEmpty()) {
-            delay(2000)
+            delay(8000)
             if (!isVideoReady && activeIndex == targetIndexForGroupCheck) {
                 isVideoFailed = true
                 Messenger.show("缓冲超时，自动跳过...", isError = true)

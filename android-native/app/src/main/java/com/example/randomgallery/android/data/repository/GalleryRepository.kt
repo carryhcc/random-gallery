@@ -203,7 +203,10 @@ class GalleryRepository(
 
     suspend fun deleteWork(workId: String): Result<String> = try {
         val res = api.deleteWork(workId)
-        if (res.code == 200) Result.success(res.message ?: "删除成功")
+        if (res.code == 200) {
+            clearCache()
+            Result.success(res.message ?: "删除成功")
+        }
         else Result.failure(Exception(res.message ?: "删除失败"))
     } catch (e: Exception) {
         if (e is CancellationException) throw e

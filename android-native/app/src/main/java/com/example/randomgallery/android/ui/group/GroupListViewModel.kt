@@ -24,6 +24,12 @@ class GroupListViewModel(
     private val _pageInfo = MutableStateFlow("第 1 页")
     val pageInfo: StateFlow<String> = _pageInfo.asStateFlow()
 
+    private val _currentPage = MutableStateFlow(1)
+    val currentPage: StateFlow<Int> = _currentPage.asStateFlow()
+
+    private val _totalPages = MutableStateFlow(1)
+    val totalPagesState: StateFlow<Int> = _totalPages.asStateFlow()
+
     private val _loading = MutableStateFlow(false)
     val loading: StateFlow<Boolean> = _loading.asStateFlow()
 
@@ -48,6 +54,8 @@ class GroupListViewModel(
                     _groups.value = it.list
                     totalPages = it.pages
                     page = it.pageNum.toInt()
+                    _currentPage.value = page
+                    _totalPages.value = totalPages
                     _pageInfo.value = "第 $page 页 / 共 $totalPages 页"
                     _error.value = null
                 }

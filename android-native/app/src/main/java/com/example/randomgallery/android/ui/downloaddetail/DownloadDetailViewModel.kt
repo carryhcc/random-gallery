@@ -6,6 +6,7 @@ import androidx.lifecycle.viewModelScope
 import com.example.randomgallery.android.AppContainer
 import com.example.randomgallery.android.data.model.XhsWorkDetailVO
 import com.example.randomgallery.android.data.repository.GalleryRepository
+import com.example.randomgallery.android.ui.common.SingleFlight
 import com.example.randomgallery.android.ui.common.UiState
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.Flow
@@ -33,8 +34,14 @@ class DownloadDetailViewModel(
     private val _refetchEvents = Channel<Result<String>>(Channel.BUFFERED)
     val refetchEvents: Flow<Result<String>> = _refetchEvents.receiveAsFlow()
 
+    // 写操作 in-flight 忙碌锁：防止 0.5~1s 网络窗口内连点重复提交（删除/解析不可逆）
+    private val writeFlight = SingleFlight()
+
+    /** 任一写操作（删除作品/删除媒体/重新解析）进行中。UI 据此禁用确认按钮。 */
+    val writeBusy: StateFlow<Boolean> = writeFlight.busy
+
     fun refetchWork(workId: String, workUrl: String?) {
-        viewModelScope.launch {
+        writeFlight.launch(viewModelScope) {
             val urlToSubmit = workUrl?.takeIf { it.isNotBlank() } ?: "https://www.xiaohongshu.com/explore/$workId"
             val result = repository().addDownloadTask(urlToSubmit)
             _refetchEvents.trySend(result)
@@ -59,20 +66,32 @@ class DownloadDetailViewModel(
     }
 
     fun deleteWork(workId: String) {
-        viewModelScope.launch {
+        writeFlight.launch(viewModelScope) {
             _deleteWorkEvents.trySend(repository().deleteWork(workId))
         }
     }
 
     fun deleteMedia(mediaId: Long, workId: String) {
-        viewModelScope.launch {
+        writeFlight.launch(viewModelScope) {
             val result = repository().deleteMedia(mediaId)
             _deleteMediaEvents.trySend(result)
             if (result.isSuccess) {
+                val current = (_detail.value as? UiState.Success)?.data
+                if (current != null) {
+                    val updatedImages = current.images.filter { it.id != mediaId }
+                    val updatedGifs = current.gifs.filter { it.id != mediaId }
+                    _detail.value = UiState.Success(current.copy(images = updatedImages, gifs = updatedGifs))
+                }
                 val detailResult = repository().getWorkDetail(workId)
                 _detail.value = detailResult.fold(
                     onSuccess = { UiState.Success(it) },
-                    onFailure = { UiState.Error(it.message ?: "加载失败") }
+                    onFailure = {
+                        current?.let { c ->
+                            val updatedImages = c.images.filter { it.id != mediaId }
+                            val updatedGifs = c.gifs.filter { it.id != mediaId }
+                            UiState.Success(c.copy(images = updatedImages, gifs = updatedGifs))
+                        } ?: UiState.Error(it.message ?: "加载失败")
+                    }
                 )
             }
         }

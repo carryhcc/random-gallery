@@ -39,8 +39,10 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
@@ -215,7 +217,8 @@ fun AppNavHost() {
                         onNavigateToDownloadManage = { navController.navigate(Routes.DOWNLOAD_MANAGE) },
                         onNavigateToRandomGallery = { navController.switchTab(Routes.RANDOM_GALLERY) },
                         onNavigateToGroupList = { navController.switchTab(Routes.GROUP_LIST) },
-                        onNavigateToDownloadList = { navController.switchTab(Routes.DOWNLOAD_LIST) }
+                        onNavigateToDownloadList = { navController.switchTab(Routes.DOWNLOAD_LIST) },
+                        onNavigateToPicList = { groupId, groupName -> navController.toPicList(groupId, groupName) }
                     )
                 }
 
@@ -297,6 +300,9 @@ fun AppNavHost() {
                         workId = entry.arguments?.getString("workId") ?: "",
                         coverImageUrl = entry.arguments?.getString("coverImageUrl") ?: "",
                         onBack = { navController.navigateUp() },
+                        onWorkDeleted = { deletedId ->
+                            navController.previousBackStackEntry?.savedStateHandle?.set("deleted_work_id", deletedId)
+                        },
                         onAuthorClick = { authorId, _ -> navController.toDownloadList(authorId = authorId) },
                         onTagClick = { tag -> navController.toDownloadList(keyword = tag) }
                     )
@@ -312,9 +318,16 @@ fun AppNavHost() {
                             type = NavType.StringType; nullable = true; defaultValue = null
                         }
                     )
-                ) {
+                ) { entry ->
                     val vm: DownloadListViewModel = viewModel {
                         DownloadListViewModel(context.applicationContext, createSavedStateHandle())
+                    }
+                    val deletedWorkId by entry.savedStateHandle.getStateFlow<String?>("deleted_work_id", null).collectAsStateWithLifecycle()
+                    LaunchedEffect(deletedWorkId) {
+                        deletedWorkId?.let {
+                            vm.removeWork(it)
+                            entry.savedStateHandle.remove<String>("deleted_work_id")
+                        }
                     }
                     DownloadListScreen(
                         viewModel = vm,
@@ -356,7 +369,8 @@ private fun NavHostController.switchTab(route: String) {
 
 private fun NavHostController.toPicList(groupId: Long, groupName: String) {
     val name = Uri.encode(groupName.ifBlank { "套图详情" }) // not a Composable: fallback hardcoded intentionally as URL path
-    navigate("${Routes.PIC_LIST}/$groupId/$name")
+    // launchSingleTop：目的地已在栈顶时不重复入栈，防止连点造成多次跳转
+    navigate("${Routes.PIC_LIST}/$groupId/$name") { launchSingleTop = true }
 }
 
 private fun NavHostController.toDownloadDetail(workId: String, coverImageUrl: String = "") {

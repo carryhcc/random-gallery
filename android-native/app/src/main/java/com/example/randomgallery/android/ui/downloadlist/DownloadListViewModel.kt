@@ -81,6 +81,10 @@ class DownloadListViewModel(
         refresh()
     }
 
+    fun removeWork(workId: String) {
+        _works.value = _works.value.filter { it.workId != workId }
+    }
+
     fun refresh() {
         page = 1
         hasMore = true

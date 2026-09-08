@@ -67,7 +67,7 @@ fun HomeScreen(
     onNavigateToRandomGallery: () -> Unit,
     onNavigateToGroupList: () -> Unit,
     onNavigateToDownloadList: () -> Unit,
-    onNavigateToPicList: (groupId: Long, groupName: String) -> Unit = { _, _ -> }
+    onNavigateToPicList: (groupId: Long, groupName: String) -> Unit
 ) {
     val context = LocalContext.current
     val spaceMode by viewModel.spaceMode.collectAsStateWithLifecycle()
@@ -79,6 +79,7 @@ fun HomeScreen(
 
     val galleryGroups by viewModel.galleryGroups.collectAsStateWithLifecycle()
     val galleryLoading by viewModel.galleryLoading.collectAsStateWithLifecycle()
+    val randomGroupBusy by viewModel.randomGroupLoading.collectAsStateWithLifecycle()
 
     val privacy by viewModel.privacy.collectAsStateWithLifecycle()
     val darkMode by viewModel.darkMode.collectAsStateWithLifecycle()
@@ -105,6 +106,11 @@ fun HomeScreen(
     LaunchedEffect(Unit) {
         viewModel.randomGroupEvents.collect { result ->
             result.onSuccess { group ->
+                // 防止服务器返回空分组数据导致按按钮无反应
+                if (group.groupId == null || group.groupId == 0L) {
+                    Messenger.show(context.getString(R.string.submit_failed_no_data), isError = true)
+                    return@collect
+                }
                 group.groupId?.let { gid ->
                     onNavigateToPicList(gid, group.groupName ?: context.getString(R.string.group_detail_fallback))
                 }
@@ -226,6 +232,7 @@ fun HomeScreen(
 
                     item(span = StaggeredGridItemSpan.FullLine) {
                         GalleryFeatureQuickBar(
+                            randomGroupBusy = randomGroupBusy,
                             onNavigateToRandomPic = onNavigateToRandomPic,
                             onNavigateToRandomGallery = onNavigateToRandomGallery,
                             onRandomGroup = { viewModel.randomGroup() },
@@ -938,6 +945,7 @@ private fun GallerySpaceHeroDashboard(
 
 @Composable
 private fun GalleryFeatureQuickBar(
+    randomGroupBusy: Boolean,
     onNavigateToRandomPic: () -> Unit,
     onNavigateToRandomGallery: () -> Unit,
     onRandomGroup: () -> Unit,
@@ -973,6 +981,7 @@ private fun GalleryFeatureQuickBar(
             icon = Icons.Filled.Collections,
             gradient = Brush.linearGradient(listOf(Color(0xFF3BAD7A), Color(0xFF68D8A0))),
             modifier = Modifier.weight(1f),
+            busy = randomGroupBusy,
             onClick = onRandomGroup
         )
     }
@@ -1054,6 +1063,7 @@ private fun VisualFeatureHeroCard(
     gradient: Brush,
     badge: String? = null,
     modifier: Modifier = Modifier,
+    busy: Boolean = false,
     onClick: () -> Unit
 ) {
     Surface(
@@ -1090,12 +1100,21 @@ private fun VisualFeatureHeroCard(
                 modifier = Modifier.align(Alignment.BottomStart),
                 verticalArrangement = Arrangement.spacedBy(2.dp)
             ) {
-                Icon(
-                    imageVector = icon,
-                    contentDescription = null,
-                    tint = Color.White,
-                    modifier = Modifier.size(24.dp)
-                )
+                if (busy) {
+                    // 抽选请求进行中：图标位换成旋转指示，给用户即时点击反馈
+                    CircularProgressIndicator(
+                        modifier = Modifier.size(22.dp),
+                        strokeWidth = 2.dp,
+                        color = Color.White
+                    )
+                } else {
+                    Icon(
+                        imageVector = icon,
+                        contentDescription = null,
+                        tint = Color.White,
+                        modifier = Modifier.size(24.dp)
+                    )
+                }
                 Text(
                     text = title,
                     style = MaterialTheme.typography.titleMedium,

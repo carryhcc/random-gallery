@@ -218,20 +218,6 @@ fun XhsDivider() {
     HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f), thickness = 0.5.dp)
 }
 
-fun Modifier.singleClick(
-    debounceTime: Long = 500L,
-    onClick: () -> Unit
-): Modifier = composed {
-    var lastClickTime = remember { 0L }
-    this.clickable {
-        val now = System.currentTimeMillis()
-        if (now - lastClickTime >= debounceTime) {
-            lastClickTime = now
-            onClick()
-        }
-    }
-}
-
 /**
  * Android 14+ 弹性微交互与防重击波纹点击修饰符
  */

@@ -68,6 +68,7 @@ fun DownloadManageScreen(
     val historyTotalPages by viewModel.historyTotalPages.collectAsStateWithLifecycle()
     val historyLoading by viewModel.historyLoading.collectAsStateWithLifecycle()
     val historyError by viewModel.historyError.collectAsStateWithLifecycle()
+    val taskActionBusy by viewModel.taskActionBusy.collectAsStateWithLifecycle()
 
     var urlInput by remember { mutableStateOf("") }
     var isInputExpanded by remember { mutableStateOf(false) }
@@ -182,7 +183,6 @@ fun DownloadManageScreen(
                 .fillMaxSize()
                 .padding(padding)
                 .background(MaterialTheme.colorScheme.background)
-                .navigationBarsPadding()
                 .padding(horizontal = Spacing.md, vertical = Spacing.xs),
             verticalArrangement = Arrangement.spacedBy(Spacing.sm)
         ) {
@@ -345,6 +345,7 @@ fun DownloadManageScreen(
                         taskToDelete?.id?.let { viewModel.deleteTask(it) }
                         taskToDelete = null
                     },
+                    enabled = !taskActionBusy,
                     colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error)
                 ) {
                     Text("删除", color = Color.White)
@@ -821,72 +822,45 @@ private fun CompactTaskHistoryCard(
                     horizontalArrangement = Arrangement.spacedBy(4.dp)
                 ) {
                     if (isFailed) {
-                        IconButton(
-                            onClick = onDelete,
-                            modifier = Modifier.size(26.dp)
-                        ) {
-                            Icon(
-                                Icons.Filled.DeleteOutline,
-                                contentDescription = "删除",
-                                tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f),
-                                modifier = Modifier.size(16.dp)
-                            )
-                        }
-
                         FilledTonalButton(
                             onClick = onRetry,
-                            shape = RoundedCornerShape(6.dp),
-                            contentPadding = PaddingValues(horizontal = 8.dp, vertical = 0.dp),
+                            shape = RoundedCornerShape(8.dp),
+                            contentPadding = PaddingValues(horizontal = 10.dp, vertical = 0.dp),
                             colors = ButtonDefaults.filledTonalButtonColors(
                                 containerColor = MaterialTheme.colorScheme.errorContainer,
                                 contentColor = MaterialTheme.colorScheme.onErrorContainer
                             ),
-                            modifier = Modifier.height(26.dp)
+                            modifier = Modifier.height(32.dp)
                         ) {
-                            Icon(Icons.Filled.Replay, contentDescription = null, modifier = Modifier.size(12.dp))
-                            Spacer(Modifier.width(2.dp))
+                            Icon(Icons.Filled.Replay, contentDescription = null, modifier = Modifier.size(14.dp))
+                            Spacer(Modifier.width(3.dp))
                             Text("重试", style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.Bold, fontSize = 11.sp)
                         }
-                    }
-
-                    if (isWaiting) {
-                        IconButton(
-                            onClick = onDelete,
-                            modifier = Modifier.size(26.dp)
-                        ) {
-                            Icon(
-                                Icons.Filled.Close,
-                                contentDescription = "取消/删除",
-                                tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f),
-                                modifier = Modifier.size(16.dp)
-                            )
-                        }
-                    }
-
-                    if (isSuccess && !task.workId.isNullOrBlank()) {
-                        IconButton(
-                            onClick = onDelete,
-                            modifier = Modifier.size(26.dp)
-                        ) {
-                            Icon(
-                                Icons.Filled.DeleteOutline,
-                                contentDescription = "删除记录",
-                                tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f),
-                                modifier = Modifier.size(16.dp)
-                            )
-                        }
-
+                    } else if (isSuccess && !task.workId.isNullOrBlank()) {
                         Button(
                             onClick = { onViewDetail(task.workId!!) },
-                            shape = RoundedCornerShape(6.dp),
-                            contentPadding = PaddingValues(horizontal = 8.dp, vertical = 0.dp),
+                            shape = RoundedCornerShape(8.dp),
+                            contentPadding = PaddingValues(horizontal = 10.dp, vertical = 0.dp),
                             colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary),
-                            modifier = Modifier.height(26.dp)
+                            modifier = Modifier.height(32.dp)
                         ) {
-                            Icon(Icons.Filled.Visibility, contentDescription = null, modifier = Modifier.size(12.dp))
-                            Spacer(Modifier.width(2.dp))
+                            Icon(Icons.Filled.Visibility, contentDescription = null, modifier = Modifier.size(14.dp))
+                            Spacer(Modifier.width(3.dp))
                             Text("查看", style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.Bold, fontSize = 11.sp)
                         }
+                    }
+
+                    // 删除/取消记录按钮：所有状态统一可用，触控热区升级为 36dp
+                    IconButton(
+                        onClick = onDelete,
+                        modifier = Modifier.size(36.dp)
+                    ) {
+                        Icon(
+                            if (isWaiting) Icons.Filled.Close else Icons.Filled.DeleteOutline,
+                            contentDescription = if (isWaiting) "取消任务" else "删除记录",
+                            tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f),
+                            modifier = Modifier.size(18.dp)
+                        )
                     }
                 }
             }

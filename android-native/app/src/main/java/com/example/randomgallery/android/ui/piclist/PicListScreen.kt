@@ -38,6 +38,7 @@ import com.example.randomgallery.android.util.Downloader
 import com.example.randomgallery.android.util.ImageUrlResolver
 import com.example.randomgallery.android.util.MediaKind
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun PicListScreen(
     viewModel: PicListViewModel,
@@ -107,52 +108,58 @@ fun PicListScreen(
                         modifier = Modifier.fillMaxSize()
                     )
                 else -> {
-                    LazyVerticalStaggeredGrid(
-                        state = gridState,
-                        columns = StaggeredGridCells.Fixed(columnCount),
-                        contentPadding = PaddingValues(Spacing.md),
-                        verticalItemSpacing = Spacing.sm,
-                        horizontalArrangement = Arrangement.spacedBy(Spacing.sm),
+                    androidx.compose.material3.pulltorefresh.PullToRefreshBox(
+                        isRefreshing = loading && items.isNotEmpty(),
+                        onRefresh = { viewModel.refresh() },
                         modifier = Modifier.fillMaxSize()
                     ) {
-                        // ── 顶部套图名称与状态 Banner ─────────────────────
-                        item(span = StaggeredGridItemSpan.FullLine) {
-                            GroupHeroHeader(
-                                groupTitle = decodedGroupName.ifBlank { stringResource(R.string.group_detail_fallback) },
-                                loadedCount = items.size
-                            )
-                        }
-
-                        // ── 图片瀑布流卡片 ─────────────────────────────
-                        itemsIndexed(
-                            items = items,
-                            key = { index, pic -> pic.id ?: "idx_$index" }
-                        ) { index, pic ->
-                            StaggeredItemEntrance(index = index) {
-                                PicTile(
-                                    pic = pic,
-                                    fullSizePx = gridFullSizePx,
-                                    onClick = { selectedIndex = index },
-                                    onDownload = { url ->
-                                        Downloader.enqueue(context, url, MediaKind.IMAGE)
-                                            .onSuccess { Messenger.show(context.getString(R.string.piclist_downloading)) }
-                                            .onFailure { e -> Messenger.show(e.message ?: "下载失败", isError = true) }
-                                    }
+                        LazyVerticalStaggeredGrid(
+                            state = gridState,
+                            columns = StaggeredGridCells.Fixed(columnCount),
+                            contentPadding = PaddingValues(Spacing.md),
+                            verticalItemSpacing = Spacing.sm,
+                            horizontalArrangement = Arrangement.spacedBy(Spacing.sm),
+                            modifier = Modifier.fillMaxSize()
+                        ) {
+                            // ── 顶部套图名称与状态 Banner ─────────────────────
+                            item(span = StaggeredGridItemSpan.FullLine) {
+                                GroupHeroHeader(
+                                    groupTitle = decodedGroupName.ifBlank { stringResource(R.string.group_detail_fallback) },
+                                    loadedCount = items.size
                                 )
                             }
-                        }
 
-                        if (loading) {
-                            item(span = StaggeredGridItemSpan.FullLine) {
-                                Box(
-                                    modifier = Modifier.fillMaxWidth().padding(vertical = Spacing.md),
-                                    contentAlignment = Alignment.Center
-                                ) {
-                                    CircularProgressIndicator(
-                                        modifier = Modifier.size(24.dp),
-                                        strokeWidth = 2.5.dp,
-                                        color = MaterialTheme.colorScheme.primary
+                            // ── 图片瀑布流卡片 ─────────────────────────────
+                            itemsIndexed(
+                                items = items,
+                                key = { index, pic -> pic.id ?: "idx_$index" }
+                            ) { index, pic ->
+                                StaggeredItemEntrance(index = index) {
+                                    PicTile(
+                                        pic = pic,
+                                        fullSizePx = gridFullSizePx,
+                                        onClick = { selectedIndex = index },
+                                        onDownload = { url ->
+                                            Downloader.enqueue(context, url, MediaKind.IMAGE)
+                                                .onSuccess { Messenger.show(context.getString(R.string.piclist_downloading)) }
+                                                .onFailure { e -> Messenger.show(e.message ?: "下载失败", isError = true) }
+                                        }
                                     )
+                                }
+                            }
+
+                            if (loading) {
+                                item(span = StaggeredGridItemSpan.FullLine) {
+                                    Box(
+                                        modifier = Modifier.fillMaxWidth().padding(vertical = Spacing.md),
+                                        contentAlignment = Alignment.Center
+                                    ) {
+                                        CircularProgressIndicator(
+                                            modifier = Modifier.size(24.dp),
+                                            strokeWidth = 2.5.dp,
+                                            color = MaterialTheme.colorScheme.primary
+                                        )
+                                    }
                                 }
                             }
                         }

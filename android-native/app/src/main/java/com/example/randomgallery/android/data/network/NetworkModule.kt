@@ -160,10 +160,9 @@ object NetworkModule {
  * 动态接口（随机图、随机套图、环境切换等）一律 no-cache。
  */
 private fun isCacheableUrl(url: String): Boolean {
-    // 静态元数据：作者列表、标签列表、下载作品详情
+    // 静态元数据：作者列表、标签列表（作品详情含可变时效链接与删除操作，不进行 HTTP 强缓存）
     return url.contains("/api/xhsWork/authors") ||
-           url.contains("/api/xhsWork/tags") ||
-           url.contains("/api/xhsWork/detail")
+           url.contains("/api/xhsWork/tags")
 }
 
 /**

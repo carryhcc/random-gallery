@@ -6,6 +6,7 @@ import androidx.lifecycle.viewModelScope
 import com.example.randomgallery.android.AppContainer
 import com.example.randomgallery.android.data.model.XhsDownloadTaskVO
 import com.example.randomgallery.android.data.repository.GalleryRepository
+import com.example.randomgallery.android.ui.common.SingleFlight
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -31,6 +32,12 @@ class DownloadManageViewModel(
     // 最近一次成功解析的 URL，用于在 Snackbar 展示
     private val _lastResolvedUrl = MutableStateFlow<String?>(null)
     val lastResolvedUrl: StateFlow<String?> = _lastResolvedUrl.asStateFlow()
+
+    // 写操作 in-flight 忙碌锁：防止删除/重试请求窗口内连点重复提交
+    private val taskActionFlight = SingleFlight()
+
+    /** 删除任务/重试任务进行中。UI 据此禁用确认按钮。 */
+    val taskActionBusy: StateFlow<Boolean> = taskActionFlight.busy
 
     private val _loading = MutableStateFlow(false)
     val loading: StateFlow<Boolean> = _loading.asStateFlow()
@@ -127,7 +134,7 @@ class DownloadManageViewModel(
     }
 
     fun deleteTask(id: Long) {
-        viewModelScope.launch {
+        taskActionFlight.launch(viewModelScope) {
             val result = repository().deleteDownloadTask(id)
             _historyEvents.trySend(result)
             if (result.isSuccess) {
@@ -157,6 +164,10 @@ class DownloadManageViewModel(
                             _historyTotalPages.value = data.pages
                             _historyError.value = null
                             pollConsecutiveErrors = 0
+                            if (data.list.isEmpty() && page > 1 && data.pages in 1 until page) {
+                                _historyPage.value = data.pages
+                                loadHistory(showLoading = false)
+                            }
                         }
                     } else {
                         pollConsecutiveErrors++
@@ -191,7 +202,7 @@ class DownloadManageViewModel(
     }
 
     fun retryTask(id: Long) {
-        viewModelScope.launch {
+        taskActionFlight.launch(viewModelScope) {
             val result = repository().retryDownloadTask(id)
             _historyEvents.trySend(result)
             if (result.isSuccess) {

@@ -12,6 +12,8 @@
     <string name="common_retry">重新加载</string>
     <string name="common_delete">删除</string>
     <string name="common_cancel">取消</string>
+    <string name="common_confirm">确定</string>
+    <string name="common_delete_success">删除成功</string>
     <string name="common_close">关闭</string>
     <string name="common_download">下载</string>
     <string name="common_refresh">刷新</string>
@@ -53,6 +55,7 @@
     <string name="download_task_queued_check">✓ 已加入下载队列</string>
     <string name="submit_failed_network">提交失败：网络连接错误</string>
     <string name="submit_failed_unknown">未知错误</string>
+    <string name="submit_failed_no_data">数据异常，请稍后重试</string>
     <!-- 套图 -->
     <string name="group_title">套图列表</string>
     <string name="group_search_hint">搜索套图名称</string>
@@ -109,6 +112,8 @@
     <string name="dd_open_original">打开原网页</string>
     <string name="dd_refetch">重新获取</string>
     <string name="dd_refetch_title">重新获取最新链接</string>
+    <string name="dd_refetch_confirm_title">重新解析作品</string>
+    <string name="dd_refetch_confirm_message">确定要重新解析该作品吗？这将重新获取最新媒体链接并更新本地数据。</string>
     <string name="dd_refetch_queued">已提交重新解析，正在更新链接…</string>
     <!-- 动图 -->
     <string name="gif_load_failed">加载失败或链接已失效</string>

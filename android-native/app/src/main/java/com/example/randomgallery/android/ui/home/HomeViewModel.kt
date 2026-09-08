@@ -12,6 +12,7 @@ import com.example.randomgallery.android.data.model.GroupVO
 import com.example.randomgallery.android.data.model.PicCount
 import com.example.randomgallery.android.data.model.XhsWorkListVO
 import com.example.randomgallery.android.data.repository.GalleryRepository
+import com.example.randomgallery.android.ui.common.SingleFlight
 import com.example.randomgallery.android.ui.common.UiState
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.Flow
@@ -70,6 +71,12 @@ class HomeViewModel(
 
     private val _randomGroupEvents = Channel<Result<GroupVO>>(Channel.BUFFERED)
     val randomGroupEvents: Flow<Result<GroupVO>> = _randomGroupEvents.receiveAsFlow()
+
+    // 随机套图抽选 in-flight 忙碌锁：进行中忽略连点，防重复请求/跳转；busy 同时驱动按钮 loading 态
+    private val randomGroupFlight = SingleFlight()
+
+    /** 随机套图抽选进行中。 */
+    val randomGroupLoading: StateFlow<Boolean> = randomGroupFlight.busy
 
     private val _proxyEnabled = MutableStateFlow(false)
     val proxyEnabled: StateFlow<Boolean> = _proxyEnabled.asStateFlow()
@@ -303,7 +310,7 @@ class HomeViewModel(
     }
 
     fun randomGroup() {
-        viewModelScope.launch {
+        randomGroupFlight.launch(viewModelScope) {
             val result = repository().getRandomGroupInfo()
             _randomGroupEvents.trySend(result)
             result.onFailure { _messages.trySend("获取失败：${it.message}") }
@@ -317,6 +324,9 @@ class HomeViewModel(
             _baseUrl.value = AppContainer.currentBaseUrl()
             _messages.trySend("已切换到 $url")
             loadEnvInfo(force = true)
+            loadHeroWorks(force = true)
+            refreshFeed()
+            refreshGallery()
         }
     }
 
@@ -337,6 +347,9 @@ class HomeViewModel(
             _baseUrl.value = AppContainer.currentBaseUrl()
             _messages.trySend("服务地址已更新，正在连接...")
             loadEnvInfo(force = true)
+            loadHeroWorks(force = true)
+            refreshFeed()
+            refreshGallery()
         }
     }
 

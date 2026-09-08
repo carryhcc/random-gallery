@@ -30,10 +30,21 @@ class RandomGalleryViewModel(
     private var hasMore = true
 
     fun refresh() {
-        page = 0
-        hasMore = true
-        _groups.value = emptyList()
-        loadMore(refresh = true)
+        if (_loading.value) return
+        _loading.value = true
+        viewModelScope.launch {
+            repository().loadMoreGroups(page = 0, refresh = true)
+                .onSuccess {
+                    _groups.value = it.images.take(MAX_GROUPS)
+                    hasMore = it.hasMore && it.images.size < MAX_GROUPS
+                    page = 1
+                    _error.value = null
+                }
+                .onFailure {
+                    if (_groups.value.isEmpty()) _error.value = it.message ?: "加载失败"
+                }
+            _loading.value = false
+        }
     }
 
     fun loadMore(refresh: Boolean = false) {

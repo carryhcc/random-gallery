@@ -58,9 +58,18 @@ fun RandomPicScreen(
 
     // 浮窗大图预览 URL
     var previewUrl by remember { mutableStateOf<String?>(null) }
+    var pendingScrollToNext by remember { mutableStateOf(false) }
 
     LaunchedEffect(Unit) {
         if (picList.isEmpty()) viewModel.loadRandomPic()
+    }
+
+    // 当图片列表追加新图且处于待翻页状态时，平滑翻到新图
+    LaunchedEffect(picList.size) {
+        if (pendingScrollToNext && picList.isNotEmpty()) {
+            pendingScrollToNext = false
+            pagerState.animateScrollToPage(picList.size - 1)
+        }
     }
 
     // 滑动到倒数第2页时自动预加载下一张随机图
@@ -81,7 +90,18 @@ fun RandomPicScreen(
                     }
                 },
                 actions = {
-                    IconButton(onClick = { viewModel.loadNext() }) {
+                    IconButton(
+                        onClick = {
+                            if (pagerState.currentPage < picList.size - 1) {
+                                scope.launch {
+                                    pagerState.animateScrollToPage(pagerState.currentPage + 1)
+                                }
+                            } else {
+                                pendingScrollToNext = true
+                                viewModel.loadNext()
+                            }
+                        }
+                    ) {
                         Icon(Icons.Filled.Refresh, contentDescription = stringResource(R.string.pic_change))
                     }
                 },
