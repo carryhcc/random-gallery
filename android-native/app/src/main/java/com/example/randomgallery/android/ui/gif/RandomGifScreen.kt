@@ -14,6 +14,7 @@ import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.detectDragGestures
+import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -21,7 +22,17 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
+import android.Manifest
+import android.app.Activity
+import android.content.Intent
+import android.os.Build
+import androidx.activity.BackEventCompat
+import androidx.activity.compose.PredictiveBackHandler
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.runtime.*
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.blur
@@ -31,9 +42,18 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalHapticFeedback
+import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.platform.LocalView
+import androidx.core.view.WindowCompat
+import androidx.core.view.WindowInsetsCompat
+import androidx.core.view.WindowInsetsControllerCompat
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.role
@@ -60,10 +80,15 @@ import coil.request.ImageRequest
 import com.example.randomgallery.android.R
 import com.example.randomgallery.android.data.model.RandomGifVO
 import com.example.randomgallery.android.ui.common.*
+import com.example.randomgallery.android.ui.common.isExpandedWidth
 import com.example.randomgallery.android.ui.theme.*
+import com.example.randomgallery.android.util.Downloader
 import com.example.randomgallery.android.util.ImageUrlResolver
+import com.example.randomgallery.android.util.MediaKind
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.launch
+import kotlin.coroutines.cancellation.CancellationException
 import kotlin.math.abs
 
 @OptIn(UnstableApi::class)
@@ -79,14 +104,55 @@ fun RandomGifScreen(
     val groupGifs by viewModel.currentGroupGifs.collectAsStateWithLifecycle()
     val loading by viewModel.loading.collectAsStateWithLifecycle()
     val error by viewModel.error.collectAsStateWithLifecycle()
+    val isFavorited by viewModel.isFavorited.collectAsStateWithLifecycle()
+
+    // ── REQ-05 沉浸式全屏：进入隐藏系统栏，离开必定恢复 ──
+    // 不采用"点击切换系统栏"方案，避免与单击播放/暂停手势冲突。
+    val view = LocalView.current
+    val hostActivity = LocalContext.current as? Activity
+    DisposableEffect(hostActivity) {
+        val window = hostActivity?.window
+        val controller = window?.let { WindowCompat.getInsetsController(it, view) }
+        controller?.apply {
+            hide(WindowInsetsCompat.Type.systemBars())
+            systemBarsBehavior = WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
+        }
+        onDispose {
+            controller?.show(WindowInsetsCompat.Type.systemBars())
+        }
+    }
+
+    // ── REQ-02 预测性返回 ──
+    // 不用无条件 BackHandler：那会吃掉系统的预测返回预览（manifest 已开 enableOnBackInvokedCallback）。
+    // PredictiveBackHandler 在系统手势进行中持续回调 progress，松手完成返回、中断则回弹。
+    val backProgress = remember { Animatable(0f) }
+    PredictiveBackHandler { progress: Flow<BackEventCompat> ->
+        try {
+            progress.collect { event ->
+                backProgress.snapTo(event.progress.coerceIn(0f, 1f))
+            }
+            // 手势完成：收尾到终态后真正返回
+            backProgress.animateTo(1f, tween(160))
+            onBack()
+        } catch (_: CancellationException) {
+            // 手势中断：回弹
+            backProgress.animateTo(0f, spring(dampingRatio = Spring.DampingRatioMediumBouncy))
+        }
+    }
 
     Box(
         modifier = Modifier
             .fillMaxSize()
             .background(MaterialTheme.colorScheme.background)
+            .graphicsLayer {
+                val p = backProgress.value
+                translationX = -size.width * 0.22f * p
+                val s = 1f - 0.08f * p
+                scaleX = s
+                scaleY = s
+            }
     ) {
         if (playMode == "group") {
-            // ── 模式 B：【整组套图】扑克牌多层重叠物理抽牌视口 ────────────
             CardStackDeckViewer(
                 groupGifs = groupGifs,
                 loading = loading,
@@ -98,16 +164,142 @@ fun RandomGifScreen(
                 onSwitchMode = { viewModel.switchMode(it) }
             )
         } else {
-            // ── 模式 A：【单张随机】仅中间卡片切换，背景与文本动态平滑流转 ──
             SingleCardDynamicGifViewer(
                 gifList = singleGifs,
                 loading = loading,
                 error = error,
+                isFavorited = isFavorited,
                 onBack = onBack,
                 onDetail = onDetail,
                 onAuthor = onAuthor,
                 onLoadNext = { viewModel.loadNext() },
+                onToggleFavorite = { viewModel.toggleFavorite() },
                 onSwitchMode = { viewModel.switchMode(it) }
+            )
+        }
+    }
+}
+
+/**
+ * REQ-06：展开宽度（≥840dp）下的右侧信息与操作栏。
+ * 卡片留在左侧，避免在平板 / 横屏上被拉成超宽横幅。
+ */
+@Composable
+private fun GifInfoSidePanel(
+    gif: RandomGifVO?,
+    isFavorited: Boolean,
+    onToggleFavorite: () -> Unit,
+    onDetail: () -> Unit,
+    onAuthor: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    Surface(
+        modifier = modifier.fillMaxHeight(),
+        shape = RoundedCornerShape(24.dp),
+        color = MaterialTheme.colorScheme.surfaceContainerHigh.copy(alpha = 0.55f),
+        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(Spacing.lg),
+            verticalArrangement = Arrangement.spacedBy(Spacing.md)
+        ) {
+            Text(
+                text = gif?.workTitle?.takeIf { it.isNotBlank() } ?: "未命名作品",
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.Bold,
+                color = MaterialTheme.colorScheme.onSurface,
+                maxLines = 3,
+                overflow = TextOverflow.Ellipsis
+            )
+
+            val author = gif?.authorNickname
+            if (!author.isNullOrBlank()) {
+                Text(
+                    text = author,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
+                )
+            }
+
+            HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
+
+            Button(
+                onClick = onToggleFavorite,
+                modifier = Modifier.fillMaxWidth(),
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = if (isFavorited) {
+                        MaterialTheme.colorScheme.primary
+                    } else {
+                        MaterialTheme.colorScheme.surfaceVariant
+                    },
+                    contentColor = if (isFavorited) {
+                        MaterialTheme.colorScheme.onPrimary
+                    } else {
+                        MaterialTheme.colorScheme.onSurfaceVariant
+                    }
+                )
+            ) {
+                Icon(
+                    imageVector = Icons.Filled.Favorite,
+                    contentDescription = null,
+                    modifier = Modifier.size(18.dp)
+                )
+                Spacer(Modifier.width(Spacing.sm))
+                Text(if (isFavorited) "已收藏" else "收藏")
+            }
+
+            OutlinedButton(onClick = onDetail, modifier = Modifier.fillMaxWidth()) {
+                Icon(
+                    imageVector = Icons.Filled.Info,
+                    contentDescription = null,
+                    modifier = Modifier.size(18.dp)
+                )
+                Spacer(Modifier.width(Spacing.sm))
+                Text("作品详情")
+            }
+
+            OutlinedButton(onClick = onAuthor, modifier = Modifier.fillMaxWidth()) {
+                Icon(
+                    imageVector = Icons.Filled.Person,
+                    contentDescription = null,
+                    modifier = Modifier.size(18.dp)
+                )
+                Spacer(Modifier.width(Spacing.sm))
+                Text("作者主页")
+            }
+        }
+    }
+}
+
+/** REQ-06 横屏 / 平板验收预览：展开分栏的右侧面板。 */
+@Preview(name = "展开分栏 · 横屏平板", widthDp = 960, heightDp = 460, showBackground = true)
+@Composable
+private fun GifInfoSidePanelPreview() {
+    MaterialTheme {
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .background(MaterialTheme.colorScheme.background)
+                .padding(24.dp),
+            contentAlignment = Alignment.CenterEnd
+        ) {
+            GifInfoSidePanel(
+                gif = RandomGifVO(
+                    id = 1L,
+                    workId = "w1",
+                    authorId = "a1",
+                    workTitle = "示例作品标题",
+                    authorNickname = "示例作者"
+                ),
+                isFavorited = true,
+                onToggleFavorite = {},
+                onDetail = {},
+                onAuthor = {},
+                modifier = Modifier.width(300.dp)
             )
         }
     }
@@ -117,27 +309,37 @@ fun RandomGifScreen(
 
 @OptIn(UnstableApi::class)
 @Composable
-private fun SingleCardDynamicGifViewer(
+// REQ-09：放开到 internal 以便 androidTest 通过 friend path 驱动交互
+internal fun SingleCardDynamicGifViewer(
     gifList: List<RandomGifVO>,
     loading: Boolean,
     error: String?,
+    isFavorited: Boolean,
     onBack: () -> Unit,
     onDetail: (workId: String) -> Unit,
     onAuthor: (authorId: String) -> Unit,
     onLoadNext: () -> Unit,
+    onToggleFavorite: () -> Unit,
     onSwitchMode: (String) -> Unit
 ) {
     val context = LocalContext.current
     val density = LocalDensity.current
     val screenWidthPx = with(density) { LocalConfiguration.current.screenWidthDp.dp.toPx() }
     val scope = rememberCoroutineScope()
+    // REQ-08：用 Compose 的 haptic 通道，跨版本、免权限、遵循系统分级设置
+    val haptic = LocalHapticFeedback.current
 
-    var activeIndex by remember { mutableIntStateOf(0) }
+    // REQ-06：旋转 / 分屏等配置变化会重建 Activity，这两项必须可保存
+    var activeIndex by rememberSaveable { mutableIntStateOf(0) }
     var pendingAdvance by remember { mutableStateOf(false) }
     var isVideoReady by remember(activeIndex) { mutableStateOf(false) }
     var isVideoFailed by remember(activeIndex) { mutableStateOf(false) }
     var isCoverFailed by remember(activeIndex) { mutableStateOf(false) }
     var videoRatio by remember(activeIndex) { mutableFloatStateOf(0.75f) }
+    var isPaused by rememberSaveable { mutableStateOf(false) }
+    var showHeart by remember { mutableStateOf(false) }
+    val heartScale = remember { Animatable(0f) }
+    val cardScale = remember { Animatable(1f) }
 
     LaunchedEffect(gifList.size) {
         if (pendingAdvance && activeIndex + 1 < gifList.size) {
@@ -206,6 +408,51 @@ private fun SingleCardDynamicGifViewer(
     }
 
     val currentGif = gifList.getOrNull(activeIndex)
+    // REQ-06：展开宽度（≥840dp）时右侧保留信息与操作栏
+    val isExpanded = isExpandedWidth()
+    val sidePanelWidth = if (isExpanded) 300.dp else 0.dp
+
+    // ── REQ-07 分享 / 保存到相册 ──
+    fun shareCurrent() {
+        val url = currentGif?.mediaUrl?.let { ImageUrlResolver.rawUrl(it) }.orEmpty()
+        if (url.isBlank()) {
+            Messenger.show("暂无媒体地址可分享", isError = true)
+            return
+        }
+        val intent = Intent(Intent.ACTION_SEND).apply {
+            type = "text/plain"
+            putExtra(Intent.EXTRA_TEXT, url)
+        }
+        context.startActivity(Intent.createChooser(intent, "分享到"))
+    }
+
+    // 复用全 App 唯一的下载入口：它带了 xhscdn / 小红书 的 Referer 头，
+    // 自行用 OkHttp + MediaStore 重写会因防盗链 403。
+    fun saveCurrent() {
+        val url = currentGif?.mediaUrl?.let { ImageUrlResolver.rawUrl(it) }.orEmpty()
+        if (url.isBlank()) {
+            Messenger.show("暂无媒体地址可保存", isError = true)
+            return
+        }
+        Downloader.enqueue(context, url, MediaKind.VIDEO)
+            .onSuccess { Messenger.show("已开始保存到相册") }
+            .onFailure { Messenger.show("保存失败：${it.message}", isError = true) }
+    }
+
+    // API 29+ 由 DownloadManager 免权限写入公共目录；API 28 需运行时申请
+    val storagePermissionLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.RequestPermission()
+    ) { granted ->
+        if (granted) saveCurrent() else Messenger.show("未授予存储权限，无法保存", isError = true)
+    }
+
+    fun onSaveClick() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+            saveCurrent()
+        } else {
+            storagePermissionLauncher.launch(Manifest.permission.WRITE_EXTERNAL_STORAGE)
+        }
+    }
     val nextGif = gifList.getOrNull(activeIndex + 1)
     val displayUrl = currentGif?.mediaUrl?.let { ImageUrlResolver.displayUrl(it) } ?: ""
 
@@ -279,9 +526,70 @@ private fun SingleCardDynamicGifViewer(
         }
     }
 
-    // 中间单张卡片平移手势
-    val cardOffsetX = remember { Animatable(0f) }
+    // 心形爆发动画
+    LaunchedEffect(showHeart) {
+        if (showHeart) {
+            heartScale.snapTo(0f)
+            heartScale.animateTo(1.2f, spring(dampingRatio = Spring.DampingRatioMediumBouncy, stiffness = Spring.StiffnessLow))
+            heartScale.animateTo(0f, tween(300))
+            showHeart = false
+        }
+    }
+
+    // 点击缩放动画
+    LaunchedEffect(isVideoReady) {
+        if (isVideoReady) {
+            cardScale.snapTo(0.95f)
+            cardScale.animateTo(1f, spring(dampingRatio = Spring.DampingRatioMediumBouncy))
+        }
+    }
+
+    // 中间单张卡片垂直拖动手势（REQ-04：改为垂直，避免与系统侧滑返回手势冲突）
     val cardOffsetY = remember { Animatable(0f) }
+    // 卡片实测高度：垂直阈值与渐隐比例都基于它，不写死屏幕宽度
+    var cardHeightPx by remember { mutableFloatStateOf(1f) }
+    // 长按倍速（REQ-03）
+    var isSpeedUp by remember { mutableStateOf(false) }
+
+    // REQ-03：两个 ExoPlayer 轮换复用，切图时必须复位，否则 2x 会残留到下一张
+    LaunchedEffect(activeIndex) {
+        isSpeedUp = false
+        players.forEach { it.setPlaybackSpeed(1f) }
+    }
+
+    fun applySpeedUp(on: Boolean) {
+        if (isSpeedUp == on) return
+        isSpeedUp = on
+        curPlayer.setPlaybackSpeed(if (on) 2f else 1f)
+    }
+
+    // REQ-04：垂直拖动结束的落位判定
+    suspend fun settleVerticalDrag() {
+        val h = cardHeightPx
+        val dy = cardOffsetY.value
+        val threshold = h * 0.18f
+        when {
+            dy < -threshold -> {
+                // 上滑 → 下一条
+                haptic.performHapticFeedback(HapticFeedbackType.GestureThresholdActivate)
+                cardOffsetY.animateTo(-h * 1.15f, spring(stiffness = Spring.StiffnessMediumLow))
+                cardOffsetY.snapTo(0f)
+                if (activeIndex + 1 < gifList.size) activeIndex += 1 else onLoadNext()
+            }
+            dy > threshold -> {
+                // 下滑 → 上一条（仅历史内）
+                if (activeIndex > 0) {
+                    haptic.performHapticFeedback(HapticFeedbackType.GestureThresholdActivate)
+                    cardOffsetY.animateTo(h * 1.15f, spring(stiffness = Spring.StiffnessMediumLow))
+                    cardOffsetY.snapTo(0f)
+                    activeIndex -= 1
+                } else {
+                    cardOffsetY.animateTo(0f, spring(dampingRatio = Spring.DampingRatioMediumBouncy))
+                }
+            }
+            else -> cardOffsetY.animateTo(0f, spring(dampingRatio = Spring.DampingRatioMediumBouncy))
+        }
+    }
 
     Box(modifier = Modifier.fillMaxSize()) {
         // ── 1. 全屏背景：动态跨帧渐变，页面框架绝不滑走 ──
@@ -324,11 +632,14 @@ private fun SingleCardDynamicGifViewer(
                 Box(
                     modifier = Modifier
                         .fillMaxSize()
-                        .padding(horizontal = 24.dp, vertical = 68.dp),
+                        .padding(
+                            start = 24.dp,
+                            end = 24.dp + sidePanelWidth,
+                            top = 68.dp,
+                            bottom = 68.dp
+                        ),
                     contentAlignment = Alignment.Center
                 ) {
-                    val dragRotation = (cardOffsetX.value / screenWidthPx) * 16f
-
                     Surface(
                         shape = RoundedCornerShape(24.dp),
                         color = Color.Black.copy(alpha = 0.35f),
@@ -337,55 +648,54 @@ private fun SingleCardDynamicGifViewer(
                         modifier = Modifier
                             .fillMaxWidth()
                             .aspectRatio(videoRatio)
+                            .onSizeChanged { cardHeightPx = it.height.toFloat().coerceAtLeast(1f) }
                             .graphicsLayer {
-                                translationX = cardOffsetX.value
                                 translationY = cardOffsetY.value
-                                rotationZ = dragRotation
+                                scaleX = cardScale.value
+                                scaleY = cardScale.value
+                                // 垂直拖动时按拖动比例渐隐
+                                alpha = 1f - (kotlin.math.abs(cardOffsetY.value) / cardHeightPx * 0.35f).coerceIn(0f, 0.35f)
                             }
                             .clip(RoundedCornerShape(24.dp))
                             .pointerInput(activeIndex) {
-                                detectDragGestures(
-                                    onDragEnd = {
+                                // REQ-03/04：单击=播放暂停，双击=收藏，长按=2x
+                                detectTapGestures(
+                                    onTap = {
+                                        isPaused = !isPaused
+                                        if (isPaused) curPlayer.pause() else curPlayer.play()
                                         scope.launch {
-                                            // 1. 向左划飞：切换到下一张
-                                            if (cardOffsetX.value < -screenWidthPx * 0.22f) {
-                                                cardOffsetX.animateTo(-screenWidthPx * 1.3f, spring(stiffness = Spring.StiffnessMediumLow))
-                                                cardOffsetX.snapTo(0f)
-                                                cardOffsetY.snapTo(0f)
-                                                if (activeIndex + 1 < gifList.size) {
-                                                    activeIndex += 1
-                                                } else {
-                                                    onLoadNext()
-                                                }
-                                            }
-                                            // 2. 向右划回：退回到上一张
-                                            else if (cardOffsetX.value > screenWidthPx * 0.22f) {
-                                                if (activeIndex > 0) {
-                                                    cardOffsetX.animateTo(screenWidthPx * 1.3f, spring(stiffness = Spring.StiffnessMediumLow))
-                                                    cardOffsetX.snapTo(0f)
-                                                    cardOffsetY.snapTo(0f)
-                                                    activeIndex -= 1
-                                                } else {
-                                                    cardOffsetX.animateTo(0f, spring(dampingRatio = Spring.DampingRatioMediumBouncy))
-                                                    cardOffsetY.animateTo(0f, spring(dampingRatio = Spring.DampingRatioMediumBouncy))
-                                                }
-                                            }
-                                            // 3. 未过阈值复位
-                                            else {
-                                                cardOffsetX.animateTo(0f, spring(dampingRatio = Spring.DampingRatioMediumBouncy))
-                                                cardOffsetY.animateTo(0f, spring(dampingRatio = Spring.DampingRatioMediumBouncy))
-                                            }
+                                            cardScale.animateTo(0.94f, tween(70))
+                                            cardScale.animateTo(1f, spring(dampingRatio = Spring.DampingRatioMediumBouncy))
                                         }
                                     },
-                                    onDrag = { change, dragAmount ->
-                                        change.consume()
-                                        scope.launch {
-                                            cardOffsetX.snapTo(cardOffsetX.value + dragAmount.x)
-                                            cardOffsetY.snapTo(cardOffsetY.value + dragAmount.y * 0.25f)
-                                        }
+                                    onDoubleTap = {
+                                        showHeart = true
+                                        haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                                        onToggleFavorite()
+                                    },
+                                    onLongPress = {
+                                        haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                                        applySpeedUp(true)
+                                    },
+                                    onPress = {
+                                        // 拖动或被取消时同样会返回，必须复位倍速
+                                        tryAwaitRelease()
+                                        applySpeedUp(false)
                                     }
                                 )
                             }
+                            .pointerInput(activeIndex) {
+                                // REQ-04：垂直拖动切换，横向留给系统返回手势
+                                detectDragGestures(
+                                    onDrag = { change, dragAmount ->
+                                        change.consume()
+                                        scope.launch { cardOffsetY.snapTo(cardOffsetY.value + dragAmount.y) }
+                                    },
+                                    onDragEnd = { scope.launch { settleVerticalDrag() } },
+                                    onDragCancel = { scope.launch { settleVerticalDrag() } }
+                                )
+                            }
+                            .testTag("gif_card")
                     ) {
                         Box(modifier = Modifier.fillMaxSize()) {
                             // 先验海报底衬
@@ -426,6 +736,41 @@ private fun SingleCardDynamicGifViewer(
                                     .graphicsLayer(alpha = if (isVideoReady) 1f else 0f)
                             )
 
+                            // ❤️ 双击收藏心形爆发动画
+                            if (showHeart) {
+                                Icon(
+                                    imageVector = Icons.Filled.Favorite,
+                                    contentDescription = null,
+                                    tint = Color(0xFFFF5050),
+                                    modifier = Modifier
+                                        .align(Alignment.Center)
+                                        .size(80.dp)
+                                        .graphicsLayer {
+                                            scaleX = heartScale.value
+                                            scaleY = heartScale.value
+                                            alpha = heartScale.value
+                                        }
+                                )
+                            }
+
+                            // 播放/暂停指示器
+                            if (isPaused && isVideoReady) {
+                                Box(
+                                    modifier = Modifier
+                                        .align(Alignment.Center)
+                                        .size(64.dp)
+                                        .background(Color.Black.copy(alpha = 0.5f), CircleShape),
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.Filled.PlayArrow,
+                                        contentDescription = "播放",
+                                        tint = Color.White,
+                                        modifier = Modifier.size(40.dp)
+                                    )
+                                }
+                            }
+
                             // 失败提示遮罩
                             if (isVideoFailed) {
                                 Box(
@@ -458,7 +803,74 @@ private fun SingleCardDynamicGifViewer(
                                     }
                                 }
                             }
+
+                            // REQ-03：长按倍速时的状态提示
+                            if (isSpeedUp) {
+                                Box(
+                                    modifier = Modifier
+                                        .align(Alignment.TopStart)
+                                        .padding(10.dp)
+                                        .clip(CircleShape)
+                                        .background(Color.Black.copy(alpha = 0.62f))
+                                        .padding(horizontal = 10.dp, vertical = 4.dp)
+                                ) {
+                                    Text(
+                                        text = "2x 快进中",
+                                        style = MaterialTheme.typography.labelSmall,
+                                        color = Color.White,
+                                        fontWeight = FontWeight.Bold
+                                    )
+                                }
+                            }
+
+                            // REQ-04：右缘垂直进度指示（当前在已加载序列中的位置）
+                            if (gifList.size > 1) {
+                                Column(
+                                    modifier = Modifier
+                                        .align(Alignment.CenterEnd)
+                                        .padding(end = 6.dp)
+                                        .width(3.dp)
+                                        .fillMaxHeight(0.42f)
+                                        .clip(CircleShape)
+                                        .testTag("gif_progress_$activeIndex"),
+                                    verticalArrangement = Arrangement.Top
+                                ) {
+                                    // weight 必须为正：首/末张时为 0，用极小值兜底
+                                    Box(
+                                        Modifier
+                                            .weight(activeIndex.coerceAtLeast(0).toFloat().coerceAtLeast(0.001f))
+                                            .fillMaxWidth()
+                                            .background(Color.White.copy(alpha = 0.30f))
+                                    )
+                                    Box(
+                                        Modifier
+                                            .weight(1f)
+                                            .fillMaxWidth()
+                                            .background(Color.White)
+                                    )
+                                    Box(
+                                        Modifier
+                                            .weight((gifList.size - activeIndex - 1).coerceAtLeast(0).toFloat().coerceAtLeast(0.001f))
+                                            .fillMaxWidth()
+                                            .background(Color.White.copy(alpha = 0.18f))
+                                    )
+                                }
+                            }
                         }
+                    }
+
+                    // REQ-06：展开宽度下卡片留在左侧，右侧承载信息与操作
+                    if (isExpanded) {
+                        GifInfoSidePanel(
+                            gif = currentGif,
+                            isFavorited = isFavorited,
+                            onToggleFavorite = onToggleFavorite,
+                            onDetail = { currentGif?.workId?.let(onDetail) },
+                            onAuthor = { currentGif?.authorId?.let(onAuthor) },
+                            modifier = Modifier
+                                .align(Alignment.CenterEnd)
+                                .width(sidePanelWidth)
+                        )
                     }
                 }
             }
@@ -579,6 +991,57 @@ private fun SingleCardDynamicGifViewer(
                             ) {
                                 Text("看作品", style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.Bold, color = Color.White)
                             }
+                        }
+
+                        // ❤️ 收藏按钮
+                        IconButton(
+                            onClick = onToggleFavorite,
+                            modifier = Modifier
+                                .size(32.dp)
+                                .clip(RoundedCornerShape(8.dp))
+                                .background(
+                                    if (isFavorited) Color(0x33FF5050)
+                                    else Color.White.copy(alpha = 0.1f)
+                                )
+                        ) {
+                            Icon(
+                                imageVector = if (isFavorited) Icons.Filled.Favorite else Icons.Filled.FavoriteBorder,
+                                contentDescription = "收藏",
+                                tint = if (isFavorited) Color(0xFFFF5050) else Color.White.copy(alpha = 0.7f),
+                                modifier = Modifier.size(16.dp)
+                            )
+                        }
+
+                        // REQ-07：分享原始媒体链接（纯文本，无需 FileProvider）
+                        IconButton(
+                            onClick = { shareCurrent() },
+                            modifier = Modifier
+                                .size(32.dp)
+                                .clip(RoundedCornerShape(8.dp))
+                                .background(Color.White.copy(alpha = 0.1f))
+                        ) {
+                            Icon(
+                                imageVector = Icons.Filled.Share,
+                                contentDescription = "分享",
+                                tint = Color.White.copy(alpha = 0.7f),
+                                modifier = Modifier.size(16.dp)
+                            )
+                        }
+
+                        // REQ-07：保存到相册（复用 Downloader，保留 XHS Referer 头）
+                        IconButton(
+                            onClick = { onSaveClick() },
+                            modifier = Modifier
+                                .size(32.dp)
+                                .clip(RoundedCornerShape(8.dp))
+                                .background(Color.White.copy(alpha = 0.1f))
+                        ) {
+                            Icon(
+                                painter = painterResource(R.drawable.ic_save),
+                                contentDescription = "保存到相册",
+                                tint = Color.White.copy(alpha = 0.7f),
+                                modifier = Modifier.size(16.dp)
+                            )
                         }
                     }
                 }

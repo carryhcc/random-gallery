@@ -1,6 +1,7 @@
 package com.example.randomgallery.android.ui.gif
 
 import android.content.Context
+import android.content.SharedPreferences
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import coil.imageLoader
@@ -54,6 +55,23 @@ class RandomGifViewModel(
     val error: StateFlow<String?> = _error.asStateFlow()
 
     private var isLoadingMore = false
+    private val reportedIds = mutableSetOf<Long>() // 防同一session重复上报
+
+    // ── 浏览历史去重：SharedPreferences 持久化 ──
+    private val prefs: SharedPreferences by lazy {
+        appContext.getSharedPreferences("gif_prefs", Context.MODE_PRIVATE)
+    }
+    private val seenIds: MutableSet<Long> by lazy {
+        prefs.getStringSet("seen_ids", emptySet())!!.map { it.toLong() }.toMutableSet()
+    }
+
+    fun saveSeenIds() {
+        prefs.edit().putStringSet("seen_ids", seenIds.map { it.toString() }.toSet()).apply()
+    }
+
+    // ── 收藏状态 ──
+    private val _isFavorited = MutableStateFlow(false)
+    val isFavorited: StateFlow<Boolean> = _isFavorited.asStateFlow()
 
     init {
         loadNext()
@@ -124,9 +142,13 @@ class RandomGifViewModel(
         viewModelScope.launch {
             var attempts = 0
             var loaded = false
+            // 构造 exclude 参数（最近 500 个已看 ID，防 URL 过长）
+            val excludeParam = if (seenIds.isNotEmpty())
+                seenIds.toList().takeLast(500).joinToString(",") else null
+
             while (attempts < MAX_ATTEMPTS && !loaded) {
                 attempts++
-                repository().getRandomGif()
+                repository().getRandomGif(excludeParam)
                     .onSuccess { gif ->
                         val url = gif.mediaUrl?.let { ImageUrlResolver.rawUrl(it) }
                         if (url != null && isUrlAlive(url)) {
@@ -136,6 +158,14 @@ class RandomGifViewModel(
                             }
                             loaded = true
                             _error.value = null
+                            // 标记为已浏览 + 查询收藏状态
+                            gif.id?.let {
+                                seenIds.add(it)
+                                saveSeenIds()
+                                checkFavorite(it)
+                            }
+                        } else {
+                            gif.id?.let { reportDead(it) }
                         }
                     }
                     .onFailure {
@@ -145,6 +175,43 @@ class RandomGifViewModel(
             }
             if (isFirst) _loading.value = false
             isLoadingMore = false
+        }
+    }
+
+    /**
+     * 上报死链到后端（防重复上报，异步非阻塞）
+     */
+    fun reportDead(id: Long) {
+        if (reportedIds.contains(id)) return
+        reportedIds.add(id)
+        viewModelScope.launch {
+            try { repository().reportDead(id) } catch (_: Exception) {}
+        }
+    }
+
+    /**
+     * 查询收藏状态
+     */
+    private fun checkFavorite(id: Long) {
+        viewModelScope.launch {
+            try {
+                val result = repository().checkFavorite(id)
+                result.onSuccess { _isFavorited.value = it }
+            } catch (_: Exception) {}
+        }
+    }
+
+    /**
+     * 切换收藏状态
+     */
+    fun toggleFavorite() {
+        val gif = _gifList.value.lastOrNull() ?: return
+        val id = gif.id ?: return
+        viewModelScope.launch {
+            try {
+                val result = repository().toggleFavorite(id)
+                result.onSuccess { _isFavorited.value = it }
+            } catch (_: Exception) {}
         }
     }
 

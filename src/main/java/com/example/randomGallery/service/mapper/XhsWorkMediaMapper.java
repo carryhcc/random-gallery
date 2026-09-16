@@ -16,11 +16,6 @@ import java.util.List;
 public interface XhsWorkMediaMapper extends BaseMapper<XhsWorkMediaDO> {
 
     /**
-     * 查询随机GIF
-     */
-    RandomGifVO randomGifInfo();
-
-    /**
      * 根据ID 获取GIF信息
      */
     RandomGifVO getGifById(@Param("id") Long id);

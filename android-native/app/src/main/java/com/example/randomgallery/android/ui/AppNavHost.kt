@@ -1,7 +1,6 @@
 package com.example.randomgallery.android.ui
 
 import android.app.Activity
-import android.net.Uri
 import androidx.activity.compose.BackHandler
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.Spring
@@ -59,6 +58,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.example.randomgallery.android.ui.common.bouncyClickable
+import com.example.randomgallery.android.ui.common.isExpandedWidth
 import com.example.randomgallery.android.ui.common.fresnelBorderBrush
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
@@ -66,14 +66,16 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.lifecycle.createSavedStateHandle
 import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.navigation.NavDestination
+import androidx.navigation.NavDestination.Companion.hasRoute
 import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.NavHostController
-import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
-import androidx.navigation.navArgument
+import androidx.navigation.toRoute
+import kotlinx.serialization.Serializable
 import com.example.randomgallery.android.R
 import com.example.randomgallery.android.ui.download.DownloadManageScreen
 import com.example.randomgallery.android.ui.download.DownloadManageViewModel
@@ -81,6 +83,8 @@ import com.example.randomgallery.android.ui.downloaddetail.DownloadDetailScreen
 import com.example.randomgallery.android.ui.downloaddetail.DownloadDetailViewModel
 import com.example.randomgallery.android.ui.downloadlist.DownloadListScreen
 import com.example.randomgallery.android.ui.downloadlist.DownloadListViewModel
+import com.example.randomgallery.android.ui.favorite.FavoriteScreen
+import com.example.randomgallery.android.ui.favorite.FavoriteViewModel
 import com.example.randomgallery.android.ui.gallery.RandomGalleryScreen
 import com.example.randomgallery.android.ui.gallery.RandomGalleryViewModel
 import com.example.randomgallery.android.ui.gif.RandomGifScreen
@@ -100,62 +104,84 @@ import com.example.randomgallery.android.ui.common.TopMessageHost
  * 纯 Compose 导航宿主。替代原 Fragment + nav_graph.xml + BottomNavigationView 体系。
  * 整个 App 只有一个 MainActivity，页面切换为 Composable 之间的导航。
  */
-object Routes {
-    const val HOME = "home"
-    const val RANDOM_PIC = "random_pic"
-    const val RANDOM_GALLERY = "random_gallery"
-    const val GROUP_LIST = "group_list"
-    const val DOWNLOAD_LIST = "download_list"
-    const val DOWNLOAD_MANAGE = "download_manage"
-    const val RANDOM_GIF = "random_gif"
-    const val PIC_LIST = "pic_list"
-    const val DOWNLOAD_DETAIL = "download_detail"
+/**
+ * REQ-11：类型安全路由。
+ *
+ * 迁移前是 `const val` 字符串 + 手写 `"$PIC_LIST/$groupId/${Uri.encode(name)}"` 拼接：
+ * 参数顺序、转义、缺参都只能靠人工保证，写错要到运行期才发现。
+ * 换成 @Serializable 后，路由串与转义由 Navigation 生成，参数即类型。
+ *
+ * 注意：数据类的属性名就是导航参数名，也就是各 ViewModel 从 SavedStateHandle
+ * 读取的 key（`groupId` / `filterAuthorId` / `filterKeyword`），改名会静默破坏筛选与分页。
+ */
+@Serializable
+sealed interface Routes {
+    @Serializable data object Home : Routes
+    @Serializable data object RandomPic : Routes
+    @Serializable data object RandomGallery : Routes
+    @Serializable data object GroupList : Routes
+    @Serializable data object DownloadManage : Routes
+    @Serializable data object RandomGif : Routes
+    @Serializable data object Favorite : Routes
+
+    @Serializable data class PicList(val groupId: Long, val groupName: String) : Routes
+
+    @Serializable data class DownloadDetail(val workId: String, val coverImageUrl: String = "") : Routes
+
+    @Serializable data class DownloadList(
+        val filterAuthorId: String? = null,
+        val filterKeyword: String? = null
+    ) : Routes
 }
 
-private data class BottomTab(val route: String, val labelRes: Int, val iconRes: Int)
+private data class BottomTab(val route: Routes, val labelRes: Int, val iconRes: Int)
 
 // ── 双模态动态底栏配置 ──────────────────────────────────────────────
 private val exploreBottomTabs = listOf(
-    BottomTab(Routes.HOME, R.string.nav_explore, R.drawable.ic_nav_home),
-    BottomTab(Routes.RANDOM_GIF, R.string.home_random_gif, R.drawable.ic_nav_stack),
-    BottomTab(Routes.DOWNLOAD_LIST, R.string.nav_download, R.drawable.ic_nav_download),
-    BottomTab(Routes.DOWNLOAD_MANAGE, R.string.home_download_manage_short, R.drawable.ic_nav_group)
+    BottomTab(Routes.Home, R.string.nav_explore, R.drawable.ic_nav_home),
+    BottomTab(Routes.RandomGif, R.string.home_random_gif, R.drawable.ic_nav_stack),
+    BottomTab(Routes.Favorite, R.string.nav_favorite, R.drawable.ic_nav_favorite),
+    BottomTab(Routes.DownloadList(), R.string.nav_download, R.drawable.ic_nav_download),
+    BottomTab(Routes.DownloadManage, R.string.home_download_manage_short, R.drawable.ic_nav_group)
 )
 
 private val galleryBottomTabs = listOf(
-    BottomTab(Routes.HOME, R.string.nav_home, R.drawable.ic_nav_home),
-    BottomTab(Routes.RANDOM_GALLERY, R.string.home_random_gallery, R.drawable.ic_nav_stack),
-    BottomTab(Routes.GROUP_LIST, R.string.nav_group, R.drawable.ic_nav_group),
-    BottomTab(Routes.RANDOM_PIC, R.string.home_random_pic, R.drawable.ic_nav_download)
+    BottomTab(Routes.Home, R.string.nav_home, R.drawable.ic_nav_home),
+    BottomTab(Routes.RandomGallery, R.string.home_random_gallery, R.drawable.ic_nav_stack),
+    BottomTab(Routes.GroupList, R.string.nav_group, R.drawable.ic_nav_group),
+    BottomTab(Routes.Favorite, R.string.nav_favorite, R.drawable.ic_nav_favorite),
+    BottomTab(Routes.RandomPic, R.string.home_random_pic, R.drawable.ic_nav_download)
 )
 
-// 顶级 Tab 显示底部导航栏
-private val bottomBarBases = setOf(
-    Routes.HOME, Routes.RANDOM_GALLERY, Routes.GROUP_LIST, Routes.DOWNLOAD_LIST, Routes.RANDOM_GIF, Routes.DOWNLOAD_MANAGE, Routes.RANDOM_PIC
+// 顶级 Tab 显示底部导航栏。按路由「类型」判定，故带参路由（DownloadList）在任意筛选态下都命中
+private val bottomBarRouteClasses = setOf(
+    Routes.Home::class, Routes.RandomGallery::class, Routes.GroupList::class,
+    Routes.DownloadList::class, Routes.RandomGif::class, Routes.DownloadManage::class,
+    Routes.RandomPic::class, Routes.Favorite::class
 )
 
-private fun routeBase(route: String?): String? =
-    route?.substringBefore("/")?.substringBefore("?")
+private fun NavDestination?.isBottomBarRoute(): Boolean =
+    this != null && bottomBarRouteClasses.any { hasRoute(it) }
 
 @Composable
 fun AppNavHost() {
     val navController = rememberNavController()
     val context = LocalContext.current
-    val configuration = LocalConfiguration.current
-    val isWideScreen = configuration.screenWidthDp >= 600
+    // REQ-06：改用 WindowSizeClass，替代 ad-hoc 的 screenWidthDp 阈值
+    val isWideScreen = isExpandedWidth()
 
     val appPrefs = remember { com.example.randomgallery.android.data.local.AppPrefs(context.applicationContext) }
     val spaceMode by appPrefs.spaceModeFlow.collectAsState(initial = "explore")
     val currentTabs = if (spaceMode == "gallery") galleryBottomTabs else exploreBottomTabs
 
     val backStackEntry by navController.currentBackStackEntryAsState()
-    val currentBase = routeBase(backStackEntry?.destination?.route)
-    val showBottomBar = currentBase in bottomBarBases
+    val currentDestination = backStackEntry?.destination
+    val showBottomBar = currentDestination.isBottomBarRoute()
 
     // 在主页时拦截返回键：双击退出
     val activity = context as? Activity
     var backPressedAt by rememberSaveable { mutableLongStateOf(0L) }
-    BackHandler(enabled = currentBase == Routes.HOME) {
+    BackHandler(enabled = currentDestination?.hasRoute(Routes.Home::class) == true) {
         val now = System.currentTimeMillis()
         if (now - backPressedAt < 2000) {
             activity?.finish()
@@ -172,7 +198,7 @@ fun AppNavHost() {
                 NavigationRail {
                     currentTabs.forEach { tab ->
                         NavigationRailItem(
-                            selected = currentBase == tab.route,
+                            selected = currentDestination?.hasRoute(tab.route::class) == true,
                             onClick = { navController.switchTab(tab.route) },
                             icon = { Icon(painterResource(tab.iconRes), contentDescription = null) },
                             label = { Text(stringResource(tab.labelRes)) }
@@ -189,7 +215,7 @@ fun AppNavHost() {
                     if (!isWideScreen && showBottomBar) {
                         FloatingCapsuleNavigationBar(
                             tabs = currentTabs,
-                            currentRoute = currentBase,
+                            currentDestination = currentDestination,
                             onTabSelected = { route -> navController.switchTab(route) }
                         )
                     }
@@ -197,14 +223,14 @@ fun AppNavHost() {
             ) { innerPadding ->
                 NavHost(
                     navController = navController,
-                    startDestination = Routes.HOME,
+                    startDestination = Routes.Home,
                     modifier = Modifier.padding(innerPadding),
                     enterTransition = { slideInHorizontally(initialOffsetX = { it / 4 }, animationSpec = spring(stiffness = Spring.StiffnessMediumLow)) + fadeIn(tween(280)) + scaleIn(initialScale = 0.95f) },
                     exitTransition = { slideOutHorizontally(targetOffsetX = { -it / 6 }, animationSpec = spring(stiffness = Spring.StiffnessMediumLow)) + fadeOut(tween(220)) + scaleOut(targetScale = 0.96f) },
                     popEnterTransition = { slideInHorizontally(initialOffsetX = { -it / 6 }, animationSpec = spring(stiffness = Spring.StiffnessMediumLow)) + fadeIn(tween(280)) + scaleIn(initialScale = 0.96f) },
                     popExitTransition = { slideOutHorizontally(targetOffsetX = { it / 4 }, animationSpec = spring(stiffness = Spring.StiffnessMediumLow)) + fadeOut(tween(220)) + scaleOut(targetScale = 0.95f) }
                 ) {
-                composable(Routes.HOME) {
+                composable<Routes.Home> {
                     val vm: HomeViewModel = viewModel { HomeViewModel(context.applicationContext) }
                     HomeScreen(
                         viewModel = vm,
@@ -216,17 +242,17 @@ fun AppNavHost() {
                         onNavigateToDownloadDetail = { workId, coverUrl ->
                             navController.toDownloadDetail(workId, coverUrl)
                         },
-                        onNavigateToRandomPic = { navController.navigate(Routes.RANDOM_PIC) },
-                        onNavigateToRandomGif = { navController.navigate(Routes.RANDOM_GIF) },
-                        onNavigateToDownloadManage = { navController.navigate(Routes.DOWNLOAD_MANAGE) },
-                        onNavigateToRandomGallery = { navController.switchTab(Routes.RANDOM_GALLERY) },
-                        onNavigateToGroupList = { navController.switchTab(Routes.GROUP_LIST) },
-                        onNavigateToDownloadList = { navController.switchTab(Routes.DOWNLOAD_LIST) },
+                        onNavigateToRandomPic = { navController.navigate(Routes.RandomPic) },
+                        onNavigateToRandomGif = { navController.navigate(Routes.RandomGif) },
+                        onNavigateToDownloadManage = { navController.navigate(Routes.DownloadManage) },
+                        onNavigateToRandomGallery = { navController.switchTab(Routes.RandomGallery) },
+                        onNavigateToGroupList = { navController.switchTab(Routes.GroupList) },
+                        onNavigateToDownloadList = { navController.switchTab(Routes.DownloadList()) },
                         onNavigateToPicList = { groupId, groupName -> navController.toPicList(groupId, groupName) }
                     )
                 }
 
-                composable(Routes.RANDOM_PIC) {
+                composable<Routes.RandomPic> {
                     val vm: RandomPicViewModel = viewModel { RandomPicViewModel(context.applicationContext) }
                     RandomPicScreen(
                         viewModel = vm,
@@ -235,7 +261,7 @@ fun AppNavHost() {
                     )
                 }
 
-                composable(Routes.RANDOM_GALLERY) {
+                composable<Routes.RandomGallery> {
                     val vm: RandomGalleryViewModel = viewModel { RandomGalleryViewModel(context.applicationContext) }
                     RandomGalleryScreen(
                         viewModel = vm,
@@ -244,7 +270,7 @@ fun AppNavHost() {
                     )
                 }
 
-                composable(Routes.GROUP_LIST) {
+                composable<Routes.GroupList> {
                     val vm: GroupListViewModel = viewModel { GroupListViewModel(context.applicationContext) }
                     GroupListScreen(
                         viewModel = vm,
@@ -253,7 +279,7 @@ fun AppNavHost() {
                     )
                 }
 
-                composable(Routes.RANDOM_GIF) {
+                composable<Routes.RandomGif> {
                     val vm: RandomGifViewModel = viewModel { RandomGifViewModel(context.applicationContext) }
                     RandomGifScreen(
                         onBack = { navController.navigateUp() },
@@ -263,7 +289,16 @@ fun AppNavHost() {
                     )
                 }
 
-                composable(Routes.DOWNLOAD_MANAGE) {
+                composable<Routes.Favorite> {
+                    val vm: FavoriteViewModel = viewModel { FavoriteViewModel(context.applicationContext) }
+                    FavoriteScreen(
+                        viewModel = vm,
+                        onWorkClick = { workId -> navController.toDownloadDetail(workId) },
+                        onBack = { navController.navigateUp() }
+                    )
+                }
+
+                composable<Routes.DownloadManage> {
                     val vm: DownloadManageViewModel = viewModel { DownloadManageViewModel(context.applicationContext) }
                     DownloadManageScreen(
                         viewModel = vm,
@@ -272,37 +307,24 @@ fun AppNavHost() {
                     )
                 }
 
-                composable(
-                    route = "${Routes.PIC_LIST}/{groupId}/{groupName}",
-                    arguments = listOf(
-                        navArgument("groupId") { type = NavType.LongType },
-                        navArgument("groupName") { type = NavType.StringType }
-                    )
-                ) { entry ->
+                composable<Routes.PicList> { entry ->
                     val vm: PicListViewModel = viewModel {
                         PicListViewModel(context.applicationContext, createSavedStateHandle())
                     }
                     PicListScreen(
                         viewModel = vm,
-                        groupName = entry.arguments?.getString("groupName") ?: context.getString(R.string.group_detail_fallback),
+                        groupName = entry.toRoute<Routes.PicList>().groupName,
                         onBack = { navController.navigateUp() }
                     )
                 }
 
-                composable(
-                    route = "${Routes.DOWNLOAD_DETAIL}/{workId}?coverImageUrl={coverImageUrl}",
-                    arguments = listOf(
-                        navArgument("workId") { type = NavType.StringType },
-                        navArgument("coverImageUrl") {
-                            type = NavType.StringType; defaultValue = ""
-                        }
-                    )
-                ) { entry ->
+                composable<Routes.DownloadDetail> { entry ->
                     val vm: DownloadDetailViewModel = viewModel { DownloadDetailViewModel(context.applicationContext) }
+                    val args = entry.toRoute<Routes.DownloadDetail>()
                     DownloadDetailScreen(
                         viewModel = vm,
-                        workId = entry.arguments?.getString("workId") ?: "",
-                        coverImageUrl = entry.arguments?.getString("coverImageUrl") ?: "",
+                        workId = args.workId,
+                        coverImageUrl = args.coverImageUrl,
                         onBack = { navController.navigateUp() },
                         onWorkDeleted = { deletedId ->
                             navController.previousBackStackEntry?.savedStateHandle?.set("deleted_work_id", deletedId)
@@ -312,17 +334,7 @@ fun AppNavHost() {
                     )
                 }
 
-                composable(
-                    route = "${Routes.DOWNLOAD_LIST}?filterAuthorId={filterAuthorId}&filterKeyword={filterKeyword}",
-                    arguments = listOf(
-                        navArgument("filterAuthorId") {
-                            type = NavType.StringType; nullable = true; defaultValue = null
-                        },
-                        navArgument("filterKeyword") {
-                            type = NavType.StringType; nullable = true; defaultValue = null
-                        }
-                    )
-                ) { entry ->
+                composable<Routes.DownloadList> { entry ->
                     val vm: DownloadListViewModel = viewModel {
                         DownloadListViewModel(context.applicationContext, createSavedStateHandle())
                     }
@@ -349,45 +361,39 @@ fun AppNavHost() {
 // ── 导航辅助 ──────────────────────────────────────────────────────────
 
 /** 切换底部 tab：支持从任意深层页面（如详情页、作者筛选页等）平滑切换至任何顶级 Tab，彻底消除多层栈卡死问题 */
-private fun NavHostController.switchTab(route: String) {
-    if (route == Routes.HOME) {
+private fun NavHostController.switchTab(route: Routes) {
+    val current = currentBackStackEntry?.destination
+    if (route == Routes.Home) {
         // 点击主页：直接回退栈顶到根页面
-        popBackStack(Routes.HOME, inclusive = false)
+        popBackStack(Routes.Home, inclusive = false)
+    } else if (current?.hasRoute(route::class) == true) {
+        // 已经在该 Tab（如在带参数的作者筛选列表页再次点击底栏【作品】），按路由类型回退到该 Tab 根，清掉参数
+        popBackStack(route::class, inclusive = false)
     } else {
-        val currentRoute = currentBackStackEntry?.destination?.route?.substringBefore("?")?.substringBefore("/")
-        if (currentRoute == route) {
-            // 如果已经在该 Tab（比如在带参数的作者列表页，再次点击底栏【作品】时），清空参数重置为纯净根列表
-            popBackStack(route, inclusive = false)
-        } else {
-            navigate(route) {
-                // 清理到根导航节点，不保留深层残留页面阻碍切换
-                popUpTo(graph.findStartDestination().id) {
-                    saveState = false
-                }
-                launchSingleTop = true
-                restoreState = false
+        navigate(route) {
+            // 清理到根导航节点，不保留深层残留页面阻碍切换
+            popUpTo(graph.findStartDestination().id) {
+                saveState = false
             }
+            launchSingleTop = true
+            restoreState = false
         }
     }
 }
 
 private fun NavHostController.toPicList(groupId: Long, groupName: String) {
-    val name = Uri.encode(groupName.ifBlank { "套图详情" }) // not a Composable: fallback hardcoded intentionally as URL path
+    // 空分组名回退为固定文案（迁移前这段逻辑内联在手工拼接的路由串里）
+    val name = groupName.ifBlank { "套图详情" }
     // launchSingleTop：目的地已在栈顶时不重复入栈，防止连点造成多次跳转
-    navigate("${Routes.PIC_LIST}/$groupId/$name") { launchSingleTop = true }
+    navigate(Routes.PicList(groupId, name)) { launchSingleTop = true }
 }
 
 private fun NavHostController.toDownloadDetail(workId: String, coverImageUrl: String = "") {
-    navigate("${Routes.DOWNLOAD_DETAIL}/${Uri.encode(workId)}?coverImageUrl=${Uri.encode(coverImageUrl)}")
+    navigate(Routes.DownloadDetail(workId, coverImageUrl))
 }
 
 private fun NavHostController.toDownloadList(authorId: String? = null, keyword: String? = null) {
-    val params = buildList {
-        authorId?.let { add("filterAuthorId=${Uri.encode(it)}") }
-        keyword?.let { add("filterKeyword=${Uri.encode(it)}") }
-    }
-    val suffix = if (params.isEmpty()) "" else "?" + params.joinToString("&")
-    navigate("${Routes.DOWNLOAD_LIST}$suffix")
+    navigate(Routes.DownloadList(filterAuthorId = authorId, filterKeyword = keyword))
 }
 
 /**
@@ -397,8 +403,8 @@ private fun NavHostController.toDownloadList(authorId: String? = null, keyword: 
 @Composable
 private fun FloatingCapsuleNavigationBar(
     tabs: List<BottomTab>,
-    currentRoute: String?,
-    onTabSelected: (String) -> Unit,
+    currentDestination: NavDestination?,
+    onTabSelected: (Routes) -> Unit,
     modifier: Modifier = Modifier
 ) {
     Box(
@@ -452,7 +458,7 @@ private fun FloatingCapsuleNavigationBar(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 tabs.forEach { tab ->
-                    val selected = currentRoute == tab.route
+                    val selected = currentDestination?.hasRoute(tab.route::class) == true
 
                     val activeBgColor by animateColorAsState(
                         targetValue = if (selected) {

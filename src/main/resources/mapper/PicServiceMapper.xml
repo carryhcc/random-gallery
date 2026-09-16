@@ -15,27 +15,10 @@
             and group_id = #{qry.groupId}
         </if>
     </select>
-    <select id="selectAllValidPicIds" resultType="java.lang.Long">
-        SELECT id FROM pic_info WHERE is_delete = 0 ORDER BY id
+    <select id="selectValidPicCount" resultType="java.lang.Long">
+        SELECT COUNT(1) FROM pic_info WHERE is_delete = 0
     </select>
-    <select id="queryPicCountInfo" resultType="com.example.randomGallery.entity.VO.GroupVO">
-        SELECT
-            p.pic_url AS groupUrl,
-            p.pic_name AS groupName,
-            p.group_id AS groupId,
-            t.total_count AS groupCount
-        FROM (
-                 SELECT id
-                 FROM pic_info
-                 WHERE is_delete = 0 AND group_id = #{groupId}
-                 ORDER BY RAND()
-                 LIMIT 1
-             ) AS rand_id
-                 LEFT JOIN pic_info p ON rand_id.id = p.id
-                 CROSS JOIN (
-            SELECT COUNT(1) AS total_count
-            FROM pic_info
-            WHERE is_delete = 0 AND group_id = #{groupId}
-        ) AS t;
+    <select id="selectFirstValidIdSince" resultType="java.lang.Long">
+        SELECT id FROM pic_info WHERE is_delete = 0 AND id &gt;= #{id} ORDER BY id LIMIT 1
     </select>
 </mapper>

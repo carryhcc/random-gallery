@@ -1,8 +1,9 @@
 plugins {
-    id("com.android.application")
-    id("org.jetbrains.kotlin.android")
-    id("org.jetbrains.kotlin.plugin.compose")
-    id("com.google.devtools.ksp")
+    alias(libs.plugins.android.application)
+    alias(libs.plugins.kotlin.android)
+    alias(libs.plugins.kotlin.compose)
+    alias(libs.plugins.kotlin.serialization)
+    alias(libs.plugins.ksp)
 }
 
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
@@ -110,57 +111,67 @@ kotlin {
 }
 
 dependencies {
-    implementation("androidx.core:core-ktx:1.16.0")
-    implementation("androidx.appcompat:appcompat:1.7.0")
+    implementation(libs.androidx.core.ktx)
+    implementation(libs.androidx.appcompat)
     // material：XML 主题 Theme.Material3.Light.NoActionBar 依赖此库（AppCompatActivity 主题）
-    implementation("com.google.android.material:material:1.12.0")
-    implementation("androidx.activity:activity-ktx:1.10.1")
-    implementation("androidx.lifecycle:lifecycle-viewmodel-ktx:2.9.1")
-    implementation("androidx.lifecycle:lifecycle-livedata-ktx:2.9.1")
-    implementation("androidx.lifecycle:lifecycle-runtime-ktx:2.9.1")
-    implementation("androidx.datastore:datastore-preferences:1.1.4")
+    implementation(libs.material)
+    implementation(libs.androidx.activity.ktx)
+    implementation(libs.androidx.lifecycle.viewmodel.ktx)
+    implementation(libs.androidx.lifecycle.livedata.ktx)
+    implementation(libs.androidx.lifecycle.runtime.ktx)
+    implementation(libs.androidx.datastore.preferences)
 
-    implementation("com.squareup.retrofit2:retrofit:2.11.0")
-    implementation("com.squareup.retrofit2:converter-moshi:2.11.0")
-    implementation("com.squareup.okhttp3:logging-interceptor:4.12.0")
-    implementation("com.squareup.moshi:moshi-kotlin:1.15.1")
-    ksp("com.squareup.moshi:moshi-kotlin-codegen:1.15.1")
+    implementation(libs.retrofit)
+    implementation(libs.retrofit.converter.moshi)
+    implementation(libs.okhttp.logging.interceptor)
+    implementation(libs.moshi.kotlin)
+    ksp(libs.moshi.kotlin.codegen)
 
-    implementation("io.coil-kt:coil:2.7.0")
-    implementation("io.coil-kt:coil-svg:2.7.0")
-    implementation("io.coil-kt:coil-video:2.7.0")
-    implementation("io.coil-kt:coil-compose:2.7.0")
-    implementation("io.coil-kt:coil-gif:2.7.0")
+    implementation(libs.coil)
+    implementation(libs.coil.svg)
+    implementation(libs.coil.video)
+    implementation(libs.coil.compose)
+    implementation(libs.coil.gif)
 
     // libheif 软解兜底（系统 HEIC 解码失败时使用），见 HeifSystemFirstDecoder
-    implementation("io.github.awxkee:avif-coder:2.2.0")
+    implementation(libs.avif.coder)
 
     // ExoPlayer via Media3 — 用于播放随机动图（实为视频文件）
-    implementation("androidx.media3:media3-exoplayer:1.6.0")
-    implementation("androidx.media3:media3-ui:1.6.0")
+    implementation(libs.androidx.media3.exoplayer)
+    implementation(libs.androidx.media3.ui)
 
     // --- Jetpack Compose（迁移用，先与现有 View 体系共存）---
-    // BOM 统一管理 Compose 各库版本；如需更新特性可整体上调此版本号。
-    val composeBom = platform("androidx.compose:compose-bom:2025.05.01")
+    // BOM 统一管理 Compose 各库版本；如需更新特性可整体上调 libs.versions.toml 里的 composeBom。
+    val composeBom = platform(libs.androidx.compose.bom)
     implementation(composeBom)
     androidTestImplementation(composeBom)
-    implementation("androidx.compose.ui:ui")
-    implementation("androidx.compose.ui:ui-graphics")
-    implementation("androidx.compose.ui:ui-tooling-preview")
-    implementation("androidx.compose.foundation:foundation")
-    implementation("androidx.compose.material3:material3")
-    implementation("androidx.compose.material:material-icons-core")
-    implementation("androidx.activity:activity-compose:1.10.1")
-    implementation("androidx.navigation:navigation-compose:2.9.0")
-    implementation("androidx.lifecycle:lifecycle-viewmodel-compose:2.9.1")
-    implementation("androidx.lifecycle:lifecycle-runtime-compose:2.9.1")
-    debugImplementation("androidx.compose.ui:ui-tooling")
+    implementation(libs.androidx.ui)
+    implementation(libs.androidx.ui.graphics)
+    implementation(libs.androidx.ui.tooling.preview)
+    implementation(libs.androidx.foundation)
+    implementation(libs.androidx.material3)
+    // REQ-06：大屏 / 横屏自适应判定的标准依据（版本由 Compose BOM 管理）
+    implementation(libs.androidx.material3.window.size)
+    implementation(libs.androidx.material.icons.core)
+    implementation(libs.androidx.activity.compose)
+    implementation(libs.androidx.navigation.compose)
+    implementation(libs.androidx.lifecycle.viewmodel.compose)
+    implementation(libs.androidx.lifecycle.runtime.compose)
+    debugImplementation(libs.androidx.ui.tooling)
 
-    implementation("androidx.room:room-runtime:2.7.1")
-    implementation("androidx.room:room-ktx:2.7.1")
-    ksp("androidx.room:room-compiler:2.7.1")
+    implementation(libs.androidx.room.runtime)
+    implementation(libs.androidx.room.ktx)
+    ksp(libs.androidx.room.compiler)
 
-    testImplementation("junit:junit:4.13.2")
-    androidTestImplementation("androidx.test.ext:junit:1.2.1")
-    androidTestImplementation("androidx.test.espresso:espresso-core:3.6.1")
+    testImplementation(libs.junit)
+    // REQ-09：viewModelScope 依赖 Dispatchers.Main，纯 JVM 测试需要 setMain
+    testImplementation(libs.kotlinx.coroutines.test)
+    androidTestImplementation(libs.androidx.test.ext.junit)
+    androidTestImplementation(libs.androidx.test.espresso.core)
+    // REQ-09：Compose 交互测试（仅编译校验，执行需真机 / 模拟器）
+    androidTestImplementation(libs.androidx.ui.test.junit4)
+    debugImplementation(libs.androidx.ui.test.manifest)
+
+    // REQ-11：类型安全导航路由的 @Serializable 运行时
+    implementation(libs.kotlinx.serialization.json)
 }

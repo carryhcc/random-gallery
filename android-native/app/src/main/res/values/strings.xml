@@ -6,7 +6,13 @@
     <string name="nav_explore">精选</string>
     <string name="nav_group">分组</string>
     <string name="nav_download">作品</string>
+    <string name="nav_favorite">收藏</string>
     <string name="home_download_manage_short">任务</string>
+    <!-- 收藏 -->
+    <string name="favorite_title">我的收藏</string>
+    <string name="favorite_empty">还没有收藏的动图</string>
+    <string name="favorite_untitled">未命名作品</string>
+    <string name="favorite_remove">取消收藏</string>
     <!-- 通用 -->
     <string name="common_back">返回</string>
     <string name="common_retry">重新加载</string>

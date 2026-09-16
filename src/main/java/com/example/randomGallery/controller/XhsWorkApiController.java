@@ -11,14 +11,21 @@ import com.example.randomGallery.entity.VO.XhsWorkDetailVO;
 import com.example.randomGallery.entity.VO.XhsWorkPageVO;
 import com.example.randomGallery.entity.common.PageResult;
 import com.example.randomGallery.service.Impl.DownloadTaskConsumer;
+import com.example.randomGallery.entity.DO.GifDeadReportLogDO;
 import com.example.randomGallery.service.*;
+import com.example.randomGallery.service.mapper.GifDeadReportLogMapper;
+import com.example.randomGallery.service.mapper.XhsWorkMediaMapper;
 import com.example.randomGallery.exception.NotFoundException;
 import com.example.randomGallery.utils.UserAgentUtils;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.Collections;
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 /**
  * 作品查询控制器
@@ -36,6 +43,8 @@ public class XhsWorkApiController {
     private final DownloadApi downloadApi;
     private final DownloadTaskService downloadTaskService;
     private final DownloadTaskConsumer downloadTaskConsumer;
+    private final GifDeadReportLogMapper gifDeadReportLogMapper;
+    private final XhsWorkMediaMapper workMediaMapper;
 
     /**
      * 下载图片
@@ -173,12 +182,14 @@ public class XhsWorkApiController {
     }
 
     /**
-     * 获取随机GIF
+     * 获取随机GIF（支持排除已看过的ID）
      */
     @GetMapping("/randomGif")
-    public Result<RandomGifVO> getRandomGif() {
-        log.info("获取随机GIF");
-        RandomGifVO randomGif = xhsWorkService.getRandomGif();
+    public Result<RandomGifVO> getRandomGif(
+            @RequestParam(required = false) String exclude) {
+        log.info("获取随机GIF, exclude={}", exclude);
+        List<Long> excludeIds = parseExcludeIds(exclude);
+        RandomGifVO randomGif = xhsWorkService.getRandomGif(excludeIds);
         if (randomGif == null) {
             return Result.error("暂无可用的GIF");
         }
@@ -186,12 +197,97 @@ public class XhsWorkApiController {
     }
 
     /**
-     * 上报动图外链失效
+     * 解析 exclude 参数（逗号分隔的ID列表）
+     */
+    private List<Long> parseExcludeIds(String exclude) {
+        if (exclude == null || exclude.isBlank()) {
+            return Collections.emptyList();
+        }
+        try {
+            return java.util.Arrays.stream(exclude.split(","))
+                    .map(String::trim)
+                    .filter(s -> !s.isEmpty())
+                    .map(Long::parseLong)
+                    .collect(Collectors.toList());
+        } catch (NumberFormatException e) {
+            log.warn("exclude 参数解析失败: {}", exclude);
+            return Collections.emptyList();
+        }
+    }
+
+    /**
+     * 上报动图外链失效（幂等：重复标记无副作用）
      */
     @GetMapping("/reportDead")
-    public Result<String> reportDead(@RequestParam Long id) {
+    public Result<String> reportDead(@RequestParam Long id, HttpServletRequest request) {
         xhsWorkService.reportDead(id);
+
+        // 记录上报日志（异步容错，不影响主流程）
+        try {
+            GifDeadReportLogDO logDO = new GifDeadReportLogDO();
+            logDO.setMediaId(id);
+            logDO.setReportSource(getClientSource(request));
+            logDO.setClientIp(getClientIp(request));
+            gifDeadReportLogMapper.insert(logDO);
+        } catch (Exception e) {
+            log.warn("死链上报日志记录失败: mediaId={}", id, e);
+        }
+
         return Result.success("已记录失效资源");
+    }
+
+    /**
+     * 获取死链上报统计
+     */
+    @GetMapping("/deadReport/stats")
+    public Result<Map<String, Object>> getDeadReportStats() {
+        Map<String, Object> stats = gifDeadReportLogMapper.getReportStats();
+        return Result.success(stats);
+    }
+
+    /**
+     * 获取死链标记的 GIF 数量
+     */
+    @GetMapping("/deadReport/count")
+    public Result<Long> getDeadCount() {
+        Long count = workMediaMapper.selectCount(
+                com.baomidou.mybatisplus.core.toolkit.Wrappers
+                        .<com.example.randomGallery.entity.DO.XhsWorkMediaDO>lambdaQuery()
+                        .eq(com.example.randomGallery.entity.DO.XhsWorkMediaDO::getIsDead, true));
+        return Result.success(count);
+    }
+
+    // ── 收藏功能 ──────────────────────────────────────────
+
+    /**
+     * 切换收藏状态（已收藏→取消，未收藏→添加）
+     */
+    @GetMapping("/favorite/toggle")
+    public Result<Boolean> toggleFavorite(
+            @RequestParam Long id,
+            @RequestParam(defaultValue = "gif") String type) {
+        boolean isFav = xhsWorkService.toggleFavorite(id, type);
+        return Result.success(isFav);
+    }
+
+    /**
+     * 查询是否已收藏
+     */
+    @GetMapping("/favorite/check")
+    public Result<Boolean> checkFavorite(
+            @RequestParam Long id,
+            @RequestParam(defaultValue = "gif") String type) {
+        return Result.success(xhsWorkService.isFavorite(id, type));
+    }
+
+    /**
+     * 获取收藏列表（分页，按收藏时间倒序）
+     */
+    @GetMapping("/favorite/list")
+    public Result<List<RandomGifVO>> getFavorites(
+            @RequestParam(defaultValue = "1") int page,
+            @RequestParam(defaultValue = "20") int size) {
+        return Result.success(xhsWorkService.getFavorites(page, size));
     }
 
     /**
@@ -228,6 +324,29 @@ public class XhsWorkApiController {
             throw new NotFoundException("未找到对应的GIF");
         }
         return Result.success(gif);
+    }
+
+    /**
+     * 从 User-Agent 判断来源平台
+     */
+    private String getClientSource(HttpServletRequest request) {
+        String ua = request.getHeader("User-Agent");
+        if (ua != null) {
+            if (ua.contains("Android")) return "android";
+            if (ua.contains("iPhone") || ua.contains("iPad")) return "ios";
+        }
+        return "web";
+    }
+
+    /**
+     * 获取客户端真实 IP（支持反向代理）
+     */
+    private String getClientIp(HttpServletRequest request) {
+        String xff = request.getHeader("X-Forwarded-For");
+        if (xff != null && !xff.isEmpty()) {
+            return xff.split(",")[0].trim();
+        }
+        return request.getRemoteAddr();
     }
 
     /**

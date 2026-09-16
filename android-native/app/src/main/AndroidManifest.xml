@@ -4,6 +4,10 @@
 
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+    <!-- REQ-07：仅 API 28 及以下需要；API 29+ 由 DownloadManager 免权限写入公共目录 -->
+    <uses-permission
+        android:name="android.permission.WRITE_EXTERNAL_STORAGE"
+        android:maxSdkVersion="28" />
 
     <application
         android:name=".RandomGalleryApp"
@@ -17,9 +21,11 @@
         android:usesCleartextTraffic="${usesCleartextTraffic}"
         android:supportsRtl="true"
         android:theme="@style/Theme.RandomGallery">
+        <!-- REQ-06：API 36 在 ≥600dp 设备上忽略应用的方向 / 可缩放限制，configChanges 兜不住。
+             因此不再拦截配置变化，走正常重建路径（状态由 ViewModel 保全）。 -->
         <activity
             android:name=".MainActivity"
-            android:configChanges="keyboardHidden|orientation|screenSize|smallestScreenSize|screenLayout"
+            android:configChanges="keyboardHidden"
             android:exported="true"
             android:windowSoftInputMode="adjustResize">
             <intent-filter>

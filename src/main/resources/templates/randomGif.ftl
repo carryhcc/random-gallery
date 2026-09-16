@@ -271,6 +271,12 @@
             </div>
             <span class="action-label">下载</span>
         </div>
+        <div class="action-btn" onclick="toggleFavorite()">
+            <div class="action-icon-bg" id="favIconBg">
+                <i class="far fa-heart" id="favIcon"></i>
+            </div>
+            <span class="action-label" id="favLabel">收藏</span>
+        </div>
     </div>
 
     <!-- 操作提示 -->
@@ -281,6 +287,16 @@
 </div>
 
 <script>
+    // ── 浏览历史去重：localStorage 持久化已看 ID ──
+    function loadSeenIds() {
+        try { return JSON.parse(localStorage.getItem('gif_seen_ids') || '[]'); } catch { return []; }
+    }
+    function saveSeenIds(ids) {
+        // 最多保留 2000 条，防止 localStorage 溢出
+        const trimmed = ids.slice(-2000);
+        localStorage.setItem('gif_seen_ids', JSON.stringify(trimmed));
+    }
+
     // 状态管理
     const state = {
         history: [],          // 历史记录栈
@@ -288,9 +304,12 @@
         isLoading: false,
         isFillMode: false,
         consecutiveFails: 0,
+        reportedIds: new Set(),  // 防同一session重复上报
+        seenIds: loadSeenIds(),  // 已浏览ID（去重）
+        isFavorited: false,      // 当前GIF是否已收藏
         touchStart: { x: 0, y: 0, time: 0 },
         currentData: null,
-        preloadVideo: new Audio() // 用于预加载资源（Audio也可以加载视频资源缓存）
+        preloadVideo: new Audio()
     };
 
     // DOM 元素
@@ -303,7 +322,10 @@
         workTitle: document.getElementById('workTitle'),
         errorToast: document.getElementById('errorToast'),
         fillIcon: document.getElementById('fillIcon'),
-        gestureHint: document.getElementById('gestureHint')
+        gestureHint: document.getElementById('gestureHint'),
+        favIcon: document.getElementById('favIcon'),
+        favIconBg: document.getElementById('favIconBg'),
+        favLabel: document.getElementById('favLabel')
     };
 
     // 初始化
@@ -357,7 +379,23 @@
         });
     }
 
-    // 加载下一个GIF（真正随机逻辑）
+    // 预加载验证：确认 mediaUrl 可访问后再展示，跳过不可用链接
+    async function isUrlAlive(url) {
+        try {
+            await fetch(url, { method: 'HEAD', mode: 'no-cors' });
+            return true;
+        } catch { return false; }
+    }
+
+    // 标记当前GIF为已浏览（去重）
+    function markAsSeen(id) {
+        if (id && !state.seenIds.includes(id)) {
+            state.seenIds.push(id);
+            saveSeenIds(state.seenIds);
+        }
+    }
+
+    // 加载下一个GIF（真正随机逻辑，支持去重）
     async function loadNextGif() {
         if (state.isLoading) return;
 
@@ -368,15 +406,38 @@
             return;
         }
 
-        // 否则请求新数据
+        // 否则请求新数据（发送已看ID列表用于去重）
         state.isLoading = true;
         dom.loader.style.display = 'block';
-        
+
+        const excludeParam = state.seenIds.length > 0
+            ? '?exclude=' + state.seenIds.slice(-500).join(',') // 最多传500个，防止URL过长
+            : '';
+
         try {
-            const res = await fetch('/api/xhsWork/randomGif');
+            const res = await fetch('/api/xhsWork/randomGif' + excludeParam);
             const json = await res.json();
             
             if (json.code === 200 && json.data) {
+                // 预加载验证：确认 mediaUrl 可访问再展示
+                if (json.data.mediaUrl && !(await isUrlAlive(json.data.mediaUrl))) {
+                    console.log('预加载验证失败，跳过:', json.data.mediaUrl);
+                    if (json.data.id && !state.reportedIds.has(json.data.id)) {
+                        state.reportedIds.add(json.data.id);
+                        fetch('/api/xhsWork/reportDead?id=' + json.data.id).catch(() => {});
+                    }
+                    state.consecutiveFails++;
+                    if (state.consecutiveFails < 3) {
+                        state.isLoading = false;
+                        return loadNextGif();
+                    }
+                    // 连续3次预加载均失败，显示终态
+                    state.consecutiveFails = 0;
+                    dom.errorToast.innerHTML = '<i class="fas fa-exclamation-circle"></i><span>很多动图资源已失效，请稍后重试</span>';
+                    dom.errorToast.style.display = 'flex';
+                    return;
+                }
+
                 // 加入历史
                 state.history.push(json.data);
                 state.currentIndex = state.history.length - 1;
@@ -388,6 +449,10 @@
                 }
 
                 renderGif(json.data);
+                // 标记为已浏览（去重）
+                markAsSeen(json.data.id);
+                // 查询收藏状态
+                checkFavorite(json.data.id);
             } else {
                 throw new Error(json.msg || '无法获取数据');
             }
@@ -533,6 +598,45 @@
         event.stopPropagation();
     }
 
+    // ── 收藏功能 ──
+    async function checkFavorite(id) {
+        if (!id) return;
+        try {
+            const res = await fetch('/api/xhsWork/favorite/check?id=' + id + '&type=gif');
+            const json = await res.json();
+            state.isFavorited = json.data === true;
+            updateFavIcon();
+        } catch {}
+    }
+
+    function updateFavIcon() {
+        if (state.isFavorited) {
+            dom.favIcon.className = 'fas fa-heart';
+            dom.favIconBg.style.background = 'rgba(255,80,80,.25)';
+            dom.favIcon.style.color = '#ff5050';
+            dom.favLabel.textContent = '已收藏';
+        } else {
+            dom.favIcon.className = 'far fa-heart';
+            dom.favIconBg.style.background = '';
+            dom.favIcon.style.color = '';
+            dom.favLabel.textContent = '收藏';
+        }
+    }
+
+    async function toggleFavorite() {
+        if (!state.currentData || !state.currentData.id) return;
+        try {
+            const res = await fetch('/api/xhsWork/favorite/toggle?id=' + state.currentData.id + '&type=gif');
+            const json = await res.json();
+            state.isFavorited = json.data === true;
+            updateFavIcon();
+            showToast(state.isFavorited ? '已收藏' : '已取消收藏');
+        } catch {
+            showToast('操作失败');
+        }
+        event.stopPropagation();
+    }
+
     function handleError() {
         dom.loader.style.display = 'none';
         showFailureState(true);
@@ -549,8 +653,9 @@
         dom.loader.style.display = 'none';
         state.consecutiveFails++;
 
-        // 上报失效资源：后端标记为失效并从随机池剔除
-        if (report && state.currentData && state.currentData.id) {
+        // 上报失效资源（防重复上报）
+        if (report && state.currentData && state.currentData.id && !state.reportedIds.has(state.currentData.id)) {
+            state.reportedIds.add(state.currentData.id);
             fetch('/api/xhsWork/reportDead?id=' + state.currentData.id).catch(() => {});
         }
 

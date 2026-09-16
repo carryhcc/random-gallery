@@ -81,10 +81,22 @@ interface ApiService {
     suspend fun getTags(@Query("limit") limit: Int = 200): ApiResponse<List<TagVO>>
 
     @GET("api/xhsWork/randomGif")
-    suspend fun getRandomGif(): ApiResponse<RandomGifVO>
+    suspend fun getRandomGif(@Query("exclude") exclude: String? = null): ApiResponse<RandomGifVO>
 
     @GET("api/xhsWork/randomGifGroup")
     suspend fun getRandomGifGroup(): ApiResponse<List<RandomGifVO>>
+
+    @GET("api/xhsWork/reportDead")
+    suspend fun reportDead(@Query("id") id: Long): ApiResponse<String>
+
+    @GET("api/xhsWork/favorite/toggle")
+    suspend fun toggleFavorite(@Query("id") id: Long, @Query("type") type: String = "gif"): ApiResponse<Boolean>
+
+    @GET("api/xhsWork/favorite/check")
+    suspend fun checkFavorite(@Query("id") id: Long, @Query("type") type: String = "gif"): ApiResponse<Boolean>
+
+    @GET("api/xhsWork/favorite/list")
+    suspend fun getFavorites(@Query("page") page: Int = 1, @Query("size") size: Int = 20): ApiResponse<List<RandomGifVO>>
 
     @GET("api/system/privacy-mode")
     suspend fun getPrivacyMode(): ApiResponse<Boolean>

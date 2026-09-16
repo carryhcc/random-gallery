@@ -7,6 +7,7 @@ import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.example.randomGallery.config.PrivacyConfig;
+import com.example.randomGallery.entity.DO.UserFavoriteDO;
 import com.example.randomGallery.entity.DO.XhsWorkBaseDO;
 import com.example.randomGallery.entity.DO.XhsWorkMediaDO;
 import com.example.randomGallery.entity.VO.RandomGifVO;
@@ -17,6 +18,7 @@ import com.example.randomGallery.entity.common.MediaTypeEnum;
 import com.example.randomGallery.service.ImageService;
 import com.example.randomGallery.service.XhsWorkService;
 import com.example.randomGallery.service.mapper.XhsWorkBaseMapper;
+import com.example.randomGallery.service.mapper.UserFavoriteMapper;
 import com.example.randomGallery.service.mapper.XhsWorkMediaMapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -25,10 +27,12 @@ import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 import org.springframework.web.util.UriComponentsBuilder;
 
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -43,6 +47,7 @@ public class XhsWorkServiceImpl implements XhsWorkService {
 
     private final XhsWorkBaseMapper workBaseMapper;
     private final XhsWorkMediaMapper workMediaMapper;
+    private final UserFavoriteMapper userFavoriteMapper;
     private final PrivacyConfig privacyConfig;
     private final ImageService imageService;
 
@@ -224,11 +229,31 @@ public class XhsWorkServiceImpl implements XhsWorkService {
 
     @Override
     public RandomGifVO getRandomGif() {
+        return getRandomGif(Collections.emptyList());
+    }
+
+    @Override
+    public RandomGifVO getRandomGif(List<Long> excludeIds) {
         List<Long> ids = getAllGifIds();
         if (ids == null || ids.isEmpty()) {
             log.warn("数据库中没有可用的GIF");
             return null;
         }
+
+        // 排除已看过的ID
+        if (excludeIds != null && !excludeIds.isEmpty()) {
+            Set<Long> excludeSet = Set.copyOf(excludeIds);
+            ids = ids.stream()
+                    .filter(id -> !excludeSet.contains(id))
+                    .collect(Collectors.toList());
+        }
+
+        if (ids.isEmpty()) {
+            log.info("所有GIF均已浏览过，重置池");
+            ids = getAllGifIds(); // 回退到全量
+            if (ids.isEmpty()) return null;
+        }
+
         Long randomId = ids.get(ThreadLocalRandom.current().nextInt(ids.size()));
         return workMediaMapper.getGifById(randomId);
     }
@@ -240,6 +265,63 @@ public class XhsWorkServiceImpl implements XhsWorkService {
         update.setId(id);
         update.setIsDead(true);
         workMediaMapper.updateById(update);
+    }
+
+    @Override
+    public boolean toggleFavorite(Long mediaId, String mediaType) {
+        int count = userFavoriteMapper.countByMedia(mediaId, mediaType);
+        if (count > 0) {
+            // 已收藏 → 取消
+            LambdaQueryWrapper<UserFavoriteDO> wrapper = Wrappers.lambdaQuery();
+            wrapper.eq(UserFavoriteDO::getMediaId, mediaId)
+                    .eq(UserFavoriteDO::getMediaType, mediaType);
+            userFavoriteMapper.delete(wrapper);
+            return false;
+        } else {
+            // 未收藏 → 添加
+            UserFavoriteDO fav = new UserFavoriteDO();
+            fav.setMediaId(mediaId);
+            fav.setMediaType(mediaType);
+            userFavoriteMapper.insert(fav);
+            return true;
+        }
+    }
+
+    @Override
+    public boolean isFavorite(Long mediaId, String mediaType) {
+        return userFavoriteMapper.countByMedia(mediaId, mediaType) > 0;
+    }
+
+    @Override
+    public List<RandomGifVO> getFavorites(int page, int pageSize) {
+        LambdaQueryWrapper<UserFavoriteDO> wrapper = Wrappers.lambdaQuery();
+        wrapper.eq(UserFavoriteDO::getMediaType, "gif")
+                .orderByDesc(UserFavoriteDO::getCreatedAt);
+        Page<UserFavoriteDO> pageResult = userFavoriteMapper.selectPage(
+                new Page<>(page, pageSize), wrapper);
+
+        List<Long> mediaIds = pageResult.getRecords().stream()
+                .map(UserFavoriteDO::getMediaId)
+                .collect(Collectors.toList());
+
+        if (mediaIds.isEmpty()) {
+            return Collections.emptyList();
+        }
+
+        // 批量查询媒体信息
+        LambdaQueryWrapper<XhsWorkMediaDO> mediaWrapper = Wrappers.lambdaQuery();
+        mediaWrapper.in(XhsWorkMediaDO::getId, mediaIds)
+                .eq(XhsWorkMediaDO::getIsDelete, false)
+                .eq(XhsWorkMediaDO::getIsDead, false);
+        Map<Long, XhsWorkMediaDO> mediaMap = workMediaMapper.selectList(mediaWrapper).stream()
+                .collect(Collectors.toMap(XhsWorkMediaDO::getId, Function.identity()));
+
+        return mediaIds.stream()
+                .map(mediaMap::get)
+                .filter(m -> m != null)
+                .map(m -> workMediaMapper.getGifById(m.getId()))
+                .filter(v -> v != null)
+                .collect(Collectors.toList());
     }
 
     @Override

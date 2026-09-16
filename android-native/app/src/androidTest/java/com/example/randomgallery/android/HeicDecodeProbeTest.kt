@@ -21,7 +21,7 @@ class HeicDecodeProbeTest {
         val dir = File("/data/local/tmp/heic")
         val files = dir.listFiles { f -> f.extension in listOf("heic", "heif", "avif") }
             ?.sortedBy { it.name }
-            ?: emptyArray()
+            ?: emptyList()
         Log.i(TAG, "found ${files.size} files in $dir")
 
         files.forEach { f ->

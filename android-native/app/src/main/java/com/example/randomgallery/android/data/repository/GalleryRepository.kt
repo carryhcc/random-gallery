@@ -254,8 +254,8 @@ class GalleryRepository(
         }
     }
 
-    suspend fun getRandomGif(): Result<RandomGifVO> = try {
-        val res = api.getRandomGif()
+    suspend fun getRandomGif(exclude: String? = null): Result<RandomGifVO> = try {
+        val res = api.getRandomGif(exclude)
         if (res.code == 200 && res.data != null) {
             cache("random_gif", moshi.adapter(RandomGifVO::class.java).toJson(res.data))
             Result.success(res.data)
@@ -274,6 +274,42 @@ class GalleryRepository(
         } else {
             Result.failure(Exception(res.message ?: "加载套图失败"))
         }
+    } catch (e: Exception) {
+        if (e is CancellationException) throw e
+        Result.failure(e)
+    }
+
+    suspend fun reportDead(id: Long): Result<String> = try {
+        val res = api.reportDead(id)
+        if (res.code == 200) Result.success(res.data ?: "已记录")
+        else Result.failure(Exception(res.message ?: "上报失败"))
+    } catch (e: Exception) {
+        if (e is CancellationException) throw e
+        Result.failure(e)
+    }
+
+    suspend fun toggleFavorite(id: Long, type: String = "gif"): Result<Boolean> = try {
+        val res = api.toggleFavorite(id, type)
+        if (res.code == 200) Result.success(res.data ?: false)
+        else Result.failure(Exception(res.message ?: "操作失败"))
+    } catch (e: Exception) {
+        if (e is CancellationException) throw e
+        Result.failure(e)
+    }
+
+    suspend fun checkFavorite(id: Long, type: String = "gif"): Result<Boolean> = try {
+        val res = api.checkFavorite(id, type)
+        if (res.code == 200) Result.success(res.data ?: false)
+        else Result.failure(Exception(res.message ?: "查询失败"))
+    } catch (e: Exception) {
+        if (e is CancellationException) throw e
+        Result.failure(e)
+    }
+
+    suspend fun getFavorites(page: Int = 1, size: Int = 20): Result<List<RandomGifVO>> = try {
+        val res = api.getFavorites(page, size)
+        if (res.code == 200) Result.success(res.data ?: emptyList())
+        else Result.failure(Exception(res.message ?: "加载收藏失败"))
     } catch (e: Exception) {
         if (e is CancellationException) throw e
         Result.failure(e)
