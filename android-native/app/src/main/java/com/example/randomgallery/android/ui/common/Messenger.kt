@@ -22,7 +22,6 @@ import androidx.compose.ui.unit.dp
 import com.example.randomgallery.android.ui.theme.XhsRed
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.delay
-import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.receiveAsFlow
 
 /** 全 App 唯一的顶部消息通道。UI 层挂 [TopMessageHost]，任何层调 [show]。 */
@@ -44,7 +43,9 @@ fun TopMessageHost(modifier: Modifier = Modifier) {
     var visible by remember { mutableStateOf(false) }
 
     LaunchedEffect(Unit) {
-        Messenger.messages.collectLatest { msg ->
+        // 用 collect 而非 collectLatest：Channel 是 BUFFERED 的，collectLatest 会在展示窗口
+        // 内取消上一条的协程，导致连续消息（如批量操作逐条报错）只剩最后一条且前一条闪现即断。
+        Messenger.messages.collect { msg ->
             current = msg
             visible = true
             delay(3000)

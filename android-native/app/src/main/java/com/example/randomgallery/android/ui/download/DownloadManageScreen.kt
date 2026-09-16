@@ -27,6 +27,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalView
@@ -348,7 +349,7 @@ fun DownloadManageScreen(
                     enabled = !taskActionBusy,
                     colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error)
                 ) {
-                    Text("删除", color = Color.White)
+                    Text("删除", color = MaterialTheme.colorScheme.onError)
                 }
             },
             dismissButton = {
@@ -426,6 +427,9 @@ private fun StatsFilterChip(
     modifier: Modifier = Modifier,
     onClick: () -> Unit
 ) {
+    // activeColor 由调用方任意指定（含动态取色的 primary），固定白字在浅色 activeColor 上
+    // 对比度不足。按背景亮度自动选取前景色，保证 >= 4.5:1。
+    val activeContentColor = if (activeColor.luminance() > 0.5f) Color.Black else Color.White
     Surface(
         shape = RoundedCornerShape(10.dp),
         color = if (selected) activeColor else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
@@ -434,7 +438,8 @@ private fun StatsFilterChip(
             if (selected) activeColor else MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.2f)
         ),
         modifier = modifier
-            .height(32.dp)
+            // 视觉高度保持 32dp，触摸目标扩至 48dp 下限（R6.5）
+            .heightIn(min = 48.dp)
             .bouncyClickable(onClick = onClick)
     ) {
         Row(
@@ -446,18 +451,18 @@ private fun StatsFilterChip(
                 text = label,
                 style = MaterialTheme.typography.labelSmall,
                 fontWeight = if (selected) FontWeight.Bold else FontWeight.Medium,
-                color = if (selected) Color.White else MaterialTheme.colorScheme.onSurface
+                color = if (selected) activeContentColor else MaterialTheme.colorScheme.onSurface
             )
             Spacer(Modifier.width(2.dp))
             Surface(
                 shape = CircleShape,
-                color = if (selected) Color.White.copy(alpha = 0.25f) else MaterialTheme.colorScheme.surfaceContainerHigh
+                color = if (selected) activeContentColor.copy(alpha = 0.25f) else MaterialTheme.colorScheme.surfaceContainerHigh
             ) {
                 Text(
                     text = "$count",
                     style = MaterialTheme.typography.labelSmall.tabularNumbers,
                     fontWeight = FontWeight.Bold,
-                    color = if (selected) Color.White else MaterialTheme.colorScheme.onSurfaceVariant,
+                    color = if (selected) activeContentColor else MaterialTheme.colorScheme.onSurfaceVariant,
                     modifier = Modifier.padding(horizontal = 4.dp, vertical = 1.dp)
                 )
             }
@@ -659,14 +664,14 @@ private fun CollapsibleDownloadInputCard(
                                 ) {
                                     CircularProgressIndicator(
                                         modifier = Modifier.size(16.dp),
-                                        color = Color.White,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant,
                                         strokeWidth = 2.dp
                                     )
                                     Text(
                                         text = "正在解析...",
                                         style = MaterialTheme.typography.labelMedium,
                                         fontWeight = FontWeight.Bold,
-                                        color = Color.White
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant
                                     )
                                 }
                             } else {
@@ -799,8 +804,7 @@ private fun CompactTaskHistoryCard(
                         Text(
                             text = task.createTime ?: "",
                             style = MaterialTheme.typography.labelSmall.tabularNumbers,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f),
-                            fontSize = 11.sp
+                            color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)
                         )
 
                         if (isFailed && !task.errorMessage.isNullOrBlank() && !isExpanded) {
@@ -809,8 +813,7 @@ private fun CompactTaskHistoryCard(
                                 style = MaterialTheme.typography.labelSmall,
                                 color = MaterialTheme.colorScheme.error,
                                 maxLines = 1,
-                                overflow = TextOverflow.Ellipsis,
-                                fontSize = 11.sp
+                                overflow = TextOverflow.Ellipsis
                             )
                         }
                     }
@@ -834,7 +837,7 @@ private fun CompactTaskHistoryCard(
                         ) {
                             Icon(Icons.Filled.Replay, contentDescription = null, modifier = Modifier.size(14.dp))
                             Spacer(Modifier.width(3.dp))
-                            Text("重试", style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.Bold, fontSize = 11.sp)
+                            Text("重试", style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.Bold)
                         }
                     } else if (isSuccess && !task.workId.isNullOrBlank()) {
                         Button(
@@ -846,7 +849,7 @@ private fun CompactTaskHistoryCard(
                         ) {
                             Icon(Icons.Filled.Visibility, contentDescription = null, modifier = Modifier.size(14.dp))
                             Spacer(Modifier.width(3.dp))
-                            Text("查看", style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.Bold, fontSize = 11.sp)
+                            Text("查看", style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.Bold)
                         }
                     }
 
@@ -931,7 +934,6 @@ private fun CompactTaskHistoryCard(
                                 text = "原始链接: ${task.url}",
                                 style = MaterialTheme.typography.labelSmall,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f),
-                                fontSize = 10.sp,
                                 maxLines = 2,
                                 overflow = TextOverflow.Ellipsis
                             )

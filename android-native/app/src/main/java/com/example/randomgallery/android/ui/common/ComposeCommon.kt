@@ -408,8 +408,14 @@ fun LiquidGlassInput(
     }
 }
 
+/** [StaggeredItemEntrance] 参与错峰入场的最大条目下标。 */
+private const val STAGGER_MAX_INDEX = 8
+
 /**
  * iOS 26 列表/网格条目滑入渐显入场动画 (Staggered Entrance Animation)
+ *
+ * 仅对首屏前 [STAGGER_MAX_INDEX] 个条目做错峰入场：Lazy 布局会在条目滚出视口时销毁其
+ * composable，滚回来时状态重建为初始值，若不加限制会导致已浏览过的条目反复淡入抖动。
  */
 @Composable
 fun StaggeredItemEntrance(
@@ -417,9 +423,15 @@ fun StaggeredItemEntrance(
     modifier: Modifier = Modifier,
     content: @Composable () -> Unit
 ) {
+    // 首屏之外的条目不参与动画，直接以最终态呈现，避免回滚复用时重播。
+    if (index > STAGGER_MAX_INDEX) {
+        Box(modifier) { content() }
+        return
+    }
+
     var visible by rememberSaveable { mutableStateOf(false) }
     LaunchedEffect(Unit) {
-        kotlinx.coroutines.delay((index.coerceAtMost(8) * 40).toLong())
+        kotlinx.coroutines.delay((index * 40).toLong())
         visible = true
     }
 

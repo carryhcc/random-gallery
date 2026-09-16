@@ -1,6 +1,7 @@
 package com.example.randomgallery.android
 
 import android.content.Context
+import com.example.randomgallery.android.config.ApiNodeSwitcher
 import com.example.randomgallery.android.config.BaseUrlConfig
 import com.example.randomgallery.android.data.local.AppPrefs
 import com.example.randomgallery.android.data.local.DatabaseModule
@@ -27,11 +28,20 @@ object AppContainer {
         // 先用默认 baseUrl 立即返回（不阻塞 Main 线程），随后异步读 DataStore 再切换
         BaseUrlConfig.update(BaseUrlConfig.resolve(null, BuildConfig.DEFAULT_BASE_URL))
         initScope.launch {
-            val savedBaseUrl = AppPrefs(appContext).getBaseUrl()
+            val prefs = AppPrefs(appContext)
+            val savedBaseUrl = prefs.getBaseUrl()
             val resolved = BaseUrlConfig.resolve(savedBaseUrl, BuildConfig.DEFAULT_BASE_URL)
             if (resolved != BaseUrlConfig.current()) {
                 BaseUrlConfig.update(resolved)
                 clearRepository()
+            }
+            // 启动自动选节点：本地节点优先 ping，首个存活节点即用；全部失联则保持现状
+            runCatching {
+                val picked = ApiNodeSwitcher.autoSelect(ApiNodeSwitcher.candidateUrls(appContext))
+                if (picked != null && picked != BaseUrlConfig.current()) {
+                    updateBaseUrl(appContext, picked)
+                    ApiNodeSwitcher.emit("已自动切换节点：$picked")
+                }
             }
         }
     }

@@ -15,6 +15,8 @@ import androidx.compose.animation.slideInHorizontally
 import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -36,7 +38,6 @@ import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.NavigationRail
 import androidx.compose.material3.NavigationRailItem
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -52,10 +53,13 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.semantics.selected
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.example.randomgallery.android.ui.common.bouncyClickable
+import com.example.randomgallery.android.ui.common.fresnelBorderBrush
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
@@ -404,20 +408,42 @@ private fun FloatingCapsuleNavigationBar(
             .padding(horizontal = 20.dp, vertical = 8.dp),
         contentAlignment = Alignment.Center
     ) {
-        Surface(
-            shape = CircleShape,
-            color = MaterialTheme.colorScheme.surfaceContainerHigh.copy(alpha = 0.94f),
-            contentColor = MaterialTheme.colorScheme.onSurface,
-            tonalElevation = 6.dp,
-            shadowElevation = 12.dp,
-            border = BorderStroke(
-                width = 1.dp,
-                color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.35f)
-            ),
+        // macOS 26 磨砂玻璃：半透明渐变底（上亮下暗）+ 顶部菲涅尔高光带 + 菲涅尔描边 + 柔和阴影
+        val isDark = isSystemInDarkTheme()
+        val glassTop = if (isDark) {
+            MaterialTheme.colorScheme.surfaceContainerHigh.copy(alpha = 0.68f)
+        } else {
+            Color.White.copy(alpha = 0.80f)
+        }
+        val glassBase = if (isDark) {
+            MaterialTheme.colorScheme.surfaceContainerHigh.copy(alpha = 0.50f)
+        } else {
+            Color.White.copy(alpha = 0.64f)
+        }
+        Box(
             modifier = Modifier
                 .fillMaxWidth()
                 .height(62.dp)
+                .shadow(elevation = 12.dp, shape = CircleShape, clip = false)
+                .clip(CircleShape)
+                .background(Brush.verticalGradient(colors = listOf(glassTop, glassBase)))
+                .border(BorderStroke(1.dp, fresnelBorderBrush(isDark)), CircleShape)
         ) {
+            // 顶部菲涅尔高光带：随胶囊上缘弧度自然收口，模拟玻璃表面捕捉顶部光线
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .fillMaxHeight(0.45f)
+                    .align(Alignment.TopCenter)
+                    .background(
+                        Brush.verticalGradient(
+                            colors = listOf(
+                                Color.White.copy(alpha = if (isDark) 0.10f else 0.28f),
+                                Color.White.copy(alpha = 0f)
+                            )
+                        )
+                    )
+            )
             Row(
                 modifier = Modifier
                     .fillMaxSize()

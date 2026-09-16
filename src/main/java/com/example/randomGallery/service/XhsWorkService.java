@@ -52,6 +52,13 @@ public interface XhsWorkService {
     RandomGifVO getRandomGif();
 
     /**
+     * 上报媒体外链失效，标记为失效并从随机池剔除
+     *
+     * @param id 媒体ID
+     */
+    void reportDead(Long id);
+
+    /**
      * 随机获取同一作品的一整组套图GIF
      * 
      * @return 同一作品下的一组GIF列表

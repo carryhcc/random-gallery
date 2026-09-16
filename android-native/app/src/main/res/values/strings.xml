@@ -119,4 +119,5 @@
     <string name="gif_load_failed">加载失败或链接已失效</string>
     <string name="gif_retry">重试</string>
     <string name="gif_skip">跳过</string>
+    <string name="gif_view_author">查看作者主页</string>
 </resources>

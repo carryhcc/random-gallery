@@ -5,7 +5,10 @@ import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.size
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Warning
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
@@ -13,8 +16,10 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.draw.blur
 import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.asImageBitmap
@@ -22,6 +27,7 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.core.graphics.drawable.toBitmap
+import com.example.randomgallery.android.R
 import coil.imageLoader
 import coil.request.ImageRequest
 import coil.request.Disposable
@@ -31,6 +37,7 @@ private sealed interface SmartImageDisplay {
     data object None : SmartImageDisplay
     data class Thumb(val bitmap: ImageBitmap) : SmartImageDisplay
     data class Full(val bitmap: ImageBitmap) : SmartImageDisplay
+    data object Failed : SmartImageDisplay
 }
 
 /**
@@ -83,7 +90,14 @@ fun SmartImage(
                             display = SmartImageDisplay.Full(fullDrawable.toBitmap().asImageBitmap())
                             onFullLoaded()
                         },
-                        onError = { if (!disposed) onError() }
+                        onError = {
+                            if (disposed) return@target
+                            // 两阶段都失败时才置失败态；若缩略图已出图则保留它，避免把可用画面换成错误占位。
+                            if (display !is SmartImageDisplay.Thumb) {
+                                display = SmartImageDisplay.Failed
+                            }
+                            onError()
+                        }
                     )
                     .build()
             )
@@ -121,6 +135,18 @@ fun SmartImage(
     ) { state ->
         when (state) {
             SmartImageDisplay.None -> Box(modifier.background(MaterialTheme.colorScheme.surfaceVariant))
+            SmartImageDisplay.Failed -> Box(
+                modifier = modifier.background(MaterialTheme.colorScheme.surfaceVariant),
+                contentAlignment = Alignment.Center
+            ) {
+                // 失败态必须与「正在加载」的空灰底可区分，否则用户无从判断该等待还是重试。
+                Icon(
+                    imageVector = Icons.Filled.Warning,
+                    contentDescription = stringResource(R.string.common_load_failed),
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.55f),
+                    modifier = Modifier.size(20.dp)
+                )
+            }
             is SmartImageDisplay.Thumb -> Image(
                 bitmap = state.bitmap,
                 contentDescription = contentDescription,

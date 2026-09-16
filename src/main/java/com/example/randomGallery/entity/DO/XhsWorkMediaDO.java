@@ -60,4 +60,11 @@ public class XhsWorkMediaDO {
      */
     @TableField(value = "is_delete")
     private Boolean isDelete;
+
+    /**
+     * 外链是否失效（区别于 is_delete 删除）：0 正常，1 已失效
+     * 由前端上报或定时校验标记，标记后从随机动图池剔除
+     */
+    @TableField(value = "is_dead")
+    private Boolean isDead;
 }

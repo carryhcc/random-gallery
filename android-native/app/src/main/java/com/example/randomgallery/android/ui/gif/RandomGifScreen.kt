@@ -13,7 +13,6 @@ import androidx.compose.animation.fadeOut
 import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
@@ -36,6 +35,9 @@ import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.role
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -509,7 +511,15 @@ private fun SingleCardDynamicGifViewer(
                                 Row(
                                     verticalAlignment = Alignment.CenterVertically,
                                     horizontalArrangement = Arrangement.spacedBy(4.dp),
-                                    modifier = Modifier.clickable { currentGif.authorId?.let { onAuthor(it) } }
+                                    // 触摸目标补到 48dp 下限，并合并语义让 TalkBack 作为单个按钮朗读
+                                    modifier = Modifier
+                                        .heightIn(min = 48.dp)
+                                        .semantics(mergeDescendants = true) {
+                                            role = Role.Button
+                                        }
+                                        .bouncyClickable(
+                                            onClickLabel = stringResource(R.string.gif_view_author)
+                                        ) { currentGif.authorId?.let { onAuthor(it) } }
                                 ) {
                                     Icon(
                                         Icons.Filled.Person,
@@ -996,7 +1006,15 @@ private fun CardStackDeckViewer(
                                 Row(
                                     verticalAlignment = Alignment.CenterVertically,
                                     horizontalArrangement = Arrangement.spacedBy(4.dp),
-                                    modifier = Modifier.clickable { currentGif.authorId?.let { onAuthor(it) } }
+                                    // 触摸目标补到 48dp 下限，并合并语义让 TalkBack 作为单个按钮朗读
+                                    modifier = Modifier
+                                        .heightIn(min = 48.dp)
+                                        .semantics(mergeDescendants = true) {
+                                            role = Role.Button
+                                        }
+                                        .bouncyClickable(
+                                            onClickLabel = stringResource(R.string.gif_view_author)
+                                        ) { currentGif.authorId?.let { onAuthor(it) } }
                                 ) {
                                     Icon(
                                         Icons.Filled.Person,

@@ -1,6 +1,7 @@
 package com.example.randomgallery.android.data.network
 
 import android.content.Context
+import com.example.randomgallery.android.config.ApiNodeFailoverInterceptor
 import com.example.randomgallery.android.data.local.AppPrefs
 import com.squareup.moshi.Moshi
 import com.squareup.moshi.kotlin.reflect.KotlinJsonAdapterFactory
@@ -123,10 +124,14 @@ object NetworkModule {
 
         val builder = OkHttpClient.Builder()
             .cache(Cache(File(cacheDir, "http_cache"), 20L * 1024L * 1024L))
-            .connectTimeout(20, TimeUnit.SECONDS)
+            // 连接超时收紧到 8s（读/写保持 20s）：节点失联时尽快触发故障切换，
+            // 避免黑洞地址让首个请求干等 20s 才开始切换
+            .connectTimeout(8, TimeUnit.SECONDS)
             .readTimeout(20, TimeUnit.SECONDS)
             .writeTimeout(20, TimeUnit.SECONDS)
             .addInterceptor(clientHeaderInterceptor)
+            // 节点故障切换：当前节点连接失败时自动改写到首个存活节点（本地节点优先 ping）
+            .addInterceptor(ApiNodeFailoverInterceptor(context.applicationContext))
             // 离线兜底：网络失败时改用 only-if-cached 重放，命中磁盘缓存返回陈旧数据
             .addInterceptor(OfflineFallbackInterceptor())
             .addNetworkInterceptor(CacheControlInterceptor())

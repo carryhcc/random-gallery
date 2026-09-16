@@ -43,7 +43,6 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
@@ -81,6 +80,9 @@ private fun openInBrowser(context: Context, url: String) {
         Toast.makeText(context, "无法打开链接：${it.message}", Toast.LENGTH_SHORT).show()
     }
 }
+
+/** 发布时间标准化显示：后端存储为 `2025-12-23_14:22:51`，展示为 `2025-12-23 14:22:51` */
+private fun formatPublishTime(raw: String): String = raw.replace('_', ' ')
 
 @OptIn(UnstableApi::class, ExperimentalMaterial3Api::class)
 @Composable
@@ -393,7 +395,7 @@ fun DownloadDetailScreen(
                                 base?.publishTime?.let {
                                     Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(Spacing.xs)) {
                                         Icon(Icons.Filled.AccessTime, null, tint = MaterialTheme.xhs.textTertiary, modifier = Modifier.size(13.dp))
-                                        Text(it, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.xhs.textTertiary)
+                                        Text(formatPublishTime(it), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.xhs.textTertiary)
                                     }
                                 }
 
@@ -767,7 +769,12 @@ private fun BoxScope.LivePhotoPage(
                     .background(Color.Black.copy(alpha = 0.45f))
                     .padding(horizontal = 6.dp, vertical = 2.dp)
             ) {
-                Text(stringResource(R.string.dd_live_badge), color = Color.White, fontSize = 11.sp, fontWeight = FontWeight.Medium)
+                Text(
+                    stringResource(R.string.dd_live_badge),
+                    style = MaterialTheme.typography.labelSmall,
+                    color = Color.White,
+                    fontWeight = FontWeight.Medium
+                )
             }
         }
 

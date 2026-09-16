@@ -234,10 +234,10 @@
         <div class="spinner"></div>
     </div>
 
-    <!-- 加载失败提示（已隐藏，改为自动加载下一个） -->
+    <!-- 加载失败提示：点击或上滑看下一张（不再自动连环切换） -->
     <div class="error-toast" id="errorToast" style="display: none;">
         <i class="fas fa-exclamation-circle"></i>
-        <span>加载失败，正在切换下一个...</span>
+        <span>该动图资源已失效，点击或上滑看下一张</span>
     </div>
 
     <!-- 底部信息 -->
@@ -287,6 +287,7 @@
         currentIndex: -1,     // 当前历史指针
         isLoading: false,
         isFillMode: false,
+        consecutiveFails: 0,
         touchStart: { x: 0, y: 0, time: 0 },
         currentData: null,
         preloadVideo: new Audio() // 用于预加载资源（Audio也可以加载视频资源缓存）
@@ -417,6 +418,7 @@
         dom.videoWrapper.classList.remove('show');
         dom.errorToast.style.display = 'none';
         dom.loader.style.display = 'block';
+        dom.player.poster = '';
         
         // 设置信息
         dom.authorName.textContent = (data.authorNickname || '未知作者');
@@ -430,6 +432,8 @@
         const playPromise = dom.player.play();
         if (playPromise !== undefined) {
             playPromise.then(() => {
+                state.consecutiveFails = 0;
+                dom.errorToast.style.display = 'none';
                 dom.videoWrapper.classList.add('show');
             }).catch(err => {
                 console.log("Autoplay prevented:", err);
@@ -531,14 +535,34 @@
 
     function handleError() {
         dom.loader.style.display = 'none';
-        // 自动加载下一个，不显示错误提示
-        setTimeout(() => loadNextGif(), 500);
+        showFailureState(true);
     }
 
     function showError() {
         dom.loader.style.display = 'none';
-        // 自动加载下一个，不显示错误提示
-        setTimeout(() => loadNextGif(), 500);
+        showFailureState(false);
+    }
+
+    // 资源失效处理：不再自动连环切换，改为占位图 + 手动下一张 + 连续失败上限
+    // report=true 仅当 <video> 真正加载失败（即当前 mediaUrl 死链）才上报，避免网络抖动误标
+    function showFailureState(report) {
+        dom.loader.style.display = 'none';
+        state.consecutiveFails++;
+
+        // 上报失效资源：后端标记为失效并从随机池剔除
+        if (report && state.currentData && state.currentData.id) {
+            fetch('/api/xhsWork/reportDead?id=' + state.currentData.id).catch(() => {});
+        }
+
+        if (state.consecutiveFails >= 3) {
+            dom.errorToast.innerHTML = '<i class="fas fa-exclamation-circle"></i><span>很多动图资源已失效，请稍后重试</span>';
+            dom.errorToast.style.display = 'flex';
+            return;
+        }
+
+        dom.player.poster = '/icons/404.svg';
+        dom.errorToast.innerHTML = '<i class="fas fa-exclamation-circle"></i><span>该动图资源已失效，点击或上滑看下一张</span>';
+        dom.errorToast.style.display = 'flex';
     }
     
     function showToast(msg) {

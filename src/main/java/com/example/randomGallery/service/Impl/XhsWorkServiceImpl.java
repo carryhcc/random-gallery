@@ -20,6 +20,7 @@ import com.example.randomGallery.service.mapper.XhsWorkBaseMapper;
 import com.example.randomGallery.service.mapper.XhsWorkMediaMapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 import org.springframework.web.util.UriComponentsBuilder;
@@ -233,13 +234,23 @@ public class XhsWorkServiceImpl implements XhsWorkService {
     }
 
     @Override
+    @CacheEvict(value = "gifIds", key = "'all'")
+    public void reportDead(Long id) {
+        XhsWorkMediaDO update = new XhsWorkMediaDO();
+        update.setId(id);
+        update.setIsDead(true);
+        workMediaMapper.updateById(update);
+    }
+
+    @Override
     @Cacheable(value = "gifIds", key = "'all'")
     public List<Long> getAllGifIds() {
         // 查询所有GIF类型且未删除的媒体ID
         LambdaQueryWrapper<XhsWorkMediaDO> wrapper = Wrappers.lambdaQuery();
         wrapper.select(XhsWorkMediaDO::getId)
                 .eq(XhsWorkMediaDO::getMediaType, MediaTypeEnum.GIF)
-                .eq(XhsWorkMediaDO::getIsDelete, false);
+                .eq(XhsWorkMediaDO::getIsDelete, false)
+                .eq(XhsWorkMediaDO::getIsDead, false);
 
         List<XhsWorkMediaDO> mediaList = workMediaMapper.selectList(wrapper);
 

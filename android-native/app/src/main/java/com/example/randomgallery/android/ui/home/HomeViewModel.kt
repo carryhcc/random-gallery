@@ -5,6 +5,7 @@ import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.randomgallery.android.AppContainer
+import com.example.randomgallery.android.config.ApiNodeSwitcher
 import com.example.randomgallery.android.config.BaseUrlConfig
 import com.example.randomgallery.android.data.network.NetworkModule
 import com.example.randomgallery.android.data.local.AppPrefs
@@ -133,6 +134,10 @@ class HomeViewModel(
         }
         viewModelScope.launch {
             repository().urlListFlow.collectLatest { _urlList.value = it }
+        }
+        viewModelScope.launch {
+            // 节点自动切换（启动自动选择 / 运行期故障切换）转顶部提示
+            ApiNodeSwitcher.events.collect { _messages.trySend(it) }
         }
         // 只加载一次（仓库层有 TTL），避免每次切回首页都重复请求
         loadEnvInfo()

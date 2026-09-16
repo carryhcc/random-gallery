@@ -28,7 +28,8 @@
                   INNER JOIN xhs_work_base xwb ON xwb.id = xwm.work_base_id
          WHERE xwm.id = #{id}
            AND xwm.media_type = 'gif'
-           AND xwm.is_delete = 0;
+           AND xwm.is_delete = 0
+            AND xwm.is_dead = 0;
      </select>
      <select id="getRandomGifGroup" resultType="com.example.randomGallery.entity.VO.RandomGifVO">
          SELECT xwm.id,
@@ -47,6 +48,7 @@
                  FROM xhs_work_media
                  WHERE media_type = 'gif'
                    AND is_delete = 0
+                    AND is_dead = 0
                  GROUP BY work_base_id
                  ORDER BY RAND()
                  LIMIT 1
@@ -54,7 +56,8 @@
          )
            AND xwm.media_type = 'gif'
            AND xwm.is_delete = 0
-         ORDER BY xwm.sort_index ASC, xwm.id ASC;
+         AND xwm.is_dead = 0
+          ORDER BY xwm.sort_index ASC, xwm.id ASC;
      </select>
     <insert id="insertBatch">
         INSERT INTO xhs_work_media (work_base_id, work_id, media_type, media_url, sort_index, create_time)

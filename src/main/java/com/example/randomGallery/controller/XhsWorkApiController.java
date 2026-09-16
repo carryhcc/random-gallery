@@ -186,6 +186,15 @@ public class XhsWorkApiController {
     }
 
     /**
+     * 上报动图外链失效
+     */
+    @GetMapping("/reportDead")
+    public Result<String> reportDead(@RequestParam Long id) {
+        xhsWorkService.reportDead(id);
+        return Result.success("已记录失效资源");
+    }
+
+    /**
      * 随机获取同一作品的一整组套图GIF
      */
     @GetMapping("/randomGifGroup")
