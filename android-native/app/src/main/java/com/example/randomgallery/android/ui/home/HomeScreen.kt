@@ -196,39 +196,41 @@ fun HomeScreen(
         val isRefreshing = if (spaceMode == "gallery") galleryLoading && galleryGroups.isNotEmpty()
                            else (feedLoading || heroLoading) && feedWorks.isNotEmpty()
 
-        PullToRefreshBox(
-            isRefreshing = isRefreshing,
-            onRefresh = {
-                if (spaceMode == "gallery") viewModel.refreshGallery()
-                else viewModel.refreshFeed()
-            },
+        AmbientBackgroundBox(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(padding)
-                .background(MaterialTheme.colorScheme.background)
         ) {
-            if (spaceMode == "gallery") {
-                // ── 模式 B：【本地·图库】专属内容流 ───────────────────────
-                val picCount = (envInfo as? UiState.Success)?.data?.picCount ?: 0L
-                val groupCount = (envInfo as? UiState.Success)?.data?.groupCount ?: 0L
+            PullToRefreshBox(
+                isRefreshing = isRefreshing,
+                onRefresh = {
+                    if (spaceMode == "gallery") viewModel.refreshGallery()
+                    else viewModel.refreshFeed()
+                },
+                modifier = Modifier.fillMaxSize()
+            ) {
+                if (spaceMode == "gallery") {
+                    // ── 模式 B：【本地·图库】专属内容流 ───────────────────────
+                    val picCount = (envInfo as? UiState.Success)?.data?.picCount ?: 0L
+                    val groupCount = (envInfo as? UiState.Success)?.data?.groupCount ?: 0L
 
-                LazyVerticalStaggeredGrid(
-                    state = gridState,
-                    columns = StaggeredGridCells.Adaptive(minSize = 165.dp),
-                    contentPadding = PaddingValues(start = Spacing.md, end = Spacing.md, top = Spacing.sm, bottom = BottomBarReserved),
-                    verticalItemSpacing = Spacing.md,
-                    horizontalArrangement = Arrangement.spacedBy(Spacing.md),
-                    modifier = Modifier.fillMaxSize()
-                ) {
-                    item(span = StaggeredGridItemSpan.FullLine) {
-                        GallerySpaceHeroDashboard(
-                            currentEnv = localEnv,
-                            picCount = picCount,
-                            groupCount = groupCount,
-                            onSwitchEnv = { viewModel.switchEnv(it) },
-                            onExploreGallery = onNavigateToRandomGallery
-                        )
-                    }
+                    LazyVerticalStaggeredGrid(
+                        state = gridState,
+                        columns = StaggeredGridCells.Adaptive(minSize = 160.dp),
+                        contentPadding = PaddingValues(start = 8.dp, end = 8.dp, top = 6.dp, bottom = BottomBarReserved),
+                        verticalItemSpacing = 8.dp,
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        modifier = Modifier.fillMaxSize()
+                    ) {
+                        item(span = StaggeredGridItemSpan.FullLine) {
+                            GallerySpaceHeroDashboard(
+                                currentEnv = localEnv,
+                                picCount = picCount,
+                                groupCount = groupCount,
+                                onSwitchEnv = { viewModel.switchEnv(it) },
+                                onExploreGallery = onNavigateToRandomGallery
+                            )
+                        }
 
                     item(span = StaggeredGridItemSpan.FullLine) {
                         GalleryFeatureQuickBar(
@@ -306,10 +308,10 @@ fun HomeScreen(
                 // ── 模式 A：【探索·精选】专属内容流 ───────────────────────
                 LazyVerticalStaggeredGrid(
                     state = gridState,
-                    columns = StaggeredGridCells.Adaptive(minSize = 165.dp),
-                    contentPadding = PaddingValues(start = Spacing.md, end = Spacing.md, top = Spacing.sm, bottom = BottomBarReserved),
-                    verticalItemSpacing = Spacing.md,
-                    horizontalArrangement = Arrangement.spacedBy(Spacing.md),
+                    columns = StaggeredGridCells.Adaptive(minSize = 160.dp),
+                    contentPadding = PaddingValues(start = 8.dp, end = 8.dp, top = 6.dp, bottom = BottomBarReserved),
+                    verticalItemSpacing = 8.dp,
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
                     modifier = Modifier.fillMaxSize()
                 ) {
                     item(span = StaggeredGridItemSpan.FullLine) {
@@ -399,6 +401,7 @@ fun HomeScreen(
                 }
             }
         }
+    }
     }
 
     if (showSettings) {
@@ -1000,10 +1003,10 @@ private fun HomeGalleryGroupCard(
     val ratio = if (url.isBlank()) 0.85f else ratioCache[url] ?: 0.85f
 
     M3GlassCard(
-        shape = RoundedCornerShape(16.dp),
-        elevation = 1.dp,
-        containerColor = MaterialTheme.colorScheme.surfaceContainerLow.copy(alpha = 0.95f),
-        borderColor = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.20f),
+        shape = RoundedCornerShape(14.dp),
+        elevation = 2.dp,
+        containerColor = MaterialTheme.colorScheme.surface,
+        borderColor = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.10f),
         modifier = Modifier
             .fillMaxWidth()
             .bouncyClickable(onClickLabel = group.groupName ?: "套图", onClick = onClick)
@@ -1026,7 +1029,7 @@ private fun HomeGalleryGroupCard(
                     modifier = Modifier
                         .fillMaxWidth()
                         .aspectRatio(ratio)
-                        .clip(RoundedCornerShape(topStart = 16.dp, topEnd = 16.dp))
+                        .clip(RoundedCornerShape(topStart = 14.dp, topEnd = 14.dp))
                         .background(MaterialTheme.colorScheme.surfaceVariant)
                 )
 
@@ -1049,7 +1052,7 @@ private fun HomeGalleryGroupCard(
                 color = MaterialTheme.colorScheme.onSurface,
                 maxLines = 2,
                 overflow = TextOverflow.Ellipsis,
-                modifier = Modifier.padding(horizontal = Spacing.md, vertical = Spacing.sm)
+                modifier = Modifier.padding(horizontal = 10.dp, vertical = 8.dp)
             )
         }
     }
@@ -1206,10 +1209,10 @@ private fun HomeWorkFeedCard(
     val ratio = if (url.isBlank()) 0.85f else ratioCache[url] ?: 0.85f
 
     M3GlassCard(
-        shape = RoundedCornerShape(16.dp),
-        elevation = 1.dp,
-        containerColor = MaterialTheme.colorScheme.surfaceContainerLow.copy(alpha = 0.95f),
-        borderColor = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.20f),
+        shape = RoundedCornerShape(14.dp),
+        elevation = 2.dp,
+        containerColor = MaterialTheme.colorScheme.surface,
+        borderColor = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.10f),
         modifier = Modifier
             .fillMaxWidth()
             .bouncyClickable(onClick = onClick)
@@ -1232,7 +1235,7 @@ private fun HomeWorkFeedCard(
                     modifier = Modifier
                         .fillMaxWidth()
                         .aspectRatio(ratio)
-                        .clip(RoundedCornerShape(topStart = 16.dp, topEnd = 16.dp))
+                        .clip(RoundedCornerShape(topStart = 14.dp, topEnd = 14.dp))
                         .background(MaterialTheme.colorScheme.surfaceVariant)
                 )
 
@@ -1249,7 +1252,7 @@ private fun HomeWorkFeedCard(
             }
 
             Column(
-                modifier = Modifier.padding(horizontal = Spacing.md, vertical = Spacing.sm),
+                modifier = Modifier.padding(horizontal = 10.dp, vertical = 8.dp),
                 verticalArrangement = Arrangement.spacedBy(4.dp)
             ) {
                 Text(

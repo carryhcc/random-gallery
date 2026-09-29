@@ -118,11 +118,10 @@ fun RandomGalleryScreen(
             )
         }
     ) { innerPadding ->
-        Box(
+        AmbientBackgroundBox(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(innerPadding)
-                .background(MaterialTheme.colorScheme.background)
         ) {
             when {
                 groups.isEmpty() && loading -> {
@@ -144,9 +143,9 @@ fun RandomGalleryScreen(
                         LazyVerticalStaggeredGrid(
                             state = gridState,
                             columns = StaggeredGridCells.Adaptive(minSize = 160.dp),
-                            contentPadding = PaddingValues(Spacing.md),
-                            verticalItemSpacing = Spacing.md,
-                            horizontalArrangement = Arrangement.spacedBy(Spacing.md),
+                            contentPadding = PaddingValues(horizontal = 8.dp, vertical = 8.dp),
+                            verticalItemSpacing = 8.dp,
+                            horizontalArrangement = Arrangement.spacedBy(8.dp),
                             modifier = Modifier.fillMaxSize()
                         ) {
                             itemsIndexed(
@@ -176,10 +175,10 @@ private fun FeedCard(
     val ratio = if (url.isBlank()) 0.85f else ratioCache[url] ?: 0.85f
 
     M3GlassCard(
-        shape = RoundedCornerShape(16.dp),
-        elevation = 1.dp,
-        containerColor = MaterialTheme.colorScheme.surfaceContainerLow.copy(alpha = 0.95f),
-        borderColor = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.20f),
+        shape = RoundedCornerShape(14.dp),
+        elevation = 2.dp,
+        containerColor = MaterialTheme.colorScheme.surface,
+        borderColor = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.10f),
         modifier = Modifier
             .fillMaxWidth()
             .bouncyClickable(onClick = onClick)
@@ -202,7 +201,7 @@ private fun FeedCard(
                     modifier = Modifier
                         .fillMaxWidth()
                         .aspectRatio(ratio)
-                        .clip(RoundedCornerShape(topStart = 16.dp, topEnd = 16.dp))
+                        .clip(RoundedCornerShape(topStart = 14.dp, topEnd = 14.dp))
                         .background(MaterialTheme.colorScheme.surfaceVariant)
                 )
 
@@ -225,7 +224,7 @@ private fun FeedCard(
                 color = MaterialTheme.colorScheme.onSurface,
                 maxLines = 2,
                 overflow = TextOverflow.Ellipsis,
-                modifier = Modifier.padding(horizontal = Spacing.md, vertical = Spacing.sm)
+                modifier = Modifier.padding(horizontal = 10.dp, vertical = 8.dp)
             )
         }
     }

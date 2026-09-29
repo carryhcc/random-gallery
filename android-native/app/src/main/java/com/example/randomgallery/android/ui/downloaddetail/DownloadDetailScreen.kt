@@ -62,6 +62,8 @@ import com.example.randomgallery.android.util.ImageUrlResolver
 import com.example.randomgallery.android.util.Downloader
 import com.example.randomgallery.android.util.MediaKind
 import androidx.compose.ui.res.stringResource
+import com.example.randomgallery.android.ui.wallpaper.WallpaperMedia
+import com.example.randomgallery.android.ui.wallpaper.WallpaperPreviewDialog
 
 private data class MediaItem2(
     val id: Long,
@@ -107,6 +109,7 @@ fun DownloadDetailScreen(
     var deleteTargetId by remember { mutableStateOf<Long?>(null) }
     var showRefetchConfirmDialog by remember { mutableStateOf(false) }
     var fullScreenInitialPage by remember { mutableIntStateOf(-1) }
+    var wallpaperTargetMedia by remember { mutableStateOf<WallpaperMedia?>(null) }
 
     // 写操作（删除/重新解析）进行中：对话框确认按钮禁用，防连点重复提交
     val writeBusy by viewModel.writeBusy.collectAsStateWithLifecycle()
@@ -290,6 +293,9 @@ fun DownloadDetailScreen(
                                             .onSuccess { Messenger.show(context.getString(R.string.dd_img_downloading)) }
                                             .onFailure { e -> Messenger.show(e.message ?: "下载失败", isError = true) }
                                     },
+                                    onSetWallpaper = { media ->
+                                        wallpaperTargetMedia = WallpaperMedia(url = media.url, isVideo = false)
+                                    },
                                     onImageClick = { page -> fullScreenInitialPage = page }
                                 ) { media, _ ->
                                     ImagePage(url = media.url, fullSizePx = pagerFullSizePx, onRefetch = { showRefetchConfirmDialog = true })
@@ -305,6 +311,9 @@ fun DownloadDetailScreen(
                                         Downloader.enqueue(context, url, MediaKind.VIDEO)
                                             .onSuccess { Messenger.show(context.getString(R.string.dd_vid_downloading)) }
                                             .onFailure { e -> Messenger.show(e.message ?: "下载失败", isError = true) }
+                                    },
+                                    onSetWallpaper = { media ->
+                                        wallpaperTargetMedia = WallpaperMedia(url = media.url, isVideo = true)
                                     },
                                     onImageClick = null
                                 ) { _, page ->
@@ -498,24 +507,49 @@ fun DownloadDetailScreen(
                         }
                     }
 
-                    // 底部下载按钮
+                    // 底部操作栏（设为壁纸 + 下载按钮）
                     val currentMedia = imageMedia.getOrNull(fullScreenPagerState.currentPage)
                     if (currentMedia != null) {
-                        FloatingActionButton(
-                            onClick = {
-                                Downloader.enqueue(context, currentMedia.url, MediaKind.IMAGE)
-                                    .onSuccess { Messenger.show(context.getString(R.string.dd_img_downloading)) }
-                                    .onFailure { e -> Messenger.show(e.message ?: "下载失败", isError = true) }
-                            },
-                            containerColor = MaterialTheme.colorScheme.primary,
-                            contentColor = MaterialTheme.colorScheme.onPrimary,
+                        Row(
                             modifier = Modifier
-                                .align(Alignment.BottomEnd)
+                                .fillMaxWidth()
+                                .align(Alignment.BottomCenter)
                                 .navigationBarsPadding()
-                                .padding(Spacing.lg)
-                                .size(48.dp)
+                                .padding(Spacing.lg),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
                         ) {
-                            Icon(Icons.Filled.FileDownload, contentDescription = stringResource(R.string.common_download), modifier = Modifier.size(22.dp))
+                            FloatingActionButton(
+                                onClick = {
+                                    wallpaperTargetMedia = WallpaperMedia(url = currentMedia.url, isVideo = false)
+                                },
+                                containerColor = MaterialTheme.colorScheme.surfaceContainerHigh.copy(alpha = 0.90f),
+                                contentColor = Color.White,
+                                modifier = Modifier.size(48.dp)
+                            ) {
+                                Icon(
+                                    Icons.Filled.Wallpaper,
+                                    contentDescription = stringResource(R.string.wallpaper_action_set),
+                                    modifier = Modifier.size(22.dp)
+                                )
+                            }
+
+                            FloatingActionButton(
+                                onClick = {
+                                    Downloader.enqueue(context, currentMedia.url, MediaKind.IMAGE)
+                                        .onSuccess { Messenger.show(context.getString(R.string.dd_img_downloading)) }
+                                        .onFailure { e -> Messenger.show(e.message ?: "下载失败", isError = true) }
+                                },
+                                containerColor = MaterialTheme.colorScheme.primary,
+                                contentColor = MaterialTheme.colorScheme.onPrimary,
+                                modifier = Modifier.size(48.dp)
+                            ) {
+                                Icon(
+                                    Icons.Filled.FileDownload,
+                                    contentDescription = stringResource(R.string.common_download),
+                                    modifier = Modifier.size(22.dp)
+                                )
+                            }
                         }
                     }
                 }
@@ -579,6 +613,13 @@ fun DownloadDetailScreen(
             }
         )
     }
+
+    wallpaperTargetMedia?.let { media ->
+        WallpaperPreviewDialog(
+            media = media,
+            onDismiss = { wallpaperTargetMedia = null }
+        )
+    }
 }
 
 // ── 通用翻页容器 ──────────────────────────────────────────────────────
@@ -589,6 +630,7 @@ private fun MediaPagerBox(
     pagerState: PagerState,
     onDelete: (Long) -> Unit,
     onDownload: (String) -> Unit,
+    onSetWallpaper: ((MediaItem2) -> Unit)? = null,
     onImageClick: ((Int) -> Unit)?,
     pageContent: @Composable BoxScope.(media: MediaItem2, page: Int) -> Unit
 ) {
@@ -625,6 +667,14 @@ private fun MediaPagerBox(
                     Modifier.align(Alignment.TopEnd).padding(Spacing.sm),
                     horizontalArrangement = Arrangement.spacedBy(Spacing.xs)
                 ) {
+                    if (onSetWallpaper != null) {
+                        MediaOverlayButton(
+                            icon = Icons.Filled.Wallpaper,
+                            desc = if (media.isVideo) stringResource(R.string.wallpaper_action_set_live) else stringResource(R.string.wallpaper_action_set)
+                        ) {
+                            onSetWallpaper(media)
+                        }
+                    }
                     // 下载按钮
                     MediaOverlayButton(icon = Icons.Filled.FileDownload, desc = stringResource(R.string.common_download)) {
                         onDownload(media.url)

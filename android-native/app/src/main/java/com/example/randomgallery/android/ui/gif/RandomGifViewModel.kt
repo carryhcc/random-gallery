@@ -55,6 +55,7 @@ class RandomGifViewModel(
     val error: StateFlow<String?> = _error.asStateFlow()
 
     private var isLoadingMore = false
+    private var hasPendingLoad = false
     private val reportedIds = mutableSetOf<Long>() // 防同一session重复上报
 
     // ── 浏览历史去重：SharedPreferences 持久化 ──
@@ -74,7 +75,7 @@ class RandomGifViewModel(
     val isFavorited: StateFlow<Boolean> = _isFavorited.asStateFlow()
 
     init {
-        loadNext()
+        preloadBuffer(3)
     }
 
     fun switchMode(mode: String) {
@@ -84,7 +85,12 @@ class RandomGifViewModel(
         _currentGroupGifs.value = emptyList()
         _error.value = null
         isLoadingMore = false
-        loadNext()
+        hasPendingLoad = false
+        if (mode == "group") {
+            loadNextGroup()
+        } else {
+            preloadBuffer(3)
+        }
     }
 
     /** 抽取并加载下一组全新套图，并按顺序提前预热所有海报 */
@@ -128,53 +134,104 @@ class RandomGifViewModel(
         }
     }
 
+    /**
+     * 从后端单次拉取一张有效动图
+     */
+    private suspend fun fetchOneGif(): Boolean {
+        var attempts = 0
+        var loaded = false
+        val excludeParam = if (seenIds.isNotEmpty())
+            seenIds.toList().takeLast(500).joinToString(",") else null
+
+        while (attempts < MAX_ATTEMPTS && !loaded) {
+            attempts++
+            repository().getRandomGif(excludeParam)
+                .onSuccess { gif ->
+                    val url = gif.mediaUrl?.let { ImageUrlResolver.rawUrl(it) }
+                    if (url != null && isUrlAlive(url)) {
+                        val current = _gifList.value
+                        if (current.none { it.mediaUrl == gif.mediaUrl } && current.size < MAX_GIFS) {
+                            _gifList.value = current + gif
+                        }
+                        loaded = true
+                        _error.value = null
+                        gif.id?.let {
+                            seenIds.add(it)
+                            saveSeenIds()
+                        }
+                    } else {
+                        gif.id?.let { reportDead(it) }
+                    }
+                }
+                .onFailure {
+                    if (_gifList.value.isEmpty()) _error.value = it.message ?: "加载失败"
+                    loaded = true
+                }
+        }
+        return loaded
+    }
+
+    /**
+     * 预热填充缓冲队列，保障快速切换与失效秒切体验
+     */
+    fun preloadBuffer(targetCount: Int = 3) {
+        if (_playMode.value == "group") return
+        if (isLoadingMore) {
+            hasPendingLoad = true
+            return
+        }
+        isLoadingMore = true
+        val isFirst = _gifList.value.isEmpty()
+        if (isFirst) _loading.value = true
+
+        viewModelScope.launch {
+            try {
+                var loadedSoFar = _gifList.value.size
+                while (loadedSoFar < targetCount && loadedSoFar < MAX_GIFS) {
+                    val ok = fetchOneGif()
+                    if (!ok) break
+                    loadedSoFar = _gifList.value.size
+                }
+                while (hasPendingLoad) {
+                    hasPendingLoad = false
+                    if (_gifList.value.size < MAX_GIFS) {
+                        fetchOneGif()
+                    }
+                }
+            } finally {
+                if (isFirst) _loading.value = false
+                isLoadingMore = false
+            }
+        }
+    }
+
     fun loadNext() {
         if (_playMode.value == "group") {
             loadNextGroup()
             return
         }
 
-        if (isLoadingMore) return
+        if (isLoadingMore) {
+            hasPendingLoad = true
+            return
+        }
         isLoadingMore = true
         val isFirst = _gifList.value.isEmpty()
         if (isFirst) _loading.value = true
 
         viewModelScope.launch {
-            var attempts = 0
-            var loaded = false
-            // 构造 exclude 参数（最近 500 个已看 ID，防 URL 过长）
-            val excludeParam = if (seenIds.isNotEmpty())
-                seenIds.toList().takeLast(500).joinToString(",") else null
-
-            while (attempts < MAX_ATTEMPTS && !loaded) {
-                attempts++
-                repository().getRandomGif(excludeParam)
-                    .onSuccess { gif ->
-                        val url = gif.mediaUrl?.let { ImageUrlResolver.rawUrl(it) }
-                        if (url != null && isUrlAlive(url)) {
-                            val current = _gifList.value
-                            if (current.none { it.mediaUrl == gif.mediaUrl } && current.size < MAX_GIFS) {
-                                _gifList.value = current + gif
-                            }
-                            loaded = true
-                            _error.value = null
-                            // 标记为已浏览 + 查询收藏状态
-                            gif.id?.let {
-                                seenIds.add(it)
-                                saveSeenIds()
-                                checkFavorite(it)
-                            }
-                        } else {
-                            gif.id?.let { reportDead(it) }
-                        }
+            try {
+                fetchOneGif()
+                while (hasPendingLoad) {
+                    hasPendingLoad = false
+                    if (_gifList.value.size < MAX_GIFS) {
+                        fetchOneGif()
                     }
-                    .onFailure {
-                        if (isFirst) _error.value = it.message ?: "加载失败"
-                        loaded = true
-                    }
+                }
+            } finally {
+                if (isFirst) _loading.value = false
+                isLoadingMore = false
             }
-            if (isFirst) _loading.value = false
-            isLoadingMore = false
         }
     }
 
@@ -190,9 +247,9 @@ class RandomGifViewModel(
     }
 
     /**
-     * 查询收藏状态
+     * 查询指定动图的收藏状态
      */
-    private fun checkFavorite(id: Long) {
+    fun checkFavorite(id: Long) {
         viewModelScope.launch {
             try {
                 val result = repository().checkFavorite(id)
@@ -202,11 +259,12 @@ class RandomGifViewModel(
     }
 
     /**
-     * 切换收藏状态
+     * 切换指定动图的收藏状态。
+     *
+     * 目标 ID 必须由 UI 传入：展示中的卡片由 activeIndex 决定，而 activeIndex 会随
+     * 上下滑动回退，用列表末尾项 / 首项兜底会收藏到并非当前展示的那张图。
      */
-    fun toggleFavorite() {
-        val gif = _gifList.value.lastOrNull() ?: return
-        val id = gif.id ?: return
+    fun toggleFavorite(id: Long) {
         viewModelScope.launch {
             try {
                 val result = repository().toggleFavorite(id)

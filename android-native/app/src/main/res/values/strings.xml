@@ -126,4 +126,25 @@
     <string name="gif_retry">重试</string>
     <string name="gif_skip">跳过</string>
     <string name="gif_view_author">查看作者主页</string>
+    <!-- 壁纸设置 -->
+    <string name="wallpaper_action_set">设为壁纸</string>
+    <string name="wallpaper_action_set_live">设为动态壁纸</string>
+    <string name="wallpaper_preview_title">壁纸预览</string>
+    <string name="wallpaper_mode_lock">锁屏预览</string>
+    <string name="wallpaper_mode_home">桌面预览</string>
+    <string name="wallpaper_mode_clean">纯净模式</string>
+    <string name="wallpaper_apply">应用壁纸</string>
+    <string name="wallpaper_apply_home">仅设为桌面壁纸</string>
+    <string name="wallpaper_apply_lock">仅设为锁屏壁纸</string>
+    <string name="wallpaper_apply_both">同时设置为桌面和锁屏</string>
+    <string name="wallpaper_apply_live">设为动态壁纸</string>
+    <string name="wallpaper_reset">重置</string>
+    <string name="wallpaper_blur">虚化</string>
+    <string name="wallpaper_setting_progress">正在应用壁纸…</string>
+    <string name="wallpaper_setting_success">壁纸设置成功！</string>
+    <string name="wallpaper_setting_failed">壁纸设置失败，请重试</string>
+    <string name="wallpaper_preparing_live">正在准备动态壁纸…</string>
+    <string name="wallpaper_live_guide">请在系统壁纸预览中点击“应用”即可完成设置</string>
+    <string name="wallpaper_service_name">随机画廊动态壁纸</string>
+    <string name="wallpaper_service_desc">来自随机图库的高清动态视频壁纸服务</string>
 </resources>

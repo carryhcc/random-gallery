@@ -69,94 +69,94 @@ fun GroupListScreen(
         containerColor = MaterialTheme.colorScheme.background,
         topBar = { XhsTopBar(title = stringResource(R.string.group_title), onBack = onBack) }
     ) { padding ->
-        Column(
-            Modifier
+        AmbientBackgroundBox(
+            modifier = Modifier
                 .fillMaxSize()
                 .padding(padding)
-                .background(MaterialTheme.colorScheme.background)
         ) {
-            // ── 搜索栏（顶部时显示，下滑时隐藏）─────────────────────
-            AnimatedVisibility(
-                visible = atTop,
-                enter = expandVertically(),
-                exit = shrinkVertically()
-            ) {
-                Column {
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(horizontal = Spacing.md, vertical = Spacing.xs),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        LiquidGlassInput(
-                            value = keyword,
-                            onValueChange = {
-                                keyword = it
-                                if (it.isBlank()) viewModel.query(null)
-                            },
-                            placeholder = stringResource(R.string.group_search_hint),
-                            leadingIcon = Icons.Filled.Search,
-                            trailingIcon = {
-                                if (keyword.isNotBlank()) {
-                                    IconButton(
-                                        onClick = {
-                                            keyword = ""
-                                            viewModel.query(null)
-                                        },
-                                        modifier = Modifier.size(24.dp)
-                                    ) {
-                                        Icon(
-                                            imageVector = Icons.Filled.Clear,
-                                            contentDescription = null,
-                                            tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                                            modifier = Modifier.size(16.dp)
-                                        )
-                                    }
-                                }
-                            },
-                            onSearch = { viewModel.query(keyword.trim().ifBlank { null }) },
-                            modifier = Modifier.fillMaxWidth()
-                        )
-                    }
-                    XhsDivider()
-                }
-            }
-
-            // ── 内容区 ────────────────────────────────────────────────
-            Box(Modifier.weight(1f)) {
-                when {
-                    groups.isEmpty() && error != null ->
-                        XhsEmptyState(error!!, onRetry = { viewModel.query(null) }, modifier = Modifier.fillMaxSize())
-                    groups.isEmpty() && loading ->
-                        XhsLoadingBox(Modifier.fillMaxSize())
-                    else ->
-                        androidx.compose.material3.pulltorefresh.PullToRefreshBox(
-                            isRefreshing = loading && groups.isNotEmpty(),
-                            onRefresh = { viewModel.query(keyword.trim().ifBlank { null }, pageIndex = 1) },
-                            modifier = Modifier.fillMaxSize()
+            Column(Modifier.fillMaxSize()) {
+                // ── 搜索栏（顶部时显示，下滑时隐藏）─────────────────────
+                AnimatedVisibility(
+                    visible = atTop,
+                    enter = expandVertically(),
+                    exit = shrinkVertically()
+                ) {
+                    Column {
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(horizontal = Spacing.md, vertical = Spacing.xs),
+                            verticalAlignment = Alignment.CenterVertically
                         ) {
-                            LazyVerticalGrid(
-                                state = gridState,
-                                columns = GridCells.Fixed(2),
-                                contentPadding = PaddingValues(Spacing.md),
-                                verticalArrangement = Arrangement.spacedBy(Spacing.md),
-                                horizontalArrangement = Arrangement.spacedBy(Spacing.md),
+                            LiquidGlassInput(
+                                value = keyword,
+                                onValueChange = {
+                                    keyword = it
+                                    if (it.isBlank()) viewModel.query(null)
+                                },
+                                placeholder = stringResource(R.string.group_search_hint),
+                                leadingIcon = Icons.Filled.Search,
+                                trailingIcon = {
+                                    if (keyword.isNotBlank()) {
+                                        IconButton(
+                                            onClick = {
+                                                keyword = ""
+                                                viewModel.query(null)
+                                            },
+                                            modifier = Modifier.size(24.dp)
+                                        ) {
+                                            Icon(
+                                                imageVector = Icons.Filled.Clear,
+                                                contentDescription = null,
+                                                tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                                                modifier = Modifier.size(16.dp)
+                                            )
+                                        }
+                                    }
+                                },
+                                onSearch = { viewModel.query(keyword.trim().ifBlank { null }) },
+                                modifier = Modifier.fillMaxWidth()
+                            )
+                        }
+                        XhsDivider()
+                    }
+                }
+
+                // ── 内容区 ────────────────────────────────────────────────
+                Box(Modifier.weight(1f)) {
+                    when {
+                        groups.isEmpty() && error != null ->
+                            XhsEmptyState(error!!, onRetry = { viewModel.query(null) }, modifier = Modifier.fillMaxSize())
+                        groups.isEmpty() && loading ->
+                            XhsLoadingBox(Modifier.fillMaxSize())
+                        else ->
+                            androidx.compose.material3.pulltorefresh.PullToRefreshBox(
+                                isRefreshing = loading && groups.isNotEmpty(),
+                                onRefresh = { viewModel.query(keyword.trim().ifBlank { null }, pageIndex = 1) },
                                 modifier = Modifier.fillMaxSize()
                             ) {
-                                itemsIndexed(items = groups, key = { index, group -> group.groupId ?: "idx_$index" }) { index, group ->
-                                    StaggeredItemEntrance(index = index) {
-                                        GroupCard(group = group, onClick = { onGroupClick(group) })
+                                LazyVerticalGrid(
+                                    state = gridState,
+                                    columns = GridCells.Fixed(2),
+                                    contentPadding = PaddingValues(horizontal = 8.dp, vertical = 8.dp),
+                                    verticalArrangement = Arrangement.spacedBy(8.dp),
+                                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                                    modifier = Modifier.fillMaxSize()
+                                ) {
+                                    itemsIndexed(items = groups, key = { index, group -> group.groupId ?: "idx_$index" }) { index, group ->
+                                        StaggeredItemEntrance(index = index) {
+                                            GroupCard(group = group, onClick = { onGroupClick(group) })
+                                        }
+                                    }
+                                    item(span = { GridItemSpan(2) }) {
+                                        Spacer(Modifier.height(8.dp))
                                     }
                                 }
-                                item(span = { GridItemSpan(2) }) {
-                                    Spacer(Modifier.height(Spacing.md))
-                                }
                             }
-                        }
+                    }
                 }
-            }
 
-            // ── 分页栏 ────────────────────────────────────────────────
+                // ── 分页栏 ────────────────────────────────────────────────
             GlassSurface(
                 shape = CircleShape,
                 elevation = 6.dp,
@@ -200,6 +200,7 @@ fun GroupListScreen(
         }
     }
 }
+}
 
 @Composable
 private fun GroupCard(group: GroupVO, onClick: () -> Unit) {
@@ -207,9 +208,9 @@ private fun GroupCard(group: GroupVO, onClick: () -> Unit) {
     val count = group.groupCount ?: 0
 
     GlassCard(
-        shape = RoundedCornerShape(24.dp),
-        elevation = 8.dp,
-        containerColor = MaterialTheme.colorScheme.surfaceContainerHigh.copy(alpha = 0.88f),
+        shape = RoundedCornerShape(16.dp),
+        elevation = 3.dp,
+        containerColor = MaterialTheme.colorScheme.surface,
         modifier = Modifier
             .fillMaxWidth()
             .bouncyClickable(onClick = onClick)
@@ -223,7 +224,7 @@ private fun GroupCard(group: GroupVO, onClick: () -> Unit) {
                 modifier = Modifier
                     .fillMaxWidth()
                     .aspectRatio(3f / 4f)
-                    .clip(RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp))
+                    .clip(RoundedCornerShape(topStart = 16.dp, topEnd = 16.dp))
                     .background(MaterialTheme.colorScheme.surfaceVariant)
             )
 
@@ -232,7 +233,7 @@ private fun GroupCard(group: GroupVO, onClick: () -> Unit) {
                 modifier = Modifier
                     .fillMaxWidth()
                     .aspectRatio(3f / 4f)
-                    .clip(RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp))
+                    .clip(RoundedCornerShape(topStart = 16.dp, topEnd = 16.dp))
                     .background(
                         Brush.verticalGradient(
                             colors = listOf(Color.Transparent, Color.Black.copy(alpha = 0.65f)),

@@ -12,9 +12,9 @@ val NeutralWhite = Color(0xFFFFFFFF)
 val NeutralBlack = Color(0xFF000000)
 
 // ── 浅色主题 ──────────────────────────────────────────────────────────
-val FeedBackground = Color(0xFFF6F6F7)
+val FeedBackground = Color(0xFFF0F2F5)
 val SurfaceCard = Color(0xFFFFFFFF)
-val SurfaceMuted = Color(0xFFF3F3F5)
+val SurfaceMuted = Color(0xFFEAEBED)
 
 val TextPrimary = Color(0xFF1A1A1A)
 val TextSecondary = Color(0xFF9A9AA0)

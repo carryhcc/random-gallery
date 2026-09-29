@@ -27,8 +27,9 @@ private val LightColors = lightColorScheme(
     onSurface = TextPrimary,
     surfaceVariant = SurfaceMuted,
     onSurfaceVariant = TextSecondary,
+    surfaceContainerLowest = SurfaceCard,
+    surfaceContainerLow = Color(0xFFFAFAFB),
     surfaceContainer = SurfaceCard,
-    surfaceContainerLow = FeedBackground,
     surfaceContainerHigh = SurfaceMuted,
     outline = DividerColor,
     outlineVariant = DividerColor,
@@ -102,7 +103,7 @@ val androidx.compose.material3.MaterialTheme.xhs: XhsExtendedColors
 @Composable
 fun RandomGalleryTheme(
     darkMode: String = "system",
-    dynamicColor: Boolean = true,
+    dynamicColor: Boolean = false,
     content: @Composable () -> Unit
 ) {
     val context = LocalContext.current

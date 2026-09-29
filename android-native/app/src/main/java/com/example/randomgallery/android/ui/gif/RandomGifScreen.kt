@@ -13,13 +13,14 @@ import androidx.compose.animation.fadeOut
 import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.*
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import android.Manifest
@@ -85,6 +86,8 @@ import com.example.randomgallery.android.ui.theme.*
 import com.example.randomgallery.android.util.Downloader
 import com.example.randomgallery.android.util.ImageUrlResolver
 import com.example.randomgallery.android.util.MediaKind
+import com.example.randomgallery.android.ui.wallpaper.WallpaperMedia
+import com.example.randomgallery.android.ui.wallpaper.WallpaperPreviewDialog
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.launch
@@ -105,20 +108,18 @@ fun RandomGifScreen(
     val loading by viewModel.loading.collectAsStateWithLifecycle()
     val error by viewModel.error.collectAsStateWithLifecycle()
     val isFavorited by viewModel.isFavorited.collectAsStateWithLifecycle()
+    var wallpaperTargetMedia by remember { mutableStateOf<WallpaperMedia?>(null) }
 
-    // ── REQ-05 沉浸式全屏：进入隐藏系统栏，离开必定恢复 ──
-    // 不采用"点击切换系统栏"方案，避免与单击播放/暂停手势冲突。
+    // 状态栏：保持全面屏沉浸式显示（不隐藏状态栏），确保暗色背景下电量/时间/通知图标清晰可见
     val view = LocalView.current
     val hostActivity = LocalContext.current as? Activity
     DisposableEffect(hostActivity) {
         val window = hostActivity?.window
         val controller = window?.let { WindowCompat.getInsetsController(it, view) }
-        controller?.apply {
-            hide(WindowInsetsCompat.Type.systemBars())
-            systemBarsBehavior = WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
-        }
+        val previousLightStatusBars = controller?.isAppearanceLightStatusBars ?: false
+        controller?.isAppearanceLightStatusBars = false
         onDispose {
-            controller?.show(WindowInsetsCompat.Type.systemBars())
+            controller?.isAppearanceLightStatusBars = previousLightStatusBars
         }
     }
 
@@ -157,11 +158,21 @@ fun RandomGifScreen(
                 groupGifs = groupGifs,
                 loading = loading,
                 error = error,
+                isFavorited = isFavorited,
                 onBack = onBack,
                 onDetail = onDetail,
                 onAuthor = onAuthor,
                 onNextGroup = { viewModel.loadNextGroup() },
-                onSwitchMode = { viewModel.switchMode(it) }
+                onToggleFavorite = { id -> viewModel.toggleFavorite(id) },
+                onReportDead = { viewModel.reportDead(it) },
+                onCheckFavorite = { viewModel.checkFavorite(it) },
+                onSwitchMode = { viewModel.switchMode(it) },
+                onWallpaper = { gif ->
+                    val url = gif.mediaUrl?.let { ImageUrlResolver.rawUrl(it) }.orEmpty()
+                    if (url.isNotBlank()) {
+                        wallpaperTargetMedia = WallpaperMedia(url = url, isVideo = true, title = gif.workTitle)
+                    }
+                }
             )
         } else {
             SingleCardDynamicGifViewer(
@@ -173,10 +184,25 @@ fun RandomGifScreen(
                 onDetail = onDetail,
                 onAuthor = onAuthor,
                 onLoadNext = { viewModel.loadNext() },
-                onToggleFavorite = { viewModel.toggleFavorite() },
-                onSwitchMode = { viewModel.switchMode(it) }
+                onToggleFavorite = { id -> viewModel.toggleFavorite(id) },
+                onReportDead = { viewModel.reportDead(it) },
+                onCheckFavorite = { viewModel.checkFavorite(it) },
+                onSwitchMode = { viewModel.switchMode(it) },
+                onWallpaper = { gif ->
+                    val url = gif.mediaUrl?.let { ImageUrlResolver.rawUrl(it) }.orEmpty()
+                    if (url.isNotBlank()) {
+                        wallpaperTargetMedia = WallpaperMedia(url = url, isVideo = true, title = gif.workTitle)
+                    }
+                }
             )
         }
+    }
+
+    wallpaperTargetMedia?.let { media ->
+        WallpaperPreviewDialog(
+            media = media,
+            onDismiss = { wallpaperTargetMedia = null }
+        )
     }
 }
 
@@ -229,47 +255,66 @@ private fun GifInfoSidePanel(
 
             Button(
                 onClick = onToggleFavorite,
-                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(14.dp),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(42.dp),
                 colors = ButtonDefaults.buttonColors(
                     containerColor = if (isFavorited) {
-                        MaterialTheme.colorScheme.primary
+                        XhsRed
                     } else {
                         MaterialTheme.colorScheme.surfaceVariant
                     },
                     contentColor = if (isFavorited) {
-                        MaterialTheme.colorScheme.onPrimary
+                        Color.White
                     } else {
                         MaterialTheme.colorScheme.onSurfaceVariant
                     }
                 )
             ) {
                 Icon(
-                    imageVector = Icons.Filled.Favorite,
+                    imageVector = if (isFavorited) Icons.Filled.Favorite else Icons.Filled.FavoriteBorder,
                     contentDescription = null,
                     modifier = Modifier.size(18.dp)
                 )
                 Spacer(Modifier.width(Spacing.sm))
-                Text(if (isFavorited) "已收藏" else "收藏")
+                Text(if (isFavorited) "已收藏" else "收藏", fontWeight = FontWeight.SemiBold)
             }
 
-            OutlinedButton(onClick = onDetail, modifier = Modifier.fillMaxWidth()) {
+            OutlinedButton(
+                onClick = onDetail,
+                shape = RoundedCornerShape(14.dp),
+                border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.6f)),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(42.dp)
+                    .bouncyClickable(onClick = onDetail)
+            ) {
                 Icon(
-                    imageVector = Icons.Filled.Info,
+                    imageVector = Icons.AutoMirrored.Filled.OpenInNew,
                     contentDescription = null,
-                    modifier = Modifier.size(18.dp)
+                    modifier = Modifier.size(17.dp)
                 )
                 Spacer(Modifier.width(Spacing.sm))
-                Text("作品详情")
+                Text("作品详情", fontWeight = FontWeight.Medium)
             }
 
-            OutlinedButton(onClick = onAuthor, modifier = Modifier.fillMaxWidth()) {
+            OutlinedButton(
+                onClick = onAuthor,
+                shape = RoundedCornerShape(14.dp),
+                border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.6f)),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(42.dp)
+                    .bouncyClickable(onClick = onAuthor)
+            ) {
                 Icon(
                     imageVector = Icons.Filled.Person,
                     contentDescription = null,
-                    modifier = Modifier.size(18.dp)
+                    modifier = Modifier.size(17.dp)
                 )
                 Spacer(Modifier.width(Spacing.sm))
-                Text("作者主页")
+                Text("作者主页", fontWeight = FontWeight.Medium)
             }
         }
     }
@@ -305,6 +350,340 @@ private fun GifInfoSidePanelPreview() {
     }
 }
 
+// ── 底部沉浸控制栏（全屏沉浸式微渐变，精简至 4 个操作，杜绝色块与拥挤）─────────
+//
+// 结构分明、呼吸感充足：
+//   行 1 → 标题区（可直接点击查看作品详情，带 Chevron 指示）+ 右侧作者 Chip（点击直达作者页）
+//   行 2 → 左侧核心操作（换一张 / 下一套）+ 右侧 3 个功能图标（收藏 / 分享 / 保存相册）
+
+@Composable
+private fun GifBottomControlBar(
+    title: String,
+    authorNickname: String?,
+    onAuthor: () -> Unit,
+    onDetail: (() -> Unit)?,
+    nextLabel: String,
+    onNext: () -> Unit,
+    isFavorited: Boolean,
+    onToggleFavorite: () -> Unit,
+    onShare: () -> Unit,
+    onSave: () -> Unit,
+    onWallpaper: (() -> Unit)? = null,
+    modifier: Modifier = Modifier
+) {
+    Box(
+        modifier = modifier
+            .fillMaxWidth()
+            .background(
+                Brush.verticalGradient(
+                    colors = listOf(
+                        Color.Transparent,
+                        Color.Black.copy(alpha = 0.40f),
+                        Color.Black.copy(alpha = 0.85f)
+                    )
+                )
+            )
+            .navigationBarsPadding()
+            .padding(start = 16.dp, end = 16.dp, top = 22.dp, bottom = 12.dp)
+    ) {
+        Column(
+            modifier = Modifier.fillMaxWidth(),
+            verticalArrangement = Arrangement.spacedBy(10.dp)
+        ) {
+            // 行 1: 标题 + 作品详情入口，右侧作者 Chip
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.SpaceBetween
+            ) {
+                // 作品标题（点击可直达作品详情）
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(3.dp),
+                    modifier = Modifier
+                        .weight(1f, fill = false)
+                        .clip(RoundedCornerShape(8.dp))
+                        .then(
+                            if (onDetail != null) {
+                                Modifier.bouncyClickable(onClickLabel = "查看作品详情", onClick = onDetail)
+                            } else Modifier
+                        )
+                        .padding(vertical = 2.dp)
+                ) {
+                    GifTitleText(
+                        title = title,
+                        modifier = Modifier.weight(1f, fill = false)
+                    )
+                    if (onDetail != null) {
+                        Icon(
+                            imageVector = Icons.Filled.ChevronRight,
+                            contentDescription = "查看作品详情",
+                            tint = Color.White.copy(alpha = 0.70f),
+                            modifier = Modifier.size(18.dp)
+                        )
+                    }
+                }
+
+                // 作者 Chip
+                if (!authorNickname.isNullOrBlank()) {
+                    GifAuthorChip(
+                        nickname = authorNickname,
+                        onClick = onAuthor,
+                        modifier = Modifier.padding(start = 8.dp)
+                    )
+                }
+            }
+
+            // 行 2: 主操作「换一张」+ 功能按键（收藏、分享、下载、设为壁纸）
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                // 左侧主要操作：珊瑚红渐变胶囊
+                GifPrimaryActionButton(
+                    text = nextLabel,
+                    onClick = onNext
+                )
+
+                // 右侧功能图标组：38dp 圆形磨砂玻璃键
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    // ❤️ 收藏
+                    GifCircleActionButton(
+                        contentDescription = if (isFavorited) "取消收藏" else "收藏",
+                        active = isFavorited,
+                        onClick = onToggleFavorite
+                    ) {
+                        Icon(
+                            imageVector = if (isFavorited) Icons.Filled.Favorite else Icons.Filled.FavoriteBorder,
+                            contentDescription = null,
+                            tint = if (isFavorited) Color(0xFFFF2442) else Color.White.copy(alpha = 0.90f),
+                            modifier = Modifier.size(19.dp)
+                        )
+                    }
+
+                    // 分享
+                    GifCircleActionButton(
+                        contentDescription = "分享",
+                        onClick = onShare
+                    ) {
+                        Icon(
+                            imageVector = Icons.Filled.Share,
+                            contentDescription = null,
+                            tint = Color.White.copy(alpha = 0.90f),
+                            modifier = Modifier.size(17.dp)
+                        )
+                    }
+
+                    // 保存到相册
+                    GifCircleActionButton(
+                        contentDescription = "保存到相册",
+                        onClick = onSave
+                    ) {
+                        Icon(
+                            imageVector = Icons.Filled.Download,
+                            contentDescription = null,
+                            tint = Color.White.copy(alpha = 0.90f),
+                            modifier = Modifier.size(19.dp)
+                        )
+                    }
+
+                    // 设为动态壁纸
+                    if (onWallpaper != null) {
+                        GifCircleActionButton(
+                            contentDescription = stringResource(R.string.wallpaper_action_set_live),
+                            onClick = onWallpaper
+                        ) {
+                            Icon(
+                                imageVector = Icons.Filled.Wallpaper,
+                                contentDescription = null,
+                                tint = Color.White.copy(alpha = 0.90f),
+                                modifier = Modifier.size(19.dp)
+                            )
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun GifTitleText(title: String, modifier: Modifier = Modifier) {
+    AnimatedContent(
+        targetState = title,
+        modifier = modifier,
+        transitionSpec = { fadeIn(tween(300)) togetherWith fadeOut(tween(200)) },
+        label = "gifTitleChange"
+    ) { text ->
+        Text(
+            text = text,
+            style = MaterialTheme.typography.titleMedium,
+            fontWeight = FontWeight.Bold,
+            color = Color.White,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis
+        )
+    }
+}
+
+@Composable
+private fun GifAuthorChip(
+    nickname: String,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    AnimatedContent(
+        targetState = nickname,
+        transitionSpec = { fadeIn(tween(300)) togetherWith fadeOut(tween(200)) },
+        label = "gifAuthorChange"
+    ) { name ->
+        Box(
+            modifier = modifier
+                .height(32.dp)
+                .clip(RoundedCornerShape(16.dp))
+                .background(Color.White.copy(alpha = 0.12f))
+                .border(0.5.dp, Color(0xFFFFD54F).copy(alpha = 0.40f), RoundedCornerShape(16.dp))
+                .bouncyClickable(onClickLabel = stringResource(R.string.gif_view_author)) { onClick() }
+                .padding(horizontal = 9.dp),
+            contentAlignment = Alignment.Center
+        ) {
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(4.dp)
+            ) {
+                Icon(
+                    Icons.Filled.Person,
+                    contentDescription = null,
+                    tint = Color(0xFFFFD54F),
+                    modifier = Modifier.size(13.dp)
+                )
+                Text(
+                    text = "@$name",
+                    style = MaterialTheme.typography.labelSmall,
+                    color = Color(0xFFFFD54F),
+                    fontWeight = FontWeight.SemiBold,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
+                )
+            }
+        }
+    }
+}
+
+/** 核心主操作胶囊按钮（换一张 / 下一套），小红书红微渐变，38dp 高度 */
+@Composable
+private fun GifPrimaryActionButton(
+    text: String,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    Box(
+        modifier = modifier
+            .height(38.dp)
+            .clip(RoundedCornerShape(19.dp))
+            .background(
+                Brush.horizontalGradient(
+                    colors = listOf(Color(0xFFFF385C), Color(0xFFFF2442))
+                )
+            )
+            .bouncyClickable(onClickLabel = text, onClick = onClick)
+            .padding(horizontal = 15.dp),
+        contentAlignment = Alignment.Center
+    ) {
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(5.dp)
+        ) {
+            Icon(
+                imageVector = Icons.Filled.Refresh,
+                contentDescription = null,
+                tint = Color.White,
+                modifier = Modifier.size(16.dp)
+            )
+            Text(
+                text = text,
+                style = MaterialTheme.typography.labelLarge,
+                fontWeight = FontWeight.Bold,
+                color = Color.White,
+                maxLines = 1
+            )
+        }
+    }
+}
+
+/** 高质感圆形磨砂玻璃功能按钮（收藏 / 分享 / 下载），统一 38dp 规格，弹性回弹，不重叠。 */
+@Composable
+private fun GifCircleActionButton(
+    contentDescription: String,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+    active: Boolean = false,
+    activeColor: Color = Color(0xFFFF2442),
+    icon: @Composable () -> Unit
+) {
+    Box(
+        modifier = modifier
+            .size(38.dp)
+            .clip(CircleShape)
+            .background(
+                if (active) activeColor.copy(alpha = 0.25f) else Color.White.copy(alpha = 0.14f)
+            )
+            .border(
+                0.6.dp,
+                if (active) activeColor.copy(alpha = 0.75f) else Color.White.copy(alpha = 0.22f),
+                CircleShape
+            )
+            .bouncyClickable(onClickLabel = contentDescription, onClick = onClick),
+        contentAlignment = Alignment.Center
+    ) {
+        icon()
+    }
+}
+
+// ── 底部控制栏布局验收预览 ──────────────────────────────────────────
+
+@Composable
+private fun GifBottomControlBarPreviewContent() {
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(MaterialTheme.colorScheme.background)
+    ) {
+        GifBottomControlBar(
+            title = "夏日清新微风写真合集",
+            authorNickname = "小红书摄影师",
+            onAuthor = {},
+            onDetail = {},
+            nextLabel = "换一张",
+            onNext = {},
+            isFavorited = true,
+            onToggleFavorite = {},
+            onShare = {},
+            onSave = {},
+            onWallpaper = {},
+            modifier = Modifier.align(Alignment.BottomCenter)
+        )
+    }
+}
+
+/** 手机竖屏（360dp）：标题+作者一行；主操作与功能图标各居一侧，平滑不重叠。 */
+@Preview(name = "底部信息条 · 手机窄屏", widthDp = 360, heightDp = 260, showBackground = true)
+@Composable
+private fun GifInfoBarCompactPreview() {
+    MaterialTheme { GifBottomControlBarPreviewContent() }
+}
+
+/** 平板 / 横屏（960dp）：同样的两行结构，主操作贴左、图标操作贴右。 */
+@Preview(name = "底部信息条 · 平板宽屏", widthDp = 960, heightDp = 180, showBackground = true)
+@Composable
+private fun GifInfoBarWidePreview() {
+    MaterialTheme { GifBottomControlBarPreviewContent() }
+}
+
 // ── 模式 A：单张随机（仅中间卡片手势切换，全屏背景高斯模糊与底部文案动态过渡）──
 
 @OptIn(UnstableApi::class)
@@ -319,8 +698,11 @@ internal fun SingleCardDynamicGifViewer(
     onDetail: (workId: String) -> Unit,
     onAuthor: (authorId: String) -> Unit,
     onLoadNext: () -> Unit,
-    onToggleFavorite: () -> Unit,
-    onSwitchMode: (String) -> Unit
+    onToggleFavorite: (Long) -> Unit,
+    onReportDead: (Long) -> Unit = {},
+    onCheckFavorite: (Long) -> Unit = {},
+    onSwitchMode: (String) -> Unit,
+    onWallpaper: ((RandomGifVO) -> Unit)? = null
 ) {
     val context = LocalContext.current
     val density = LocalDensity.current
@@ -336,10 +718,17 @@ internal fun SingleCardDynamicGifViewer(
     var isVideoFailed by remember(activeIndex) { mutableStateOf(false) }
     var isCoverFailed by remember(activeIndex) { mutableStateOf(false) }
     var videoRatio by remember(activeIndex) { mutableFloatStateOf(0.75f) }
-    var isPaused by rememberSaveable { mutableStateOf(false) }
+    var isPaused by remember(activeIndex) { mutableStateOf(false) }
     var showHeart by remember { mutableStateOf(false) }
     val heartScale = remember { Animatable(0f) }
-    val cardScale = remember { Animatable(1f) }
+
+    // 底部信息条实测高度：窄屏两行栏明显更高，卡片视口据此预留底部空间，避免被信息条遮住
+    var infoBarHeightPx by remember { mutableIntStateOf(0) }
+    val infoBarBottomInset = if (infoBarHeightPx > 0) {
+        with(density) { infoBarHeightPx.toDp() }
+    } else {
+        68.dp
+    }
 
     LaunchedEffect(gifList.size) {
         if (pendingAdvance && activeIndex + 1 < gifList.size) {
@@ -404,6 +793,13 @@ internal fun SingleCardDynamicGifViewer(
             }
         }
         curPlayer.addListener(listener)
+        if (curPlayer.playbackState == Player.STATE_READY) {
+            isVideoReady = true
+            isVideoFailed = false
+        }
+        if (curPlayer.videoSize.width > 0 && curPlayer.videoSize.height > 0) {
+            videoRatio = (curPlayer.videoSize.width.toFloat() / curPlayer.videoSize.height).coerceIn(0.55f, 1.8f)
+        }
         onDispose { curPlayer.removeListener(listener) }
     }
 
@@ -456,72 +852,93 @@ internal fun SingleCardDynamicGifViewer(
     val nextGif = gifList.getOrNull(activeIndex + 1)
     val displayUrl = currentGif?.mediaUrl?.let { ImageUrlResolver.displayUrl(it) } ?: ""
 
-    // 播放与预热
+    // 监听当前卡片变化，同步更新收藏状态
+    LaunchedEffect(currentGif?.id) {
+        currentGif?.id?.let { onCheckFavorite(it) }
+    }
+
+    val curRaw = currentGif?.mediaUrl?.let { ImageUrlResolver.rawUrl(it) }
+    val nextRaw = nextGif?.mediaUrl?.let { ImageUrlResolver.rawUrl(it) }
+
+    // 1. 列表接近末尾时触发预加载后续动图（独立效应，不打断当前播放）
     LaunchedEffect(activeIndex, gifList.size) {
-        if (gifList.isEmpty()) return@LaunchedEffect
-        if (activeIndex >= gifList.size - 2) {
+        if (gifList.isNotEmpty() && activeIndex >= gifList.size - 2) {
             onLoadNext()
         }
-        isVideoReady = false
-        isVideoFailed = false
-        isCoverFailed = false
+    }
 
-        val curRaw = currentGif?.mediaUrl?.let { ImageUrlResolver.rawUrl(it) }
-        val nextRaw = nextGif?.mediaUrl?.let { ImageUrlResolver.rawUrl(it) }
-
-        if (!curRaw.isNullOrBlank()) {
-            curPlayer.setMediaItem(MediaItem.fromUri(curRaw))
-            curPlayer.prepare()
-            curPlayer.play()
-        } else {
-            isVideoFailed = true
+    // 2. 当前视频播放调度：仅当当前视频切换或媒体地址变化时执行，避免后台缓冲时跳回开头
+    LaunchedEffect(activeIndex, currentGif?.id, curRaw) {
+        if (curRaw.isNullOrBlank()) {
+            if (currentGif != null) {
+                isVideoFailed = true
+            }
+            return@LaunchedEffect
         }
 
-        if (!nextRaw.isNullOrBlank()) {
+        val isSameMedia = curPlayer.currentMediaItem?.mediaId == curRaw
+        if (!isSameMedia) {
+            isVideoReady = false
+            isVideoFailed = false
+            isCoverFailed = false
+            curPlayer.setMediaItem(MediaItem.fromUri(curRaw))
+            curPlayer.prepare()
+        } else {
+            if (curPlayer.playbackState == Player.STATE_READY) {
+                isVideoReady = true
+                isVideoFailed = false
+            }
+        }
+        if (!isPaused) {
+            curPlayer.play()
+        }
+    }
+
+    // 3. 下一张动图后台预热：独立执行，静默缓冲下一张视频
+    LaunchedEffect(nextRaw) {
+        if (!nextRaw.isNullOrBlank() && prePlayer.currentMediaItem?.mediaId != nextRaw) {
             prePlayer.setMediaItem(MediaItem.fromUri(nextRaw))
             prePlayer.prepare()
             prePlayer.pause()
         }
     }
 
-    // 快速失败机制：带有当前索引防护，避免跳过竞态
-    val targetIndexForCheck = activeIndex
-    LaunchedEffect(targetIndexForCheck, isVideoReady, isVideoFailed, isCoverFailed) {
-        if (isCoverFailed && activeIndex == targetIndexForCheck) {
-            isVideoFailed = true
-            Messenger.show("资源已失效，自动切换...", isError = true)
-            delay(500)
-            if (activeIndex == targetIndexForCheck) {
-                if (activeIndex + 1 < gifList.size) activeIndex += 1
-                else onLoadNext()
+    // 快速失败自动切换机制：无感平滑跳过失效动图，不弹打扰性 Toast
+    LaunchedEffect(activeIndex, isVideoFailed, isCoverFailed) {
+        if ((isCoverFailed || isVideoFailed) && gifList.isNotEmpty()) {
+            currentGif?.id?.let { onReportDead(it) }
+            if (activeIndex + 1 < gifList.size) {
+                // 缓冲队列中已有下一张：0ms 秒切下一张（无感丝滑体验）
+                activeIndex += 1
+            } else {
+                // 队列暂时见底：标记等待新图拉取到位并触发拉取
+                pendingAdvance = true
+                onLoadNext()
             }
-            return@LaunchedEffect
         }
+    }
 
-        if (isVideoFailed && activeIndex == targetIndexForCheck) {
-            Messenger.show("动图无法播放，自动切换...", isError = true)
-            delay(600)
-            if (activeIndex == targetIndexForCheck) {
-                if (activeIndex + 1 < gifList.size) activeIndex += 1
-                else onLoadNext()
-            }
-            return@LaunchedEffect
-        }
-
-        // 缓冲等待时间放宽至 8.0 秒，保障弱网与移动 CDN 首帧体验
-        if (!isVideoReady && !isVideoFailed && gifList.isNotEmpty()) {
+    // 缓冲超时降级跳过（8秒仍无法播放首帧且非失败，静默跳至下一张）
+    LaunchedEffect(activeIndex, isVideoReady, isVideoFailed, isCoverFailed) {
+        if (!isVideoReady && !isVideoFailed && !isCoverFailed && gifList.isNotEmpty()) {
             delay(8000)
-            if (!isVideoReady && activeIndex == targetIndexForCheck) {
-                isVideoFailed = true
-                Messenger.show("缓冲超时，自动跳过...", isError = true)
-                delay(600)
-                if (activeIndex == targetIndexForCheck) {
-                    if (activeIndex + 1 < gifList.size) activeIndex += 1
-                    else {
-                        pendingAdvance = true
-                        onLoadNext()
-                    }
+            if (!isVideoReady && !isVideoFailed && !isCoverFailed) {
+                if (activeIndex + 1 < gifList.size) {
+                    activeIndex += 1
+                } else {
+                    pendingAdvance = true
+                    onLoadNext()
                 }
+            }
+        }
+    }
+
+    // 自动切图等待超时保护：若 8 秒仍未返回新图，重置 pendingAdvance 允许手动轻触重试
+    LaunchedEffect(pendingAdvance, activeIndex) {
+        if (pendingAdvance) {
+            delay(8000)
+            if (pendingAdvance && activeIndex + 1 >= gifList.size) {
+                pendingAdvance = false
             }
         }
     }
@@ -533,14 +950,6 @@ internal fun SingleCardDynamicGifViewer(
             heartScale.animateTo(1.2f, spring(dampingRatio = Spring.DampingRatioMediumBouncy, stiffness = Spring.StiffnessLow))
             heartScale.animateTo(0f, tween(300))
             showHeart = false
-        }
-    }
-
-    // 点击缩放动画
-    LaunchedEffect(isVideoReady) {
-        if (isVideoReady) {
-            cardScale.snapTo(0.95f)
-            cardScale.animateTo(1f, spring(dampingRatio = Spring.DampingRatioMediumBouncy))
         }
     }
 
@@ -574,7 +983,12 @@ internal fun SingleCardDynamicGifViewer(
                 haptic.performHapticFeedback(HapticFeedbackType.GestureThresholdActivate)
                 cardOffsetY.animateTo(-h * 1.15f, spring(stiffness = Spring.StiffnessMediumLow))
                 cardOffsetY.snapTo(0f)
-                if (activeIndex + 1 < gifList.size) activeIndex += 1 else onLoadNext()
+                if (activeIndex + 1 < gifList.size) {
+                    activeIndex += 1
+                } else {
+                    pendingAdvance = true
+                    onLoadNext()
+                }
             }
             dy > threshold -> {
                 // 下滑 → 上一条（仅历史内）
@@ -629,14 +1043,15 @@ internal fun SingleCardDynamicGifViewer(
             )
             gifList.isNotEmpty() -> {
                 // ── 2. 中间卡片独立手势拖拽切图视口 ──
+                val statusBarTop = WindowInsets.statusBars.asPaddingValues().calculateTopPadding()
                 Box(
                     modifier = Modifier
                         .fillMaxSize()
                         .padding(
                             start = 24.dp,
                             end = 24.dp + sidePanelWidth,
-                            top = 68.dp,
-                            bottom = 68.dp
+                            top = statusBarTop + 54.dp,
+                            bottom = infoBarBottomInset
                         ),
                     contentAlignment = Alignment.Center
                 ) {
@@ -651,8 +1066,6 @@ internal fun SingleCardDynamicGifViewer(
                             .onSizeChanged { cardHeightPx = it.height.toFloat().coerceAtLeast(1f) }
                             .graphicsLayer {
                                 translationY = cardOffsetY.value
-                                scaleX = cardScale.value
-                                scaleY = cardScale.value
                                 // 垂直拖动时按拖动比例渐隐
                                 alpha = 1f - (kotlin.math.abs(cardOffsetY.value) / cardHeightPx * 0.35f).coerceIn(0f, 0.35f)
                             }
@@ -663,15 +1076,11 @@ internal fun SingleCardDynamicGifViewer(
                                     onTap = {
                                         isPaused = !isPaused
                                         if (isPaused) curPlayer.pause() else curPlayer.play()
-                                        scope.launch {
-                                            cardScale.animateTo(0.94f, tween(70))
-                                            cardScale.animateTo(1f, spring(dampingRatio = Spring.DampingRatioMediumBouncy))
-                                        }
                                     },
                                     onDoubleTap = {
                                         showHeart = true
                                         haptic.performHapticFeedback(HapticFeedbackType.LongPress)
-                                        onToggleFavorite()
+                                        currentGif?.id?.let(onToggleFavorite)
                                     },
                                     onLongPress = {
                                         haptic.performHapticFeedback(HapticFeedbackType.LongPress)
@@ -771,35 +1180,54 @@ internal fun SingleCardDynamicGifViewer(
                                 }
                             }
 
-                            // 失败提示遮罩
-                            if (isVideoFailed) {
+                            // 正在寻找下一张 / 失败重试过渡态（彻底移除惊悚大黑遮罩与“糟糕找不到图片”）
+                            if (isVideoFailed || isCoverFailed) {
                                 Box(
                                     modifier = Modifier
                                         .fillMaxSize()
-                                        .background(Color.Black.copy(alpha = 0.7f)),
+                                        .background(Color.Black.copy(alpha = 0.45f)),
                                     contentAlignment = Alignment.Center
                                 ) {
-                                    Column(
-                                        horizontalAlignment = Alignment.CenterHorizontally,
-                                        verticalArrangement = Arrangement.spacedBy(6.dp)
-                                    ) {
-                                        Icon(
-                                            imageVector = Icons.Filled.ErrorOutline,
-                                            contentDescription = null,
-                                            tint = Color.White.copy(alpha = 0.85f),
-                                            modifier = Modifier.size(32.dp)
-                                        )
-                                        Text(
-                                            text = "糟糕，找不到图片了...",
-                                            style = MaterialTheme.typography.bodyMedium,
-                                            color = Color.White,
-                                            fontWeight = FontWeight.Bold
-                                        )
-                                        Text(
-                                            text = "即将自动切换下一张",
-                                            style = MaterialTheme.typography.labelSmall,
-                                            color = Color.White.copy(alpha = 0.7f)
-                                        )
+                                    if (pendingAdvance) {
+                                        Column(
+                                            horizontalAlignment = Alignment.CenterHorizontally,
+                                            verticalArrangement = Arrangement.spacedBy(10.dp)
+                                        ) {
+                                            CircularProgressIndicator(
+                                                modifier = Modifier.size(32.dp),
+                                                color = Color.White.copy(alpha = 0.85f),
+                                                strokeWidth = 2.5.dp
+                                            )
+                                            Text(
+                                                text = "正在寻找下一张...",
+                                                style = MaterialTheme.typography.labelMedium,
+                                                color = Color.White.copy(alpha = 0.85f)
+                                            )
+                                        }
+                                    } else {
+                                        Column(
+                                            horizontalAlignment = Alignment.CenterHorizontally,
+                                            verticalArrangement = Arrangement.spacedBy(8.dp),
+                                            modifier = Modifier
+                                                .clip(RoundedCornerShape(12.dp))
+                                                .bouncyClickable {
+                                                    pendingAdvance = true
+                                                    onLoadNext()
+                                                }
+                                                .padding(16.dp)
+                                        ) {
+                                            Icon(
+                                                imageVector = Icons.Filled.Refresh,
+                                                contentDescription = "重试",
+                                                tint = Color.White.copy(alpha = 0.9f),
+                                                modifier = Modifier.size(28.dp)
+                                            )
+                                            Text(
+                                                text = "网络连接较慢，轻触重试",
+                                                style = MaterialTheme.typography.labelMedium,
+                                                color = Color.White.copy(alpha = 0.85f)
+                                            )
+                                        }
                                     }
                                 }
                             }
@@ -822,40 +1250,6 @@ internal fun SingleCardDynamicGifViewer(
                                     )
                                 }
                             }
-
-                            // REQ-04：右缘垂直进度指示（当前在已加载序列中的位置）
-                            if (gifList.size > 1) {
-                                Column(
-                                    modifier = Modifier
-                                        .align(Alignment.CenterEnd)
-                                        .padding(end = 6.dp)
-                                        .width(3.dp)
-                                        .fillMaxHeight(0.42f)
-                                        .clip(CircleShape)
-                                        .testTag("gif_progress_$activeIndex"),
-                                    verticalArrangement = Arrangement.Top
-                                ) {
-                                    // weight 必须为正：首/末张时为 0，用极小值兜底
-                                    Box(
-                                        Modifier
-                                            .weight(activeIndex.coerceAtLeast(0).toFloat().coerceAtLeast(0.001f))
-                                            .fillMaxWidth()
-                                            .background(Color.White.copy(alpha = 0.30f))
-                                    )
-                                    Box(
-                                        Modifier
-                                            .weight(1f)
-                                            .fillMaxWidth()
-                                            .background(Color.White)
-                                    )
-                                    Box(
-                                        Modifier
-                                            .weight((gifList.size - activeIndex - 1).coerceAtLeast(0).toFloat().coerceAtLeast(0.001f))
-                                            .fillMaxWidth()
-                                            .background(Color.White.copy(alpha = 0.18f))
-                                    )
-                                }
-                            }
                         }
                     }
 
@@ -864,7 +1258,7 @@ internal fun SingleCardDynamicGifViewer(
                         GifInfoSidePanel(
                             gif = currentGif,
                             isFavorited = isFavorited,
-                            onToggleFavorite = onToggleFavorite,
+                            onToggleFavorite = { currentGif?.id?.let(onToggleFavorite) },
                             onDetail = { currentGif?.workId?.let(onDetail) },
                             onAuthor = { currentGif?.authorId?.let(onAuthor) },
                             modifier = Modifier
@@ -873,194 +1267,77 @@ internal fun SingleCardDynamicGifViewer(
                         )
                     }
                 }
-            }
-        }
 
-        // ── 3. 底部半透明悬浮信息卡片 ──
-        if (currentGif != null) {
-            Surface(
-                shape = RoundedCornerShape(18.dp),
-                color = Color.Black.copy(alpha = 0.55f),
-                border = BorderStroke(0.5.dp, Color.White.copy(alpha = 0.25f)),
-                modifier = Modifier
-                    .align(Alignment.BottomCenter)
-                    .navigationBarsPadding()
-                    .padding(horizontal = Spacing.md, vertical = 20.dp)
-                    .fillMaxWidth()
-            ) {
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 14.dp, vertical = 10.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.SpaceBetween
-                ) {
+                // 垂直滚动进度指示：显示在卡片外部右侧屏幕边缘，杜绝遮挡图片内容
+                if (gifList.size > 1 && !isExpanded) {
                     Column(
-                        modifier = Modifier.weight(1f),
-                        verticalArrangement = Arrangement.spacedBy(2.dp)
+                        modifier = Modifier
+                            .align(Alignment.CenterEnd)
+                            .padding(end = 4.dp)
+                            .padding(bottom = infoBarBottomInset)
+                            .width(3.5.dp)
+                            .height(84.dp)
+                            .clip(CircleShape)
+                            .background(Color.White.copy(alpha = 0.16f))
+                            .testTag("gif_progress_$activeIndex"),
+                        verticalArrangement = Arrangement.Top
                     ) {
-                        AnimatedContent(
-                            targetState = currentGif.workTitle?.ifBlank { "沉浸动图短片" } ?: "沉浸动图短片",
-                            transitionSpec = { fadeIn(tween(300)) togetherWith fadeOut(tween(200)) },
-                            label = "titleChange"
-                        ) { title ->
-                            Text(
-                                text = title,
-                                style = MaterialTheme.typography.titleSmall,
-                                fontWeight = FontWeight.Bold,
-                                color = Color.White,
-                                maxLines = 1,
-                                overflow = TextOverflow.Ellipsis
-                            )
-                        }
-
-                        if (!currentGif.authorNickname.isNullOrBlank()) {
-                            AnimatedContent(
-                                targetState = currentGif.authorNickname,
-                                transitionSpec = { fadeIn(tween(300)) togetherWith fadeOut(tween(200)) },
-                                label = "authorChange"
-                            ) { nickname ->
-                                Row(
-                                    verticalAlignment = Alignment.CenterVertically,
-                                    horizontalArrangement = Arrangement.spacedBy(4.dp),
-                                    // 触摸目标补到 48dp 下限，并合并语义让 TalkBack 作为单个按钮朗读
-                                    modifier = Modifier
-                                        .heightIn(min = 48.dp)
-                                        .semantics(mergeDescendants = true) {
-                                            role = Role.Button
-                                        }
-                                        .bouncyClickable(
-                                            onClickLabel = stringResource(R.string.gif_view_author)
-                                        ) { currentGif.authorId?.let { onAuthor(it) } }
-                                ) {
-                                    Icon(
-                                        Icons.Filled.Person,
-                                        contentDescription = null,
-                                        tint = Color(0xFFFFD54F),
-                                        modifier = Modifier.size(13.dp)
-                                    )
-                                    Text(
-                                        text = "@$nickname",
-                                        style = MaterialTheme.typography.labelSmall,
-                                        color = Color(0xFFFFD54F),
-                                        fontWeight = FontWeight.Medium
-                                    )
-                                }
-                            }
-                        }
-                    }
-
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(6.dp)
-                    ) {
-                        if (activeIndex > 0) {
-                            OutlinedButton(
-                                onClick = { activeIndex -= 1 },
-                                shape = RoundedCornerShape(10.dp),
-                                contentPadding = PaddingValues(horizontal = 8.dp, vertical = 4.dp),
-                                border = BorderStroke(0.5.dp, Color.White.copy(alpha = 0.4f)),
-                                modifier = Modifier.height(32.dp)
-                            ) {
-                                Text("上一张", style = MaterialTheme.typography.labelSmall, color = Color.White)
-                            }
-                        }
-
-                        FilledTonalButton(
-                            onClick = {
-                                if (activeIndex + 1 < gifList.size) activeIndex += 1
-                                else {
-                                    pendingAdvance = true
-                                    onLoadNext()
-                                }
-                            },
-                            shape = RoundedCornerShape(10.dp),
-                            contentPadding = PaddingValues(horizontal = 10.dp, vertical = 4.dp),
-                            modifier = Modifier.height(32.dp)
-                        ) {
-                            Text("换一张", style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.Bold)
-                        }
-
-                        if (!currentGif.workId.isNullOrBlank()) {
-                            Button(
-                                onClick = { onDetail(currentGif.workId) },
-                                shape = RoundedCornerShape(10.dp),
-                                contentPadding = PaddingValues(horizontal = 10.dp, vertical = 4.dp),
-                                colors = ButtonDefaults.buttonColors(containerColor = XhsRed),
-                                modifier = Modifier.height(32.dp)
-                            ) {
-                                Text("看作品", style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.Bold, color = Color.White)
-                            }
-                        }
-
-                        // ❤️ 收藏按钮
-                        IconButton(
-                            onClick = onToggleFavorite,
-                            modifier = Modifier
-                                .size(32.dp)
-                                .clip(RoundedCornerShape(8.dp))
-                                .background(
-                                    if (isFavorited) Color(0x33FF5050)
-                                    else Color.White.copy(alpha = 0.1f)
-                                )
-                        ) {
-                            Icon(
-                                imageVector = if (isFavorited) Icons.Filled.Favorite else Icons.Filled.FavoriteBorder,
-                                contentDescription = "收藏",
-                                tint = if (isFavorited) Color(0xFFFF5050) else Color.White.copy(alpha = 0.7f),
-                                modifier = Modifier.size(16.dp)
-                            )
-                        }
-
-                        // REQ-07：分享原始媒体链接（纯文本，无需 FileProvider）
-                        IconButton(
-                            onClick = { shareCurrent() },
-                            modifier = Modifier
-                                .size(32.dp)
-                                .clip(RoundedCornerShape(8.dp))
-                                .background(Color.White.copy(alpha = 0.1f))
-                        ) {
-                            Icon(
-                                imageVector = Icons.Filled.Share,
-                                contentDescription = "分享",
-                                tint = Color.White.copy(alpha = 0.7f),
-                                modifier = Modifier.size(16.dp)
-                            )
-                        }
-
-                        // REQ-07：保存到相册（复用 Downloader，保留 XHS Referer 头）
-                        IconButton(
-                            onClick = { onSaveClick() },
-                            modifier = Modifier
-                                .size(32.dp)
-                                .clip(RoundedCornerShape(8.dp))
-                                .background(Color.White.copy(alpha = 0.1f))
-                        ) {
-                            Icon(
-                                painter = painterResource(R.drawable.ic_save),
-                                contentDescription = "保存到相册",
-                                tint = Color.White.copy(alpha = 0.7f),
-                                modifier = Modifier.size(16.dp)
-                            )
-                        }
+                        Box(
+                            Modifier
+                                .weight(activeIndex.coerceAtLeast(0).toFloat().coerceAtLeast(0.001f))
+                                .fillMaxWidth()
+                                .background(Color.Transparent)
+                        )
+                        Box(
+                            Modifier
+                                .weight(1f)
+                                .fillMaxWidth()
+                                .background(Color.White)
+                        )
+                        Box(
+                            Modifier
+                                .weight((gifList.size - activeIndex - 1).coerceAtLeast(0).toFloat().coerceAtLeast(0.001f))
+                                .fillMaxWidth()
+                                .background(Color.Transparent)
+                        )
                     }
                 }
             }
         }
 
-        // ── 4. 顶部导航与模式切换 ──
+        // ── 3. 底部沉浸控制栏 ──
+        if (currentGif != null) {
+            GifBottomControlBar(
+                title = currentGif.workTitle?.ifBlank { "沉浸动图短片" } ?: "沉浸动图短片",
+                authorNickname = currentGif.authorNickname,
+                onAuthor = { currentGif.authorId?.let(onAuthor) },
+                onDetail = currentGif.workId?.let { wid -> { onDetail(wid) } },
+                nextLabel = "换一张",
+                onNext = {
+                    if (activeIndex + 1 < gifList.size) {
+                        activeIndex += 1
+                    } else {
+                        pendingAdvance = true
+                        onLoadNext()
+                    }
+                },
+                isFavorited = isFavorited,
+                onToggleFavorite = { currentGif?.id?.let(onToggleFavorite) },
+                onShare = { shareCurrent() },
+                onSave = { onSaveClick() },
+                onWallpaper = { currentGif?.let { onWallpaper?.invoke(it) } },
+                modifier = Modifier
+                    .align(Alignment.BottomCenter)
+                    .onSizeChanged { infoBarHeightPx = it.height }
+            )
+        }
+
+        // ── 4. 顶部导航与模式切换（单张模式在右侧显示当前序号胶囊，如 3 / 10）──
         TopHeaderBar(
             currentMode = "single",
             onBack = onBack,
             onSwitchMode = onSwitchMode,
-            onShuffleClick = {
-                if (activeIndex + 1 < gifList.size) activeIndex += 1
-                else {
-                    pendingAdvance = true
-                    onLoadNext()
-                }
-            },
-            shuffleLabel = "换一个"
+            badgeText = if (gifList.size > 1) "${activeIndex + 1} / ${gifList.size}" else null
         )
     }
 }
@@ -1073,11 +1350,16 @@ private fun CardStackDeckViewer(
     groupGifs: List<RandomGifVO>,
     loading: Boolean,
     error: String?,
+    isFavorited: Boolean,
     onBack: () -> Unit,
     onDetail: (workId: String) -> Unit,
     onAuthor: (authorId: String) -> Unit,
     onNextGroup: () -> Unit,
-    onSwitchMode: (String) -> Unit
+    onToggleFavorite: (Long) -> Unit,
+    onReportDead: (Long) -> Unit = {},
+    onCheckFavorite: (Long) -> Unit = {},
+    onSwitchMode: (String) -> Unit,
+    onWallpaper: ((RandomGifVO) -> Unit)? = null
 ) {
     val context = LocalContext.current
     val density = LocalDensity.current
@@ -1088,6 +1370,14 @@ private fun CardStackDeckViewer(
     var isVideoReady by remember(activeIndex, groupGifs) { mutableStateOf(false) }
     var isVideoFailed by remember(activeIndex, groupGifs) { mutableStateOf(false) }
     var isCoverFailed by remember(activeIndex, groupGifs) { mutableStateOf(false) }
+
+    // 同 SingleCardDynamicGifViewer：底部信息条实测高度，用于卡片视口底部预留
+    var infoBarHeightPx by remember { mutableIntStateOf(0) }
+    val infoBarBottomInset = if (infoBarHeightPx > 0) {
+        with(density) { infoBarHeightPx.toDp() }
+    } else {
+        68.dp
+    }
 
     val players = remember {
         val httpDataSourceFactory = androidx.media3.datasource.DefaultHttpDataSource.Factory()
@@ -1138,6 +1428,10 @@ private fun CardStackDeckViewer(
             }
         }
         curPlayer.addListener(listener)
+        if (curPlayer.playbackState == Player.STATE_READY) {
+            isVideoReady = true
+            isVideoFailed = false
+        }
         onDispose { curPlayer.removeListener(listener) }
     }
 
@@ -1145,63 +1439,106 @@ private fun CardStackDeckViewer(
     val nextGif = groupGifs.getOrNull(activeIndex + 1)
     val displayUrl = currentGif?.mediaUrl?.let { ImageUrlResolver.displayUrl(it) } ?: ""
 
-    LaunchedEffect(activeIndex, groupGifs) {
-        if (groupGifs.isEmpty()) return@LaunchedEffect
-        isVideoReady = false
-        isVideoFailed = false
-        isCoverFailed = false
+    fun shareCurrent() {
+        val url = currentGif?.mediaUrl?.let { ImageUrlResolver.rawUrl(it) }.orEmpty()
+        if (url.isBlank()) {
+            Messenger.show("暂无媒体地址可分享", isError = true)
+            return
+        }
+        val intent = Intent(Intent.ACTION_SEND).apply {
+            type = "text/plain"
+            putExtra(Intent.EXTRA_TEXT, url)
+        }
+        context.startActivity(Intent.createChooser(intent, "分享到"))
+    }
 
-        val curRaw = currentGif?.mediaUrl?.let { ImageUrlResolver.rawUrl(it) }
-        val nextRaw = nextGif?.mediaUrl?.let { ImageUrlResolver.rawUrl(it) }
+    fun saveCurrent() {
+        val url = currentGif?.mediaUrl?.let { ImageUrlResolver.rawUrl(it) }.orEmpty()
+        if (url.isBlank()) {
+            Messenger.show("暂无媒体地址可保存", isError = true)
+            return
+        }
+        Downloader.enqueue(context, url, MediaKind.VIDEO)
+            .onSuccess { Messenger.show("已开始保存到相册") }
+            .onFailure { Messenger.show("保存失败：${it.message}", isError = true) }
+    }
 
-        if (!curRaw.isNullOrBlank()) {
-            curPlayer.setMediaItem(MediaItem.fromUri(curRaw))
-            curPlayer.prepare()
-            curPlayer.play()
+    val storagePermissionLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.RequestPermission()
+    ) { granted ->
+        if (granted) saveCurrent() else Messenger.show("未授予存储权限，无法保存", isError = true)
+    }
+
+    fun onSaveClick() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+            saveCurrent()
         } else {
-            isVideoFailed = true
+            storagePermissionLauncher.launch(Manifest.permission.WRITE_EXTERNAL_STORAGE)
+        }
+    }
+
+    val curRaw = currentGif?.mediaUrl?.let { ImageUrlResolver.rawUrl(it) }
+    val nextRaw = nextGif?.mediaUrl?.let { ImageUrlResolver.rawUrl(it) }
+
+    LaunchedEffect(activeIndex, currentGif?.id, curRaw) {
+        if (curRaw.isNullOrBlank()) {
+            if (currentGif != null) {
+                isVideoFailed = true
+            }
+            return@LaunchedEffect
         }
 
-        if (!nextRaw.isNullOrBlank()) {
+        val isSameMedia = curPlayer.currentMediaItem?.mediaId == curRaw
+        if (!isSameMedia) {
+            isVideoReady = false
+            isVideoFailed = false
+            isCoverFailed = false
+            curPlayer.setMediaItem(MediaItem.fromUri(curRaw))
+            curPlayer.prepare()
+        } else {
+            if (curPlayer.playbackState == Player.STATE_READY) {
+                isVideoReady = true
+                isVideoFailed = false
+            }
+        }
+        curPlayer.play()
+    }
+
+    LaunchedEffect(nextRaw) {
+        if (!nextRaw.isNullOrBlank() && prePlayer.currentMediaItem?.mediaId != nextRaw) {
             prePlayer.setMediaItem(MediaItem.fromUri(nextRaw))
             prePlayer.prepare()
             prePlayer.pause()
         }
     }
 
-    // 快速跳过判定：带有 targetIndex 防护
-    val targetIndexForGroupCheck = activeIndex
-    LaunchedEffect(targetIndexForGroupCheck, isVideoReady, isVideoFailed, isCoverFailed, groupGifs) {
-        if (isCoverFailed && activeIndex == targetIndexForGroupCheck) {
-            isVideoFailed = true
-            Messenger.show("资源已失效，自动跳过...", isError = true)
-            delay(500)
-            if (activeIndex == targetIndexForGroupCheck) {
-                if (activeIndex + 1 < groupGifs.size) activeIndex += 1
-                else onNextGroup()
-            }
-            return@LaunchedEffect
-        }
+    val currentGroupGif = groupGifs.getOrNull(activeIndex)
+    LaunchedEffect(currentGroupGif?.id) {
+        currentGroupGif?.id?.let { onCheckFavorite(it) }
+    }
 
-        if (isVideoFailed && activeIndex == targetIndexForGroupCheck) {
-            Messenger.show("动图无法播放，自动跳过...", isError = true)
-            delay(600)
-            if (activeIndex == targetIndexForGroupCheck) {
-                if (activeIndex + 1 < groupGifs.size) activeIndex += 1
-                else onNextGroup()
+    // 快速跳过判定（无感静默跳过失效动图，不弹打扰性 Toast）
+    LaunchedEffect(activeIndex, isVideoFailed, isCoverFailed, groupGifs.size) {
+        if ((isCoverFailed || isVideoFailed) && groupGifs.isNotEmpty()) {
+            val cur = groupGifs.getOrNull(activeIndex)
+            cur?.id?.let { onReportDead(it) }
+            if (activeIndex + 1 < groupGifs.size) {
+                activeIndex += 1
+            } else {
+                onNextGroup()
             }
-            return@LaunchedEffect
         }
+    }
 
-        if (!isVideoReady && !isVideoFailed && groupGifs.isNotEmpty()) {
+    // 缓冲超时静默跳过
+    LaunchedEffect(activeIndex, isVideoReady, isVideoFailed, isCoverFailed, groupGifs.size) {
+        if (!isVideoReady && !isVideoFailed && !isCoverFailed && groupGifs.isNotEmpty()) {
             delay(8000)
-            if (!isVideoReady && activeIndex == targetIndexForGroupCheck) {
-                isVideoFailed = true
-                Messenger.show("缓冲超时，自动跳过...", isError = true)
-                delay(600)
-                if (activeIndex == targetIndexForGroupCheck) {
-                    if (activeIndex + 1 < groupGifs.size) activeIndex += 1
-                    else onNextGroup()
+            if (!isVideoReady && !isVideoFailed && !isCoverFailed) {
+                if (activeIndex + 1 < groupGifs.size) {
+                    activeIndex += 1
+                } else {
+                    onNextGroup()
                 }
             }
         }
@@ -1240,10 +1577,11 @@ private fun CardStackDeckViewer(
                 modifier = Modifier.fillMaxSize()
             )
             groupGifs.isNotEmpty() -> {
+                val statusBarTop = WindowInsets.statusBars.asPaddingValues().calculateTopPadding()
                 Box(
                     modifier = Modifier
                         .fillMaxSize()
-                        .padding(horizontal = 20.dp, vertical = 68.dp),
+                        .padding(start = 20.dp, end = 20.dp, top = statusBarTop + 54.dp, bottom = infoBarBottomInset),
                     contentAlignment = Alignment.Center
                 ) {
                     val remainingCount = (groupGifs.size - activeIndex).coerceAtLeast(0)
@@ -1367,54 +1705,58 @@ private fun CardStackDeckViewer(
                                             .graphicsLayer(alpha = if (isVideoReady) 1f else 0f)
                                     )
 
-                                    if (isVideoFailed) {
+                                    if (isVideoFailed || isCoverFailed) {
                                         Box(
                                             modifier = Modifier
                                                 .fillMaxSize()
-                                                .background(Color.Black.copy(alpha = 0.7f)),
+                                                .background(Color.Black.copy(alpha = 0.45f)),
                                             contentAlignment = Alignment.Center
                                         ) {
                                             Column(
                                                 horizontalAlignment = Alignment.CenterHorizontally,
-                                                verticalArrangement = Arrangement.spacedBy(6.dp)
+                                                verticalArrangement = Arrangement.spacedBy(10.dp)
                                             ) {
-                                                Icon(
-                                                    imageVector = Icons.Filled.ErrorOutline,
-                                                    contentDescription = null,
-                                                    tint = Color.White.copy(alpha = 0.85f),
-                                                    modifier = Modifier.size(32.dp)
+                                                CircularProgressIndicator(
+                                                    modifier = Modifier.size(32.dp),
+                                                    color = Color.White.copy(alpha = 0.85f),
+                                                    strokeWidth = 2.5.dp
                                                 )
                                                 Text(
-                                                    text = "糟糕，找不到图片了...",
-                                                    style = MaterialTheme.typography.bodyMedium,
-                                                    color = Color.White,
-                                                    fontWeight = FontWeight.Bold
-                                                )
-                                                Text(
-                                                    text = "即将自动切换下一张",
-                                                    style = MaterialTheme.typography.labelSmall,
-                                                    color = Color.White.copy(alpha = 0.7f)
+                                                    text = if (activeIndex + 1 < groupGifs.size) "正在切换下一张..." else "正在换一套...",
+                                                    style = MaterialTheme.typography.labelMedium,
+                                                    color = Color.White.copy(alpha = 0.85f)
                                                 )
                                             }
                                         }
                                     }
                                 }
 
-                                Surface(
-                                    shape = RoundedCornerShape(8.dp),
-                                    color = Color.Black.copy(alpha = 0.55f),
-                                    border = BorderStroke(0.5.dp, Color.White.copy(alpha = 0.2f)),
+                                Box(
                                     modifier = Modifier
                                         .align(Alignment.TopStart)
-                                        .padding(12.dp)
+                                        .padding(14.dp)
+                                        .clip(RoundedCornerShape(12.dp))
+                                        .background(Color.Black.copy(alpha = 0.55f))
+                                        .border(0.6.dp, Color.White.copy(alpha = 0.25f), RoundedCornerShape(12.dp))
+                                        .padding(horizontal = 9.dp, vertical = 4.dp)
                                 ) {
-                                    Text(
-                                        text = "${cardIndex + 1} / ${groupGifs.size} 抽",
-                                        style = MaterialTheme.typography.labelSmall.tabularNumbers,
-                                        fontWeight = FontWeight.Bold,
-                                        color = Color.White,
-                                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp)
-                                    )
+                                    Row(
+                                        verticalAlignment = Alignment.CenterVertically,
+                                        horizontalArrangement = Arrangement.spacedBy(4.dp)
+                                    ) {
+                                        Icon(
+                                            imageVector = Icons.Filled.Collections,
+                                            contentDescription = null,
+                                            tint = Color.White,
+                                            modifier = Modifier.size(13.dp)
+                                        )
+                                        Text(
+                                            text = "${cardIndex + 1} / ${groupGifs.size} 抽",
+                                            style = MaterialTheme.typography.labelSmall.tabularNumbers,
+                                            fontWeight = FontWeight.Bold,
+                                            color = Color.White
+                                        )
+                                    }
                                 }
                             }
                         }
@@ -1423,125 +1765,27 @@ private fun CardStackDeckViewer(
             }
         }
 
+        // ── 3. 底部沉浸控制栏 ──
         if (currentGif != null) {
-            Surface(
-                shape = RoundedCornerShape(18.dp),
-                color = Color.Black.copy(alpha = 0.55f),
-                border = BorderStroke(0.5.dp, Color.White.copy(alpha = 0.25f)),
+            GifBottomControlBar(
+                title = currentGif.workTitle?.ifBlank { "沉浸动图套图" } ?: "沉浸动图套图",
+                authorNickname = currentGif.authorNickname,
+                onAuthor = { currentGif.authorId?.let(onAuthor) },
+                onDetail = currentGif.workId?.let { wid -> { onDetail(wid) } },
+                nextLabel = if (activeIndex + 1 < groupGifs.size) "下一张" else "下一套",
+                onNext = {
+                    if (activeIndex + 1 < groupGifs.size) activeIndex += 1
+                    else onNextGroup()
+                },
+                isFavorited = isFavorited,
+                onToggleFavorite = { currentGif?.id?.let(onToggleFavorite) },
+                onShare = { shareCurrent() },
+                onSave = { onSaveClick() },
+                onWallpaper = { currentGif?.let { onWallpaper?.invoke(it) } },
                 modifier = Modifier
                     .align(Alignment.BottomCenter)
-                    .navigationBarsPadding()
-                    .padding(horizontal = Spacing.md, vertical = 20.dp)
-                    .fillMaxWidth()
-            ) {
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 14.dp, vertical = 10.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.SpaceBetween
-                ) {
-                    Column(
-                        modifier = Modifier.weight(1f),
-                        verticalArrangement = Arrangement.spacedBy(2.dp)
-                    ) {
-                        AnimatedContent(
-                            targetState = currentGif.workTitle?.ifBlank { "沉浸动图套图" } ?: "沉浸动图套图",
-                            transitionSpec = { fadeIn(tween(300)) togetherWith fadeOut(tween(200)) },
-                            label = "groupTitleChange"
-                        ) { title ->
-                            Text(
-                                text = title,
-                                style = MaterialTheme.typography.titleSmall,
-                                fontWeight = FontWeight.Bold,
-                                color = Color.White,
-                                maxLines = 1,
-                                overflow = TextOverflow.Ellipsis
-                            )
-                        }
-
-                        if (!currentGif.authorNickname.isNullOrBlank()) {
-                            AnimatedContent(
-                                targetState = currentGif.authorNickname,
-                                transitionSpec = { fadeIn(tween(300)) togetherWith fadeOut(tween(200)) },
-                                label = "groupAuthorChange"
-                            ) { nickname ->
-                                Row(
-                                    verticalAlignment = Alignment.CenterVertically,
-                                    horizontalArrangement = Arrangement.spacedBy(4.dp),
-                                    // 触摸目标补到 48dp 下限，并合并语义让 TalkBack 作为单个按钮朗读
-                                    modifier = Modifier
-                                        .heightIn(min = 48.dp)
-                                        .semantics(mergeDescendants = true) {
-                                            role = Role.Button
-                                        }
-                                        .bouncyClickable(
-                                            onClickLabel = stringResource(R.string.gif_view_author)
-                                        ) { currentGif.authorId?.let { onAuthor(it) } }
-                                ) {
-                                    Icon(
-                                        Icons.Filled.Person,
-                                        contentDescription = null,
-                                        tint = Color(0xFFFFD54F),
-                                        modifier = Modifier.size(13.dp)
-                                    )
-                                    Text(
-                                        text = "@${nickname}",
-                                        style = MaterialTheme.typography.labelSmall,
-                                        color = Color(0xFFFFD54F),
-                                        fontWeight = FontWeight.Medium
-                                    )
-                                }
-                            }
-                        }
-                    }
-
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(6.dp)
-                    ) {
-                        if (activeIndex > 0) {
-                            OutlinedButton(
-                                onClick = { activeIndex -= 1 },
-                                shape = RoundedCornerShape(10.dp),
-                                contentPadding = PaddingValues(horizontal = 8.dp, vertical = 4.dp),
-                                border = BorderStroke(0.5.dp, Color.White.copy(alpha = 0.4f)),
-                                modifier = Modifier.height(32.dp)
-                            ) {
-                                Text("上一张", style = MaterialTheme.typography.labelSmall, color = Color.White)
-                            }
-                        }
-
-                        FilledTonalButton(
-                            onClick = {
-                                if (activeIndex + 1 < groupGifs.size) activeIndex += 1
-                                else onNextGroup()
-                            },
-                            shape = RoundedCornerShape(10.dp),
-                            contentPadding = PaddingValues(horizontal = 10.dp, vertical = 4.dp),
-                            modifier = Modifier.height(32.dp)
-                        ) {
-                            Text(
-                                text = if (activeIndex + 1 < groupGifs.size) "下一张" else "下一套",
-                                style = MaterialTheme.typography.labelSmall,
-                                fontWeight = FontWeight.Bold
-                            )
-                        }
-
-                        if (!currentGif.workId.isNullOrBlank()) {
-                            Button(
-                                onClick = { onDetail(currentGif.workId) },
-                                shape = RoundedCornerShape(10.dp),
-                                contentPadding = PaddingValues(horizontal = 10.dp, vertical = 4.dp),
-                                colors = ButtonDefaults.buttonColors(containerColor = XhsRed),
-                                modifier = Modifier.height(32.dp)
-                            ) {
-                                Text("看作品", style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.Bold, color = Color.White)
-                            }
-                        }
-                    }
-                }
-            }
+                    .onSizeChanged { infoBarHeightPx = it.height }
+            )
         }
 
         TopHeaderBar(
@@ -1561,56 +1805,104 @@ private fun TopHeaderBar(
     currentMode: String,
     onBack: () -> Unit,
     onSwitchMode: (String) -> Unit,
-    onShuffleClick: () -> Unit,
-    shuffleLabel: String
+    onShuffleClick: (() -> Unit)? = null,
+    shuffleLabel: String? = null,
+    badgeText: String? = null
 ) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
             .statusBarsPadding()
-            .padding(horizontal = Spacing.sm, vertical = Spacing.xs),
+            .padding(horizontal = 14.dp, vertical = 6.dp),
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically
     ) {
         Row(
             verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(8.dp)
+            horizontalArrangement = Arrangement.spacedBy(10.dp)
         ) {
-            Surface(
-                shape = CircleShape,
-                color = Color.Black.copy(alpha = 0.45f),
-                border = BorderStroke(0.5.dp, Color.White.copy(alpha = 0.25f)),
-                modifier = Modifier.bouncyClickable(onClick = onBack)
+            // 返回按钮：38dp 圆形磨砂玻璃键
+            Box(
+                modifier = Modifier
+                    .size(38.dp)
+                    .clip(CircleShape)
+                    .background(Color.Black.copy(alpha = 0.50f))
+                    .border(0.6.dp, Color.White.copy(alpha = 0.25f), CircleShape)
+                    .bouncyClickable(onClickLabel = stringResource(R.string.common_back), onClick = onBack),
+                contentAlignment = Alignment.Center
             ) {
                 Icon(
                     Icons.AutoMirrored.Filled.ArrowBack,
                     contentDescription = stringResource(R.string.common_back),
                     tint = Color.White,
-                    modifier = Modifier.padding(8.dp).size(20.dp)
+                    modifier = Modifier.size(20.dp)
                 )
             }
 
-            // 模式切换胶囊
+            // 模式切换胶囊（单张随机 | 整组套图）
             GifModeSegmentedPill(
                 currentMode = currentMode,
                 onModeChange = onSwitchMode
             )
         }
 
-        // 换一组 / 换一个
-        Surface(
-            shape = RoundedCornerShape(16.dp),
-            color = Color.Black.copy(alpha = 0.45f),
-            border = BorderStroke(0.5.dp, Color.White.copy(alpha = 0.25f)),
-            modifier = Modifier.bouncyClickable(onClick = onShuffleClick)
-        ) {
-            Row(
-                modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(4.dp)
+        // 右侧操作或指示（套图模式显示「换一套」，单张模式显示数字序号胶囊，如 "3 / 10"）
+        if (onShuffleClick != null && !shuffleLabel.isNullOrBlank()) {
+            Box(
+                modifier = Modifier
+                    .height(38.dp)
+                    .clip(RoundedCornerShape(19.dp))
+                    .background(Color.Black.copy(alpha = 0.50f))
+                    .border(0.6.dp, Color.White.copy(alpha = 0.25f), RoundedCornerShape(19.dp))
+                    .bouncyClickable(onClickLabel = shuffleLabel, onClick = onShuffleClick)
+                    .padding(horizontal = 12.dp, vertical = 8.dp),
+                contentAlignment = Alignment.Center
             ) {
-                Icon(Icons.Filled.Shuffle, contentDescription = null, tint = Color.White, modifier = Modifier.size(14.dp))
-                Text(text = shuffleLabel, style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.Bold, color = Color.White)
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(5.dp)
+                ) {
+                    Icon(
+                        Icons.Filled.Shuffle,
+                        contentDescription = null,
+                        tint = Color.White,
+                        modifier = Modifier.size(15.dp)
+                    )
+                    Text(
+                        text = shuffleLabel,
+                        style = MaterialTheme.typography.labelMedium,
+                        fontWeight = FontWeight.Bold,
+                        color = Color.White
+                    )
+                }
+            }
+        } else if (!badgeText.isNullOrBlank()) {
+            Box(
+                modifier = Modifier
+                    .height(38.dp)
+                    .clip(RoundedCornerShape(19.dp))
+                    .background(Color.Black.copy(alpha = 0.50f))
+                    .border(0.6.dp, Color.White.copy(alpha = 0.25f), RoundedCornerShape(19.dp))
+                    .padding(horizontal = 12.dp, vertical = 8.dp),
+                contentAlignment = Alignment.Center
+            ) {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(5.dp)
+                ) {
+                    Icon(
+                        Icons.Filled.Collections,
+                        contentDescription = null,
+                        tint = Color.White.copy(alpha = 0.85f),
+                        modifier = Modifier.size(14.dp)
+                    )
+                    Text(
+                        text = badgeText,
+                        style = MaterialTheme.typography.labelMedium.tabularNumbers,
+                        fontWeight = FontWeight.Bold,
+                        color = Color.White
+                    )
+                }
             }
         }
     }
@@ -1623,52 +1915,68 @@ private fun GifModeSegmentedPill(
     currentMode: String,
     onModeChange: (String) -> Unit
 ) {
-    Surface(
-        shape = RoundedCornerShape(16.dp),
-        color = Color.Black.copy(alpha = 0.45f),
-        border = BorderStroke(0.5.dp, Color.White.copy(alpha = 0.25f)),
-        modifier = Modifier.height(34.dp)
+    Box(
+        modifier = Modifier
+            .height(38.dp)
+            .clip(RoundedCornerShape(19.dp))
+            .background(Color.Black.copy(alpha = 0.50f))
+            .border(0.6.dp, Color.White.copy(alpha = 0.22f), RoundedCornerShape(19.dp))
+            .padding(3.dp),
+        contentAlignment = Alignment.CenterStart
     ) {
         Row(
-            modifier = Modifier.padding(2.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
             val isSingle = currentMode == "single"
-            Surface(
-                shape = RoundedCornerShape(12.dp),
-                color = if (isSingle) XhsRed else Color.Transparent,
+            Box(
                 modifier = Modifier
                     .fillMaxHeight()
-                    .clip(RoundedCornerShape(12.dp))
-                    .bouncyClickable { onModeChange("single") }
-            ) {
-                Box(modifier = Modifier.padding(horizontal = 10.dp), contentAlignment = Alignment.Center) {
-                    Text(
-                        text = "单张随机",
-                        style = MaterialTheme.typography.labelSmall,
-                        fontWeight = if (isSingle) FontWeight.Bold else FontWeight.Normal,
-                        color = if (isSingle) Color.White else Color.White.copy(alpha = 0.75f)
+                    .clip(RoundedCornerShape(16.dp))
+                    .then(
+                        if (isSingle) {
+                            Modifier.background(
+                                Brush.horizontalGradient(
+                                    listOf(Color(0xFFFF385C), Color(0xFFFF2442))
+                                )
+                            )
+                        } else Modifier
                     )
-                }
+                    .bouncyClickable { onModeChange("single") }
+                    .padding(horizontal = 11.dp),
+                contentAlignment = Alignment.Center
+            ) {
+                Text(
+                    text = "单张随机",
+                    style = MaterialTheme.typography.labelMedium,
+                    fontWeight = if (isSingle) FontWeight.Bold else FontWeight.Normal,
+                    color = if (isSingle) Color.White else Color.White.copy(alpha = 0.75f)
+                )
             }
 
             val isGroup = currentMode == "group"
-            Surface(
-                shape = RoundedCornerShape(12.dp),
-                color = if (isGroup) XhsRed else Color.Transparent,
+            Box(
                 modifier = Modifier
                     .fillMaxHeight()
-                    .clip(RoundedCornerShape(12.dp))
-                    .bouncyClickable { onModeChange("group") }
-            ) {
-                Box(modifier = Modifier.padding(horizontal = 10.dp), contentAlignment = Alignment.Center) {
-                    Text(
-                        text = "整组套图",
-                        style = MaterialTheme.typography.labelSmall,
-                        fontWeight = if (isGroup) FontWeight.Bold else FontWeight.Normal,
-                        color = if (isGroup) Color.White else Color.White.copy(alpha = 0.75f)
+                    .clip(RoundedCornerShape(16.dp))
+                    .then(
+                        if (isGroup) {
+                            Modifier.background(
+                                Brush.horizontalGradient(
+                                    listOf(Color(0xFFFF385C), Color(0xFFFF2442))
+                                )
+                            )
+                        } else Modifier
                     )
-                }
+                    .bouncyClickable { onModeChange("group") }
+                    .padding(horizontal = 11.dp),
+                contentAlignment = Alignment.Center
+            ) {
+                Text(
+                    text = "整组套图",
+                    style = MaterialTheme.typography.labelMedium,
+                    fontWeight = if (isGroup) FontWeight.Bold else FontWeight.Normal,
+                    color = if (isGroup) Color.White else Color.White.copy(alpha = 0.75f)
+                )
             }
         }
     }

@@ -35,6 +35,8 @@ import com.example.randomgallery.android.ui.theme.*
 import com.example.randomgallery.android.util.Downloader
 import com.example.randomgallery.android.util.ImageUrlResolver
 import com.example.randomgallery.android.util.MediaKind
+import com.example.randomgallery.android.ui.wallpaper.WallpaperMedia
+import com.example.randomgallery.android.ui.wallpaper.WallpaperPreviewDialog
 import kotlinx.coroutines.launch
 
 /** 随机一图：对齐随机动图 UI 架构，主题清爽背景，居中圆角卡片，流畅左右滑动切图 */
@@ -58,6 +60,7 @@ fun RandomPicScreen(
 
     // 浮窗大图预览 URL
     var previewUrl by remember { mutableStateOf<String?>(null) }
+    var wallpaperUrl by remember { mutableStateOf<String?>(null) }
     var pendingScrollToNext by remember { mutableStateOf(false) }
 
     LaunchedEffect(Unit) {
@@ -284,22 +287,38 @@ fun RandomPicScreen(
                                     Spacer(Modifier.width(1.dp))
                                 }
 
-                                IconButton(
-                                    onClick = {
-                                        if (currentUrl.isNotBlank()) {
-                                            Downloader.enqueue(context, currentUrl, MediaKind.IMAGE)
-                                                .onSuccess { Messenger.show(context.getString(R.string.pic_download_queued)) }
-                                                .onFailure { e -> Messenger.show(e.message ?: "下载失败", isError = true) }
-                                        }
-                                    },
-                                    modifier = Modifier.size(44.dp)
-                                ) {
-                                    Icon(
-                                        Icons.Filled.Download,
-                                        contentDescription = stringResource(R.string.common_download),
-                                        tint = MaterialTheme.colorScheme.primary,
-                                        modifier = Modifier.size(24.dp)
-                                    )
+                                Row(verticalAlignment = Alignment.CenterVertically) {
+                                    IconButton(
+                                        onClick = {
+                                            if (currentUrl.isNotBlank()) wallpaperUrl = currentUrl
+                                        },
+                                        modifier = Modifier.size(44.dp)
+                                    ) {
+                                        Icon(
+                                            Icons.Filled.Wallpaper,
+                                            contentDescription = stringResource(R.string.wallpaper_action_set),
+                                            tint = MaterialTheme.colorScheme.primary,
+                                            modifier = Modifier.size(24.dp)
+                                        )
+                                    }
+
+                                    IconButton(
+                                        onClick = {
+                                            if (currentUrl.isNotBlank()) {
+                                                Downloader.enqueue(context, currentUrl, MediaKind.IMAGE)
+                                                    .onSuccess { Messenger.show(context.getString(R.string.pic_download_queued)) }
+                                                    .onFailure { e -> Messenger.show(e.message ?: "下载失败", isError = true) }
+                                            }
+                                        },
+                                        modifier = Modifier.size(44.dp)
+                                    ) {
+                                        Icon(
+                                            Icons.Filled.Download,
+                                            contentDescription = stringResource(R.string.common_download),
+                                            tint = MaterialTheme.colorScheme.primary,
+                                            modifier = Modifier.size(24.dp)
+                                        )
+                                    }
                                 }
                             }
                         }
@@ -350,7 +369,47 @@ fun RandomPicScreen(
                         tint = Color.White
                     )
                 }
+
+                // 底部浮动设为壁纸按钮
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .align(Alignment.BottomCenter)
+                        .navigationBarsPadding()
+                        .padding(Spacing.lg),
+                    horizontalArrangement = Arrangement.Center
+                ) {
+                    Button(
+                        onClick = {
+                            val url = previewUrl
+                            if (!url.isNullOrBlank()) {
+                                previewUrl = null
+                                wallpaperUrl = url
+                            }
+                        },
+                        shape = CircleShape,
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = MaterialTheme.colorScheme.primary,
+                            contentColor = MaterialTheme.colorScheme.onPrimary
+                        )
+                    ) {
+                        Icon(Icons.Filled.Wallpaper, contentDescription = null, modifier = Modifier.size(18.dp))
+                        Spacer(Modifier.width(8.dp))
+                        Text(
+                            stringResource(R.string.wallpaper_action_set),
+                            style = MaterialTheme.typography.labelLarge,
+                            fontWeight = FontWeight.Bold
+                        )
+                    }
+                }
             }
         }
+    }
+
+    wallpaperUrl?.let { url ->
+        WallpaperPreviewDialog(
+            media = WallpaperMedia(url = url, isVideo = false),
+            onDismiss = { wallpaperUrl = null }
+        )
     }
 }

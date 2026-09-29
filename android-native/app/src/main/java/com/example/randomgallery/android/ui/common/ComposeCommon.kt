@@ -29,8 +29,10 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.graphics.luminance
 import com.example.randomgallery.android.R
 import com.example.randomgallery.android.ui.theme.Spacing
+import com.example.randomgallery.android.ui.theme.XhsRed
 
 /**
  * iOS 26 / Modern Apple 菲涅尔反光高光边框刷 (Fresnel Edge Reflection Brush)
@@ -58,10 +60,10 @@ fun fresnelBorderBrush(isDark: Boolean = false): Brush = Brush.linearGradient(
 fun M3GlassSurface(
     modifier: Modifier = Modifier,
     shape: Shape = RoundedCornerShape(16.dp),
-    elevation: Dp = 1.5.dp,
-    containerColor: Color = MaterialTheme.colorScheme.surfaceContainerLow.copy(alpha = 0.90f),
+    elevation: Dp = 2.dp,
+    containerColor: Color = MaterialTheme.colorScheme.surface,
     contentColor: Color = MaterialTheme.colorScheme.onSurface,
-    borderColor: Color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.20f),
+    borderColor: Color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.12f),
     content: @Composable () -> Unit
 ) {
     Surface(
@@ -81,8 +83,8 @@ fun M3GlassSurface(
 fun GlassSurface(
     modifier: Modifier = Modifier,
     shape: Shape = RoundedCornerShape(16.dp),
-    elevation: Dp = 1.5.dp,
-    containerColor: Color = MaterialTheme.colorScheme.surfaceContainerLow.copy(alpha = 0.90f),
+    elevation: Dp = 2.dp,
+    containerColor: Color = MaterialTheme.colorScheme.surface,
     content: @Composable () -> Unit
 ) {
     M3GlassSurface(
@@ -100,11 +102,11 @@ fun GlassSurface(
 @Composable
 fun M3GlassCard(
     modifier: Modifier = Modifier,
-    shape: Shape = RoundedCornerShape(20.dp),
+    shape: Shape = RoundedCornerShape(16.dp),
     elevation: Dp = 2.dp,
-    containerColor: Color = MaterialTheme.colorScheme.surfaceContainerLow.copy(alpha = 0.92f),
+    containerColor: Color = MaterialTheme.colorScheme.surface,
     contentColor: Color = MaterialTheme.colorScheme.onSurface,
-    borderColor: Color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.20f),
+    borderColor: Color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.12f),
     content: @Composable ColumnScope.() -> Unit
 ) {
     Surface(
@@ -124,9 +126,9 @@ fun M3GlassCard(
 @Composable
 fun GlassCard(
     modifier: Modifier = Modifier,
-    shape: Shape = RoundedCornerShape(20.dp),
+    shape: Shape = RoundedCornerShape(16.dp),
     elevation: Dp = 2.dp,
-    containerColor: Color = MaterialTheme.colorScheme.surfaceContainerLow.copy(alpha = 0.92f),
+    containerColor: Color = MaterialTheme.colorScheme.surface,
     content: @Composable ColumnScope.() -> Unit
 ) {
     M3GlassCard(
@@ -134,6 +136,47 @@ fun GlassCard(
         shape = shape,
         elevation = elevation,
         containerColor = containerColor,
+        content = content
+    )
+}
+
+/**
+ * 具有轻量氛围漫反射微渐变的页面背景容器 (AmbientBackgroundBox)
+ * 浅色模式下顶部带有 4% 极微弱的漫反射柔光，向背景自然过渡，彻底消除单调苍白感。
+ */
+@Composable
+fun AmbientBackgroundBox(
+    modifier: Modifier = Modifier,
+    content: @Composable BoxScope.() -> Unit
+) {
+    val bgColor = MaterialTheme.colorScheme.background
+    val isDark = bgColor.luminance() < 0.5f
+    val gradientBrush = remember(isDark, bgColor) {
+        if (isDark) {
+            Brush.verticalGradient(
+                colors = listOf(
+                    Color(0xFF16161A),
+                    bgColor
+                ),
+                endY = 500f
+            )
+        } else {
+            Brush.verticalGradient(
+                colors = listOf(
+                    XhsRed.copy(alpha = 0.035f),
+                    Color(0xFFF3F4F7),
+                    bgColor
+                ),
+                endY = 450f
+            )
+        }
+    }
+
+    Box(
+        modifier = modifier
+            .fillMaxSize()
+            .background(bgColor)
+            .background(gradientBrush),
         content = content
     )
 }

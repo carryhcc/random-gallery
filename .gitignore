@@ -52,3 +52,7 @@ window_dump.xml
 skills-lock.json
 .agent-teams
 
+# 本地工具运行期状态（非源码）
+.omo/
+.kotlin/
+
