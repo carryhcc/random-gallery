@@ -1,10 +1,11 @@
 package com.example.randomgallery.android.ui.downloadlist
 
-import android.content.Context
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.example.randomgallery.android.AppContainer
+import com.example.randomgallery.android.di.RepositoryProvider
+import dagger.hilt.android.lifecycle.HiltViewModel
+import javax.inject.Inject
 import com.example.randomgallery.android.data.model.AuthorVO
 import com.example.randomgallery.android.data.model.TagVO
 import com.example.randomgallery.android.data.model.XhsWorkListVO
@@ -17,12 +18,13 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import kotlin.random.Random
 
-class DownloadListViewModel(
-    private val appContext: Context,
-    savedStateHandle: SavedStateHandle
+@HiltViewModel
+class DownloadListViewModel @Inject constructor(
+    private val repositories: RepositoryProvider,
+    private val savedStateHandle: SavedStateHandle,
 ) : ViewModel() {
 
-    private fun repository(): GalleryRepository = AppContainer.repository(appContext)
+    private fun repository(): GalleryRepository = repositories.repository()
 
     private val _works = MutableStateFlow<List<XhsWorkListVO>>(emptyList())
     val works: StateFlow<List<XhsWorkListVO>> = _works.asStateFlow()
@@ -45,18 +47,41 @@ class DownloadListViewModel(
     private val _error = MutableStateFlow<String?>(null)
     val error: StateFlow<String?> = _error.asStateFlow()
 
-    private var page = 1
-    private var hasMore = true
+    // 以下分页/筛选状态一律走 SavedStateHandle：原先它们是普通字段，只有
+    // authorId / keyword 进过 handle，于是旋转屏幕后 page 回到 1、seed 重新随机，
+    // 列表会以新顺序整体重排，用户看到的已是另一份数据。isLoadingInFlight 则是
+    // 纯粹的瞬时在途标记，重建后必然无在途请求，不需要保存。
+    private var page: Int
+        get() = savedStateHandle[KEY_PAGE] ?: 1
+        set(value) { savedStateHandle[KEY_PAGE] = value }
+
+    private var hasMore: Boolean
+        get() = savedStateHandle[KEY_HAS_MORE] ?: true
+        set(value) { savedStateHandle[KEY_HAS_MORE] = value }
+
     private var isLoadingInFlight = false  // 防止 snapshotFlow 同帧多次触发
 
-    var authorId: String? = null
-    var tagId: Long? = null
-    var keyword: String? = null
-    private var seed: Int = Random.nextInt(1, 999999)
+    var authorId: String?
+        get() = savedStateHandle[KEY_AUTHOR_ID]
+        set(value) { savedStateHandle[KEY_AUTHOR_ID] = value }
+
+    var tagId: Long?
+        get() = savedStateHandle[KEY_TAG_ID]
+        set(value) { savedStateHandle[KEY_TAG_ID] = value }
+
+    var keyword: String?
+        get() = savedStateHandle[KEY_KEYWORD]
+        set(value) { savedStateHandle[KEY_KEYWORD] = value }
+
+    /** 随机排序种子：必须持久化，否则重建后列表顺序会变 */
+    private var seed: Int
+        get() = savedStateHandle[KEY_SEED] ?: Random.nextInt(1, 999999).also { savedStateHandle[KEY_SEED] = it }
+        set(value) { savedStateHandle[KEY_SEED] = value }
 
     init {
-        authorId = savedStateHandle.get<String>("filterAuthorId")
-        keyword = savedStateHandle.get<String>("filterKeyword")
+        // 导航参数优先于已保存值：用户从筛选入口进来时应覆盖上次的选择
+        savedStateHandle.get<String>("filterAuthorId")?.let { authorId = it }
+        savedStateHandle.get<String>("filterKeyword")?.let { keyword = it }
         init()
         loadMore()
     }
@@ -148,5 +173,12 @@ class DownloadListViewModel(
 
     private companion object {
         const val MAX_WORKS = 200
+
+        const val KEY_PAGE = "dlPage"
+        const val KEY_HAS_MORE = "dlHasMore"
+        const val KEY_SEED = "dlSeed"
+        const val KEY_AUTHOR_ID = "dlAuthorId"
+        const val KEY_TAG_ID = "dlTagId"
+        const val KEY_KEYWORD = "dlKeyword"
     }
 }

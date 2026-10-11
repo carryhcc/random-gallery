@@ -3,7 +3,7 @@ package com.example.randomgallery.android.ui.favorite
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -90,7 +90,10 @@ fun FavoriteScreen(
                     contentPadding = PaddingValues(horizontal = Spacing.md, vertical = Spacing.sm),
                     verticalArrangement = Arrangement.spacedBy(Spacing.xs)
                 ) {
-                    items(items, key = { it.id ?: 0L }) { gif ->
+                    // id 缺失时必须给出互不相同的 key：LazyColumn 遇到重复 key 会直接抛
+                    // IllegalArgumentException。负数兜底与首页列表的约定一致，且不会与真实
+                    // 主键（恒为正）冲突。
+                    itemsIndexed(items, key = { index, gif -> gif.id ?: -(index.toLong() + 1) }) { _, gif ->
                         FavoriteItem(
                             gif = gif,
                             onOpen = onWorkClick,

@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  备份 / 设备迁移排除规则。
+
+  AppPrefs 里存着用户自填的 API 节点地址、自定义代理 host/port 与节点列表，
+  gif_prefs 里存着浏览历史 ID。这些属于本机运行期状态，既没有跨设备迁移的价值，
+  也会经云备份 / adb backup 离开设备，因此显式排除。
+-->
+<full-backup-content>
+    <exclude domain="sharedpref" path="." />
+    <exclude domain="file" path="datastore" />
+    <exclude domain="root" path="app_webview" />
+</full-backup-content>

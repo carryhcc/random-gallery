@@ -90,7 +90,7 @@ fun PicListScreen(
                     ) {
                         Icon(
                             imageVector = if (columnCount == 2) Icons.Filled.GridOn else Icons.Filled.GridView,
-                            contentDescription = "切换网格列数",
+                            contentDescription = stringResource(R.string.piclist_toggle_columns),
                             tint = MaterialTheme.colorScheme.onSurfaceVariant
                         )
                     }
@@ -230,7 +230,7 @@ private fun GroupHeroHeader(
             )
             Spacer(Modifier.height(2.dp))
             Text(
-                text = "已加载 $loadedCount 张图片 · 真实比例自适应瀑布流",
+                text = stringResource(R.string.piclist_loaded_count, loadedCount),
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
@@ -291,7 +291,7 @@ private fun PicTile(
                 ) {
                     Icon(
                         Icons.Filled.Download,
-                        contentDescription = "下载",
+                        contentDescription = stringResource(R.string.common_download),
                         tint = Color.White,
                         modifier = Modifier.size(16.dp)
                     )
@@ -429,7 +429,7 @@ private fun PicLightboxDialog(
                         contentColor = MaterialTheme.colorScheme.onSurface
                     )
                 ) {
-                    Icon(Icons.Filled.Close, contentDescription = "关闭", modifier = Modifier.size(18.dp))
+                    Icon(Icons.Filled.Close, contentDescription = stringResource(R.string.common_close), modifier = Modifier.size(18.dp))
                 }
             }
 

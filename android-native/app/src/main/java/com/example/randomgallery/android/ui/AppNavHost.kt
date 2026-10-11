@@ -57,6 +57,7 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import com.example.randomgallery.android.data.local.AppSettings
 import com.example.randomgallery.android.ui.common.bouncyClickable
 import com.example.randomgallery.android.ui.common.isExpandedWidth
 import com.example.randomgallery.android.ui.common.fresnelBorderBrush
@@ -64,8 +65,7 @@ import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
-import androidx.lifecycle.createSavedStateHandle
-import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.navigation.NavDestination
 import androidx.navigation.NavDestination.Companion.hasRoute
 import androidx.navigation.NavGraph.Companion.findStartDestination
@@ -163,15 +163,18 @@ private val bottomBarRouteClasses = setOf(
 private fun NavDestination?.isBottomBarRoute(): Boolean =
     this != null && bottomBarRouteClasses.any { hasRoute(it) }
 
+/**
+ * @param settings 由宿主 Activity 注入。此处不再自行 new，避免依赖图外再造一个
+ *   DataStore 客户端实例（同一 DataStore 文件被两个实例持有会互相覆盖写入）。
+ */
 @Composable
-fun AppNavHost() {
+fun AppNavHost(settings: AppSettings) {
     val navController = rememberNavController()
     val context = LocalContext.current
     // REQ-06：改用 WindowSizeClass，替代 ad-hoc 的 screenWidthDp 阈值
     val isWideScreen = isExpandedWidth()
 
-    val appPrefs = remember { com.example.randomgallery.android.data.local.AppPrefs(context.applicationContext) }
-    val spaceMode by appPrefs.spaceModeFlow.collectAsState(initial = "explore")
+    val spaceMode by settings.spaceModeFlow.collectAsState(initial = "explore")
     val currentTabs = if (spaceMode == "gallery") galleryBottomTabs else exploreBottomTabs
 
     val backStackEntry by navController.currentBackStackEntryAsState()
@@ -231,7 +234,7 @@ fun AppNavHost() {
                     popExitTransition = { slideOutHorizontally(targetOffsetX = { it / 4 }, animationSpec = spring(stiffness = Spring.StiffnessMediumLow)) + fadeOut(tween(220)) + scaleOut(targetScale = 0.95f) }
                 ) {
                 composable<Routes.Home> {
-                    val vm: HomeViewModel = viewModel { HomeViewModel(context.applicationContext) }
+                    val vm: HomeViewModel = hiltViewModel()
                     HomeScreen(
                         viewModel = vm,
                         onWorkClick = { work ->
@@ -253,7 +256,7 @@ fun AppNavHost() {
                 }
 
                 composable<Routes.RandomPic> {
-                    val vm: RandomPicViewModel = viewModel { RandomPicViewModel(context.applicationContext) }
+                    val vm: RandomPicViewModel = hiltViewModel()
                     RandomPicScreen(
                         viewModel = vm,
                         onBack = { navController.navigateUp() },
@@ -262,7 +265,7 @@ fun AppNavHost() {
                 }
 
                 composable<Routes.RandomGallery> {
-                    val vm: RandomGalleryViewModel = viewModel { RandomGalleryViewModel(context.applicationContext) }
+                    val vm: RandomGalleryViewModel = hiltViewModel()
                     RandomGalleryScreen(
                         viewModel = vm,
                         onGroupClick = { group -> navController.toPicList(group.groupId ?: 0L, group.groupName ?: context.getString(R.string.group_detail_fallback)) },
@@ -271,7 +274,7 @@ fun AppNavHost() {
                 }
 
                 composable<Routes.GroupList> {
-                    val vm: GroupListViewModel = viewModel { GroupListViewModel(context.applicationContext) }
+                    val vm: GroupListViewModel = hiltViewModel()
                     GroupListScreen(
                         viewModel = vm,
                         onGroupClick = { group -> navController.toPicList(group.groupId ?: 0L, group.groupName ?: context.getString(R.string.group_detail_fallback)) },
@@ -280,7 +283,7 @@ fun AppNavHost() {
                 }
 
                 composable<Routes.RandomGif> {
-                    val vm: RandomGifViewModel = viewModel { RandomGifViewModel(context.applicationContext) }
+                    val vm: RandomGifViewModel = hiltViewModel()
                     RandomGifScreen(
                         onBack = { navController.navigateUp() },
                         onDetail = { workId -> navController.toDownloadDetail(workId) },
@@ -290,7 +293,7 @@ fun AppNavHost() {
                 }
 
                 composable<Routes.Favorite> {
-                    val vm: FavoriteViewModel = viewModel { FavoriteViewModel(context.applicationContext) }
+                    val vm: FavoriteViewModel = hiltViewModel()
                     FavoriteScreen(
                         viewModel = vm,
                         onWorkClick = { workId -> navController.toDownloadDetail(workId) },
@@ -299,7 +302,7 @@ fun AppNavHost() {
                 }
 
                 composable<Routes.DownloadManage> {
-                    val vm: DownloadManageViewModel = viewModel { DownloadManageViewModel(context.applicationContext) }
+                    val vm: DownloadManageViewModel = hiltViewModel()
                     DownloadManageScreen(
                         viewModel = vm,
                         onBack = { navController.navigateUp() },
@@ -308,9 +311,7 @@ fun AppNavHost() {
                 }
 
                 composable<Routes.PicList> { entry ->
-                    val vm: PicListViewModel = viewModel {
-                        PicListViewModel(context.applicationContext, createSavedStateHandle())
-                    }
+                    val vm: PicListViewModel = hiltViewModel()
                     PicListScreen(
                         viewModel = vm,
                         groupName = entry.toRoute<Routes.PicList>().groupName,
@@ -319,7 +320,7 @@ fun AppNavHost() {
                 }
 
                 composable<Routes.DownloadDetail> { entry ->
-                    val vm: DownloadDetailViewModel = viewModel { DownloadDetailViewModel(context.applicationContext) }
+                    val vm: DownloadDetailViewModel = hiltViewModel()
                     val args = entry.toRoute<Routes.DownloadDetail>()
                     DownloadDetailScreen(
                         viewModel = vm,
@@ -335,9 +336,7 @@ fun AppNavHost() {
                 }
 
                 composable<Routes.DownloadList> { entry ->
-                    val vm: DownloadListViewModel = viewModel {
-                        DownloadListViewModel(context.applicationContext, createSavedStateHandle())
-                    }
+                    val vm: DownloadListViewModel = hiltViewModel()
                     val deletedWorkId by entry.savedStateHandle.getStateFlow<String?>("deleted_work_id", null).collectAsStateWithLifecycle()
                     LaunchedEffect(deletedWorkId) {
                         deletedWorkId?.let {

@@ -1,12 +1,15 @@
 package com.example.randomgallery.android.ui.download
 
-import android.content.Context
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.example.randomgallery.android.AppContainer
+import com.example.randomgallery.android.di.RepositoryProvider
+import dagger.hilt.android.lifecycle.HiltViewModel
+import javax.inject.Inject
 import com.example.randomgallery.android.data.model.XhsDownloadTaskVO
 import com.example.randomgallery.android.data.repository.GalleryRepository
 import com.example.randomgallery.android.ui.common.SingleFlight
+import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -16,11 +19,14 @@ import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.launch
 
-class DownloadManageViewModel(
-    private val appContext: Context
+enum class CookieStatus { EMPTY, SAVED, CHECKING, VALID, INVALID }
+
+@HiltViewModel
+class DownloadManageViewModel @Inject constructor(
+    private val repositories: RepositoryProvider,
 ) : ViewModel() {
 
-    private fun repository(): GalleryRepository = AppContainer.repository(appContext)
+    private fun repository(): GalleryRepository = repositories.repository()
 
     private val _submitEvents = Channel<Result<String>>(Channel.BUFFERED)
     val submitEvents: Flow<Result<String>> = _submitEvents.receiveAsFlow()
@@ -44,6 +50,20 @@ class DownloadManageViewModel(
 
     private val _autoReadClipboard = MutableStateFlow(false)
     val autoReadClipboard: StateFlow<Boolean> = _autoReadClipboard.asStateFlow()
+
+    // ── XHS Cookie 保存与校验 ──
+    private val _xhsCookie = MutableStateFlow("")
+    val xhsCookie: StateFlow<String> = _xhsCookie.asStateFlow()
+
+    private val _cookieStatus = MutableStateFlow(CookieStatus.EMPTY)
+    val cookieStatus: StateFlow<CookieStatus> = _cookieStatus.asStateFlow()
+
+    private val _cookieEvents = Channel<Result<String>>(Channel.BUFFERED)
+    val cookieEvents: Flow<Result<String>> = _cookieEvents.receiveAsFlow()
+
+    private var cookieValidationJob: Job? = null
+    private val _cookieSaving = MutableStateFlow(false)
+    val cookieSaving: StateFlow<Boolean> = _cookieSaving.asStateFlow()
 
     // ── 下载历史 ──
     private val HISTORY_PAGE_SIZE = 10
@@ -74,10 +94,77 @@ class DownloadManageViewModel(
         viewModelScope.launch {
             repository().autoReadClipboardFlow.collectLatest { _autoReadClipboard.value = it }
         }
+        viewModelScope.launch {
+            repository().xhsCookieFlow.collectLatest { saved ->
+                if (saved != _xhsCookie.value) {
+                    _xhsCookie.value = saved
+                    _cookieStatus.value = if (saved.isBlank()) CookieStatus.EMPTY else CookieStatus.SAVED
+                }
+            }
+        }
+    }
+
+    fun saveCookie(raw: String, validateAfterSave: Boolean = false) {
+        if (_cookieSaving.value) return
+        val trimmed = raw.trim()
+        if (trimmed.isNotBlank() && !isCookieFormatPlausible(trimmed)) {
+            _cookieEvents.trySend(Result.failure(Exception("Cookie 格式不正确")))
+            return
+        }
+        _cookieSaving.value = true
+        cookieValidationJob?.cancel()
+        _cookieStatus.value = if (_xhsCookie.value.isBlank()) CookieStatus.EMPTY else CookieStatus.SAVED
+        viewModelScope.launch {
+            try {
+                repository().saveXhsCookie(trimmed)
+                _xhsCookie.value = trimmed
+                _cookieStatus.value = if (trimmed.isBlank()) CookieStatus.EMPTY else CookieStatus.SAVED
+                _cookieEvents.trySend(Result.success(if (trimmed.isBlank()) "已清除 Cookie" else "Cookie 已更新"))
+                if (validateAfterSave && trimmed.isNotBlank()) validateCookie()
+            } catch (e: Exception) {
+                if (e is CancellationException) throw e
+                _cookieEvents.trySend(Result.failure(Exception("Cookie 保存失败，请重试")))
+            } finally {
+                _cookieSaving.value = false
+            }
+        }
+    }
+
+    fun validateCookie() {
+        val cookie = _xhsCookie.value
+        if (cookie.isBlank()) {
+            _cookieEvents.trySend(Result.failure(Exception("请先保存 Cookie")))
+            return
+        }
+        if (_cookieStatus.value == CookieStatus.CHECKING) return
+        _cookieStatus.value = CookieStatus.CHECKING
+        cookieValidationJob = viewModelScope.launch {
+            val r = repository().validateXhsCookie(cookie)
+            // Cookie 被外部更新时，旧响应也不能覆盖新值的状态。
+            if (_xhsCookie.value != cookie) return@launch
+            when {
+                r.isSuccess && r.getOrNull() == true -> {
+                    _cookieStatus.value = CookieStatus.VALID
+                    _cookieEvents.trySend(Result.success("校验通过"))
+                }
+                r.isSuccess -> {
+                    _cookieStatus.value = CookieStatus.INVALID
+                    _cookieEvents.trySend(Result.failure(Exception("Cookie 已失效，或探测作品无法访问，请重新获取")))
+                }
+                else -> {
+                    _cookieStatus.value = CookieStatus.SAVED
+                    _cookieEvents.trySend(Result.failure(r.exceptionOrNull() ?: Exception("校验失败")))
+                }
+            }
+        }
     }
 
     fun submit(url: String) {
         if (_loading.value) return          // 防止重复提交
+        if (_cookieSaving.value) {
+            _submitEvents.trySend(Result.failure(Exception("Cookie 正在保存，请稍后入库")))
+            return
+        }
         val trimmedInput = url.trim()
         if (trimmedInput.isBlank()) {
             _submitEvents.trySend(Result.failure(Exception("请输入链接")))
@@ -217,6 +304,17 @@ class DownloadManageViewModel(
         fun extractHttpUrl(text: String?): String? {
             if (text.isNullOrBlank()) return null
             return HTTP_URL_PATTERN.find(text)?.value
+        }
+
+        fun isCookieFormatPlausible(raw: String?): Boolean {
+            val value = raw?.trim() ?: return false
+            if (value.isBlank()) return false
+            if (value.length !in 16..8192) return false
+            if (value.any { it.code < 32 || it.code >= 127 }) return false
+            return value.split(';').all { part ->
+                val pair = part.trim().split('=', limit = 2)
+                pair.size == 2 && pair[0].isNotBlank() && pair[0].none { it.isWhitespace() }
+            }
         }
     }
 }

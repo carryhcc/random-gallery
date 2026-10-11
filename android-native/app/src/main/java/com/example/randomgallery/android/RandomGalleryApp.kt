@@ -8,19 +8,31 @@ import coil.decode.VideoFrameDecoder
 import coil.disk.DiskCache
 import coil.memory.MemoryCache
 import coil.size.Precision
+import com.example.randomgallery.android.data.network.NetworkModule
+import com.example.randomgallery.android.data.network.CleartextPolicyInterceptor
+import com.example.randomgallery.android.data.network.ProxyController
+import com.example.randomgallery.android.di.BaseUrlManager
 import com.example.randomgallery.android.util.HeifSystemFirstDecoder
+import dagger.hilt.android.HiltAndroidApp
 import okhttp3.Dispatcher
 import okhttp3.Interceptor
 import okhttp3.OkHttpClient
 import okhttp3.Response
 import java.io.IOException
 import java.util.concurrent.TimeUnit
+import javax.inject.Inject
 
+@HiltAndroidApp
 class RandomGalleryApp : Application(), ImageLoaderFactory {
+
+    @Inject lateinit var baseUrlManager: BaseUrlManager
+
+    @Inject lateinit var proxyController: ProxyController
 
     override fun onCreate() {
         super.onCreate()
-        AppContainer.initialize(this)
+        proxyController.prime()
+        baseUrlManager.initialize()
     }
 
     override fun newImageLoader(): ImageLoader {
@@ -33,6 +45,7 @@ class RandomGalleryApp : Application(), ImageLoaderFactory {
             .dispatcher(imageDispatcher)
             .connectTimeout(15, TimeUnit.SECONDS)
             .readTimeout(20, TimeUnit.SECONDS)
+            .addInterceptor(CleartextPolicyInterceptor())
             .addInterceptor(CoilNetworkInterceptor())
 
         okHttpClientBuilder.proxySelector(

@@ -1,5 +1,7 @@
 package com.example.randomGallery.config;
 
+import com.example.randomGallery.entity.QO.CookieValidateQry;
+import com.example.randomGallery.entity.QO.DownLoadQry;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.servlet.http.HttpServletRequest;
@@ -141,6 +143,16 @@ public class ApiLoggingAspect {
     private Object maskIfSensitive(Object value) {
         if (value == null)
             return null;
+        // Cookie 是请求对象字段，不能只依赖 Map 的敏感键处理。
+        if (value instanceof CookieValidateQry) {
+            return Map.of("cookie", "***");
+        }
+        if (value instanceof DownLoadQry qry) {
+            Map<?, ?> fields = objectMapper.convertValue(qry, Map.class);
+            Map<Object, Object> copy = new HashMap<>(fields);
+            copy.put("cookie", "***");
+            return maskIfSensitive(copy);
+        }
         // 简单脱敏与体积控制
         if (value instanceof CharSequence str) {
             String s = str.toString();

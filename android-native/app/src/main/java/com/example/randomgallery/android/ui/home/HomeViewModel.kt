@@ -1,14 +1,15 @@
 package com.example.randomgallery.android.ui.home
 
-import android.content.Context
 import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.example.randomgallery.android.AppContainer
 import com.example.randomgallery.android.config.ApiNodeSwitcher
 import com.example.randomgallery.android.config.BaseUrlConfig
-import com.example.randomgallery.android.data.network.NetworkModule
-import com.example.randomgallery.android.data.local.AppPrefs
+import com.example.randomgallery.android.data.network.ProxySettings
+import com.example.randomgallery.android.data.local.AppSettings
+import com.example.randomgallery.android.di.NodeManager
+import dagger.hilt.android.lifecycle.HiltViewModel
+import javax.inject.Inject
 import com.example.randomgallery.android.data.model.GroupVO
 import com.example.randomgallery.android.data.model.PicCount
 import com.example.randomgallery.android.data.model.XhsWorkListVO
@@ -24,12 +25,14 @@ import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.launch
 
-class HomeViewModel(
-    private val appContext: Context
+@HiltViewModel
+class HomeViewModel @Inject constructor(
+    private val nodes: NodeManager,
+    private val prefs: AppSettings,
+    private val proxySettings: ProxySettings,
 ) : ViewModel() {
 
-    private fun repository(): GalleryRepository = AppContainer.repository(appContext)
-    private val prefs by lazy { AppPrefs(appContext) }
+    private fun repository(): GalleryRepository = nodes.repository()
 
     private val _envInfo = MutableStateFlow<UiState<PicCount>>(UiState.Loading)
     val envInfo: StateFlow<UiState<PicCount>> = _envInfo.asStateFlow()
@@ -264,7 +267,7 @@ class HomeViewModel(
                 onFailure = { UiState.Error(it.message ?: "加载失败") }
             )
             if (result.isFailure) {
-                val url = AppContainer.currentBaseUrl()
+                val url = nodes.currentBaseUrl()
                 val msg = result.exceptionOrNull()?.message ?: "未知错误"
                 _messages.trySend("连接失败 ($url): $msg")
             }
@@ -275,8 +278,8 @@ class HomeViewModel(
         viewModelScope.launch {
             prefs.saveProxyConfig(enabled, type, host, port)
             // 重建底层网络客户端与连接池，并应用最新代理配置（支持运行时切换）
-            AppContainer.clearRepository()
-            NetworkModule.refreshProxy(appContext)
+            nodes.invalidateRepository()
+            proxySettings.refresh()
             _messages.trySend(if (enabled) "已启用自定义代理 $type://$host:$port" else "已关闭自定义网络代理")
         }
     }
@@ -325,8 +328,8 @@ class HomeViewModel(
     /** 切换到已有 URL（直接应用，不需要验证） */
     fun selectBaseUrl(url: String) {
         viewModelScope.launch {
-            AppContainer.updateBaseUrl(appContext, url)
-            _baseUrl.value = AppContainer.currentBaseUrl()
+            nodes.updateBaseUrl(url)
+            _baseUrl.value = nodes.currentBaseUrl()
             _messages.trySend("已切换到 $url")
             loadEnvInfo(force = true)
             loadHeroWorks(force = true)
@@ -348,8 +351,8 @@ class HomeViewModel(
                 current.add(0, sanitized)
                 prefs.saveUrlList(current)
             }
-            AppContainer.updateBaseUrl(appContext, sanitized)
-            _baseUrl.value = AppContainer.currentBaseUrl()
+            nodes.updateBaseUrl(sanitized)
+            _baseUrl.value = nodes.currentBaseUrl()
             _messages.trySend("服务地址已更新，正在连接...")
             loadEnvInfo(force = true)
             loadHeroWorks(force = true)

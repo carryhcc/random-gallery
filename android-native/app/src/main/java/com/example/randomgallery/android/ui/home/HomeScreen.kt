@@ -261,14 +261,14 @@ fun HomeScreen(
                                     modifier = Modifier.size(20.dp)
                                 )
                                 Text(
-                                    text = "套图分组目录",
+                                    text = stringResource(R.string.home_groups_title),
                                     style = MaterialTheme.typography.titleMedium,
                                     fontWeight = FontWeight.Black,
                                     color = MaterialTheme.colorScheme.onSurface
                                 )
                             }
                             Text(
-                                text = "多环境套图",
+                                text = stringResource(R.string.home_groups_subtitle),
                                 style = MaterialTheme.typography.labelSmall,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)
                             )
@@ -354,14 +354,14 @@ fun HomeScreen(
                                     modifier = Modifier.size(20.dp)
                                 )
                                 Text(
-                                    text = "精选作品探索",
+                                    text = stringResource(R.string.home_hero_title),
                                     style = MaterialTheme.typography.titleMedium,
                                     fontWeight = FontWeight.Black,
                                     color = MaterialTheme.colorScheme.onSurface
                                 )
                             }
                             Text(
-                                text = "小红书解析内容",
+                                text = stringResource(R.string.home_hero_subtitle),
                                 style = MaterialTheme.typography.labelSmall,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)
                             )
@@ -591,7 +591,7 @@ private fun ImmersiveHeroCarousel(
                                     modifier = Modifier.size(14.dp)
                                 )
                                 Text(
-                                    text = "精选作品",
+                                    text = stringResource(R.string.home_hero_section),
                                     style = MaterialTheme.typography.labelSmall,
                                     fontWeight = FontWeight.Bold,
                                     color = Color.White
@@ -668,7 +668,7 @@ private fun ImmersiveHeroCarousel(
                                         modifier = Modifier.size(13.dp)
                                     )
                                     Text(
-                                        text = "$imgCount 张",
+                                        text = stringResource(R.string.home_image_count, imgCount),
                                         style = MaterialTheme.typography.labelSmall.tabularNumbers,
                                         color = Color.White.copy(alpha = 0.9f)
                                     )
@@ -724,7 +724,7 @@ private fun DualSpaceSegmentedPill(
                         modifier = Modifier.size(15.dp)
                     )
                     Text(
-                        text = "探索·精选",
+                        text = stringResource(R.string.home_space_explore),
                         style = MaterialTheme.typography.labelMedium,
                         fontWeight = if (isExplore) FontWeight.Bold else FontWeight.Medium,
                         color = exploreContent
@@ -757,7 +757,7 @@ private fun DualSpaceSegmentedPill(
                         modifier = Modifier.size(15.dp)
                     )
                     Text(
-                        text = "本地·图库",
+                        text = stringResource(R.string.home_space_gallery),
                         style = MaterialTheme.typography.labelMedium,
                         fontWeight = if (isGallery) FontWeight.Bold else FontWeight.Medium,
                         color = galleryContent
@@ -783,8 +783,8 @@ private fun ExploreFeatureQuickBar(
         horizontalArrangement = Arrangement.spacedBy(Spacing.sm)
     ) {
         VisualFeatureHeroCard(
-            title = "动图短片",
-            subtitle = "精彩动画",
+            title = stringResource(R.string.home_feature_gif_title),
+            subtitle = stringResource(R.string.home_feature_gif_subtitle),
             icon = Icons.Filled.Animation,
             gradient = Brush.linearGradient(listOf(Color(0xFF11998E), Color(0xFF38EF7D))),
             badge = "动态",
@@ -793,8 +793,8 @@ private fun ExploreFeatureQuickBar(
         )
 
         VisualFeatureHeroCard(
-            title = "作品列表",
-            subtitle = "全部已下载",
+            title = stringResource(R.string.home_feature_works_title),
+            subtitle = stringResource(R.string.home_feature_works_subtitle),
             icon = Icons.Filled.PhotoAlbum,
             gradient = Brush.linearGradient(listOf(Color(0xFF4A90D9), Color(0xFF6B7FD7))),
             modifier = Modifier.weight(1f),
@@ -802,8 +802,8 @@ private fun ExploreFeatureQuickBar(
         )
 
         VisualFeatureHeroCard(
-            title = "下载管理",
-            subtitle = "解析队列",
+            title = stringResource(R.string.home_feature_download_title),
+            subtitle = stringResource(R.string.home_feature_download_subtitle),
             icon = Icons.Filled.Download,
             gradient = Brush.linearGradient(listOf(Color(0xFFFF8008), Color(0xFFFFC837))),
             modifier = Modifier.weight(1f),
@@ -853,7 +853,7 @@ private fun GallerySpaceHeroDashboard(
                         modifier = Modifier.size(20.dp)
                     )
                     Text(
-                        text = "环境数据库概览",
+                        text = stringResource(R.string.home_env_overview),
                         style = MaterialTheme.typography.titleMedium,
                         fontWeight = FontWeight.Bold,
                         color = MaterialTheme.colorScheme.onSurface
@@ -906,7 +906,7 @@ private fun GallerySpaceHeroDashboard(
                                 fontWeight = FontWeight.Bold
                             )
                             Text(
-                                text = "图片总数",
+                                text = stringResource(R.string.home_env_pic_total),
                                 style = MaterialTheme.typography.labelSmall,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
@@ -932,7 +932,7 @@ private fun GallerySpaceHeroDashboard(
                                 fontWeight = FontWeight.Bold
                             )
                             Text(
-                                text = "套图总组数",
+                                text = stringResource(R.string.home_env_group_total),
                                 style = MaterialTheme.typography.labelSmall,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
@@ -962,7 +962,7 @@ private fun GalleryFeatureQuickBar(
     ) {
         VisualFeatureHeroCard(
             title = stringResource(R.string.home_random_gallery),
-            subtitle = "画廊瀑布流",
+            subtitle = stringResource(R.string.home_tool_gallery_subtitle),
             icon = Icons.Filled.GridView,
             gradient = Brush.linearGradient(listOf(Color(0xFFFF5E62), Color(0xFFFF9966))),
             modifier = Modifier.weight(1f),
@@ -971,7 +971,7 @@ private fun GalleryFeatureQuickBar(
 
         VisualFeatureHeroCard(
             title = stringResource(R.string.home_random_pic),
-            subtitle = "单张看图",
+            subtitle = stringResource(R.string.home_tool_pic_subtitle),
             icon = Icons.Filled.Shuffle,
             gradient = Brush.linearGradient(listOf(Color(0xFF6B7FD7), Color(0xFF8E9EFA))),
             modifier = Modifier.weight(1f),
@@ -980,7 +980,7 @@ private fun GalleryFeatureQuickBar(
 
         VisualFeatureHeroCard(
             title = stringResource(R.string.home_random_group),
-            subtitle = "随机抽选",
+            subtitle = stringResource(R.string.home_tool_random_subtitle),
             icon = Icons.Filled.Collections,
             gradient = Brush.linearGradient(listOf(Color(0xFF3BAD7A), Color(0xFF68D8A0))),
             modifier = Modifier.weight(1f),
@@ -1036,7 +1036,7 @@ private fun HomeGalleryGroupCard(
                 val count = group.groupCount ?: 0
                 if (count > 0) {
                     M3GlassChip(
-                        text = "$count 张",
+                        text = stringResource(R.string.home_group_count, count),
                         icon = Icons.Filled.Image,
                         modifier = Modifier
                             .align(Alignment.TopEnd)
@@ -1355,7 +1355,7 @@ private fun SettingsBottomSheet(
                     }
                     Column {
                         Text(
-                            text = "偏好设置",
+                            text = stringResource(R.string.home_settings_title),
                             style = MaterialTheme.typography.titleLarge,
                             fontWeight = FontWeight.Bold,
                             color = MaterialTheme.colorScheme.onSurface
@@ -1371,7 +1371,7 @@ private fun SettingsBottomSheet(
                 IconButton(onClick = onDismiss) {
                     Icon(
                         imageVector = Icons.Filled.Close,
-                        contentDescription = "关闭",
+                        contentDescription = stringResource(R.string.common_close),
                         tint = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 }
@@ -1399,7 +1399,7 @@ private fun SettingsBottomSheet(
                             modifier = Modifier.size(18.dp)
                         )
                         Text(
-                            text = "主题外观",
+                            text = stringResource(R.string.home_theme_section),
                             style = MaterialTheme.typography.titleSmall,
                             fontWeight = FontWeight.Bold,
                             color = MaterialTheme.colorScheme.onSurface
@@ -1458,13 +1458,13 @@ private fun SettingsBottomSheet(
                             )
                             Column(modifier = Modifier.weight(1f, fill = false)) {
                                 Text(
-                                    text = "自定义网络代理",
+                                    text = stringResource(R.string.home_proxy_title),
                                     style = MaterialTheme.typography.titleSmall,
                                     fontWeight = FontWeight.Bold,
                                     color = MaterialTheme.colorScheme.onSurface
                                 )
                                 Text(
-                                    text = "VPN 自动绕过此 App 时，可手动设置代理端口",
+                                    text = stringResource(R.string.home_proxy_subtitle),
                                     style = MaterialTheme.typography.bodySmall,
                                     color = MaterialTheme.colorScheme.onSurfaceVariant
                                 )
@@ -1587,7 +1587,7 @@ private fun SettingsBottomSheet(
                                     horizontalArrangement = Arrangement.spacedBy(6.dp)
                                 ) {
                                     Text(
-                                        text = "探索内容隐私过滤",
+                                        text = stringResource(R.string.home_privacy_title),
                                         style = MaterialTheme.typography.titleSmall,
                                         fontWeight = FontWeight.Bold,
                                         color = MaterialTheme.colorScheme.onSurface
@@ -1597,7 +1597,7 @@ private fun SettingsBottomSheet(
                                         color = Color(0xFFFF5E62).copy(alpha = 0.15f)
                                     ) {
                                         Text(
-                                            text = "XHS专属",
+                                            text = stringResource(R.string.home_privacy_badge),
                                             style = MaterialTheme.typography.labelSmall,
                                             color = Color(0xFFFF5E62),
                                             fontWeight = FontWeight.Bold,
@@ -1606,7 +1606,7 @@ private fun SettingsBottomSheet(
                                     }
                                 }
                                 Text(
-                                    text = "开启后自动过滤小红书解析内容中的敏感/私密作品",
+                                    text = stringResource(R.string.home_privacy_subtitle),
                                     style = MaterialTheme.typography.bodySmall,
                                     color = MaterialTheme.colorScheme.onSurfaceVariant
                                 )
@@ -1644,13 +1644,13 @@ private fun SettingsBottomSheet(
                         )
                         Column {
                             Text(
-                                text = "服务端 API 节点",
+                                text = stringResource(R.string.home_node_title),
                                 style = MaterialTheme.typography.titleSmall,
                                 fontWeight = FontWeight.Bold,
                                 color = MaterialTheme.colorScheme.onSurface
                             )
                             Text(
-                                text = "双空间通用网络后端",
+                                text = stringResource(R.string.home_node_subtitle),
                                 style = MaterialTheme.typography.labelSmall,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                             )

@@ -1,10 +1,11 @@
 package com.example.randomgallery.android.ui.piclist
 
-import android.content.Context
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.example.randomgallery.android.AppContainer
+import com.example.randomgallery.android.di.BaseUrlManager
+import dagger.hilt.android.lifecycle.HiltViewModel
+import javax.inject.Inject
 import com.example.randomgallery.android.data.model.PicVO
 import com.example.randomgallery.android.data.repository.GalleryRepository
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -12,12 +13,13 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 
-class PicListViewModel(
-    private val appContext: Context,
-    savedStateHandle: SavedStateHandle
+@HiltViewModel
+class PicListViewModel @Inject constructor(
+    private val baseUrlManager: BaseUrlManager,
+    savedStateHandle: SavedStateHandle,
 ) : ViewModel() {
 
-    private fun repository(): GalleryRepository = AppContainer.repository(appContext)
+    private fun repository(): GalleryRepository = baseUrlManager.repository()
 
     private val _items = MutableStateFlow<List<PicVO>>(emptyList())
     val items: StateFlow<List<PicVO>> = _items.asStateFlow()

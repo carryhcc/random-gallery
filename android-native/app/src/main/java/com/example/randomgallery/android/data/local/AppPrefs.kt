@@ -11,7 +11,14 @@ import kotlinx.coroutines.flow.map
 
 private val Context.dataStore by preferencesDataStore(name = "app_prefs")
 
-class AppPrefs(private val context: Context) {
+/**
+ * 应用偏好（DataStore 支撑），[AppSettings] 的唯一实现。
+ *
+ * 下游一律依赖 [AppSettings] / [Preferences] 接口而非本类：DataStore 在 JVM 上无法实例化
+ * （依赖 Android Context），直接依赖本类会让任何下游都无法在无设备环境下测试。
+ * 全项目只有在 DI 模块里 `AppPrefs(context)` 这一次具体构造。
+ */
+class AppPrefs(private val context: Context) : AppSettings {
 
     companion object {
         private val KEY_ENV = stringPreferencesKey("env")
@@ -22,6 +29,7 @@ class AppPrefs(private val context: Context) {
         private val KEY_AUTO_READ_CLIPBOARD = booleanPreferencesKey("auto_read_clipboard")
         // URL 列表以换行符分隔存储
         private val KEY_URL_LIST = stringPreferencesKey("url_list")
+        private val KEY_XHS_COOKIE = stringPreferencesKey("xhs_cookie")
 
         private val KEY_SPACE_MODE = stringPreferencesKey("app_space_mode")
         
@@ -34,23 +42,24 @@ class AppPrefs(private val context: Context) {
         private const val URL_SEPARATOR = "\n"
     }
 
-    val proxyEnabledFlow: Flow<Boolean> = context.dataStore.data.map { it[KEY_PROXY_ENABLED] ?: false }
-    val proxyTypeFlow: Flow<String> = context.dataStore.data.map { it[KEY_PROXY_TYPE] ?: "HTTP" }
-    val proxyHostFlow: Flow<String> = context.dataStore.data.map { it[KEY_PROXY_HOST] ?: "127.0.0.1" }
-    val proxyPortFlow: Flow<Int> = context.dataStore.data.map { it[KEY_PROXY_PORT] ?: 7890 }
+    override val proxyEnabledFlow: Flow<Boolean> = context.dataStore.data.map { it[KEY_PROXY_ENABLED] ?: false }
+    override val proxyTypeFlow: Flow<String> = context.dataStore.data.map { it[KEY_PROXY_TYPE] ?: "HTTP" }
+    override val proxyHostFlow: Flow<String> = context.dataStore.data.map { it[KEY_PROXY_HOST] ?: "127.0.0.1" }
+    override val proxyPortFlow: Flow<Int> = context.dataStore.data.map { it[KEY_PROXY_PORT] ?: 7890 }
 
-    val spaceModeFlow: Flow<String> = context.dataStore.data.map { it[KEY_SPACE_MODE] ?: "explore" }
-    val envFlow: Flow<String> = context.dataStore.data.map { it[KEY_ENV] ?: "dev" }
-    val privacyFlow: Flow<Boolean> = context.dataStore.data.map { it[KEY_PRIVACY] ?: true }
-    val darkModeFlow: Flow<String> = context.dataStore.data.map { it[KEY_DARK_MODE] ?: "system" }
-    val viewModeFlow: Flow<String> = context.dataStore.data.map { it[KEY_VIEW_MODE] ?: "single" }
-    val baseUrlFlow: Flow<String?> = context.dataStore.data.map { it[KEY_BASE_URL] }
-    val autoReadClipboardFlow: Flow<Boolean> = context.dataStore.data.map { it[KEY_AUTO_READ_CLIPBOARD] ?: false }
-    val urlListFlow: Flow<List<String>> = context.dataStore.data.map { prefs ->
+    override val spaceModeFlow: Flow<String> = context.dataStore.data.map { it[KEY_SPACE_MODE] ?: "explore" }
+    override val envFlow: Flow<String> = context.dataStore.data.map { it[KEY_ENV] ?: "dev" }
+    override val privacyFlow: Flow<Boolean> = context.dataStore.data.map { it[KEY_PRIVACY] ?: true }
+    override val darkModeFlow: Flow<String> = context.dataStore.data.map { it[KEY_DARK_MODE] ?: "system" }
+    override val viewModeFlow: Flow<String> = context.dataStore.data.map { it[KEY_VIEW_MODE] ?: "single" }
+    override val baseUrlFlow: Flow<String?> = context.dataStore.data.map { it[KEY_BASE_URL] }
+    override val autoReadClipboardFlow: Flow<Boolean> = context.dataStore.data.map { it[KEY_AUTO_READ_CLIPBOARD] ?: false }
+    override val xhsCookieFlow: Flow<String> = context.dataStore.data.map { it[KEY_XHS_COOKIE] ?: "" }
+    override val urlListFlow: Flow<List<String>> = context.dataStore.data.map { prefs ->
         prefs[KEY_URL_LIST]?.split(URL_SEPARATOR)?.filter { it.isNotBlank() } ?: emptyList()
     }
 
-    suspend fun saveProxyConfig(enabled: Boolean, type: String, host: String, port: Int) {
+    override suspend fun saveProxyConfig(enabled: Boolean, type: String, host: String, port: Int) {
         context.dataStore.edit {
             it[KEY_PROXY_ENABLED] = enabled
             it[KEY_PROXY_TYPE] = type
@@ -59,27 +68,27 @@ class AppPrefs(private val context: Context) {
         }
     }
 
-    suspend fun saveEnv(env: String) {
+    override suspend fun saveEnv(env: String) {
         context.dataStore.edit { it[KEY_ENV] = env }
     }
 
-    suspend fun savePrivacy(enabled: Boolean) {
+    override suspend fun savePrivacy(enabled: Boolean) {
         context.dataStore.edit { it[KEY_PRIVACY] = enabled }
     }
 
-    suspend fun saveSpaceMode(mode: String) {
+    override suspend fun saveSpaceMode(mode: String) {
         context.dataStore.edit { it[KEY_SPACE_MODE] = mode }
     }
 
-    suspend fun saveDarkMode(mode: String) {
+    override suspend fun saveDarkMode(mode: String) {
         context.dataStore.edit { it[KEY_DARK_MODE] = mode }
     }
 
-    suspend fun saveViewMode(mode: String) {
+    override suspend fun saveViewMode(mode: String) {
         context.dataStore.edit { it[KEY_VIEW_MODE] = mode }
     }
 
-    suspend fun saveBaseUrl(baseUrl: String?) {
+    override suspend fun saveBaseUrl(baseUrl: String?) {
         context.dataStore.edit {
             if (baseUrl.isNullOrBlank()) {
                 it.remove(KEY_BASE_URL)
@@ -89,15 +98,25 @@ class AppPrefs(private val context: Context) {
         }
     }
 
-    suspend fun saveAutoReadClipboard(enabled: Boolean) {
+    override suspend fun saveAutoReadClipboard(enabled: Boolean) {
         context.dataStore.edit { it[KEY_AUTO_READ_CLIPBOARD] = enabled }
     }
 
-    suspend fun getBaseUrl(): String? = baseUrlFlow.first()
+    override suspend fun saveXhsCookie(cookie: String) {
+        context.dataStore.edit {
+            if (cookie.isBlank()) {
+                it.remove(KEY_XHS_COOKIE)
+            } else {
+                it[KEY_XHS_COOKIE] = cookie.trim()
+            }
+        }
+    }
 
-    suspend fun saveUrlList(urls: List<String>) {
+    override suspend fun getBaseUrl(): String? = baseUrlFlow.first()
+
+    override suspend fun saveUrlList(urls: List<String>) {
         context.dataStore.edit { it[KEY_URL_LIST] = urls.joinToString(URL_SEPARATOR) }
     }
 
-    suspend fun getUrlList(): List<String> = urlListFlow.first()
+    override suspend fun getUrlList(): List<String> = urlListFlow.first()
 }

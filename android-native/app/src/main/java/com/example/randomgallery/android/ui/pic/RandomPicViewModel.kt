@@ -1,9 +1,10 @@
 package com.example.randomgallery.android.ui.pic
 
-import android.content.Context
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.example.randomgallery.android.AppContainer
+import com.example.randomgallery.android.di.BaseUrlManager
+import dagger.hilt.android.lifecycle.HiltViewModel
+import javax.inject.Inject
 import com.example.randomgallery.android.data.model.GroupVO
 import com.example.randomgallery.android.data.model.PicVO
 import com.example.randomgallery.android.data.repository.GalleryRepository
@@ -13,11 +14,12 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 
-class RandomPicViewModel(
-    private val appContext: Context
+@HiltViewModel
+class RandomPicViewModel @Inject constructor(
+    private val baseUrlManager: BaseUrlManager
 ) : ViewModel() {
 
-    private fun repository(): GalleryRepository = AppContainer.repository(appContext)
+    private fun repository(): GalleryRepository = baseUrlManager.repository()
 
     private val _picList = MutableStateFlow<List<PicVO>>(emptyList())
     val picList: StateFlow<List<PicVO>> = _picList.asStateFlow()

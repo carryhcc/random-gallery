@@ -1,4 +1,20 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!--
+  Release 版网络安全配置。
+
+  base-config 放开明文是**有意**的，原因见 CleartextPolicy：
+  1. NSC 的 <domain> 只做字符串精确匹配 + 子域后缀匹配，IP 字面量无特殊处理，
+     也没有 CIDR / 网段语法（AOSP ApplicationConfig / XmlConfigSource）。
+     内网地址由用户随时填写，无法逐个枚举。
+  2. 只要声明了 NSC，manifest 的 android:usesCleartextTraffic 就被完全忽略
+     （API 24+），所以「flag 兜底 IP 字面量」并不存在。
+
+  也就是说「只放行内网」这条策略在 XML 层表达不出来。应用自己的 OkHttp 网络栈统一挂载
+  CleartextPolicyInterceptor 和 Downloader 入队校验：release 下只允许回环/内网 HTTP，公网请求必须 HTTPS。
+
+  debug 版由 app/src/debug/res/xml/network_security_config.xml 覆盖，同样全量放行。
+-->
 <network-security-config>
+    <!-- 应用请求由 CleartextPolicyInterceptor / Downloader 限制；NSC 无法表达网段 -->
     <base-config cleartextTrafficPermitted="true" />
 </network-security-config>

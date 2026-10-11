@@ -57,7 +57,13 @@ MAIN_ACTIVITY="com.example.randomgallery.android.MainActivity"
 
 if [ "$MODE" = "release" ]; then
   echo "==> 构建 Release APK（带 R8 优化和 ABI 架构分包）"
-  ./gradlew :app:assembleRelease
+  if [ -f keystore.properties ]; then
+    ./gradlew :app:assembleRelease
+  else
+    echo "==> 未配置正式签名，使用本机 debug key 构建本地 Release 测试包（保留 R8 优化）"
+    echo "    正式发布请配置 keystore.properties；本测试包不能用于上架。"
+    ./gradlew :app:assembleRelease -PallowDebugSigning=true
+  fi
   APK_DIR="app/build/outputs/apk/release"
 else
   echo "==> 构建 Debug APK"

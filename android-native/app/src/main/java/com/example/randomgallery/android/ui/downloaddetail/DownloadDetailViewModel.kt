@@ -1,9 +1,10 @@
 package com.example.randomgallery.android.ui.downloaddetail
 
-import android.content.Context
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.example.randomgallery.android.AppContainer
+import com.example.randomgallery.android.di.BaseUrlManager
+import dagger.hilt.android.lifecycle.HiltViewModel
+import javax.inject.Inject
 import com.example.randomgallery.android.data.model.XhsWorkDetailVO
 import com.example.randomgallery.android.data.repository.GalleryRepository
 import com.example.randomgallery.android.ui.common.SingleFlight
@@ -16,11 +17,12 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.launch
 
-class DownloadDetailViewModel(
-    private val appContext: Context
+@HiltViewModel
+class DownloadDetailViewModel @Inject constructor(
+    private val baseUrlManager: BaseUrlManager
 ) : ViewModel() {
 
-    private fun repository(): GalleryRepository = AppContainer.repository(appContext)
+    private fun repository(): GalleryRepository = baseUrlManager.repository()
 
     private val _detail = MutableStateFlow<UiState<XhsWorkDetailVO>>(UiState.Loading)
     val detail: StateFlow<UiState<XhsWorkDetailVO>> = _detail.asStateFlow()

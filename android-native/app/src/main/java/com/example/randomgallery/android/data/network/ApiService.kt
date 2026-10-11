@@ -49,6 +49,9 @@ interface ApiService {
     @GET("api/xhsWork/download/stats")
     suspend fun getDownloadStats(): ApiResponse<DownloadTaskStatsVO>
 
+    @POST("api/xhsWork/download/validateCookie")
+    suspend fun validateCookie(@Body qry: CookieValidateQry): ApiResponse<Boolean>
+
     @DELETE("api/xhsWork/download/task/{id}")
     suspend fun deleteDownloadTask(@Path("id") id: Long): ApiResponse<String>
 

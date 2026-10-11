@@ -172,16 +172,20 @@ fun WallpaperPreviewDialog(
             onDispose { player?.release() }
         }
 
-        // 实时时钟与日期
+        // 实时时钟与日期：锁屏覆盖层可见时才走。1s 一跳是为了让分钟翻页及时，
+        // 但格式串固定不变（原先每轮都 new 两个 SimpleDateFormat），且只在
+        // LOCK_SCREEN 模态下运行——另两个模态既不显示它，也不必每秒重组一次。
         var currentTimeStr by remember { mutableStateOf("") }
         var currentDateStr by remember { mutableStateOf("") }
-        LaunchedEffect(Unit) {
+        LaunchedEffect(previewMode, showUiControls) {
+            if (previewMode != WallpaperPreviewMode.LOCK_SCREEN || !showUiControls) return@LaunchedEffect
             val timeFmt = SimpleDateFormat("HH:mm", Locale.getDefault())
             val dateFmt = SimpleDateFormat("M月d日 EEEE", Locale.CHINA)
             while (true) {
-                val now = Date()
-                currentTimeStr = timeFmt.format(now)
-                currentDateStr = dateFmt.format(now)
+                val time = timeFmt.format(Date())
+                val date = dateFmt.format(Date())
+                if (time != currentTimeStr) currentTimeStr = time
+                if (date != currentDateStr) currentDateStr = date
                 kotlinx.coroutines.delay(1000)
             }
         }
@@ -388,7 +392,7 @@ fun WallpaperPreviewDialog(
                             verticalAlignment = Alignment.CenterVertically
                         ) {
                             Text(
-                                text = "壁纸虚化程度: ${blurLevel.toInt()} dp",
+                                text = stringResource(R.string.wallpaper_blur_level, blurLevel.toInt()),
                                 style = MaterialTheme.typography.bodyMedium,
                                 color = Color.White,
                                 fontWeight = FontWeight.Medium
@@ -786,13 +790,13 @@ private fun LockScreenOverlay(
                     }
                     Column(modifier = Modifier.weight(1f)) {
                         Text(
-                            text = "随机图库 · 壁纸透传预览",
+                            text = stringResource(R.string.wallpaper_lock_preview_title),
                             style = MaterialTheme.typography.labelLarge,
                             fontWeight = FontWeight.SemiBold,
                             color = Color.White
                         )
                         Text(
-                            text = "双指缩放或拖拽平移，实时查看锁屏与遮挡效果",
+                            text = stringResource(R.string.wallpaper_lock_preview_desc),
                             style = MaterialTheme.typography.bodySmall,
                             color = Color.White.copy(alpha = 0.80f),
                             maxLines = 1,
@@ -835,7 +839,7 @@ private fun LockScreenOverlay(
                     modifier = Modifier.size(20.dp)
                 )
                 Text(
-                    text = "向上滑动解锁",
+                    text = stringResource(R.string.wallpaper_lock_swipe_up),
                     style = MaterialTheme.typography.labelSmall,
                     color = Color.White.copy(alpha = 0.70f)
                 )
@@ -893,7 +897,7 @@ private fun HomeScreenOverlay() {
                     modifier = Modifier.size(20.dp)
                 )
                 Text(
-                    text = "搜索应用与内容…",
+                    text = stringResource(R.string.wallpaper_mock_search_hint),
                     style = MaterialTheme.typography.bodyMedium,
                     color = Color.White.copy(alpha = 0.80f)
                 )
@@ -908,8 +912,18 @@ private fun HomeScreenOverlay() {
             verticalArrangement = Arrangement.spacedBy(22.dp)
         ) {
             val appRows = listOf(
-                listOf(Icons.Filled.PhoneAndroid to "电话", Icons.Filled.ChatBubble to "信息", Icons.Filled.Explore to "浏览器", Icons.Filled.Image to "相册"),
-                listOf(Icons.Filled.Settings to "设置", Icons.Filled.AccessTime to "时钟", Icons.Filled.FolderSpecial to "文件", Icons.Filled.AutoAwesome to "相机")
+                listOf(
+                    Icons.Filled.PhoneAndroid to stringResource(R.string.wallpaper_mock_phone),
+                    Icons.Filled.ChatBubble to stringResource(R.string.wallpaper_mock_message),
+                    Icons.Filled.Explore to stringResource(R.string.wallpaper_mock_browser),
+                    Icons.Filled.Image to stringResource(R.string.wallpaper_mock_gallery)
+                ),
+                listOf(
+                    Icons.Filled.Settings to stringResource(R.string.wallpaper_mock_settings),
+                    Icons.Filled.AccessTime to stringResource(R.string.wallpaper_mock_clock),
+                    Icons.Filled.FolderSpecial to stringResource(R.string.wallpaper_mock_files),
+                    Icons.Filled.AutoAwesome to stringResource(R.string.wallpaper_mock_camera)
+                )
             )
             appRows.forEach { rowApps ->
                 Row(
@@ -938,10 +952,10 @@ private fun HomeScreenOverlay() {
                     .padding(vertical = 12.dp),
                 horizontalArrangement = Arrangement.SpaceAround
             ) {
-                AppMockIcon(icon = Icons.Filled.PhoneAndroid, label = "电话")
-                AppMockIcon(icon = Icons.Filled.ChatBubble, label = "信息")
-                AppMockIcon(icon = Icons.Filled.Explore, label = "浏览器")
-                AppMockIcon(icon = Icons.Filled.Image, label = "相册")
+                AppMockIcon(icon = Icons.Filled.PhoneAndroid, label = stringResource(R.string.wallpaper_mock_phone))
+                AppMockIcon(icon = Icons.Filled.ChatBubble, label = stringResource(R.string.wallpaper_mock_message))
+                AppMockIcon(icon = Icons.Filled.Explore, label = stringResource(R.string.wallpaper_mock_browser))
+                AppMockIcon(icon = Icons.Filled.Image, label = stringResource(R.string.wallpaper_mock_gallery))
             }
         }
     }

@@ -70,6 +70,11 @@ data class DownLoadQry(
 )
 
 @JsonClass(generateAdapter = true)
+data class CookieValidateQry(
+    val cookie: String
+)
+
+@JsonClass(generateAdapter = true)
 data class XhsWorkListVO(
     val id: Long? = null,
     val workId: String? = null,

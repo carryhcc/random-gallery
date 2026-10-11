@@ -2,6 +2,7 @@ package com.example.randomGallery.controller;
 
 import cn.hutool.core.util.ObjectUtil;
 import com.example.randomGallery.common.Result;
+import com.example.randomGallery.entity.QO.CookieValidateQry;
 import com.example.randomGallery.entity.QO.DownLoadQry;
 import com.example.randomGallery.entity.VO.AuthorVO;
 import com.example.randomGallery.entity.VO.RandomGifVO;
@@ -53,6 +54,14 @@ public class XhsWorkApiController {
     public Result<String> download(@RequestBody DownLoadQry qry) {
         downloadApi.addDownloadTask(qry);
         return Result.success("下载任务添加成功");
+    }
+
+    /**
+     * 校验小红书 Cookie 是否有效（仅向外部下载器发起元数据探测，不落库）
+     */
+    @PostMapping("/download/validateCookie")
+    public Result<Boolean> validateCookie(@RequestBody CookieValidateQry qry) {
+        return downloadApi.validateCookie(qry.getCookie());
     }
 
     /**

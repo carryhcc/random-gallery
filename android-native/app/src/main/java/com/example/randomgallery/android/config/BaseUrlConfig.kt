@@ -18,7 +18,11 @@ object BaseUrlConfig {
         if (uri.host.isNullOrBlank()) return null
         if (uri.query != null || uri.fragment != null) return null
 
-        return uri.toString().let { if (it.endsWith("/")) it else "$it/" }
+        val normalized = uri.toString().let { if (it.endsWith("/")) it else "$it/" }
+        // 明文策略在这里落地：NSC 无法表达「只放行内网」，见 CleartextPolicy
+        if (!CleartextPolicy.permitsHttpUrl(normalized)) return null
+
+        return normalized
     }
 
     fun resolve(custom: String?, fallback: String): String {

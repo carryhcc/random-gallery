@@ -1,9 +1,10 @@
 package com.example.randomgallery.android.ui.gallery
 
-import android.content.Context
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.example.randomgallery.android.AppContainer
+import com.example.randomgallery.android.di.BaseUrlManager
+import dagger.hilt.android.lifecycle.HiltViewModel
+import javax.inject.Inject
 import com.example.randomgallery.android.data.model.GroupVO
 import com.example.randomgallery.android.data.repository.GalleryRepository
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -11,11 +12,12 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 
-class RandomGalleryViewModel(
-    private val appContext: Context
+@HiltViewModel
+class RandomGalleryViewModel @Inject constructor(
+    private val baseUrlManager: BaseUrlManager
 ) : ViewModel() {
 
-    private fun repository(): GalleryRepository = AppContainer.repository(appContext)
+    private fun repository(): GalleryRepository = baseUrlManager.repository()
 
     private val _groups = MutableStateFlow<List<GroupVO>>(emptyList())
     val groups: StateFlow<List<GroupVO>> = _groups.asStateFlow()

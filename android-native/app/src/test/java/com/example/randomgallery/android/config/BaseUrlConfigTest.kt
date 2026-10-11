@@ -20,6 +20,15 @@ class BaseUrlConfigTest {
     }
 
     @Test
+    fun `sanitize enforces the cleartext policy`() {
+        // debug 变体下公网明文放行；release 拒绝（策略本体见 CleartextPolicyTest）
+        assertEquals(
+            "http://gallery.example.com/",
+            BaseUrlConfig.sanitize("http://gallery.example.com"),
+        )
+    }
+
+    @Test
     fun `resolve uses fallback when custom url is blank`() {
         assertEquals(
             "http://10.0.2.2:8086/",

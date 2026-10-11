@@ -147,4 +147,88 @@
     <string name="wallpaper_live_guide">请在系统壁纸预览中点击“应用”即可完成设置</string>
     <string name="wallpaper_service_name">随机画廊动态壁纸</string>
     <string name="wallpaper_service_desc">来自随机图库的高清动态视频壁纸服务</string>
+
+    <!-- 首页 -->
+    <string name="home_groups_title">套图分组目录</string>
+    <string name="home_groups_subtitle">多环境套图</string>
+    <string name="home_hero_title">精选作品探索</string>
+    <string name="home_hero_subtitle">小红书解析内容</string>
+    <string name="home_hero_section">精选作品</string>
+    <string name="home_image_count">%1$d 张</string>
+    <string name="home_space_explore">探索·精选</string>
+    <string name="home_space_gallery">本地·图库</string>
+    <string name="home_feature_gif_title">动图短片</string>
+    <string name="home_feature_gif_subtitle">精彩动画</string>
+    <string name="home_feature_works_title">作品列表</string>
+    <string name="home_feature_works_subtitle">全部已下载</string>
+    <string name="home_feature_download_title">下载管理</string>
+    <string name="home_feature_download_subtitle">解析队列</string>
+    <string name="home_env_overview">环境数据库概览</string>
+    <string name="home_env_pic_total">图片总数</string>
+    <string name="home_env_group_total">套图总组数</string>
+    <string name="home_tool_gallery_subtitle">画廊瀑布流</string>
+    <string name="home_tool_pic_subtitle">单张看图</string>
+    <string name="home_tool_random_subtitle">随机抽选</string>
+    <string name="home_group_count">%1$d 张</string>
+    <string name="home_settings_title">偏好设置</string>
+    <string name="home_theme_section">主题外观</string>
+    <string name="home_proxy_title">自定义网络代理</string>
+    <string name="home_proxy_subtitle">VPN 自动绕过此 App 时，可手动设置代理端口</string>
+    <string name="home_privacy_title">探索内容隐私过滤</string>
+    <string name="home_privacy_badge">XHS专属</string>
+    <string name="home_privacy_subtitle">开启后自动过滤小红书解析内容中的敏感/私密作品</string>
+    <string name="home_node_title">服务端 API 节点</string>
+    <string name="home_node_subtitle">双空间通用网络后端</string>
+
+    <!-- 图片列表 -->
+    <string name="piclist_toggle_columns">切换网格列数</string>
+    <string name="piclist_loaded_count">已加载 %1$d 张图片 · 真实比例自适应瀑布流</string>
+    <string name="piclist_remove">移除</string>
+
+    <!-- 下载与解析管理 -->
+    <string name="dlmanage_title">下载与解析管理</string>
+    <string name="dlmanage_delete_confirm">确定要删除该条记录吗？%1$s</string>
+    <string name="dlmanage_filter_all">全部</string>
+    <string name="dlmanage_filter_running">进行中</string>
+    <string name="dlmanage_filter_done">已完成</string>
+    <string name="dlmanage_filter_failed">失败</string>
+    <string name="dlmanage_new_link">新建链接解析</string>
+    <string name="dlmanage_read_clipboard">读剪贴板</string>
+    <string name="dlmanage_paste">粘贴</string>
+    <string name="dlmanage_parsing">正在解析…</string>
+    <string name="dlmanage_submit">加入下载解析</string>
+    <string name="dlmanage_failure_detail">失败原因详情</string>
+    <string name="dlmanage_copy_reason">复制原因</string>
+    <string name="dlmanage_original_url">原始链接: %1$s</string>
+
+    <!-- 作品列表 -->
+    <string name="dl_list_search_hint">搜索下载作品关键词…</string>
+    <string name="dl_list_clear">清空</string>
+
+    <!-- 壁纸预览透传 -->
+    <string name="wallpaper_blur_level">壁纸虚化程度: %1$d dp</string>
+    <string name="wallpaper_lock_preview_title">随机图库 · 壁纸透传预览</string>
+    <string name="wallpaper_lock_preview_desc">双指缩放或拖拽平移，实时查看锁屏与遮挡效果</string>
+    <string name="wallpaper_lock_swipe_up">向上滑动解锁</string>
+    <string name="wallpaper_mock_search_hint">搜索应用与内容…</string>
+    <string name="wallpaper_mock_phone">电话</string>
+    <string name="wallpaper_mock_message">信息</string>
+    <string name="wallpaper_mock_browser">浏览器</string>
+    <string name="wallpaper_mock_gallery">相册</string>
+    <string name="wallpaper_mock_settings">设置</string>
+    <string name="wallpaper_mock_clock">时钟</string>
+    <string name="wallpaper_mock_files">文件</string>
+    <string name="wallpaper_mock_camera">相机</string>
+
+    <!-- 动图页 -->
+    <string name="gif_view_detail">查看作品详情</string>
+    <string name="gif_share">分享</string>
+    <string name="gif_save_to_album">保存到相册</string>
+    <string name="gif_play">播放</string>
+    <string name="gif_searching_next">正在寻找下一张…</string>
+    <string name="gif_slow_network_retry">网络连接较慢，轻触重试</string>
+    <string name="gif_fast_forward">2x 快进中</string>
+    <string name="gif_group_progress">%1$d / %2$d 抽</string>
+    <string name="gif_mode_single">单张随机</string>
+    <string name="gif_mode_group">整组套图</string>
 </resources>

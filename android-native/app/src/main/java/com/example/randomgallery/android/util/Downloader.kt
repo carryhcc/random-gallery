@@ -5,6 +5,8 @@ import android.content.Context
 import android.os.Environment
 import androidx.core.content.getSystemService
 import androidx.core.net.toUri
+import com.example.randomgallery.android.BuildConfig
+import com.example.randomgallery.android.config.CleartextPolicy
 
 enum class MediaKind { IMAGE, VIDEO }
 
@@ -12,6 +14,9 @@ enum class MediaKind { IMAGE, VIDEO }
 object Downloader {
 
     fun enqueue(context: Context, url: String, kind: MediaKind, subDir: String = "RandomGallery"): Result<Long> {
+        if (!CleartextPolicy.permitsHttpUrl(url, BuildConfig.PERMIT_PUBLIC_CLEARTEXT)) {
+            return Result.failure(IllegalArgumentException("Release 下载地址必须使用 HTTPS 或内网 HTTP"))
+        }
         val manager = context.getSystemService<DownloadManager>()
             ?: return Result.failure(IllegalStateException("DownloadManager unavailable"))
         val defaultExt = if (kind == MediaKind.VIDEO) "mp4" else "jpg"

@@ -12,6 +12,7 @@ import androidx.core.graphics.drawable.toBitmap
 import coil.imageLoader
 import coil.request.ImageRequest
 import coil.request.SuccessResult
+import com.example.randomgallery.android.data.network.CleartextPolicyInterceptor
 import com.example.randomgallery.android.util.ImageUrlResolver
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -36,14 +37,19 @@ object WallpaperHelper {
     private const val LIVE_WALLPAPER_FILE = "current_live_wallpaper.mp4"
     const val ACTION_LIVE_WALLPAPER_UPDATED = "com.example.randomgallery.android.LIVE_WALLPAPER_UPDATED"
 
+    // 壁纸源图解码边长上限：4096 与常见 GPU 最大纹理尺寸一致，超过只会浪费内存
+    private const val MAX_SOURCE_EDGE = 4096
+    private const val MIN_SOURCE_EDGE = 1080
+
     /**
      * 壁纸视频下载专用客户端：懒加载复用，避免每次下载都新建客户端（各自的连接池与线程池）。
      *
-     * 不复用全局客户端——其 ApiNodeFailoverInterceptor 会把任意失败的 GET 改写到 API 节点，
+     * 不复用全局客户端——其 NodeFailoverInterceptor 会把任意失败的 GET 改写到 API 节点，
      * 而这里下载的是 xhscdn 视频直链，改写目标错误；同时显式放宽超时以适配大文件。
      */
     private val downloadClient: OkHttpClient by lazy {
         OkHttpClient.Builder()
+            .addInterceptor(CleartextPolicyInterceptor())
             .connectTimeout(15, TimeUnit.SECONDS)
             .readTimeout(60, TimeUnit.SECONDS)
             .writeTimeout(60, TimeUnit.SECONDS)
@@ -58,14 +64,25 @@ object WallpaperHelper {
     }
 
     /**
-     * 使用 Coil 异步拉取原始高清晰度 Bitmap
+     * 使用 Coil 异步拉取 Bitmap，并按屏幕分辨率上限约束解码尺寸。
+     *
+     * 不能用 [coil.size.Size.ORIGINAL]：相机原图常见 4000x3000，ARGB_8888 下单个
+     * Bitmap 就是 ~48MB Java 堆；后续 [cropAndTransformBitmap] 还要再分配一张屏幕
+     * 尺寸的输出图并（可选）再复制一份虚化结果，峰值轻易突破 100MB，在中低端机上
+     * 直接 OOM。裁切只需要覆盖「视口 x 最大缩放倍数」，故长边按屏幕长边的 2 倍
+     * 约束并封顶 [MAX_SOURCE_EDGE]（4096 与常见 GPU 纹理上限一致，再高也只是
+     * 白白占内存）。
      */
     suspend fun loadSourceBitmap(context: Context, url: String): Bitmap? = withContext(Dispatchers.IO) {
         val resolvedUrl = ImageUrlResolver.rawUrl(url)
         // 复用应用级单例 ImageLoader（含 HEIC 解码器、磁盘缓存与代理配置）
         val imageLoader = context.imageLoader
+        val metrics = context.resources.displayMetrics
+        val screenLongEdge = max(metrics.widthPixels, metrics.heightPixels)
+        val decodeEdge = (screenLongEdge * 2).coerceIn(MIN_SOURCE_EDGE, MAX_SOURCE_EDGE)
         val request = ImageRequest.Builder(context)
             .data(resolvedUrl)
+            .size(decodeEdge, decodeEdge) // Coil 默认 Scale.FIT：按长边等比缩放，不拉伸
             .allowHardware(false) // 需要在 CPU 内存中裁切与处理
             .build()
         val result = imageLoader.execute(request)
@@ -128,7 +145,11 @@ object WallpaperHelper {
 
         // 2. 高斯模糊微调（如果用户开启了虚化）
         return if (blurRadius > 0.5f) {
-            fastBlur(outBitmap, blurRadius.roundToInt().coerceIn(1, 25))
+            // fastBlur 已经用 getPixels 把内容读进了自己的 IntArray，中间图用完即可回收；
+            // 不回收的话它会一路活到 GC，和虚化结果叠加占两份屏幕尺寸的 ARGB_8888
+            val blurred = fastBlur(outBitmap, blurRadius.roundToInt().coerceIn(1, 25))
+            outBitmap.recycle()
+            blurred
         } else {
             outBitmap
         }

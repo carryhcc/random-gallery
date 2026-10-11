@@ -292,7 +292,7 @@ private fun CompactSearchHeaderBar(
                     decorationBox = { innerTextField ->
                         if (keyword.isBlank()) {
                             Text(
-                                text = "搜索下载作品关键词...",
+                                text = stringResource(R.string.dl_list_search_hint),
                                 style = MaterialTheme.typography.bodyMedium,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f)
                             )
@@ -308,7 +308,7 @@ private fun CompactSearchHeaderBar(
                     ) {
                         Icon(
                             imageVector = Icons.Filled.Clear,
-                            contentDescription = "清空",
+                            contentDescription = stringResource(R.string.dl_list_clear),
                             tint = MaterialTheme.colorScheme.onSurfaceVariant,
                             modifier = Modifier.size(15.dp)
                         )
@@ -370,7 +370,7 @@ private fun ActiveFilterTag(
                 fontWeight = FontWeight.Bold
             )
             IconButton(onClick = onClear, modifier = Modifier.size(16.dp)) {
-                Icon(Icons.Filled.Close, contentDescription = "移除", tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(11.dp))
+                Icon(Icons.Filled.Close, contentDescription = stringResource(R.string.piclist_remove), tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(11.dp))
             }
         }
     }

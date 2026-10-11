@@ -12,6 +12,7 @@ import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.gestures.detectDragGestures
@@ -41,6 +42,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.layout.onSizeChanged
@@ -417,7 +419,7 @@ private fun GifBottomControlBar(
                     if (onDetail != null) {
                         Icon(
                             imageVector = Icons.Filled.ChevronRight,
-                            contentDescription = "查看作品详情",
+                            contentDescription = stringResource(R.string.gif_view_detail),
                             tint = Color.White.copy(alpha = 0.70f),
                             modifier = Modifier.size(18.dp)
                         )
@@ -467,7 +469,7 @@ private fun GifBottomControlBar(
 
                     // 分享
                     GifCircleActionButton(
-                        contentDescription = "分享",
+                        contentDescription = stringResource(R.string.gif_share),
                         onClick = onShare
                     ) {
                         Icon(
@@ -480,7 +482,7 @@ private fun GifBottomControlBar(
 
                     // 保存到相册
                     GifCircleActionButton(
-                        contentDescription = "保存到相册",
+                        contentDescription = stringResource(R.string.gif_save_to_album),
                         onClick = onSave
                     ) {
                         Icon(
@@ -682,6 +684,80 @@ private fun GifInfoBarCompactPreview() {
 @Composable
 private fun GifInfoBarWidePreview() {
     MaterialTheme { GifBottomControlBarPreviewContent() }
+}
+
+// ── 全屏高斯模糊背景：带「上一张兜底」的交叉淡入淡出 ──
+
+/**
+ * 全屏背景图渐变切换容器。
+ *
+ * 直接用 [Crossfade] 按 url 切换时，每个目标 url 都是一棵全新的 [AsyncImage] 子树：
+ * 新图解码完成前该层是空白的，而旧图已经开始淡出，屏幕中段就会露出页面根布局
+ * 近黑的背景色——即「上下滑动切换时背景黑一下，然后才渲染出下一张图片的背景色」。
+ *
+ * 这里在 [Crossfade] 之下常驻一层「最近一次成功解码」的背景图（[Painter] 由
+ * Coil 的 `Success` 状态直接提供，无额外解码开销）作为兜底：
+ * 1. 切换瞬间新图未就绪 → 兜底层仍是上一张，画面不中断；
+ * 2. 新图解码完成 → 兜底层立即换成新图，同时上层继续完成 300ms 淡入，二者内容一致，不产生跳变；
+ * 3. 新图加载失败（死链）→ 兜底层保留上一张，也不会闪黑。
+ *
+ * @param url 当前应显示的背景图地址，空串时回落到页面底色。
+ * @param label 动画调试标签。
+ */
+@Composable
+private fun StableBackgroundCrossfade(
+    url: String,
+    label: String,
+    modifier: Modifier = Modifier,
+) {
+    val context = LocalContext.current
+    // 最近一次成功解码的背景图；跨 url 保留，切换期间持续兜底绘制。
+    var lastLoaded by remember { mutableStateOf<Painter?>(null) }
+
+    Box(modifier = modifier.fillMaxSize()) {
+        lastLoaded?.let { painter ->
+            Image(
+                painter = painter,
+                contentDescription = null,
+                contentScale = ContentScale.Crop,
+                modifier = Modifier
+                    .fillMaxSize()
+                    .blur(50.dp)
+                    .background(Color.Black.copy(alpha = 0.45f))
+            )
+        }
+
+        Crossfade(
+            targetState = url,
+            animationSpec = tween(300),
+            label = label
+        ) { target ->
+            if (target.isNotBlank()) {
+                AsyncImage(
+                    model = ImageRequest.Builder(context)
+                        .data(target)
+                        .crossfade(false) // 淡入淡出由本组件统一控制，避免 Coil 内部动画叠加出透明帧
+                        .build(),
+                    contentDescription = null,
+                    contentScale = ContentScale.Crop,
+                    onSuccess = { result ->
+                        // 只接受当前 url 的结果：正在淡出的旧层回调不能覆盖兜底图
+                        if (target == url) lastLoaded = result.painter
+                    },
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .blur(50.dp)
+                        .background(Color.Black.copy(alpha = 0.45f))
+                )
+            } else {
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .background(MaterialTheme.colorScheme.background)
+                )
+            }
+        }
+    }
 }
 
 // ── 模式 A：单张随机（仅中间卡片手势切换，全屏背景高斯模糊与底部文案动态过渡）──
@@ -1007,32 +1083,7 @@ internal fun SingleCardDynamicGifViewer(
 
     Box(modifier = Modifier.fillMaxSize()) {
         // ── 1. 全屏背景：动态跨帧渐变，页面框架绝不滑走 ──
-        Crossfade(
-            targetState = displayUrl,
-            animationSpec = tween(300),
-            label = "bgFade"
-        ) { url ->
-            if (url.isNotBlank()) {
-                AsyncImage(
-                    model = ImageRequest.Builder(context)
-                        .data(url)
-                        .crossfade(true)
-                        .build(),
-                    contentDescription = null,
-                    contentScale = ContentScale.Crop,
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .blur(50.dp)
-                        .background(Color.Black.copy(alpha = 0.45f))
-                )
-            } else {
-                Box(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .background(MaterialTheme.colorScheme.background)
-                )
-            }
-        }
+        StableBackgroundCrossfade(url = displayUrl, label = "bgFade")
 
         when {
             loading && gifList.isEmpty() -> XhsLoadingBox(Modifier.fillMaxSize())
@@ -1173,7 +1224,7 @@ internal fun SingleCardDynamicGifViewer(
                                 ) {
                                     Icon(
                                         imageVector = Icons.Filled.PlayArrow,
-                                        contentDescription = "播放",
+                                        contentDescription = stringResource(R.string.gif_play),
                                         tint = Color.White,
                                         modifier = Modifier.size(40.dp)
                                     )
@@ -1199,7 +1250,7 @@ internal fun SingleCardDynamicGifViewer(
                                                 strokeWidth = 2.5.dp
                                             )
                                             Text(
-                                                text = "正在寻找下一张...",
+                                                text = stringResource(R.string.gif_searching_next),
                                                 style = MaterialTheme.typography.labelMedium,
                                                 color = Color.White.copy(alpha = 0.85f)
                                             )
@@ -1218,12 +1269,12 @@ internal fun SingleCardDynamicGifViewer(
                                         ) {
                                             Icon(
                                                 imageVector = Icons.Filled.Refresh,
-                                                contentDescription = "重试",
+                                                contentDescription = stringResource(R.string.gif_retry),
                                                 tint = Color.White.copy(alpha = 0.9f),
                                                 modifier = Modifier.size(28.dp)
                                             )
                                             Text(
-                                                text = "网络连接较慢，轻触重试",
+                                                text = stringResource(R.string.gif_slow_network_retry),
                                                 style = MaterialTheme.typography.labelMedium,
                                                 color = Color.White.copy(alpha = 0.85f)
                                             )
@@ -1243,7 +1294,7 @@ internal fun SingleCardDynamicGifViewer(
                                         .padding(horizontal = 10.dp, vertical = 4.dp)
                                 ) {
                                     Text(
-                                        text = "2x 快进中",
+                                        text = stringResource(R.string.gif_fast_forward),
                                         style = MaterialTheme.typography.labelSmall,
                                         color = Color.White,
                                         fontWeight = FontWeight.Bold
@@ -1548,26 +1599,7 @@ private fun CardStackDeckViewer(
     val offsetY = remember { Animatable(0f) }
 
     Box(modifier = Modifier.fillMaxSize()) {
-        Crossfade(
-            targetState = displayUrl,
-            animationSpec = tween(300),
-            label = "groupBgFade"
-        ) { url ->
-            if (url.isNotBlank()) {
-                AsyncImage(
-                    model = ImageRequest.Builder(context)
-                        .data(url)
-                        .crossfade(true)
-                        .build(),
-                    contentDescription = null,
-                    contentScale = ContentScale.Crop,
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .blur(50.dp)
-                        .background(Color.Black.copy(alpha = 0.45f))
-                )
-            }
-        }
+        StableBackgroundCrossfade(url = displayUrl, label = "groupBgFade")
 
         when {
             loading && groupGifs.isEmpty() -> XhsLoadingBox(Modifier.fillMaxSize())
@@ -1751,7 +1783,7 @@ private fun CardStackDeckViewer(
                                             modifier = Modifier.size(13.dp)
                                         )
                                         Text(
-                                            text = "${cardIndex + 1} / ${groupGifs.size} 抽",
+                                            text = stringResource(R.string.gif_group_progress, cardIndex + 1, groupGifs.size),
                                             style = MaterialTheme.typography.labelSmall.tabularNumbers,
                                             fontWeight = FontWeight.Bold,
                                             color = Color.White
@@ -1946,7 +1978,7 @@ private fun GifModeSegmentedPill(
                 contentAlignment = Alignment.Center
             ) {
                 Text(
-                    text = "单张随机",
+                    text = stringResource(R.string.gif_mode_single),
                     style = MaterialTheme.typography.labelMedium,
                     fontWeight = if (isSingle) FontWeight.Bold else FontWeight.Normal,
                     color = if (isSingle) Color.White else Color.White.copy(alpha = 0.75f)
@@ -1972,7 +2004,7 @@ private fun GifModeSegmentedPill(
                 contentAlignment = Alignment.Center
             ) {
                 Text(
-                    text = "整组套图",
+                    text = stringResource(R.string.gif_mode_group),
                     style = MaterialTheme.typography.labelMedium,
                     fontWeight = if (isGroup) FontWeight.Bold else FontWeight.Normal,
                     color = if (isGroup) Color.White else Color.White.copy(alpha = 0.75f)

@@ -1,14 +1,14 @@
 package com.example.randomgallery.android.data.network
 
 import android.content.Context
-import com.example.randomgallery.android.config.ApiNodeFailoverInterceptor
-import com.example.randomgallery.android.data.local.AppPrefs
+import com.example.randomgallery.android.config.NodeFailoverInterceptor
+import com.example.randomgallery.android.config.NodeFailoverStrategy
+import com.example.randomgallery.android.config.CleartextPolicy
+import com.example.randomgallery.android.BuildConfig
+import com.example.randomgallery.android.data.local.AppSettings
 import com.squareup.moshi.Moshi
 import com.squareup.moshi.kotlin.reflect.KotlinJsonAdapterFactory
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.first
-import kotlinx.coroutines.launch
 import okhttp3.Cache
 import okhttp3.CacheControl
 import okhttp3.Interceptor
@@ -24,96 +24,39 @@ import java.net.Proxy
 import java.net.ProxySelector
 import java.net.SocketAddress
 import java.net.URI
+import java.io.IOException
 import java.util.concurrent.TimeUnit
-import java.util.concurrent.atomic.AtomicBoolean
 
-// 自定义代理（模块级，供 NetworkModule 内部类与 Coil 图片加载器共享读取）
-@Volatile
-private var cachedProxy: Proxy? = null
-
+/**
+ * 网络层装配。
+ *
+ * 迁移前这里自己维护一个静态 `okHttpClient` 单例，并用 `resetOkHttpClient()` 在切节点 / 换代理时
+ * 把它置空重建。客户端的生命周期由 Hilt 单例管理后，这些重置入口改由 [ProxyController] 与
+ * [com.example.randomgallery.android.di.BaseUrlManager] 驱动：前者只需清连接池（代理选择器
+ * 每次建连都读最新值，不必重建客户端），后者本就无需重建客户端（baseUrl 固化在 Retrofit 上）。
+ */
 object NetworkModule {
 
-    // 全应用共享同一个 OkHttpClient（含磁盘缓存目录）：
-    // 切换 baseUrl 只新建轻量 Retrofit 包装，避免多个 DiskLruCache 争用同一目录导致缓存被静默禁用。
-    @Volatile
-    private var okHttpClient: OkHttpClient? = null
+    val moshi: Moshi = Moshi.Builder()
+        .addLast(KotlinJsonAdapterFactory())
+        .build()
 
-    // 应用上下文（首次构建客户端时缓存），用于后台预读代理配置
-    @Volatile
-    private var appContext: Context? = null
+    /** 每次换 baseUrl 新建一个轻量 Retrofit 包装；共享客户端避免多个 DiskLruCache 争用同一目录。 */
+    fun createApiService(client: OkHttpClient, baseUrl: String): ApiService =
+        Retrofit.Builder()
+            .baseUrl(baseUrl)
+            .addConverterFactory(MoshiConverterFactory.create(moshi))
+            .client(client)
+            .build()
+            .create(ApiService::class.java)
 
-    // 自定义代理在 IO 线程预读并缓存，避免在主线程读取时阻塞
-    private val proxyPrereadStarted = AtomicBoolean(false)
-
-    fun okHttpClient(context: Context, enableHttpLogging: Boolean): OkHttpClient {
-        appContext = context.applicationContext
-        ensureProxyPreread()
-        okHttpClient?.let { return it }
-        return synchronized(this) {
-            okHttpClient ?: createOkHttp(context.applicationContext, enableHttpLogging).also { okHttpClient = it }
-        }
-    }
-
-    private fun ensureProxyPreread() {
-        if (proxyPrereadStarted.compareAndSet(false, true)) {
-            CoroutineScope(Dispatchers.IO).launch {
-                cachedProxy = computeProxy(appContext)
-            }
-        }
-    }
-
-    fun resetOkHttpClient() {
-        synchronized(this) {
-            okHttpClient = null
-        }
-    }
-
-    fun clearHttpCache() {
-        runCatching { okHttpClient?.cache?.evictAll() }
-    }
-
-    /**
-     * 代理配置变更后重新读取并应用：更新 [cachedProxy] 后重建底层 OkHttpClient，
-     * 配合 [DynamicProxySelector] 使后续新建连接立即走新代理（无需重启进程）。
-     */
-    suspend fun refreshProxy(context: Context) {
-        cachedProxy = computeProxy(context.applicationContext)
-        resetOkHttpClient()
-    }
-
-    /** 动态代理选择器：每次建连时读取最新 [cachedProxy]，支持运行时切换代理。 */
-    fun dynamicProxySelector(): ProxySelector = DynamicProxySelector()
-
-    /**
-     * 在 IO 线程读取自定义代理配置并缓存到 [cachedProxy]，避免在调用线程（可能为主线程）
-     * 同步阻塞。首次构建 OkHttpClient 时异步预读可能尚未完成
-     * （cachedProxy 为 null，等价直连）；当用户修改代理配置时
-     * [com.example.randomgallery.android.AppContainer.clearRepository] 会重建客户端，
-     * 配合 [dynamicProxySelector] 与 [refreshProxy] 使新连接立即走新代理。
-     */
-    private suspend fun computeProxy(context: Context?): Proxy? = runCatching {
-        val ctx = context ?: return@runCatching null
-        val prefs = AppPrefs(ctx)
-        val enabled = prefs.proxyEnabledFlow.first()
-        if (!enabled) return@runCatching null
-        val host = prefs.proxyHostFlow.first()
-        val port = prefs.proxyPortFlow.first()
-        val typeStr = prefs.proxyTypeFlow.first()
-        if (host.isNotBlank() && port in 1..65535) {
-            val type = if (typeStr.equals("SOCKS", ignoreCase = true)) Proxy.Type.SOCKS else Proxy.Type.HTTP
-            Proxy(type, InetSocketAddress(host, port))
-        } else null
-    }.getOrNull()
-
-    private fun createOkHttp(context: Context, enableHttpLogging: Boolean): OkHttpClient {
-        val cacheDir = context.cacheDir
-        val logging = HttpLoggingInterceptor().apply {
-            level = if (enableHttpLogging) {
-                HttpLoggingInterceptor.Level.BODY
-            } else {
-                HttpLoggingInterceptor.Level.NONE
-            }
-        }
+    /** 供 Hilt 提供应用级单例客户端（`@Provides` 中装配全部拦截器）。 */
+    fun createOkHttpClient(
+        context: Context,
+        enableHttpLogging: Boolean,
+        baseUrlManager: NodeFailoverStrategy,
+    ): OkHttpClient {
+        val appContext = context.applicationContext
         val clientHeaderInterceptor = Interceptor { chain ->
             chain.proceed(
                 chain.request().newBuilder()
@@ -122,42 +65,69 @@ object NetworkModule {
             )
         }
 
-        val builder = OkHttpClient.Builder()
-            .cache(Cache(File(cacheDir, "http_cache"), 20L * 1024L * 1024L))
+        return OkHttpClient.Builder()
+            .cache(Cache(File(appContext.cacheDir, "http_cache"), 20L * 1024L * 1024L))
             // 连接超时收紧到 8s（读/写保持 20s）：节点失联时尽快触发故障切换，
             // 避免黑洞地址让首个请求干等 20s 才开始切换
             .connectTimeout(8, TimeUnit.SECONDS)
             .readTimeout(20, TimeUnit.SECONDS)
             .writeTimeout(20, TimeUnit.SECONDS)
             .addInterceptor(clientHeaderInterceptor)
-            // 节点故障切换：当前节点连接失败时自动改写到首个存活节点（本地节点优先 ping）
-            .addInterceptor(ApiNodeFailoverInterceptor(context.applicationContext))
+            .addInterceptor(CleartextPolicyInterceptor())
+            // 节点故障切换：当前节点连接失败时自动改写到首个存活节点
+            .addInterceptor(NodeFailoverInterceptor(baseUrlManager))
             // 离线兜底：网络失败时改用 only-if-cached 重放，命中磁盘缓存返回陈旧数据
             .addInterceptor(OfflineFallbackInterceptor())
             .addNetworkInterceptor(CacheControlInterceptor())
-            .addInterceptor(logging)
-
-        builder.proxySelector(dynamicProxySelector())
-
-        return builder.build()
-    }
-
-    val moshi: Moshi = Moshi.Builder()
-        .addLast(KotlinJsonAdapterFactory())
-        .build()
-
-    fun createApiService(
-        context: Context,
-        baseUrl: String,
-        enableHttpLogging: Boolean
-    ): ApiService {
-        val retrofit = Retrofit.Builder()
-            .baseUrl(baseUrl)
-            .addConverterFactory(MoshiConverterFactory.create(moshi))
-            .client(okHttpClient(context, enableHttpLogging))
+            .addInterceptor(Interceptor { chain ->
+                // Cookie 位于 JSON 请求体，debug 日志也不得输出这些请求的正文。
+                val sensitive = chain.request().url.encodedPath.let {
+                    it.endsWith("/api/xhsWork/download") || it.endsWith("/download/validateCookie")
+                }
+                HttpLoggingInterceptor().apply {
+                    level = if (!enableHttpLogging || sensitive) HttpLoggingInterceptor.Level.NONE
+                    else HttpLoggingInterceptor.Level.BODY
+                }.intercept(chain)
+            })
+            .proxySelector(dynamicProxySelector())
             .build()
-        return retrofit.create(ApiService::class.java)
     }
+
+    /** 动态代理选择器：每次建连时读取最新 [ProxyStore.proxy]，支持运行时切换代理。 */
+    fun dynamicProxySelector(): ProxySelector = DynamicProxySelector()
+}
+
+/** Enforce the Release cleartext boundary for every request handled by an app-owned OkHttp client. */
+class CleartextPolicyInterceptor : Interceptor {
+    override fun intercept(chain: Interceptor.Chain): okhttp3.Response {
+        val url = chain.request().url
+        if (!CleartextPolicy.permitsHttpUrl(url.toString(), BuildConfig.PERMIT_PUBLIC_CLEARTEXT)) {
+            throw IOException("Cleartext HTTP is not permitted for ${url.host}")
+        }
+        return chain.proceed(chain.request())
+    }
+}
+
+/**
+ * 自定义代理的进程内缓存。
+ *
+ * 以静态可变状态存在是有意的：OkHttp 的 [ProxySelector] 是长时间存活的连接期回调，
+ * 只拿得到 URI，取不到注入的依赖。配置本身由 [ProxyController] 在 IO 线程写入。
+ */
+internal object ProxyStore {
+    @Volatile
+    var proxy: Proxy? = null
+
+    suspend fun compute(prefs: AppSettings): Proxy? = runCatching {
+        if (!prefs.proxyEnabledFlow.first()) return@runCatching null
+        val host = prefs.proxyHostFlow.first()
+        val port = prefs.proxyPortFlow.first()
+        val typeStr = prefs.proxyTypeFlow.first()
+        if (host.isNotBlank() && port in 1..65535) {
+            val type = if (typeStr.equals("SOCKS", ignoreCase = true)) Proxy.Type.SOCKS else Proxy.Type.HTTP
+            Proxy(type, InetSocketAddress(host, port))
+        } else null
+    }.getOrNull()
 }
 
 /**
@@ -223,12 +193,12 @@ private class OfflineFallbackInterceptor : Interceptor {
 }
 
 /**
- * 动态代理选择器：每次新建连接时读取最新的 [cachedProxy]。
+ * 动态代理选择器：每次新建连接时读取最新的 [ProxyStore.proxy]。
  * 这样修改代理设置后无需重建 OkHttpClient 即可对新连接生效（API 与 Coil 图片加载均适用）。
  */
 private class DynamicProxySelector : ProxySelector() {
     override fun select(uri: URI?): List<Proxy> {
-        val proxy = cachedProxy
+        val proxy = ProxyStore.proxy
         return if (proxy != null) listOf(proxy) else listOf(Proxy.NO_PROXY)
     }
 

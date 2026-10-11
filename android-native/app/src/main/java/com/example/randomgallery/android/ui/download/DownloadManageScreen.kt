@@ -50,6 +50,11 @@ import com.example.randomgallery.android.ui.common.*
 import com.example.randomgallery.android.ui.theme.*
 import kotlinx.coroutines.delay
 
+// 有在途任务时的轮询间隔
+private const val POLL_ACTIVE_MS = 3_000L
+// 空闲时的心跳间隔：仅用于发现其他客户端/后台新建的任务
+private const val POLL_IDLE_MS = 30_000L
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun DownloadManageScreen(
@@ -122,13 +127,22 @@ fun DownloadManageScreen(
         }
     }
 
-    // 页面活跃时每 3s 轮询进度
+    LaunchedEffect(viewModel) {
+        viewModel.cookieEvents.collect { result ->
+            Messenger.show(result.exceptionOrNull()?.message ?: result.getOrDefault("操作成功"), isError = result.isFailure)
+        }
+    }
+
+    // 进度轮询：只在「确实有任务在跑」时保持 3s 快节奏，没有在途任务时降到 30s 心跳。
+    // 原先无条件每 3s 拉一次分页接口，页面开着不动也在持续耗流量与电量。
+    // 心跳不能省——任务可能由其他客户端/后台上传，本机状态不更新就发现不了。
     val lifecycleOwner = LocalLifecycleOwner.current
-    LaunchedEffect(lifecycleOwner) {
+    val inFlightCount = stats.waitingCount + if (loading) 1L else 0L
+    LaunchedEffect(lifecycleOwner, inFlightCount) {
         lifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
             while (true) {
                 viewModel.pollHistory()
-                delay(3000)
+                delay(if (inFlightCount > 0) POLL_ACTIVE_MS else POLL_IDLE_MS)
             }
         }
     }
@@ -143,7 +157,7 @@ fun DownloadManageScreen(
                         horizontalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
                         Text(
-                            text = "下载与解析管理",
+                            text = stringResource(R.string.dlmanage_title),
                             fontWeight = FontWeight.Bold,
                             style = MaterialTheme.typography.titleLarge
                         )
@@ -209,6 +223,8 @@ fun DownloadManageScreen(
                     if (urlInput.isNotBlank() && !loading) viewModel.submit(urlInput)
                 }
             )
+
+            XhsCookieCard(viewModel)
 
             // ── 2. 任务历史看板与状态过滤胶囊 ────────────────────────
             M3GlassCard(
@@ -336,7 +352,10 @@ fun DownloadManageScreen(
             },
             text = {
                 Text(
-                    text = "确定要删除该条记录吗？${taskToDelete?.workTitle?.let { "\n《$it》" } ?: ""}",
+                    text = stringResource(
+                        R.string.dlmanage_delete_confirm,
+                        taskToDelete?.workTitle?.let { "\n《$it》" } ?: ""
+                    ),
                     style = MaterialTheme.typography.bodyMedium
                 )
             },
@@ -378,7 +397,7 @@ private fun TaskStatsFilterBar(
     ) {
         // 全部
         StatsFilterChip(
-            label = "全部",
+            label = stringResource(R.string.dlmanage_filter_all),
             count = stats.total,
             selected = currentFilter == null,
             activeColor = MaterialTheme.colorScheme.primary,
@@ -388,7 +407,7 @@ private fun TaskStatsFilterBar(
 
         // 进行中 / 排队中 (status = 0)
         StatsFilterChip(
-            label = "进行中",
+            label = stringResource(R.string.dlmanage_filter_running),
             count = stats.waitingCount,
             selected = currentFilter == 0,
             activeColor = Color(0xFF4A90D9),
@@ -398,7 +417,7 @@ private fun TaskStatsFilterBar(
 
         // 已完成 (status = 1)
         StatsFilterChip(
-            label = "已完成",
+            label = stringResource(R.string.dlmanage_filter_done),
             count = stats.completedCount,
             selected = currentFilter == 1,
             activeColor = Color(0xFF3BAD7A),
@@ -408,7 +427,7 @@ private fun TaskStatsFilterBar(
 
         // 失败 (status = 2)
         StatsFilterChip(
-            label = "失败",
+            label = stringResource(R.string.dlmanage_filter_failed),
             count = stats.failedCount,
             selected = currentFilter == 2,
             activeColor = Color(0xFFE05252),
@@ -523,7 +542,7 @@ private fun CollapsibleDownloadInputCard(
                         )
                     }
                     Text(
-                        text = "新建链接解析",
+                        text = stringResource(R.string.dlmanage_new_link),
                         style = MaterialTheme.typography.titleSmall,
                         fontWeight = FontWeight.Bold,
                         color = MaterialTheme.colorScheme.onSurface
@@ -557,7 +576,7 @@ private fun CollapsibleDownloadInputCard(
                                 modifier = Modifier.size(12.dp)
                             )
                             Text(
-                                text = "读剪贴板",
+                                text = stringResource(R.string.dlmanage_read_clipboard),
                                 style = MaterialTheme.typography.labelSmall,
                                 color = if (autoReadClipboard) XhsRed else MaterialTheme.colorScheme.onSurfaceVariant,
                                 fontWeight = if (autoReadClipboard) FontWeight.Bold else FontWeight.Normal
@@ -572,7 +591,7 @@ private fun CollapsibleDownloadInputCard(
                         ) {
                             Icon(
                                 Icons.Filled.ContentPaste,
-                                contentDescription = "粘贴",
+                                contentDescription = stringResource(R.string.dlmanage_paste),
                                 tint = MaterialTheme.colorScheme.primary,
                                 modifier = Modifier.size(16.dp)
                             )
@@ -668,7 +687,7 @@ private fun CollapsibleDownloadInputCard(
                                         strokeWidth = 2.dp
                                     )
                                     Text(
-                                        text = "正在解析...",
+                                        text = stringResource(R.string.dlmanage_parsing),
                                         style = MaterialTheme.typography.labelMedium,
                                         fontWeight = FontWeight.Bold,
                                         color = MaterialTheme.colorScheme.onSurfaceVariant
@@ -686,7 +705,7 @@ private fun CollapsibleDownloadInputCard(
                                         modifier = Modifier.size(16.dp)
                                     )
                                     Text(
-                                        text = "加入下载解析",
+                                        text = stringResource(R.string.dlmanage_submit),
                                         style = MaterialTheme.typography.labelMedium,
                                         fontWeight = FontWeight.Bold,
                                         color = if (urlInput.isNotBlank()) Color.White else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f)
@@ -902,7 +921,7 @@ private fun CompactTaskHistoryCard(
                                     modifier = Modifier.size(13.dp)
                                 )
                                 Text(
-                                    text = "失败原因详情",
+                                    text = stringResource(R.string.dlmanage_failure_detail),
                                     style = MaterialTheme.typography.labelSmall,
                                     fontWeight = FontWeight.Bold,
                                     color = MaterialTheme.colorScheme.error
@@ -911,7 +930,7 @@ private fun CompactTaskHistoryCard(
 
                             // 复制完整原因
                             Text(
-                                text = "复制原因",
+                                text = stringResource(R.string.dlmanage_copy_reason),
                                 style = MaterialTheme.typography.labelSmall,
                                 color = MaterialTheme.colorScheme.error,
                                 fontWeight = FontWeight.Bold,
@@ -931,7 +950,7 @@ private fun CompactTaskHistoryCard(
 
                         if (!task.url.isNullOrBlank() && task.url != task.workTitle) {
                             Text(
-                                text = "原始链接: ${task.url}",
+                                text = stringResource(R.string.dlmanage_original_url, task.url.orEmpty()),
                                 style = MaterialTheme.typography.labelSmall,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f),
                                 maxLines = 2,

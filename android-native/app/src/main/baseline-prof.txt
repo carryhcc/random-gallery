@@ -1,0 +1,69 @@
+# Baseline Profile：冷启动关键路径
+#
+# AGP 会把本文件合并进 APK，profileinstaller 在设备首次空闲时据此编译 AOT 镜像，
+# 让下面这些方法在后续启动中免去 JIT 解释执行与 profile 采样，直接走机器码。
+#
+# 覆盖范围 = Application.onCreate → MainActivity.onCreate → 首帧 HomeScreen 这条链路。
+# 刻意不写「所有方法」——过度膨胀的 profile 会拉长 dexopt 时间、挤占磁盘，收益反而下降。
+#
+# 格式：HSPL（human-readable simple profile line）。AGP 的 compileArtProfile 会严格校验，
+# 写错直接构建失败 —— 这里的三条规则都是踩过的坑：
+#   Lcom/foo/Bar;                              —— 类。**不能**带 H/S/P 前缀
+#   Lcom/foo/Bar;->m()V                        —— 方法。**必须**带 H/S/P 之一：H=热点，S=启动期，P=启动后
+#   HSPLcom/foo/Bar;->m()V                     —— 启动期关键路径
+# 早期版本在类规则上误加了 HSPL 前缀（如 HSPLandroidx/activity/EdgeToEdge;），
+# 因当时无人执行过该任务而未被发现。
+#
+# 注意：混淆后的类名（release 走 R8）无需在此处理——R8 会把这里的条目映射到重命名后的
+# 符号上；已删除的方法会被直接丢弃。
+
+# ── Application / 依赖装配 ──────────────────────────────────────────────
+HSPLcom/example/randomgallery/android/RandomGalleryApp;->onCreate()V
+HSPLcom/example/randomgallery/android/RandomGalleryApp;->newImageLoader()Lcoil/ImageLoader;
+Lcom/example/randomgallery/android/RandomGalleryApp;
+# 依赖图由 Hilt 在编译期生成，DaggerRandomGalleryApp_HiltComponents_SingletonC 是启动期装配的入口；
+# 原先这里写的是已被 Hilt 取代的 AppContainer（已删除，条目会被 R8 直接丢弃）。
+Lcom/example/randomgallery/android/DaggerRandomGalleryApp_HiltComponents_SingletonC;
+Lcom/example/randomgallery/android/di/BaseUrlManager;
+# 方法规则必须带 H/S/P 之一：H=热点，S=启动期，P=启动后。这里是启动期调用。
+HSPLcom/example/randomgallery/android/di/BaseUrlManager;->initialize()V
+Lcom/example/randomgallery/android/di/AppModule;
+
+# ── baseUrl / 节点选择（启动期异步但不该拖慢首帧）───────────────────────
+Lcom/example/randomgallery/android/config/BaseUrlConfig;
+Lcom/example/randomgallery/android/config/CleartextPolicy;
+Lcom/example/randomgallery/android/config/ApiNodeSwitcher;
+
+# ── 偏好读写（DataStore）──────────────────────────────────────────────
+Lcom/example/randomgallery/android/data/local/AppPrefs;
+# 由 Hilt 在启动期构造（原条目漏了 H/S/P 标记，AGP 的 compileArtProfile 会直接报错）
+HSPLcom/example/randomgallery/android/data/local/AppPrefs;-><init>(Landroid/content/Context;)V
+Lcom/example/randomgallery/android/data/local/AppSettings;
+Lcom/example/randomgallery/android/data/local/Preferences;
+
+# ── Activity 宿主与首帧 ───────────────────────────────────────────────
+Landroidx/activity/EdgeToEdge;
+HSPLcom/example/randomgallery/android/MainActivity;->onCreate(Landroid/os/Bundle;)V
+Lcom/example/randomgallery/android/MainActivity;
+
+# ── Compose 宿主与导航 ────────────────────────────────────────────────
+Landroidx/compose/runtime/Recomposer;
+Lcom/example/randomgallery/android/ui/AppNavHost;
+Lcom/example/randomgallery/android/ui/theme/ThemeKt;
+
+# ── 首页 ViewModel 与首屏数据 ─────────────────────────────────────────
+Lcom/example/randomgallery/android/ui/home/HomeViewModel;
+Lcom/example/randomgallery/android/ui/home/HomeScreenKt;
+Lcom/example/randomgallery/android/data/repository/GalleryRepository;
+Lcom/example/randomgallery/android/data/network/NetworkModule;
+
+# ── 图片加载（首屏封面）──────────────────────────────────────────────
+Lcoil/ImageLoader;
+Lcoil/ImageLoader$Builder;
+Lcoil/request/ImageRequest$Builder;
+
+# ── 网络 / JSON 解析（首屏接口）────────────────────────────────────────
+Lokhttp3/OkHttpClient;
+Lokhttp3/Call;
+Lretrofit2/Retrofit;
+Lcom/squareup/moshi/Moshi;

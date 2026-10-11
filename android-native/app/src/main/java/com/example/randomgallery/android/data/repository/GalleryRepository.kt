@@ -1,6 +1,6 @@
 package com.example.randomgallery.android.data.repository
 
-import com.example.randomgallery.android.data.local.AppPrefs
+import com.example.randomgallery.android.data.local.Preferences
 import com.example.randomgallery.android.data.local.CachedPayload
 import com.example.randomgallery.android.data.local.CachedPayloadDao
 import com.example.randomgallery.android.data.model.*
@@ -12,12 +12,13 @@ import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.async
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 
 class GalleryRepository(
     private val api: ApiService,
     private val cacheDao: CachedPayloadDao,
-    private val prefs: AppPrefs
+    private val prefs: Preferences,
 ) {
 
     private val moshi = NetworkModule.moshi
@@ -34,7 +35,7 @@ class GalleryRepository(
     }
 
     // 首页环境/隐私信息 TTL 缓存：进入首页不再每次发起网络请求，过期才刷新。
-    // 以当前 baseUrl 为 key，切换 baseUrl 时 AppContainer 会重建 repository（缓存自然失效）。
+    // 以当前 baseUrl 为 key，切换 baseUrl 时 BaseUrlManager 会重建 repository（缓存自然失效）。
     private class TtlEntry<T>(val value: T, val fetchedAt: Long)
 
     private class TtlCache<T>(private val ttlMs: Long) {
@@ -66,6 +67,7 @@ class GalleryRepository(
     val baseUrlFlow: Flow<String> = prefs.baseUrlFlow.map { BaseUrlConfig.resolve(it, BaseUrlConfig.current()) }
     val autoReadClipboardFlow: Flow<Boolean> = prefs.autoReadClipboardFlow
     val urlListFlow: Flow<List<String>> = prefs.urlListFlow
+    val xhsCookieFlow: Flow<String> = prefs.xhsCookieFlow
 
     suspend fun getRandomPic(): Result<PicVO> = try {
         val res = api.getRandomPic()
@@ -124,9 +126,22 @@ class GalleryRepository(
     }
 
     suspend fun addDownloadTask(url: String): Result<String> = try {
-        val res = api.addDownloadTask(DownLoadQry(url = url))
+        // 提交时读取持久化 cookie（而非依赖 UI 传入），保证即使 UI 状态陈旧也能带上最新值。
+        // 未保存时传 null，交由后端回退到配置文件里的 cookie。
+        val cookie = prefs.xhsCookieFlow.first().ifBlank { null }
+        val res = api.addDownloadTask(DownLoadQry(url = url, cookie = cookie))
         if (res.code == 200) Result.success(res.message ?: "任务已添加")
         else Result.failure(Exception(res.message ?: "添加失败"))
+    } catch (e: Exception) {
+        if (e is CancellationException) throw e
+        Result.failure(e)
+    }
+
+    suspend fun validateXhsCookie(cookie: String): Result<Boolean> = try {
+        // 校验只探测 cookie 是否有效，不落库（落库由 saveXhsCookie 负责）。
+        val res = api.validateCookie(CookieValidateQry(cookie = cookie))
+        if (res.code == 200 && res.data != null) Result.success(res.data)
+        else Result.failure(Exception(res.message ?: "校验失败"))
     } catch (e: Exception) {
         if (e is CancellationException) throw e
         Result.failure(e)
@@ -388,6 +403,8 @@ class GalleryRepository(
     suspend fun saveViewMode(mode: String) = prefs.saveViewMode(mode)
 
     suspend fun saveAutoReadClipboard(enabled: Boolean) = prefs.saveAutoReadClipboard(enabled)
+
+    suspend fun saveXhsCookie(cookie: String) = prefs.saveXhsCookie(cookie)
 
     private suspend fun cacheWorkList(page: Int, authorId: String?, tagId: Long?, keyword: String?, data: List<XhsWorkListVO>) {
         val key = "work_list_${page}_${authorId ?: "all"}_${tagId ?: "all"}_${keyword ?: "all"}"

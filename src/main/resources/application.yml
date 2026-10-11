@@ -45,6 +45,8 @@ other:
   downloader:
     port: 5556
     url: http://${db.host}:${other.downloader.port}/xhs/detail
+    # Cookie 校验用的小红书作品链接；部署时设置 OTHER_DOWNLOADER_PROBE_URL，需可从服务器访问
+    probe-url: ${OTHER_DOWNLOADER_PROBE_URL:}
   imaginary:
     type: jpeg
     quality: 90

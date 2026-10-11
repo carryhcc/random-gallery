@@ -36,7 +36,7 @@ class RandomGifScreenInteractionTest {
 
     private fun setViewer(
         gifs: List<RandomGifVO>,
-        onToggleFavorite: () -> Unit = {},
+        onToggleFavorite: (Long) -> Unit = {},
         onLoadNext: () -> Unit = {}
     ) {
         rule.setContent {
