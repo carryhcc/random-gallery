@@ -24,7 +24,6 @@ import java.net.Proxy
 import java.net.ProxySelector
 import java.net.SocketAddress
 import java.net.URI
-import java.io.IOException
 import java.util.concurrent.TimeUnit
 
 /**
