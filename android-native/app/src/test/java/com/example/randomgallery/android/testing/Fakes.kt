@@ -158,7 +158,7 @@ open class StubApiService : ApiService {
     override suspend fun getGroupList(groupName: String?, pageIndex: Int, pageSize: Int): ApiResponse<PageResult<GroupVO>> = unimplemented("getGroupList")
     override suspend fun loadMoreGroups(page: Int, refresh: Boolean) = unimplemented("loadMoreGroups")
     override suspend fun deleteDownloadTask(id: Long) = unimplemented("deleteDownloadTask")
-    override suspend fun retryDownloadTask(id: Long) = unimplemented("retryDownloadTask")
+    override suspend fun retryDownloadTask(id: Long, qry: RetryDownloadQry) = unimplemented("retryDownloadTask")
     override suspend fun getXhsWorkDetail(workId: String): ApiResponse<XhsWorkDetailVO> = unimplemented("getXhsWorkDetail")
     override suspend fun deleteWork(workId: String) = unimplemented("deleteWork")
     override suspend fun deleteMedia(id: Long) = unimplemented("deleteMedia")

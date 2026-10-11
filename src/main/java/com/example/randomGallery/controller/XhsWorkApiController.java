@@ -4,6 +4,7 @@ import cn.hutool.core.util.ObjectUtil;
 import com.example.randomGallery.common.Result;
 import com.example.randomGallery.entity.QO.CookieValidateQry;
 import com.example.randomGallery.entity.QO.DownLoadQry;
+import com.example.randomGallery.entity.QO.RetryDownloadQry;
 import com.example.randomGallery.entity.VO.AuthorVO;
 import com.example.randomGallery.entity.VO.RandomGifVO;
 import com.example.randomGallery.entity.VO.TagVO;
@@ -97,8 +98,13 @@ public class XhsWorkApiController {
      * 重试失败的下载任务
      */
     @PostMapping("/download/retry/{id}")
-    public Result<String> retryDownload(@PathVariable Long id) {
-        downloadTaskService.retryTask(id);
+    public Result<String> retryDownload(@PathVariable Long id, @RequestBody(required = false) RetryDownloadQry qry) {
+        if (qry == null) {
+            // 保持旧版客户端兼容：不传请求体时保留任务原有参数。
+            downloadTaskService.retryTask(id);
+        } else {
+            downloadTaskService.retryTask(id, qry.getCookie());
+        }
         downloadTaskConsumer.submit(id);
         return Result.success("重试任务已提交");
     }

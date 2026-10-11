@@ -48,6 +48,9 @@ public interface DownloadTaskService {
      */
     void retryTask(Long id);
 
+    /** 使用本次请求的 Cookie 重试失败任务；null 表示使用下载器默认配置。 */
+    void retryTask(Long id, String cookie);
+
     /**
      * 标记任务为已完成并回填作品信息
      */

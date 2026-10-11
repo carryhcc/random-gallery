@@ -2,6 +2,7 @@ package com.example.randomGallery.config;
 
 import com.example.randomGallery.entity.QO.CookieValidateQry;
 import com.example.randomGallery.entity.QO.DownLoadQry;
+import com.example.randomGallery.entity.QO.RetryDownloadQry;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.servlet.http.HttpServletRequest;
@@ -145,6 +146,9 @@ public class ApiLoggingAspect {
             return null;
         // Cookie 是请求对象字段，不能只依赖 Map 的敏感键处理。
         if (value instanceof CookieValidateQry) {
+            return Map.of("cookie", "***");
+        }
+        if (value instanceof RetryDownloadQry) {
             return Map.of("cookie", "***");
         }
         if (value instanceof DownLoadQry qry) {

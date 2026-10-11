@@ -175,7 +175,10 @@ class GalleryRepository(
     }
 
     suspend fun retryDownloadTask(id: Long): Result<String> = try {
-        val res = api.retryDownloadTask(id)
+        // 重试时采用当前保存的 Cookie，避免失败任务一直使用创建时的失效值。
+        // 当前没有 Cookie 时发送 null，让后端清除旧值并回退到下载器默认配置。
+        val cookie = prefs.xhsCookieFlow.first().ifBlank { null }
+        val res = api.retryDownloadTask(id, RetryDownloadQry(cookie = cookie))
         if (res.code == 200) Result.success(res.message ?: "重试任务已提交")
         else Result.failure(Exception(res.message ?: "重试失败"))
     } catch (e: Exception) {

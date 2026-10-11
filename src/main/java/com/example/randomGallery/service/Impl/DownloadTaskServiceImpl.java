@@ -103,6 +103,16 @@ public class DownloadTaskServiceImpl implements DownloadTaskService {
     @Override
     @Transactional(rollbackFor = Exception.class)
     public void retryTask(Long id) {
+        retryTaskInternal(id, null, false);
+    }
+
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public void retryTask(Long id, String cookie) {
+        retryTaskInternal(id, cookie, true);
+    }
+
+    private void retryTaskInternal(Long id, String cookie, boolean replaceCookie) {
         XhsDownloadTaskDO task = getById(id);
         if (task == null) {
             throw new NotFoundException("下载任务不存在");
@@ -114,7 +124,17 @@ public class DownloadTaskServiceImpl implements DownloadTaskService {
         task.setErrorMessage(null);
         task.setFinishTime(null);
         task.setRetryCount(task.getRetryCount() == null ? 1 : task.getRetryCount() + 1);
-        downloadTaskMapper.updateById(task);
+        // UpdateWrapper 可明确写入 null，避免 MyBatis-Plus 的 NOT_NULL 更新策略保留旧 Cookie。
+        var update = Wrappers.<XhsDownloadTaskDO>lambdaUpdate()
+                .eq(XhsDownloadTaskDO::getId, id)
+                .set(XhsDownloadTaskDO::getStatus, task.getStatus())
+                .set(XhsDownloadTaskDO::getErrorMessage, null)
+                .set(XhsDownloadTaskDO::getFinishTime, null)
+                .set(XhsDownloadTaskDO::getRetryCount, task.getRetryCount());
+        if (replaceCookie) {
+            update.set(XhsDownloadTaskDO::getParamsCookie, cookie);
+        }
+        downloadTaskMapper.update(null, update);
         log.info("下载任务重试, id: {}, 重试次数: {}", id, task.getRetryCount());
     }
 

@@ -56,7 +56,7 @@ interface ApiService {
     suspend fun deleteDownloadTask(@Path("id") id: Long): ApiResponse<String>
 
     @POST("api/xhsWork/download/retry/{id}")
-    suspend fun retryDownloadTask(@Path("id") id: Long): ApiResponse<String>
+    suspend fun retryDownloadTask(@Path("id") id: Long, @Body qry: RetryDownloadQry): ApiResponse<String>
 
     @GET("api/xhsWork/list")
     suspend fun getXhsWorkList(

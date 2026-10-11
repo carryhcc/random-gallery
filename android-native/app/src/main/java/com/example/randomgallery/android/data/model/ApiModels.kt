@@ -75,6 +75,11 @@ data class CookieValidateQry(
 )
 
 @JsonClass(generateAdapter = true)
+data class RetryDownloadQry(
+    val cookie: String? = null
+)
+
+@JsonClass(generateAdapter = true)
 data class XhsWorkListVO(
     val id: Long? = null,
     val workId: String? = null,
